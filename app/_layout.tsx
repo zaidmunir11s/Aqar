@@ -3,8 +3,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 
-import { useSupabase } from "@/hooks/useSupabase";
-import { SupabaseProvider } from "@/providers/supabase-provider";
+import SafeAreaView from "@/components/SafeAreaView";
 
 SplashScreen.setOptions({
   duration: 500,
@@ -14,38 +13,20 @@ SplashScreen.setOptions({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  return (
-    <SupabaseProvider>
-      <RootNavigator />
-    </SupabaseProvider>
-  );
-}
-
-function RootNavigator() {
-  const { isLoaded, session } = useSupabase();
-
   useEffect(() => {
-    if (isLoaded) {
-      SplashScreen.hide();
-    }
-  }, [isLoaded]);
+    SplashScreen.hide();
+  }, []);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        gestureEnabled: false,
-        animation: "none",
-        animationDuration: 0,
-      }}
-    >
-      <Stack.Protected guard={!!session}>
-        <Stack.Screen name="(protected)" />
-      </Stack.Protected>
-
-      <Stack.Protected guard={!session}>
-        <Stack.Screen name="(public)" />
-      </Stack.Protected>
-    </Stack>
+    <SafeAreaView>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </SafeAreaView>
   );
 }

@@ -472,9 +472,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    // backgroundColor: COLORS.background,
     paddingTop: hp(1),
-    // paddingBottom: hp(0.3),
   },
 });
 

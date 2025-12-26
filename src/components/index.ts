@@ -1,0 +1,9 @@
+// Export all components from a single entry point for easier imports
+export * from "./common";
+export * from "./property";
+export * from "./project";
+export * from "./services";
+export * from "./input";
+export * from "./map";
+export * from "./profile";
+export { default as CalendarModal } from "./calendar/CalendarModal";

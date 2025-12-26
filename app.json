@@ -8,10 +8,7 @@
     "scheme": "expo-supabase-starter",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.flemingvincent.expo-supabase-starter"

@@ -8,13 +8,13 @@
     "scheme": "expo-supabase-starter",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.flemingvincent.expo-supabase-starter"
+      "bundleIdentifier": "com.flemingvincent.expo-supabase-starter",
+      "config": {
+        "googleMapsApiKey": "AIzaSyD6rcuWRjrWv0WzoFIW9ZM4OvsBgVF2WhQ"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.flemingvincent.exposupabasestarter"
+      "package": "com.flemingvincent.exposupabasestarter",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD6rcuWRjrWv0WzoFIW9ZM4OvsBgVF2WhQ"
+        }
+      }
     },
     "plugins": [
       "expo-router",

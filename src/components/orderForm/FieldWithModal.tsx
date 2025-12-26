@@ -1,0 +1,80 @@
+import React, { memo } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import { COLORS } from "../../constants";
+
+export interface FieldWithModalProps {
+  label: string;
+  value: string;
+  placeholder: string;
+  onPress: () => void;
+  backgroundColor?: "white" | "background";
+}
+
+/**
+ * Reusable field component that opens a modal
+ */
+const FieldWithModal = memo<FieldWithModalProps>(
+  ({ label, value, placeholder, onPress, backgroundColor = "white" }) => {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity
+          style={[
+            styles.field,
+            backgroundColor === "background" && styles.fieldBackground,
+          ]}
+          onPress={onPress}
+        >
+          <Text style={[styles.fieldText, !value && styles.placeholder]}>
+            {value || placeholder}
+          </Text>
+          <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+);
+
+FieldWithModal.displayName = "FieldWithModal";
+
+const styles = StyleSheet.create({
+  section: {
+    marginBottom: hp(2.5),
+  },
+  label: {
+    fontSize: wp(4),
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: hp(1),
+  },
+  field: {
+    backgroundColor: COLORS.white,
+    borderRadius: wp(2),
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.5),
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  fieldBackground: {
+    backgroundColor: COLORS.background,
+  },
+  fieldText: {
+    fontSize: wp(4),
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  placeholder: {
+    color: COLORS.textSecondary,
+  },
+});
+
+export default FieldWithModal;
+

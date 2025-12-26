@@ -27,13 +27,10 @@ export default function LoginScreen(): React.JSX.Element {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-  const isFormValid =
-    phoneNumber.trim().length > 0 && password.trim().length > 0;
-
   const handleLogin = useCallback(() => {
-    if (!isFormValid) return;
     console.log("Login with:", phoneNumber, password);
-  }, [isFormValid, phoneNumber, password]);
+    navigation.navigate("ProfileDetail");
+  }, [phoneNumber, password, navigation]);
 
   const handleCreateAccount = useCallback(() => {
     navigation.navigate("CreateAccount");
@@ -92,7 +89,6 @@ export default function LoginScreen(): React.JSX.Element {
         <PrimaryButton
           text="Login"
           onPress={handleLogin}
-          disabled={!isFormValid}
           style={styles.loginButton}
         />
 

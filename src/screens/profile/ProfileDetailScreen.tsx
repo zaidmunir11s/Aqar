@@ -1,0 +1,204 @@
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import {
+  ScreenHeader,
+  PhoneCard,
+  ActionButtons,
+  AqarCard,
+  PromotionServiceCard,
+  ActivityItem,
+  AddButton,
+  MenuList,
+  ClientsSection,
+  FinancialInformationSection,
+  AccountManagementSection,
+} from "../../components";
+import type { MenuItem } from "../../components/profile/MenuList";
+
+type NavigationProp = NativeStackNavigationProp<any>;
+
+export default function ProfileDetailScreen(): React.JSX.Element {
+  const navigation = useNavigation<NavigationProp>();
+
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+
+  const handleWalletPress = () => {
+    // TODO: Navigate to wallet screen
+    console.log("Wallet pressed");
+  };
+
+  const handlePhonePress = () => {
+    navigation.navigate("UserProfileAds");
+  };
+
+  const handleFavoritesPress = () => {
+    console.log("Favorites pressed");
+  };
+
+  const handleAlertsPress = () => {
+    console.log("Alerts pressed");
+  };
+
+  const handleAqarPress = () => {
+    console.log("Aqar+ pressed");
+  };
+
+  const handlePromotionServicePress = () => {
+    console.log("Promotion Services pressed");
+  };
+
+  const handleActivityPress = () => {
+    console.log("Activity pressed");
+  };
+
+  const handleAddPress = () => {
+    console.log("Add pressed");
+  };
+
+  const handleMyClientsPress = () => {
+    console.log("My Clients pressed");
+  };
+
+  const handlePaymentsPress = () => {
+    console.log("Payments pressed");
+  };
+
+  const handleFinancialSettingsPress = () => {
+    console.log("Financial Settings pressed");
+  };
+
+  const handleManageCardsPress = () => {
+    console.log("Manage Cards pressed");
+  };
+
+  const handleUpdateProfilePress = () => {
+    console.log("Update profile pressed");
+  };
+
+  const handleChangePasswordPress = () => {
+    console.log("Change password pressed");
+  };
+
+  const handleChangePhoneNumberPress = () => {
+    console.log("Change phone number pressed");
+  };
+
+  const handleLogoutPress = () => {
+    console.log("Log out pressed");
+  };
+
+  const menuItems: MenuItem[] = [
+    {
+      title: "My Ads",
+      subtitle: "Published, expired and marketing requests",
+      onPress: () => console.log("My Ads pressed"),
+    },
+    {
+      title: "My Deals",
+      subtitle: "Verify the deals you have completed",
+      onPress: () => console.log("My Deals pressed"),
+    },
+    {
+      title: "Requests",
+      subtitle: "Get alerts for offers similar to your wishes",
+      onPress: () => console.log("Requests pressed"),
+    },
+    {
+      title: "My Bookings",
+      subtitle: "Booking history for daily/monthly rental units",
+      onPress: () => console.log("My Bookings pressed"),
+    },
+    {
+      title: "Unit reservation requests",
+      subtitle: "Register project unit reservation request",
+      onPress: () => console.log("Unit reservation requests pressed"),
+      showNewBadge: true,
+    },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Profile"
+        onBackPress={handleBackPress}
+        fontWeightBold={true}
+        rightComponent={
+          <TouchableOpacity
+            style={styles.walletContainer}
+            onPress={handleWalletPress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="wallet-outline" size={wp(5)} color="#0ab539" />
+            <Text style={styles.walletText}>No balance</Text>
+          </TouchableOpacity>
+        }
+        showRightSide={true}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <PhoneCard phoneNumber="0542 932 681" onPress={handlePhonePress} />
+        <ActionButtons
+          onFavoritesPress={handleFavoritesPress}
+          onAlertsPress={handleAlertsPress}
+        />
+        <AqarCard onPress={handleAqarPress} />
+        <PromotionServiceCard onPress={handlePromotionServicePress} />
+        <ActivityItem onPress={handleActivityPress} />
+        <AddButton onPress={handleAddPress} />
+        <MenuList items={menuItems} />
+        <ClientsSection onMyClientsPress={handleMyClientsPress} />
+        <FinancialInformationSection
+          onPaymentsPress={handlePaymentsPress}
+          onFinancialSettingsPress={handleFinancialSettingsPress}
+          onManageCardsPress={handleManageCardsPress}
+        />
+        <AccountManagementSection
+          onUpdateProfilePress={handleUpdateProfilePress}
+          onChangePasswordPress={handleChangePasswordPress}
+          onChangePhoneNumberPress={handleChangePhoneNumberPress}
+          onLogoutPress={handleLogoutPress}
+        />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f3f4f6",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: wp(4),
+  },
+  walletContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: wp(2),
+  },
+  walletText: {
+    fontSize: wp(3.8),
+    color: "#0ab539",
+    fontWeight: "500",
+  },
+});

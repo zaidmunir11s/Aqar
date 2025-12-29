@@ -6,7 +6,7 @@ export const COLORS = {
   primaryDark: "#059669",
 
   // Marker colors for map
- markerDefault : "#0e856a",
+  markerDefault: "#0e856a",
   markerSelected: "#3b82f6",
   markerVisited: "#9ca3af",
   markerProject: "#8b5cf6",
@@ -61,8 +61,7 @@ export const COLORS = {
   //addBtn
   addBtnBorder: "#0e856a",
   addBtnText: "#0e856a",
-  
-  
+
   //tabBarActiveTintColor
   activeTabBar: "#0e856a",
 
@@ -70,7 +69,6 @@ export const COLORS = {
   activeChipBorder: "#0e856a",
   activeChipText: "#0e856a",
   activeChipBackground: "#DFF4EF",
-
 
   //activeTopTabBar
   activeTopTabBar: "#0e856a",
@@ -81,14 +79,12 @@ export const COLORS = {
   //showListFilterTab
   showListFilterTabActive: "#0e856a",
 
-
   //showListCards
   showListCardLocation: "#0e856a",
   showListCardPrice: "#0e856a",
 
   //propertyDetailPrice
   propertyDetailPrice: "#0e856a",
-
 
   //priceInDailyBookingCardSection
   dailyCardPrice: "#0e856a",
@@ -102,7 +98,6 @@ export const COLORS = {
   //projectdetailsGetLocationButton
   getLocation: "#0e856a",
 
-
   //loginLabel +966  and phoneicon color
   numberLabel: "#0e856a",
 
@@ -112,12 +107,8 @@ export const COLORS = {
   //loginFieldsBorderColor
   loginFieldsBorder: "#d2d6d9",
 
-
   //CalenderMOdal
   okButton: "#0e856a",
   arrows: "#0e856a",
   todayDate: "#0e856a",
-
-
-
 } as const;

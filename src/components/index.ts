@@ -5,6 +5,7 @@ export * from "./project";
 export * from "./services";
 export * from "./input";
 export * from "./map";
+export * from "./profile";
 export { default as CalendarModal } from "./calendar/CalendarModal";
 export { default as BookingDateModal } from "./calendar/BookingDateModal";
 export { default as DatePickerModal } from "./calendar/DatePickerModal";

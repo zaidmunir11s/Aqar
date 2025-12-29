@@ -33,7 +33,8 @@ export default function LoginScreen(): React.JSX.Element {
   const handleLogin = useCallback(() => {
     if (!isFormValid) return;
     console.log("Login with:", phoneNumber, password);
-  }, [isFormValid, phoneNumber, password]);
+    navigation.navigate("ProfileDetail");
+  }, [isFormValid, phoneNumber, password, navigation]);
 
   const handleCreateAccount = useCallback(() => {
     navigation.navigate("CreateAccount");

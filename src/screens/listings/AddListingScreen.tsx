@@ -24,23 +24,51 @@ export default function AddListingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
 
   const handleBackPress = () => {
-    // Navigate back - will go to appropriate map screen based on which stack we're in
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      // Try to navigate to the appropriate map screen
+    // Get the parent navigator (Tab Navigator) to determine which tab we're in
+    const parent = navigation.getParent();
+    const rootState = parent?.getState();
+    
+    // Find the current tab by checking the root navigator state
+    const currentTabRoute = rootState?.routes?.[rootState?.index || 0];
+    const tabName = currentTabRoute?.name;
+    
+    // Determine which map screen to navigate to based on the current tab
+    const targetMapScreen = 
+      tabName === "Listings" ? "MapLanding" :
+      tabName === "Projects" ? "ProjectsMap" :
+      tabName === "Bookings" ? "DailyMap" : "MapLanding";
+    
+    // Get the current stack state
+    const stackState = navigation.getState();
+    const stackRoutes = stackState?.routes || [];
+    
+    // If there are multiple screens in the stack, pop to the first one (map screen)
+    if (stackRoutes.length > 1) {
       try {
-        navigation.navigate("DailyMap");
-      } catch {
-        try {
-          navigation.navigate("ProjectsMap");
-        } catch {
-          try {
-    navigation.navigate("MapLanding");
-          } catch {
-            // If none work, just go back
-            navigation.goBack();
-          }
+        // Pop to the first screen in the stack (should be the map screen)
+        navigation.popToTop();
+      } catch (error) {
+        // If popToTop fails, navigate directly to the map screen using parent navigator
+        if (tabName && (tabName === "Listings" || tabName === "Projects" || tabName === "Bookings")) {
+          parent?.navigate(tabName, { screen: targetMapScreen });
+        } else {
+          navigation.navigate(targetMapScreen);
+        }
+      }
+    } else {
+      // Only one screen in stack or can't determine, navigate directly to map screen
+      try {
+        if (tabName && (tabName === "Listings" || tabName === "Projects" || tabName === "Bookings")) {
+          // Use parent navigator to navigate to the tab and screen
+          parent?.navigate(tabName, { screen: targetMapScreen });
+        } else {
+          // Fallback: try direct navigation
+          navigation.navigate(targetMapScreen);
+        }
+      } catch (error) {
+        // If navigation fails, try going back
+        if (navigation.canGoBack()) {
+          navigation.goBack();
         }
       }
     }

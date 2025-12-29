@@ -24,7 +24,8 @@ import {
   DAILY_FILTER_OPTIONS,
 } from "../../data/propertyData";
 import { getTypeLabelFromType, formatPrice, formatDateRange, calculateDays } from "../../utils";
-import { PropertyCard, DailyBookingListCard, BookingDateModal, DailyHeaderBoxes, CityModal } from "../../components";
+import { PropertyCard, DailyBookingListCard, BookingDateModal, DailyHeaderBoxes, CityModal, SearchFilterModal } from "../../components";
+import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import { COLORS, CITY_REGIONS } from "../../constants";
 import { useCalendar, useBookingModal } from "../../hooks";
 import type { Property } from "../../types/property";
@@ -38,13 +39,31 @@ interface RouteParams {
   selectedDates?: CalendarDates;
   selectedFilter?: string | null; // Preserve filter selection
   selectedCity?: string; // Preserve city selection
+  searchFilters?: SearchFilterState | null; // Preserve search filters
 }
 
-// Module-level variable to preserve filter selection across navigation resets
+// Module-level variables to preserve filter state across navigation resets
 let preservedFilter: string | null = null;
+let preservedDates: CalendarDates = { startDate: null, endDate: null };
+let preservedCity: string = "City";
+let preservedSearchFilters: SearchFilterState | null = null;
 
-// Export getter function to access preserved filter from other modules
+// Export getter and setter functions to access preserved filters from other modules
 export const getPreservedFilter = (): string | null => preservedFilter;
+export const getPreservedDates = (): CalendarDates => preservedDates;
+export const getPreservedCity = (): string => preservedCity;
+export const getPreservedSearchFilters = (): SearchFilterState | null => preservedSearchFilters;
+
+// Setter functions to update preserved values
+export const setPreservedDates = (dates: CalendarDates) => {
+  preservedDates = dates;
+};
+export const setPreservedCity = (city: string) => {
+  preservedCity = city;
+};
+export const setPreservedSearchFilters = (filters: SearchFilterState | null) => {
+  preservedSearchFilters = filters;
+};
 
 export default function PropertyListScreen(): React.JSX.Element {
   const route = useRoute();
@@ -100,26 +119,62 @@ export default function PropertyListScreen(): React.JSX.Element {
   const [isScrolling, setIsScrolling] = useState<boolean>(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
-  const [selectedCity, setSelectedCity] = useState<string>(params?.selectedCity || "City");
+  const [selectedCity, setSelectedCity] = useState<string>(
+    params?.selectedCity || preservedCity || "City"
+  );
+  const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
+  const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
+    params?.searchFilters || preservedSearchFilters
+  );
   
   // Sync selectedCity when params change
   useEffect(() => {
     if (params?.selectedCity) {
+      preservedCity = params.selectedCity;
       setSelectedCity(params.selectedCity);
+    } else if (!params?.selectedCity && preservedCity && preservedCity !== "City") {
+      setSelectedCity(preservedCity);
     }
   }, [params?.selectedCity]);
 
-  // Use calendar hook for date management - initialize with params if available
-  const initialDates = selectedDatesFromParams || { startDate: null, endDate: null };
+  // Sync searchFilters when params change
+  useEffect(() => {
+    if (params?.searchFilters) {
+      preservedSearchFilters = params.searchFilters;
+      setSearchFilters(params.searchFilters);
+    } else if (!params?.searchFilters && preservedSearchFilters) {
+      setSearchFilters(preservedSearchFilters);
+    }
+  }, [params?.searchFilters]);
+
+  // Update preserved city when it changes
+  useEffect(() => {
+    if (selectedCity && selectedCity !== "City") {
+      preservedCity = selectedCity;
+    }
+  }, [selectedCity]);
+
+  // Use calendar hook for date management - initialize with params or preserved dates
+  const initialDates = selectedDatesFromParams || preservedDates || { startDate: null, endDate: null };
   const { selectedDates: calendarSelectedDates, handleDateSelect, setSelectedDates } = useCalendar(initialDates);
   const { modalVisible: bookingDateModalVisible, openModal: openBookingDateModal, closeModal: closeBookingDateModal } = useBookingModal();
   
   // Sync calendar dates with params when they change (from navigation)
   useEffect(() => {
     if (selectedDatesFromParams) {
+      preservedDates = selectedDatesFromParams;
       setSelectedDates(selectedDatesFromParams);
+    } else if (!selectedDatesFromParams && preservedDates.startDate && preservedDates.endDate) {
+      setSelectedDates(preservedDates);
     }
   }, [selectedDatesFromParams, setSelectedDates]);
+
+  // Update preserved dates when they change
+  useEffect(() => {
+    if (calendarSelectedDates.startDate && calendarSelectedDates.endDate) {
+      preservedDates = calendarSelectedDates;
+    }
+  }, [calendarSelectedDates]);
   
   // Use calendar dates (they will be synced with params)
   const effectiveSelectedDates = calendarSelectedDates;
@@ -185,6 +240,7 @@ export default function PropertyListScreen(): React.JSX.Element {
         selectedDates: effectiveSelectedDates, // Pass current selected dates
         selectedFilter: selectedFilter, // Preserve filter when going to map
         selectedCity: selectedCity !== "City" ? selectedCity : undefined, // Pass selected city
+        searchFilters: searchFilters, // Pass search filters
       });
     } else if (listingType === "projects" || listingType === "sale") {
       navigation.navigate("ProjectsMap");
@@ -229,9 +285,21 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, []);
 
   const handleFiltersPress = useCallback(() => {
-    // TODO: Open filters
-    console.log("Filters pressed");
+    setFilterModalVisible(true);
   }, []);
+
+  const handleSearchFilters = useCallback((filters: SearchFilterState, count: number) => {
+    preservedSearchFilters = filters;
+    setSearchFilters(filters);
+    setFilterModalVisible(false);
+  }, []);
+
+  // Update preserved search filters when they change
+  useEffect(() => {
+    if (searchFilters) {
+      preservedSearchFilters = searchFilters;
+    }
+  }, [searchFilters]);
 
   const handleAddPress = useCallback(() => {
     navigation.navigate("AddListing");
@@ -266,8 +334,8 @@ export default function PropertyListScreen(): React.JSX.Element {
     [listingType]
   );
 
-  // Filter properties based on selected dates (for daily listings) and city
-  const filteredProperties = useMemo(() => {
+  // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters)
+  const filteredPropertiesForModal = useMemo(() => {
     if (listingType !== "daily") return properties;
     
     let filtered = [...properties];
@@ -307,9 +375,23 @@ export default function PropertyListScreen(): React.JSX.Element {
         );
       }
     }
-    
+
     return filtered;
   }, [properties, listingType, effectiveSelectedDates, selectedCity]);
+
+  // Filter properties based on selected dates (for daily listings), city, and searchFilters
+  const filteredProperties = useMemo(() => {
+    if (listingType !== "daily") return properties;
+    
+    let filtered = [...filteredPropertiesForModal];
+
+    // Apply search filters if any
+    if (searchFilters) {
+      filtered = applySearchFilters(filtered, searchFilters);
+    }
+    
+    return filtered;
+  }, [filteredPropertiesForModal, searchFilters, listingType, properties]);
 
   // Sort properties based on selected filter
   const sortedProperties = useMemo(() => {
@@ -353,33 +435,33 @@ export default function PropertyListScreen(): React.JSX.Element {
       const typeLabel = getTypeLabel(item.type) || "Property";
 
       const { title, priceLine } = useMemo(() => {
-        let priceLine = "";
-        let title = "";
+      let priceLine = "";
+      let title = "";
 
-        if (listingType === "daily") {
-          title = typeLabel || "Property";
-          const calculatedPrice = calculateDailyPrice(item);
-          if (calculatedPrice) {
-            priceLine = `${calculatedPrice} SAR`;
-          } else {
-            const dailyProperty = item as any;
-            priceLine =
-              dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
-          }
-        } else if (listingType === "rent") {
-          title = `${typeLabel} for rent`;
-          const rentProperty = item as any;
-          const formattedPrice = rentProperty.price
-            ? formatPrice(rentProperty.price)
-            : "0";
-          priceLine = `${formattedPrice} SAR / Yearly`;
+      if (listingType === "daily") {
+        title = typeLabel || "Property";
+        const calculatedPrice = calculateDailyPrice(item);
+        if (calculatedPrice) {
+          priceLine = `${calculatedPrice} SAR`;
         } else {
-          title = `${typeLabel} for sale`;
-          const saleProperty = item as any;
-          const formattedPrice = saleProperty.price
-            ? formatPrice(saleProperty.price)
-            : "0";
-          priceLine = `${formattedPrice} SAR`;
+          const dailyProperty = item as any;
+          priceLine =
+            dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
+        }
+      } else if (listingType === "rent") {
+        title = `${typeLabel} for rent`;
+        const rentProperty = item as any;
+        const formattedPrice = rentProperty.price
+          ? formatPrice(rentProperty.price)
+          : "0";
+        priceLine = `${formattedPrice} SAR / Yearly`;
+      } else {
+        title = `${typeLabel} for sale`;
+        const saleProperty = item as any;
+        const formattedPrice = saleProperty.price
+          ? formatPrice(saleProperty.price)
+          : "0";
+        priceLine = `${formattedPrice} SAR`;
         }
 
         return { title, priceLine };
@@ -551,7 +633,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
       {/* Filter Tabs - Only show for non-daily listings */}
       {!isDailyListing && (
-        <View style={styles.filterContainer}>
+      <View style={styles.filterContainer}>
         <View style={styles.filterTabsWrapper}>
           <TouchableOpacity
             style={[
@@ -684,8 +766,110 @@ export default function PropertyListScreen(): React.JSX.Element {
         onLocateMe={handleCityLocateMe}
         selectedCity={selectedCity !== "City" ? selectedCity : undefined}
       />
+
+      <SearchFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onSearch={handleSearchFilters}
+        properties={filteredPropertiesForModal}
+      />
     </View>
   );
+}
+
+// Apply search filters to properties
+function applySearchFilters(
+  properties: Property[],
+  filters: SearchFilterState
+): Property[] {
+  let filtered = [...properties];
+
+  // Filter by property type
+  if (filters.selectedPropertyType) {
+    filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
+  }
+
+  // Filter by price (for daily properties, use dailyPrice or monthlyPrice)
+  if (filters.fromPrice || filters.toPrice) {
+    filtered = filtered.filter((p) => {
+      let price: number | null = null;
+
+      if (p.listingType === "daily" && "dailyPrice" in p) {
+        price = p.dailyPrice;
+      } else if (p.listingType === "daily" && "monthlyPrice" in p) {
+        price = p.monthlyPrice;
+      }
+
+      if (price === null) return false;
+
+      const fromPrice = filters.fromPrice ? parseFloat(filters.fromPrice) : 0;
+      const toPrice = filters.toPrice ? parseFloat(filters.toPrice) : Infinity;
+
+      return price >= fromPrice && price <= toPrice;
+    });
+  }
+
+  // Filter by usage type (Singles/Families)
+  if (filters.usageType) {
+    const usage = filters.usageType === "Singles" ? "single" : "family";
+    filtered = filtered.filter((p) => p.usage === usage);
+  }
+
+  // Filter by bedrooms
+  if (filters.bedrooms) {
+    if (filters.bedrooms === "6+") {
+      filtered = filtered.filter((p) => p.bedrooms >= 6);
+    } else {
+      const bedrooms = parseInt(filters.bedrooms);
+      filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+    }
+  }
+
+  // Filter by living rooms
+  if (filters.livingRooms) {
+    const livingRooms = parseInt(filters.livingRooms.replace("+", ""));
+    filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+  }
+
+  // Filter by WC
+  if (filters.wc) {
+    const wc = parseInt(filters.wc.replace("+", ""));
+    filtered = filtered.filter((p) => p.restrooms >= wc);
+  }
+
+  // Filter by features (toggles)
+  const featureFilters: { [key: string]: string } = {
+    furnished: "Furnished",
+    carEntrance: "Car Entrance",
+    airConditioned: "Air Conditioned",
+    privateRoof: "Private Roof",
+    apartmentInVilla: "Apartment in Villa",
+    twoEntrances: "Two Entrances",
+    specialEntrances: "Special Entrances",
+    nearBus: "Near Bus",
+    nearMetro: "Near Metro",
+    pool: "Pool",
+    footballPitch: "Football Pitch",
+    volleyballCourt: "Volleyball Court",
+    tent: "Tent",
+    kitchen: "Kitchen",
+    playground: "Playground",
+    familySection: "Family Section",
+    stairs: "Stairs",
+    driverRoom: "Driver Room",
+    maidRoom: "Maid Room",
+    basement: "Basement",
+  };
+
+  Object.entries(featureFilters).forEach(([key, featureName]) => {
+    if (filters[key as keyof SearchFilterState] === true) {
+      filtered = filtered.filter(
+        (p) => p.features && p.features.includes(featureName)
+      );
+    }
+  });
+
+  return filtered;
 }
 
 const styles = StyleSheet.create({

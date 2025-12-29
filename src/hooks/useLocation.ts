@@ -47,10 +47,10 @@ export function useLocation() {
 
         return {
           region: {
-            latitude,
-            longitude,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
+          latitude,
+          longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
           },
           isOutsideSaudi: false,
         };

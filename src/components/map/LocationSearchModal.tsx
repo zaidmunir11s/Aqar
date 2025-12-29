@@ -103,7 +103,7 @@ export default function LocationSearchModal({
               placeholderTextColor="#9ca3af"
               value={searchText}
               onChangeText={setSearchText}
-              autoFocus={true}
+              autoFocus={false}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
             />
@@ -112,7 +112,7 @@ export default function LocationSearchModal({
                 onPress={() => setSearchText("")}
                 style={styles.clearButton}
               >
-                <Ionicons name="close-circle" size={wp(5)} color="#6b7280" />
+                <Ionicons name="close" size={wp(5)} color="#6b7280" />
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -174,13 +174,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    height: hp(50),
+    height: hp(45),
     paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.background,
     borderRadius: wp(3),
     marginHorizontal: wp(4),
     marginTop: hp(2),
@@ -188,12 +188,12 @@ const styles = StyleSheet.create({
     paddingLeft: wp(3),
     paddingRight: wp(2),
     paddingVertical: hp(1),
-    borderWidth: 1.5,
-    borderColor: "transparent",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   searchContainerFocused: {
-    backgroundColor: "#fff",
-    borderColor: COLORS.primary,
+    backgroundColor: COLORS.activeChipBackground,
+    borderColor: COLORS.activeChipBorder,
   },
   searchInput: {
     flex: 1,

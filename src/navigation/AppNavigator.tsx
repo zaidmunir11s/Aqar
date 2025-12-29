@@ -10,10 +10,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import {
-  getFocusedRouteNameFromRoute,
-  Route,
-} from "@react-navigation/native";
+import { getFocusedRouteNameFromRoute, Route } from "@react-navigation/native";
 
 import { AuthStack, ListingsStack, ProjectsStack, DailyStack } from "./stacks";
 import ServicesScreen from "../screens/services/ServicesScreen";
@@ -88,11 +85,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Profile",
           tabBarIcon: ({ color }) => (
-            <FontAwesome6
-              name="circle-user"
-              size={wp(6)}
-              color={color}
-            />
+            <FontAwesome6 name="circle-user" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -112,11 +105,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Listings",
           tabBarIcon: ({ color }) => (
-            <FontAwesome6
-              name="map-location-dot"
-              size={wp(7)}
-              color={color}
-            />
+            <FontAwesome6 name="map-location-dot" size={wp(7)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -129,11 +118,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Projects",
           tabBarIcon: ({ color }) => (
-            <Ionicons
-              name="stats-chart-outline"
-              size={wp(6)}
-              color={color}
-            />
+            <Ionicons name="stats-chart-outline" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -146,57 +131,58 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Bookings",
           tabBarIcon: ({ color }) => (
-            <FontAwesome6
-              name="calendar-days"
-              size={wp(6)}
-              color={color}
-            />
+            <FontAwesome6 name="calendar-days" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Get the current navigation state
             const state = navigation.getState();
-            const bookingsTabState = state.routes.find((r) => r.name === "Bookings");
-            
-            // Check if we're currently on PropertyList
-            const currentRoute = bookingsTabState?.state?.routes?.[bookingsTabState?.state?.index || 0];
+            const bookingsTabState = state.routes.find(
+              (r) => r.name === "Bookings"
+            );
+
+            const currentRoute =
+              bookingsTabState?.state?.routes?.[
+                bookingsTabState?.state?.index || 0
+              ];
             const isOnPropertyList = currentRoute?.name === "PropertyList";
-            
-            // Always get preserved filter before any navigation
-            const { getPreservedFilter } = require("../screens/listings/PropertyListScreen");
+
+            const {
+              getPreservedFilter,
+            } = require("../screens/listings/PropertyListScreen");
             const preservedFilter = getPreservedFilter();
-            
-            // If we're not on PropertyList, prevent default and navigate to it
+
             if (!isOnPropertyList) {
               e.preventDefault();
-              // Get filter from current route if available
               interface RouteParams {
                 selectedFilter?: string | null;
               }
-              const currentRouteParams = currentRoute?.params as RouteParams | undefined;
+              const currentRouteParams = currentRoute?.params as
+                | RouteParams
+                | undefined;
               const filterFromCurrentRoute = currentRouteParams?.selectedFilter;
-              
-              // Priority: preservedFilter (module-level, always up-to-date) > filterFromCurrentRoute
-              // Always use preservedFilter if it exists, as it's the source of truth
-              const filterToPreserve = preservedFilter !== null && preservedFilter !== undefined 
-                ? preservedFilter 
-                : filterFromCurrentRoute;
-              
-              // Navigate to PropertyList with preserved filter
-              navigation.navigate("Bookings", { 
+              const filterToPreserve =
+                preservedFilter !== null && preservedFilter !== undefined
+                  ? preservedFilter
+                  : filterFromCurrentRoute;
+              navigation.navigate("Bookings", {
                 screen: "PropertyList",
-                params: filterToPreserve ? { selectedFilter: filterToPreserve } : undefined
+                params: filterToPreserve
+                  ? { selectedFilter: filterToPreserve }
+                  : undefined,
               });
             } else {
-              // We're already on PropertyList - ensure filter is preserved in params
-              // This prevents filter from being lost when switching tabs
               interface RouteParams {
                 selectedFilter?: string | null;
               }
-              const currentRouteParams = currentRoute?.params as RouteParams | undefined;
-              if (preservedFilter && currentRouteParams?.selectedFilter !== preservedFilter) {
+              const currentRouteParams = currentRoute?.params as
+                | RouteParams
+                | undefined;
+              if (
+                preservedFilter &&
+                currentRouteParams?.selectedFilter !== preservedFilter
+              ) {
                 e.preventDefault();
                 navigation.navigate("Bookings", {
                   screen: "PropertyList",
@@ -216,11 +202,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Chat",
           tabBarIcon: ({ color }) => (
-            <Entypo
-              name="chat"
-              size={wp(6)}
-              color={color}
-            />
+            <Entypo name="chat" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}

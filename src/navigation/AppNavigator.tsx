@@ -137,34 +137,24 @@ export default function AppNavigator(): React.JSX.Element {
         })}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Get the current navigation state
             const state = navigation.getState();
-            const dailyTabState = state.routes.find((r) => r.name === "Daily");
-
-            // Check if we're currently on PropertyList
-            const currentRoute =
-              dailyTabState?.state?.routes?.[dailyTabState?.state?.index || 0];
             const bookingsTabState = state.routes.find(
               (r) => r.name === "Bookings"
             );
 
-            // Check if we're currently on PropertyList
             const currentRoute =
               bookingsTabState?.state?.routes?.[
                 bookingsTabState?.state?.index || 0
               ];
             const isOnPropertyList = currentRoute?.name === "PropertyList";
 
-            // Always get preserved filter before any navigation
             const {
               getPreservedFilter,
             } = require("../screens/listings/PropertyListScreen");
             const preservedFilter = getPreservedFilter();
 
-            // If we're not on PropertyList, prevent default and navigate to it
             if (!isOnPropertyList) {
               e.preventDefault();
-              // Get filter from current route if available
               interface RouteParams {
                 selectedFilter?: string | null;
               }
@@ -172,15 +162,10 @@ export default function AppNavigator(): React.JSX.Element {
                 | RouteParams
                 | undefined;
               const filterFromCurrentRoute = currentRouteParams?.selectedFilter;
-
-              // Priority: preservedFilter (module-level, always up-to-date) > filterFromCurrentRoute
-              // Always use preservedFilter if it exists, as it's the source of truth
               const filterToPreserve =
                 preservedFilter !== null && preservedFilter !== undefined
                   ? preservedFilter
                   : filterFromCurrentRoute;
-
-              // Navigate to PropertyList with preserved filter
               navigation.navigate("Bookings", {
                 screen: "PropertyList",
                 params: filterToPreserve
@@ -188,8 +173,6 @@ export default function AppNavigator(): React.JSX.Element {
                   : undefined,
               });
             } else {
-              // We're already on PropertyList - ensure filter is preserved in params
-              // This prevents filter from being lost when switching tabs
               interface RouteParams {
                 selectedFilter?: string | null;
               }

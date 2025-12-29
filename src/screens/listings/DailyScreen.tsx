@@ -29,8 +29,19 @@ import {
   BookingDateModal,
   DailyHeaderBoxes,
   CityModal,
+  SearchFilterModal,
 } from "../../components";
+import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import type { Property, DailyProperty } from "../../types/property";
+import { 
+  getPreservedFilter, 
+  getPreservedDates, 
+  getPreservedCity, 
+  getPreservedSearchFilters,
+  setPreservedDates,
+  setPreservedCity,
+  setPreservedSearchFilters
+} from "./PropertyListScreen";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -43,12 +54,21 @@ export default function DailyScreen(): React.JSX.Element {
 
   const [region, setRegion] = useState(RIYADH_REGION);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
-  const [selectedCity, setSelectedCity] = useState<string>("City");
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
+  const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
+  
+  // Initialize from params or preserved values
+  const routeParamsForInit = route.params as { selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
+  const [selectedCity, setSelectedCity] = useState<string>(
+    routeParamsForInit?.selectedCity || getPreservedCity() || "City"
+  );
+  const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
+    routeParamsForInit?.searchFilters || getPreservedSearchFilters()
+  );
   
   // Check if we should zoom out or navigate to city when navigating from list screen
   useEffect(() => {
-    const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string };
+    const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string; searchFilters?: SearchFilterState | null };
     if (params?.shouldZoomOut && mapRef.current) {
       // If city is provided, navigate to that city, otherwise zoom out to default region
       if (params.selectedCity) {
@@ -56,6 +76,7 @@ export default function DailyScreen(): React.JSX.Element {
         if (cityRegion) {
           mapRef.current.animateToRegion(cityRegion, 800);
           setRegion(cityRegion);
+          setPreservedCity(params.selectedCity);
           setSelectedCity(params.selectedCity);
         } else {
           mapRef.current.animateToRegion(RIYADH_REGION, 800);
@@ -69,10 +90,17 @@ export default function DailyScreen(): React.JSX.Element {
       if (cityRegion) {
         mapRef.current.animateToRegion(cityRegion, 800);
         setRegion(cityRegion);
+        setPreservedCity(params.selectedCity);
         setSelectedCity(params.selectedCity);
       }
     }
-  }, [route.params]);
+    
+    // Sync searchFilters from params
+    if (params?.searchFilters !== undefined) {
+      setPreservedSearchFilters(params.searchFilters);
+      setSearchFilters(params.searchFilters);
+    }
+  }, [route.params, setPreservedCity, setPreservedSearchFilters]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<number>>(new Set());
   const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
@@ -82,8 +110,8 @@ export default function DailyScreen(): React.JSX.Element {
   const { getCurrentLocation } = useLocation();
   
   // Get selectedDates and selectedFilter from route params if available (when navigating from list screen)
-  const routeParams = route.params as { shouldZoomOut?: boolean; selectedDates?: CalendarDates; selectedFilter?: string | null } | undefined;
-  const initialDates = routeParams?.selectedDates || { startDate: null, endDate: null };
+  const routeParams = route.params as { shouldZoomOut?: boolean; selectedDates?: CalendarDates; selectedFilter?: string | null; selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
+  const initialDates = routeParams?.selectedDates || getPreservedDates() || { startDate: null, endDate: null };
   
   const { selectedDates, markedDates, handleDateSelect, resetDates, setSelectedDates } =
     useCalendar(initialDates);
@@ -97,8 +125,8 @@ export default function DailyScreen(): React.JSX.Element {
     }
   }, [routeParams?.selectedDates, setSelectedDates]);
 
-  // Filter properties - only daily listings
-  const filteredProperties = useMemo(() => {
+  // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters)
+  const filteredPropertiesForModal = useMemo(() => {
     let properties = PROPERTY_DATA.filter(
       (p) => p.listingType === "daily" && !("isProject" in p && p.isProject)
     );
@@ -141,6 +169,18 @@ export default function DailyScreen(): React.JSX.Element {
 
     return properties;
   }, [selectedDates, selectedCity]);
+
+  // Filter properties - only daily listings (includes searchFilters)
+  const filteredProperties = useMemo(() => {
+    let properties = [...filteredPropertiesForModal];
+
+    // Apply search filters if any
+    if (searchFilters) {
+      properties = applySearchFilters(properties, searchFilters);
+    }
+
+    return properties;
+  }, [filteredPropertiesForModal, searchFilters]);
 
   // Get only regular properties (exclude projects) for counter
   const regularPropertiesOnly = useMemo(() => {
@@ -268,8 +308,6 @@ export default function DailyScreen(): React.JSX.Element {
   );
 
   const handleShowList = useCallback(() => {
-    // Get preserved filter from PropertyListScreen
-    const { getPreservedFilter } = require("./PropertyListScreen");
     const preservedFilter = getPreservedFilter();
     
     const params: any = {
@@ -278,15 +316,17 @@ export default function DailyScreen(): React.JSX.Element {
       selectedDates: selectedDates, // Always pass selectedDates, even if null
       selectedFilter: preservedFilter, // Preserve filter selection
       selectedCity: selectedCity !== "City" ? selectedCity : undefined, // Preserve city selection
+      searchFilters: searchFilters, // Pass search filters
     };
     navigation.navigate("PropertyList", params);
-  }, [visibleProperties, selectedDates, navigation, selectedCity]);
+  }, [visibleProperties, selectedDates, navigation, selectedCity, searchFilters, getPreservedFilter]);
 
   const handleCityPress = useCallback(() => {
     setCityModalVisible(true);
   }, []);
 
   const handleCitySearch = useCallback((city: string) => {
+    setPreservedCity(city);
     setSelectedCity(city);
     // Navigate map to selected city
     const cityRegion = CITY_REGIONS[city];
@@ -314,9 +354,14 @@ export default function DailyScreen(): React.JSX.Element {
   }, [getCurrentLocation]);
 
   const handleFiltersPress = useCallback(() => {
-    // TODO: Open filters
-    console.log("Filters pressed");
+    setFilterModalVisible(true);
   }, []);
+
+  const handleSearchFilters = useCallback((filters: SearchFilterState, count: number) => {
+    setPreservedSearchFilters(filters);
+    setSearchFilters(filters);
+    setFilterModalVisible(false);
+  }, [setPreservedSearchFilters]);
 
   const handleSearchBookingDate = useCallback(() => {
     closeBookingDateModal();
@@ -438,8 +483,110 @@ export default function DailyScreen(): React.JSX.Element {
         onLocateMe={handleCityLocateMe}
         selectedCity={selectedCity !== "City" ? selectedCity : undefined}
       />
+
+      <SearchFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onSearch={handleSearchFilters}
+        properties={filteredPropertiesForModal}
+      />
     </View>
   );
+}
+
+// Apply search filters to properties
+function applySearchFilters(
+  properties: Property[],
+  filters: SearchFilterState
+): Property[] {
+  let filtered = [...properties];
+
+  // Filter by property type
+  if (filters.selectedPropertyType) {
+    filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
+  }
+
+  // Filter by price (for daily properties, use dailyPrice or monthlyPrice)
+  if (filters.fromPrice || filters.toPrice) {
+    filtered = filtered.filter((p) => {
+      let price: number | null = null;
+
+      if (p.listingType === "daily" && "dailyPrice" in p) {
+        price = p.dailyPrice;
+      } else if (p.listingType === "daily" && "monthlyPrice" in p) {
+        price = p.monthlyPrice;
+      }
+
+      if (price === null) return false;
+
+      const fromPrice = filters.fromPrice ? parseFloat(filters.fromPrice) : 0;
+      const toPrice = filters.toPrice ? parseFloat(filters.toPrice) : Infinity;
+
+      return price >= fromPrice && price <= toPrice;
+    });
+  }
+
+  // Filter by usage type (Singles/Families)
+  if (filters.usageType) {
+    const usage = filters.usageType === "Singles" ? "single" : "family";
+    filtered = filtered.filter((p) => p.usage === usage);
+  }
+
+  // Filter by bedrooms
+  if (filters.bedrooms) {
+    if (filters.bedrooms === "6+") {
+      filtered = filtered.filter((p) => p.bedrooms >= 6);
+    } else {
+      const bedrooms = parseInt(filters.bedrooms);
+      filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+    }
+  }
+
+  // Filter by living rooms
+  if (filters.livingRooms) {
+    const livingRooms = parseInt(filters.livingRooms.replace("+", ""));
+    filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+  }
+
+  // Filter by WC
+  if (filters.wc) {
+    const wc = parseInt(filters.wc.replace("+", ""));
+    filtered = filtered.filter((p) => p.restrooms >= wc);
+  }
+
+  // Filter by features (toggles)
+  const featureFilters: { [key: string]: string } = {
+    furnished: "Furnished",
+    carEntrance: "Car Entrance",
+    airConditioned: "Air Conditioned",
+    privateRoof: "Private Roof",
+    apartmentInVilla: "Apartment in Villa",
+    twoEntrances: "Two Entrances",
+    specialEntrances: "Special Entrances",
+    nearBus: "Near Bus",
+    nearMetro: "Near Metro",
+    pool: "Pool",
+    footballPitch: "Football Pitch",
+    volleyballCourt: "Volleyball Court",
+    tent: "Tent",
+    kitchen: "Kitchen",
+    playground: "Playground",
+    familySection: "Family Section",
+    stairs: "Stairs",
+    driverRoom: "Driver Room",
+    maidRoom: "Maid Room",
+    basement: "Basement",
+  };
+
+  Object.entries(featureFilters).forEach(([key, featureName]) => {
+    if (filters[key as keyof SearchFilterState] === true) {
+      filtered = filtered.filter(
+        (p) => p.features && p.features.includes(featureName)
+      );
+    }
+  });
+
+  return filtered;
 }
 
 const styles = StyleSheet.create({

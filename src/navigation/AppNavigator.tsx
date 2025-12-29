@@ -139,12 +139,12 @@ export default function AppNavigator(): React.JSX.Element {
         })}
       />
 
-      {/* ---------------- Daily ---------------- */}
+      {/* ---------------- Bookings ---------------- */}
       <Tab.Screen
-        name="Daily"
+        name="Bookings"
         component={DailyStack}
         options={({ route }) => ({
-          tabBarLabel: "Daily",
+          tabBarLabel: "Bookings",
           tabBarIcon: ({ color }) => (
             <FontAwesome6
               name="calendar-days"
@@ -158,79 +158,47 @@ export default function AppNavigator(): React.JSX.Element {
           tabPress: (e) => {
             // Get the current navigation state
             const state = navigation.getState();
-            const dailyTabState = state.routes.find((r) => r.name === "Daily");
+            const bookingsTabState = state.routes.find((r) => r.name === "Bookings");
             
             // Check if we're currently on PropertyList
-            const currentRoute = dailyTabState?.state?.routes?.[dailyTabState?.state?.index || 0];
+            const currentRoute = bookingsTabState?.state?.routes?.[bookingsTabState?.state?.index || 0];
             const isOnPropertyList = currentRoute?.name === "PropertyList";
             
             // Always get preserved filter before any navigation
             const { getPreservedFilter } = require("../screens/listings/PropertyListScreen");
             const preservedFilter = getPreservedFilter();
             
-            // If we're not on PropertyList, prevent default and reset to it
+            // If we're not on PropertyList, prevent default and navigate to it
             if (!isOnPropertyList) {
               e.preventDefault();
-              // Get the parent navigator (Tab navigator)
-              const parent = navigation.getParent();
-              if (parent) {
-                // Reset the Daily stack to PropertyList
-                const tabState = parent.getState();
-                const dailyIndex = tabState.routes.findIndex((r) => r.name === "Daily");
-                
-                if (dailyIndex !== -1) {
-                  // Get filter from multiple sources to ensure we don't lose it
-                  // 1. Check if there's a filter in the current route (map screen might have it)
-                  const currentRouteParams = currentRoute?.params as any;
-                  const filterFromCurrentRoute = currentRouteParams?.selectedFilter;
-                  
-                  // 2. Check if there's a PropertyList route in the stack with a filter
-                  const currentDailyState = tabState.routes[dailyIndex]?.state;
-                  const propertyListRouteInStack = currentDailyState?.routes?.find(
-                    (r: any) => r.name === "PropertyList"
-                  );
-                  const filterFromStack = propertyListRouteInStack?.params?.selectedFilter;
-                  
-                  // Priority: preservedFilter (module-level, always up-to-date) > filterFromCurrentRoute > filterFromStack
-                  // Always use preservedFilter if it exists, as it's the source of truth
-                  // NEVER reset filter - always preserve it if it exists
-                  const filterToPreserve = preservedFilter !== null && preservedFilter !== undefined 
-                    ? preservedFilter 
-                    : (filterFromCurrentRoute ?? filterFromStack);
-                  
-                  parent.reset({
-                    index: dailyIndex,
-                    routes: tabState.routes.map((route, idx) => {
-                      if (route.name === "Daily") {
-                        return {
-                          ...route,
-                          state: {
-                            routes: [{ 
-                              name: "PropertyList",
-                              // Always pass filter if it exists - never reset it
-                              params: filterToPreserve ? { selectedFilter: filterToPreserve } : undefined
-                            }],
-                            index: 0,
-                          },
-                        };
-                      }
-                      return route;
-                    }),
-                  });
-                }
-              } else {
-                // Fallback: navigate to PropertyList with preserved filter
-                navigation.navigate("Daily", { 
-                  screen: "PropertyList",
-                  params: preservedFilter ? { selectedFilter: preservedFilter } : undefined
-                });
+              // Get filter from current route if available
+              interface RouteParams {
+                selectedFilter?: string | null;
               }
+              const currentRouteParams = currentRoute?.params as RouteParams | undefined;
+              const filterFromCurrentRoute = currentRouteParams?.selectedFilter;
+              
+              // Priority: preservedFilter (module-level, always up-to-date) > filterFromCurrentRoute
+              // Always use preservedFilter if it exists, as it's the source of truth
+              const filterToPreserve = preservedFilter !== null && preservedFilter !== undefined 
+                ? preservedFilter 
+                : filterFromCurrentRoute;
+              
+              // Navigate to PropertyList with preserved filter
+              navigation.navigate("Bookings", { 
+                screen: "PropertyList",
+                params: filterToPreserve ? { selectedFilter: filterToPreserve } : undefined
+              });
             } else {
               // We're already on PropertyList - ensure filter is preserved in params
               // This prevents filter from being lost when switching tabs
-              if (preservedFilter && currentRoute?.params?.selectedFilter !== preservedFilter) {
+              interface RouteParams {
+                selectedFilter?: string | null;
+              }
+              const currentRouteParams = currentRoute?.params as RouteParams | undefined;
+              if (preservedFilter && currentRouteParams?.selectedFilter !== preservedFilter) {
                 e.preventDefault();
-                navigation.navigate("Daily", {
+                navigation.navigate("Bookings", {
                   screen: "PropertyList",
                   params: { selectedFilter: preservedFilter },
                   merge: true,

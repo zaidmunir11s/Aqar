@@ -11,17 +11,24 @@ export interface TabBarSectionProps {
   options: string[];
   selectedValue: string | null;
   onSelect: (value: string) => void;
+  backgroundColor?: string;
 }
 
 /**
  * Reusable tab bar section with selectable tabs
  */
 const TabBarSection = memo<TabBarSectionProps>(
-  ({ label, options, selectedValue, onSelect }) => {
+  ({ label, options, selectedValue, onSelect, backgroundColor }) => {
+    const handlePress = (option: string) => {
+      // Always call onSelect with the option value
+      // The parent component will handle the logic for toggling/unselecting
+      onSelect(option);
+    };
+
     return (
       <View style={styles.section}>
         {label && <Text style={styles.label}>{label}</Text>}
-        <View style={styles.segmentedTabBar}>
+        <View style={[styles.segmentedTabBar, backgroundColor && { backgroundColor }]}>
           {options.map((option, index) => (
             <TouchableOpacity
               key={option}
@@ -31,7 +38,7 @@ const TabBarSection = memo<TabBarSectionProps>(
                 index === options.length - 1 && styles.lastSegment,
                 selectedValue === option && styles.segmentedTabActive,
               ]}
-              onPress={() => onSelect(option)}
+              onPress={() => handlePress(option)}
               activeOpacity={0.7}
             >
               <Text

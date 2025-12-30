@@ -35,7 +35,7 @@ export const COLORS = {
   info: "#3b82f6",
 
   // Border colors
-  border: "#d0d5d9",
+  border: "#babec5",
   borderLight: "#f3f4f6",
 
   // Shadow colors
@@ -111,4 +111,10 @@ export const COLORS = {
   okButton: "#0e856a",
   arrows: "#0e856a",
   todayDate: "#0e856a",
+
+  //modal button background color like Reserve button, 
+  modalButton: "#1A253D",
+
+  //Login and other button diasable
+  disabledButton: "#9ca3af",
 } as const;

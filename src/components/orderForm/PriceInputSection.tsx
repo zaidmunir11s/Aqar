@@ -1,10 +1,11 @@
-import React, { memo, useState } from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import React, { memo } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { TextInput } from "../input";
 
 export interface PriceInputSectionProps {
   label: string;
@@ -29,39 +30,28 @@ const PriceInputSection = memo<PriceInputSectionProps>(
     fromPlaceholder = "From price",
     toPlaceholder = "To price",
   }) => {
-    const [fromFocused, setFromFocused] = useState(false);
-    const [toFocused, setToFocused] = useState(false);
-
     return (
       <View style={styles.section}>
         <Text style={styles.label}>{label}</Text>
         <View style={styles.priceRow}>
           <TextInput
-            style={[
-              styles.priceInput,
-              fromFocused && styles.priceInputActive,
-            ]}
-            placeholder={fromPlaceholder}
-            placeholderTextColor={COLORS.textTertiary}
             value={fromValue}
             onChangeText={onFromChange}
+            placeholder={fromPlaceholder}
             keyboardType="numeric"
-            onFocus={() => setFromFocused(true)}
-            onBlur={() => setFromFocused(false)}
+            containerStyle={styles.priceInputContainer}
+            inputWrapperStyle={styles.priceInput}
+            showFocusStates={true}
           />
           <Text style={styles.priceSeparator}>-</Text>
           <TextInput
-            style={[
-              styles.priceInput,
-              toFocused && styles.priceInputActive,
-            ]}
-            placeholder={toPlaceholder}
-            placeholderTextColor={COLORS.textTertiary}
             value={toValue}
             onChangeText={onToChange}
+            placeholder={toPlaceholder}
             keyboardType="numeric"
-            onFocus={() => setToFocused(true)}
-            onBlur={() => setToFocused(false)}
+            containerStyle={styles.priceInputContainer}
+            inputWrapperStyle={styles.priceInput}
+            showFocusStates={true}
           />
         </View>
       </View>
@@ -86,21 +76,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: wp(2),
   },
-  priceInput: {
+  priceInputContainer: {
     flex: 1,
+    marginBottom: 0,
+  },
+  priceInput: {
     backgroundColor: COLORS.white,
     borderRadius: wp(2),
     paddingHorizontal: wp(4),
-    paddingVertical: hp(1.5),
-    fontSize: wp(4),
-    color: COLORS.textPrimary,
+    // paddingVertical: hp(0.1),
     borderWidth: 1.2,
     borderColor: "#ccc",
-  },
-  priceInputActive: {
-    backgroundColor: "#e6fff6",
-    borderColor: COLORS.primary,
-    borderWidth: 1.5,
   },
   priceSeparator: {
     fontSize: wp(4),

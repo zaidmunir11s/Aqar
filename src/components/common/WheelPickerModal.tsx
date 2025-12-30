@@ -1,4 +1,4 @@
-import React, { memo, useState, useRef, useEffect } from "react";
+import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -83,10 +83,72 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
       });
     };
 
-    const handleOk = () => {
+    const handleOk = useCallback(() => {
       onSelect(options[selectedIndex]);
       handleClose();
-    };
+    }, [options, selectedIndex, onSelect, handleClose]);
+
+    const keyExtractor = useCallback((item: string, i: number) => `${item}-${i}`, []);
+
+    const renderItem = useCallback(
+      ({ item, index }: { item: string; index: number }) => {
+        const inputRange = [
+          (index - 2) * ITEM_HEIGHT,
+          (index - 1) * ITEM_HEIGHT,
+          index * ITEM_HEIGHT,
+          (index + 1) * ITEM_HEIGHT,
+          (index + 2) * ITEM_HEIGHT,
+        ];
+
+        const scale = scrollY.interpolate({
+          inputRange,
+          outputRange: [0.85, 0.92, 1.1, 0.92, 0.85],
+          extrapolate: "clamp",
+        });
+
+        const opacity = scrollY.interpolate({
+          inputRange,
+          outputRange: [0.25, 0.5, 1, 0.5, 0.25],
+          extrapolate: "clamp",
+        });
+
+        // Color interpolation: center item gets primary color, others get textSecondary
+        const color = scrollY.interpolate({
+          inputRange,
+          outputRange: [
+            COLORS.textSecondary,
+            COLORS.textSecondary,
+            COLORS.primary,
+            COLORS.textSecondary,
+            COLORS.textSecondary,
+          ],
+          extrapolate: "clamp",
+        });
+
+        return (
+          <View style={{ height: ITEM_HEIGHT, justifyContent: "center" }}>
+            <Animated.Text
+              style={[
+                styles.itemText,
+                { opacity, transform: [{ scale }], color },
+              ]}
+            >
+              {item}
+            </Animated.Text>
+          </View>
+        );
+      },
+      [scrollY]
+    );
+
+    const getItemLayout = useCallback(
+      (_: any, index: number) => ({
+        length: ITEM_HEIGHT,
+        offset: ITEM_HEIGHT * index,
+        index,
+      }),
+      []
+    );
 
     return (
       <Modal
@@ -119,7 +181,9 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
               <Animated.FlatList
               ref={flatListRef}
               data={options}
-              keyExtractor={(item, i) => `${item}-${i}`}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              getItemLayout={getItemLayout}
               showsVerticalScrollIndicator={false}
               snapToInterval={ITEM_HEIGHT}
               decelerationRate="fast"
@@ -140,58 +204,11 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
                 const clampedIndex = Math.max(0, Math.min(index, options.length - 1));
                 setSelectedIndex(clampedIndex);
               }}
-              getItemLayout={(data, index) => ({
-                length: ITEM_HEIGHT,
-                offset: ITEM_HEIGHT * index,
-                index,
-              })}
-              renderItem={({ item, index }) => {
-                const inputRange = [
-                  (index - 2) * ITEM_HEIGHT,
-                  (index - 1) * ITEM_HEIGHT,
-                  index * ITEM_HEIGHT,
-                  (index + 1) * ITEM_HEIGHT,
-                  (index + 2) * ITEM_HEIGHT,
-                ];
-
-                const scale = scrollY.interpolate({
-                  inputRange,
-                  outputRange: [0.85, 0.92, 1.1, 0.92, 0.85],
-                  extrapolate: "clamp",
-                });
-
-                const opacity = scrollY.interpolate({
-                  inputRange,
-                  outputRange: [0.25, 0.5, 1, 0.5, 0.25],
-                  extrapolate: "clamp",
-                });
-
-                // Color interpolation: center item gets primary color, others get textSecondary
-                const color = scrollY.interpolate({
-                  inputRange,
-                  outputRange: [
-                    COLORS.textSecondary,
-                    COLORS.textSecondary,
-                    COLORS.primary,
-                    COLORS.textSecondary,
-                    COLORS.textSecondary,
-                  ],
-                  extrapolate: "clamp",
-                });
-
-                return (
-                  <View style={{ height: ITEM_HEIGHT, justifyContent: "center" }}>
-                    <Animated.Text
-                      style={[
-                        styles.itemText,
-                        { opacity, transform: [{ scale }], color },
-                      ]}
-                    >
-                      {item}
-                    </Animated.Text>
-                  </View>
-                );
-              }}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              updateCellsBatchingPeriod={50}
+              initialNumToRender={10}
+              windowSize={5}
             />
             </View>
           </Animated.View>

@@ -83,17 +83,17 @@ export default function DescriptionScreen(): React.JSX.Element {
         <Text style={styles.sectionTitle}>Description</Text>
 
         {/* Text Input Field */}
-        <TextInput
+          <TextInput
           value={description}
           onChangeText={setDescription}
-          placeholder="Please enter any additional details about the desired property"
-          multiline
-          numberOfLines={10}
+            placeholder="Please enter any additional details about the desired property"
+            multiline
+            numberOfLines={10}
           containerStyle={styles.inputContainerStyle}
           inputWrapperStyle={styles.inputContainer}
           inputStyle={styles.textInput}
           showFocusStates={true}
-        />
+          />
 
       </View>
 

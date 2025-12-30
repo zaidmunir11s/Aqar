@@ -6,6 +6,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -15,20 +16,32 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BackButton, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
-import { Entypo } from "@expo/vector-icons";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function CreateAccountScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
-  const isFormValid = phoneNumber.trim().length > 0;
+  const isFormValid =
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    email.trim().length > 0 &&
+    password.trim().length > 0;
 
-  const handleSendVerification = useCallback(() => {
+  const handleAgreeAndContinue = useCallback(() => {
     if (!isFormValid) return;
-    console.log("Send verification code to:", phoneNumber);
-  }, [isFormValid, phoneNumber]);
+    console.log("Agree & Continue:", {
+      firstName,
+      lastName,
+      email,
+      password,
+    });
+    // TODO: Navigate to next screen
+  }, [isFormValid, firstName, lastName, email, password]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -37,6 +50,17 @@ export default function CreateAccountScreen(): React.JSX.Element {
       navigation.navigate("Listings");
     }
   }, [navigation]);
+
+  const handleTermsPress = useCallback(() => {
+    console.log("Terms and Conditions pressed");
+    // TODO: Navigate to Terms screen
+  }, []);
+
+  const handlePrivacyPress = useCallback(() => {
+    console.log("Privacy Policy pressed");
+    // TODO: Navigate to Privacy screen
+  }, []);
+
 
   return (
     <KeyboardAvoidingView
@@ -51,42 +75,78 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>
-            Enter the mobile number of your account
-          </Text>
+          <Text style={styles.title}>Finishing sign up</Text>
         </View>
 
-        {/* Phone Number Input */}
-        <TextInput
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          label="Phone number"
-          labelIcon={{
-            name: "mobile",
-            library: "Entypo",
-            color: COLORS.numberLabel,
-          }}
-          prefix="+966"
-          placeholder=""
-          keyboardType="phone-pad"
-          showFocusStates={true}
-        />
+        {/* Full Name Section */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Full name</Text>
+          <TextInput
+            value={firstName}
+            onChangeText={setFirstName}
+            placeholder="First name"
+            showFocusStates={true}
+            containerStyle={styles.nameInputContainer}
+          />
+          <TextInput
+            value={lastName}
+            onChangeText={setLastName}
+            placeholder="Last name"
+            showFocusStates={true}
+            inputWrapperStyle={styles.lastNameInputWrapper}
+          />
+        </View>
 
-        {/* Send Verification Code Button */}
+        {/* Email Section */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            showFocusStates={true}
+          />
+        </View>
+
+        {/* Password Section */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            isPassword={true}
+            showPasswordToggle={true}
+            showFocusStates={true}
+          />
+        </View>
+
+        {/* Legal Text */}
+        <View style={styles.legalContainer}>
+          <Text style={styles.legalText}>
+            By Logging In Or Registering, You Have Agreed To{" "}
+          </Text>
+          <View style={styles.linksInline}>
+            <TouchableOpacity onPress={handleTermsPress} activeOpacity={0.7}>
+              <Text style={styles.legalLink}>The Terms And Conditions</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalText}> And </Text>
+            <TouchableOpacity onPress={handlePrivacyPress} activeOpacity={0.7}>
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Agree & Continue Button */}
         <PrimaryButton
-          text="Send verification code"
-          onPress={handleSendVerification}
+          text="Agree & continue"
+          onPress={handleAgreeAndContinue}
           disabled={!isFormValid}
-          style={styles.sendButton}
+          style={styles.continueButton}
           showArrow={true}
         />
-
-
-        {/* Privacy Note */}
-        <Text style={styles.privacyNote}>
-          * Your mobile number will not be shown until you add a listing.
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -95,35 +155,60 @@ export default function CreateAccountScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#fff",
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: wp(4),
-    // paddingTop: Platform.OS === "ios" ? hp(2.5) : hp(0.5),
+    paddingHorizontal: wp(6),
+    paddingTop: Platform.OS === "ios" ? hp(2) : hp(1),
     paddingBottom: hp(3),
   },
   header: {
     marginBottom: hp(4),
-    marginTop: hp(4),
-  },
-  title: {
-    fontSize: wp(7.5),
-    fontWeight: "bold",
-    marginBottom: hp(1.5),
-  },
-  subtitle: {
-    fontSize: wp(4),
-    color: "#666",
-    lineHeight: hp(3),
-  },
-  sendButton: {
     marginTop: hp(2),
   },
-  privacyNote: {
-    fontSize: wp(3.5),
-    color: "#666",
-    lineHeight: hp(2.5),
-    marginTop: hp(22),
+  title: {
+    fontSize: wp(6.5),
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  section: {
+    // marginBottom: hp(2),
+  },
+  label: {
+    fontSize: wp(4),
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: hp(1.5),
+  },
+  nameInputContainer: {
+    marginBottom: 0,
+  },
+  lastNameInputWrapper: {
+    borderRadius: 0,
+  },
+  legalContainer: {
+    marginTop: hp(1),
+    marginBottom: hp(2),
+    alignItems: "center",
+  },
+  legalText: {
+    fontSize: wp(3.2),
+    color: "#6b7280",
+    lineHeight: hp(2),
+  },
+  linksInline: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  legalLink: {
+    fontSize: wp(3.2),
+    color: COLORS.primary,
+    textDecorationLine: "underline",
+    fontWeight: "500",
+  },
+  continueButton: {
+    marginTop: hp(13),
   },
 });

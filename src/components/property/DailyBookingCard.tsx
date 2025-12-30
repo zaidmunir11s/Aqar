@@ -43,24 +43,19 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
 
     const days = calculateDays(selectedDates.startDate, selectedDates.endDate);
 
-    // Check if monthly property
     const isMonthlyProperty = property.bookingType === "monthly";
 
-    // For monthly properties: show monthly price if < 30 days, otherwise calculate and round
     let total: number;
     let priceText: string;
     if (isMonthlyProperty) {
       if (days < 30) {
-        // Show monthly price
         total = property.monthlyPrice ?? 0;
         priceText = `Monthly: ${total} SAR`;
       } else {
-        // Calculate based on days and round
         total = Math.round((property.dailyPrice ?? 0) * days);
         priceText = `${days} days × ${property.dailyPrice} SAR = ${total} SAR`;
       }
     } else {
-      // Daily property: always calculate and round
       total = Math.round((property.dailyPrice ?? 0) * days);
       priceText = `${days} days × ${property.dailyPrice} SAR = ${total} SAR`;
     }

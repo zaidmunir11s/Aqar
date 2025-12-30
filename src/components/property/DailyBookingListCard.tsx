@@ -11,12 +11,16 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
-import { Ionicons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { getUsageLabel, getDefaultImageUrl, getTypeLabelFromType } from "../../utils";
+import { getDefaultImageUrl, getTypeLabelFromType } from "../../utils";
 import type { Property } from "../../types/property";
 import { COLORS } from "../../constants";
 import { DAILY_FILTER_OPTIONS } from "../../data/propertyData";
@@ -30,16 +34,14 @@ export interface DailyBookingListCardProps {
   calculatedPrice?: number | null;
 }
 
-/**
- * Daily booking list card component with landscape image and navigation arrows
- */
 const DailyBookingListCard = memo<DailyBookingListCardProps>(
   ({ property, onPress, priceLine, calculatedPrice }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
-    const images = property.images && property.images.length > 0 
-      ? property.images 
-      : [getDefaultImageUrl()];
+    const images =
+      property.images && property.images.length > 0
+        ? property.images
+        : [getDefaultImageUrl()];
 
     const handleImageScroll = useCallback(
       (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -68,11 +70,7 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
 
     const renderImage = useCallback(
       ({ item }: { item: string }) => (
-        <Image
-          source={{ uri: item }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
       ),
       []
     );
@@ -82,28 +80,29 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
       []
     );
 
-    const typeLabel = getTypeLabelFromType(property.type, DAILY_FILTER_OPTIONS) || "Property";
-    const usageLabel = getUsageLabel(property.usage);
+    const typeLabel =
+      getTypeLabelFromType(property.type, DAILY_FILTER_OPTIONS) || "Property";
 
-    // Format location: "Chalet in Riyadh, Banban"
-    const locationParts = property.address?.split(",").map(part => part.trim()) || [];
-    let locationText = typeLabel;
+    const locationParts =
+      property.address?.split(",").map((part) => part.trim()) || [];
+    let propertyName = property.address || `${typeLabel} Property`;
+    if (locationParts.length > 0 && locationParts[0]) {
+      propertyName = locationParts[0];
+    }
+    let locationText = property.address || "Location not available";
     if (locationParts.length >= 2) {
-      locationText = `${typeLabel} in ${locationParts[locationParts.length - 2]}, ${locationParts[locationParts.length - 1]}`;
+      locationText = `${locationParts[locationParts.length - 2]}, ${locationParts[locationParts.length - 1]}`;
     } else if (locationParts.length === 1 && locationParts[0]) {
-      locationText = `${typeLabel} in ${locationParts[0]}`;
-    } else {
-      locationText = `${typeLabel} in ${property.address || "Location not available"}`;
+      locationText = locationParts[0];
     }
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.9}
-        onPress={onPress}
-      >
-        {/* Landscape Image with Navigation Arrows */}
-        <View style={styles.imageContainer}>
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.imageContainer}
+          activeOpacity={0.9}
+          onPress={onPress}
+        >
           <FlatList
             ref={flatListRef}
             data={images}
@@ -117,7 +116,6 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
             onScrollToIndexFailed={() => {}}
           />
 
-          {/* Left Arrow - Always show if there are multiple images */}
           {images.length > 1 && (
             <TouchableOpacity
               style={[styles.arrowButton, styles.leftArrow]}
@@ -125,15 +123,10 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
               activeOpacity={0.7}
               disabled={currentImageIndex === 0}
             >
-              <Ionicons 
-                name="chevron-back" 
-                size={wp(4.5)} 
-                color="#333" 
-              />
+              <Ionicons name="chevron-back" size={wp(4.5)} color="#333" />
             </TouchableOpacity>
           )}
 
-          {/* Right Arrow - Always show if there are multiple images */}
           {images.length > 1 && (
             <TouchableOpacity
               style={[styles.arrowButton, styles.rightArrow]}
@@ -141,15 +134,10 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
               activeOpacity={0.7}
               disabled={currentImageIndex === images.length - 1}
             >
-              <Ionicons 
-                name="chevron-forward" 
-                size={wp(4.5)} 
-                color="#333" 
-              />
+              <Ionicons name="chevron-forward" size={wp(4.5)} color="#333" />
             </TouchableOpacity>
           )}
 
-          {/* Image Dots Indicator */}
           {images.length > 1 && (
             <View style={styles.dotsContainer}>
               {images.map((_, index) => (
@@ -163,10 +151,19 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
               ))}
             </View>
           )}
-        </View>
+        </TouchableOpacity>
 
-        {/* Content Section */}
-        <View style={styles.content}>
+        {/* Content Section - Separate below image */}
+        <TouchableOpacity
+          style={styles.content}
+          activeOpacity={0.9}
+          onPress={onPress}
+        >
+          {/* Property Name Section */}
+          <Text style={styles.propertyName} numberOfLines={1}>
+            {propertyName}
+          </Text>
+
           {/* Price Section */}
           <View style={styles.priceSection}>
             <Text style={styles.price}>{priceLine}</Text>
@@ -202,15 +199,13 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
             )}
           </View>
 
-          {/* Location Section */}
           <View style={styles.locationSection}>
-            <Ionicons name="location" size={wp(4)} color={COLORS.showListCardLocation} />
             <Text style={styles.locationText} numberOfLines={1}>
               {locationText}
             </Text>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   }
 );
@@ -218,38 +213,40 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
 DailyBookingListCard.displayName = "DailyBookingListCard";
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: wp(3),
-    marginBottom: hp(2),
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-      },
-      android: { elevation: 4 },
-    }),
+  container: {
+    marginBottom: hp(2.5),
+    marginHorizontal: wp(4),
   },
   imageContainer: {
     width: "100%",
-    height: hp(20),
+    height: hp(25),
     position: "relative",
     backgroundColor: "#e5e7eb",
+    borderRadius: wp(4),
+    overflow: "hidden",
+    marginBottom: hp(1),
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+      },
+      android: { elevation: 3 },
+    }),
   },
   image: {
-    width: SCREEN_WIDTH,
-    height: hp(20),
+    width: SCREEN_WIDTH - wp(9), // Account for container margins
+    height: hp(25),
   },
+
   arrowButton: {
     position: "absolute",
     top: "50%",
     transform: [{ translateY: -wp(6) }],
     backgroundColor: "#fff",
-    width: wp(10),
-    height: wp(10),
+    width: wp(7),
+    height: wp(7),
     borderRadius: wp(5),
     justifyContent: "center",
     alignItems: "center",
@@ -264,10 +261,10 @@ const styles = StyleSheet.create({
     }),
   },
   leftArrow: {
-    left: wp(2),
+    left: wp(1),
   },
   rightArrow: {
-    right: wp(2),
+    right: wp(1),
   },
   dotsContainer: {
     position: "absolute",
@@ -291,27 +288,28 @@ const styles = StyleSheet.create({
     height: wp(2.5),
     borderRadius: wp(1.25),
   },
-  content: {
-    padding: wp(4),
+  content: {},
+  propertyName: {
+    fontSize: wp(4),
+    fontWeight: "600",
+    color: "#111827",
   },
   priceSection: {
-    marginBottom: hp(1),
+    marginBottom: hp(0.5),
   },
   price: {
-    fontSize: wp(4.5),
+    fontSize: wp(3.5),
     fontWeight: "700",
     color: COLORS.showListCardPrice,
   },
   detailsSection: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: hp(1),
   },
   detailItem: {
     flexDirection: "row",
     alignItems: "center",
     marginRight: wp(4),
-    marginBottom: hp(0.5),
   },
   detailText: {
     marginLeft: wp(1),
@@ -326,9 +324,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: wp(3.2),
     color: "#6b7280",
-    marginLeft: wp(1),
   },
 });
 
 export default DailyBookingListCard;
-

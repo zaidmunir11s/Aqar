@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   searchButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0091ea",
+    backgroundColor: "#1a253d",
     paddingHorizontal: wp(4),
     paddingVertical: hp(1.2),
     borderRadius: wp(3.5),

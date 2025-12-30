@@ -59,8 +59,19 @@ const PropertyCard = memo<PropertyCardProps>(
         activeOpacity={0.8}
         onPress={onPress}
       >
+        {/* Image Container */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Content Section */}
         <View style={styles.cardContent}>
           <Text style={styles.title}>{title}</Text>
+
           <Text style={styles.price}>{priceLine}</Text>
 
           {showMetaInfo && (
@@ -102,7 +113,11 @@ const PropertyCard = memo<PropertyCardProps>(
 
           {property.address && (
             <View style={styles.addressRow}>
-              <Ionicons name="location" size={wp(4)} color={COLORS.showListCardLocation} />
+              <Ionicons
+                name="location"
+                size={wp(4)}
+                color={COLORS.showListCardLocation}
+              />
               <Text numberOfLines={1} style={styles.address}>
                 {property.address}
               </Text>
@@ -115,7 +130,11 @@ const PropertyCard = memo<PropertyCardProps>(
               <View style={styles.matchedItemsContainer}>
                 {matchedCriteria.matchedItems.map((item, index) => (
                   <View key={index} style={styles.matchedBadge}>
-                    <Ionicons name="checkmark-circle" size={wp(3)} color={COLORS.primary} />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={wp(3)}
+                      color={COLORS.primary}
+                    />
                     <Text style={styles.matchedBadgeText}>{item}</Text>
                   </View>
                 ))}
@@ -123,12 +142,6 @@ const PropertyCard = memo<PropertyCardProps>(
             </View>
           )}
         </View>
-
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.image}
-          resizeMode="cover"
-        />
       </TouchableOpacity>
     );
   }
@@ -143,6 +156,8 @@ const styles = StyleSheet.create({
     borderRadius: wp(3),
     marginBottom: hp(2),
     overflow: "hidden",
+    padding: wp(3),
+    alignItems: "center",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -153,32 +168,38 @@ const styles = StyleSheet.create({
       android: { elevation: 4 },
     }),
   },
-  cardContent: {
-    flex: 1,
-    padding: wp(4),
-    justifyContent: "space-between",
+  imageContainer: {
+    width: wp(25),
+    height: wp(25),
+    borderRadius: wp(3),
+    overflow: "hidden",
+    backgroundColor: "#e5e7eb",
+    marginRight: wp(3),
+    position: "relative",
   },
   image: {
-    width: wp(30),
-    height: hp(18),
-    backgroundColor: "#e5e7eb",
+    width: "100%",
+    height: "100%",
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: "flex-start",
   },
   title: {
-    fontSize: wp(4),
+    fontSize: wp(3.2),
     fontWeight: "700",
-    color: "#111827",
-    marginBottom: hp(0.5),
+    color: "#000000",
+    marginBottom: hp(0.3),
   },
   price: {
-    fontSize: wp(4),
+    fontSize: wp(3),
     fontWeight: "700",
-    color:COLORS.showListCardPrice,
-    marginBottom: hp(1),
+    color: COLORS.showListCardPrice,
+    marginBottom: hp(0.5),
   },
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: hp(1),
   },
   metaItem: {
     flexDirection: "row",
@@ -188,7 +209,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     marginLeft: wp(1),
-    fontSize: wp(3.2),
+    fontSize: wp(2.9),
     color: "#6b7280",
   },
   addressRow: {
@@ -197,7 +218,7 @@ const styles = StyleSheet.create({
   },
   address: {
     flex: 1,
-    fontSize: wp(3.2),
+    fontSize: wp(2.9),
     color: "#6b7280",
     marginLeft: wp(1),
   },
@@ -224,7 +245,7 @@ const styles = StyleSheet.create({
     gap: wp(1),
   },
   matchedBadgeText: {
-    fontSize: wp(2.8),
+    fontSize: wp(2.6),
     color: COLORS.primary,
     fontWeight: "500",
   },

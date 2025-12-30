@@ -1,4 +1,10 @@
-import React, { useMemo, useCallback, useState, useRef, useEffect } from "react";
+import React, {
+  useMemo,
+  useCallback,
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 import {
   View,
   StyleSheet,
@@ -23,8 +29,21 @@ import {
   SALE_FILTER_OPTIONS,
   DAILY_FILTER_OPTIONS,
 } from "../../data/propertyData";
-import { getTypeLabelFromType, formatPrice, formatDateRange, calculateDays } from "../../utils";
-import { PropertyCard, DailyBookingListCard, BookingDateModal, DailyHeaderBoxes, CityModal, SearchFilterModal } from "../../components";
+import {
+  getTypeLabelFromType,
+  formatPrice,
+  formatDateRange,
+  calculateDays,
+} from "../../utils";
+import {
+  PropertyCard,
+  DailyBookingListCard,
+  BookingDateModal,
+  DailyHeaderBoxes,
+  CityModal,
+  SearchFilterModal,
+  ScreenHeader,
+} from "../../components";
 import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import { COLORS, CITY_REGIONS } from "../../constants";
 import { useCalendar, useBookingModal } from "../../hooks";
@@ -52,7 +71,8 @@ let preservedSearchFilters: SearchFilterState | null = null;
 export const getPreservedFilter = (): string | null => preservedFilter;
 export const getPreservedDates = (): CalendarDates => preservedDates;
 export const getPreservedCity = (): string => preservedCity;
-export const getPreservedSearchFilters = (): SearchFilterState | null => preservedSearchFilters;
+export const getPreservedSearchFilters = (): SearchFilterState | null =>
+  preservedSearchFilters;
 
 // Setter functions to update preserved values
 export const setPreservedDates = (dates: CalendarDates) => {
@@ -61,7 +81,9 @@ export const setPreservedDates = (dates: CalendarDates) => {
 export const setPreservedCity = (city: string) => {
   preservedCity = city;
 };
-export const setPreservedSearchFilters = (filters: SearchFilterState | null) => {
+export const setPreservedSearchFilters = (
+  filters: SearchFilterState | null
+) => {
   preservedSearchFilters = filters;
 };
 
@@ -69,14 +91,12 @@ export default function PropertyListScreen(): React.JSX.Element {
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
   const navigation = useNavigation<NavigationProp>();
-  
-  // Get properties from params or load default daily properties for initial route
-  const listingType = params?.listingType || "daily"; // Default to daily for initial route
+
+  const listingType = params?.listingType || "daily";
   const properties = useMemo(() => {
     if (params?.properties) {
       return params.properties;
     }
-    // If no params (initial route), load all daily properties
     if (listingType === "daily") {
       return PROPERTY_DATA.filter(
         (p) => p.listingType === "daily" && !("isProject" in p && p.isProject)
@@ -84,38 +104,35 @@ export default function PropertyListScreen(): React.JSX.Element {
     }
     return [];
   }, [params?.properties, listingType]);
-  
+
   const selectedDatesFromParams = params?.selectedDates;
-  // const insets = useSafeAreaInsets();
-  // Initialize filter from params or preserved filter - always prioritize preservedFilter
-  // This ensures filter is never lost even if params don't have it
   const [selectedFilter, setSelectedFilter] = useState<string | null>(
     params?.selectedFilter ?? preservedFilter ?? null
   );
-  
-  // Initialize preserved filter from params if available (when navigating back)
-  // But never clear it if params don't have it - preserve existing filter
+
   useEffect(() => {
-    if (params?.selectedFilter !== undefined && params.selectedFilter !== null) {
+    if (
+      params?.selectedFilter !== undefined &&
+      params.selectedFilter !== null
+    ) {
       preservedFilter = params.selectedFilter;
-      // Also update state if it's different
       if (selectedFilter !== params.selectedFilter) {
         setSelectedFilter(params.selectedFilter);
       }
-    } else if (params?.selectedFilter === undefined && preservedFilter !== null && selectedFilter === null) {
-      // If params don't have filter but preservedFilter exists and state is null, restore preservedFilter
+    } else if (
+      params?.selectedFilter === undefined &&
+      preservedFilter !== null &&
+      selectedFilter === null
+    ) {
       setSelectedFilter(preservedFilter);
     }
   }, [params?.selectedFilter]);
-  
-  // Update preserved filter when it changes - but never clear it unless explicitly set to null by user
   useEffect(() => {
     if (selectedFilter !== null) {
       preservedFilter = selectedFilter;
     }
-    // Note: We don't restore from preservedFilter here to avoid infinite loops
-    // The restoration happens in the params effect above
   }, [selectedFilter]);
+
   const [isScrolling, setIsScrolling] = useState<boolean>(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
@@ -126,18 +143,20 @@ export default function PropertyListScreen(): React.JSX.Element {
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
     params?.searchFilters || preservedSearchFilters
   );
-  
-  // Sync selectedCity when params change
+
   useEffect(() => {
     if (params?.selectedCity) {
       preservedCity = params.selectedCity;
       setSelectedCity(params.selectedCity);
-    } else if (!params?.selectedCity && preservedCity && preservedCity !== "City") {
+    } else if (
+      !params?.selectedCity &&
+      preservedCity &&
+      preservedCity !== "City"
+    ) {
       setSelectedCity(preservedCity);
     }
   }, [params?.selectedCity]);
 
-  // Sync searchFilters when params change
   useEffect(() => {
     if (params?.searchFilters) {
       preservedSearchFilters = params.searchFilters;
@@ -147,50 +166,67 @@ export default function PropertyListScreen(): React.JSX.Element {
     }
   }, [params?.searchFilters]);
 
-  // Update preserved city when it changes
   useEffect(() => {
     if (selectedCity && selectedCity !== "City") {
       preservedCity = selectedCity;
     }
   }, [selectedCity]);
 
-  // Use calendar hook for date management - initialize with params or preserved dates
-  const initialDates = selectedDatesFromParams || preservedDates || { startDate: null, endDate: null };
-  const { selectedDates: calendarSelectedDates, handleDateSelect, setSelectedDates } = useCalendar(initialDates);
-  const { modalVisible: bookingDateModalVisible, openModal: openBookingDateModal, closeModal: closeBookingDateModal } = useBookingModal();
-  
-  // Sync calendar dates with params when they change (from navigation)
+  const initialDates = selectedDatesFromParams ||
+    preservedDates || { startDate: null, endDate: null };
+  const {
+    selectedDates: calendarSelectedDates,
+    handleDateSelect,
+    setSelectedDates,
+  } = useCalendar(initialDates);
+  const {
+    modalVisible: bookingDateModalVisible,
+    openModal: openBookingDateModal,
+    closeModal: closeBookingDateModal,
+  } = useBookingModal();
+
   useEffect(() => {
     if (selectedDatesFromParams) {
       preservedDates = selectedDatesFromParams;
       setSelectedDates(selectedDatesFromParams);
-    } else if (!selectedDatesFromParams && preservedDates.startDate && preservedDates.endDate) {
+    } else if (
+      !selectedDatesFromParams &&
+      preservedDates.startDate &&
+      preservedDates.endDate
+    ) {
       setSelectedDates(preservedDates);
     }
   }, [selectedDatesFromParams, setSelectedDates]);
 
-  // Update preserved dates when they change
   useEffect(() => {
     if (calendarSelectedDates.startDate && calendarSelectedDates.endDate) {
       preservedDates = calendarSelectedDates;
     }
   }, [calendarSelectedDates]);
-  
-  // Use calendar dates (they will be synced with params)
+
   const effectiveSelectedDates = calendarSelectedDates;
 
-  // Get reservation text to display for daily listings
   const reservationText = useMemo(() => {
-    if (listingType === "daily" && effectiveSelectedDates.startDate && effectiveSelectedDates.endDate) {
-      return formatDateRange(effectiveSelectedDates.startDate, effectiveSelectedDates.endDate);
+    if (
+      listingType === "daily" &&
+      effectiveSelectedDates.startDate &&
+      effectiveSelectedDates.endDate
+    ) {
+      return formatDateRange(
+        effectiveSelectedDates.startDate,
+        effectiveSelectedDates.endDate
+      );
     }
     return "Choose Reservation";
   }, [listingType, effectiveSelectedDates]);
 
-  // Calculate daily price based on selected dates
   const calculateDailyPrice = useCallback(
     (property: Property) => {
-      if (!effectiveSelectedDates || !effectiveSelectedDates.startDate || !effectiveSelectedDates.endDate)
+      if (
+        !effectiveSelectedDates ||
+        !effectiveSelectedDates.startDate ||
+        !effectiveSelectedDates.endDate
+      )
         return null;
       const start = new Date(effectiveSelectedDates.startDate);
       const end = new Date(effectiveSelectedDates.endDate);
@@ -233,33 +269,37 @@ export default function PropertyListScreen(): React.JSX.Element {
   );
 
   const handleBackPress = useCallback(() => {
-    // Navigate to the correct map screen based on listingType
     if (listingType === "daily") {
-      navigation.navigate("DailyMap", { 
+      navigation.navigate("DailyMap", {
         shouldZoomOut: true,
-        selectedDates: effectiveSelectedDates, // Pass current selected dates
-        selectedFilter: selectedFilter, // Preserve filter when going to map
-        selectedCity: selectedCity !== "City" ? selectedCity : undefined, // Pass selected city
-        searchFilters: searchFilters, // Pass search filters
+        selectedDates: effectiveSelectedDates,
+        selectedFilter: selectedFilter,
+        selectedCity: selectedCity !== "City" ? selectedCity : undefined,
+        searchFilters: searchFilters,
       });
     } else if (listingType === "projects" || listingType === "sale") {
       navigation.navigate("ProjectsMap");
     } else {
-      // For rent or default, go to MapLanding
       navigation.navigate("MapLanding");
     }
-  }, [navigation, listingType, effectiveSelectedDates, selectedFilter, selectedCity]);
+  }, [
+    navigation,
+    listingType,
+    effectiveSelectedDates,
+    selectedFilter,
+    selectedCity,
+  ]);
 
-  const handleFilterPress = useCallback((filterType: string) => {
-    // Toggle filter: if same filter is pressed, unselect it
-    const newFilter = selectedFilter === filterType ? null : filterType;
-    setSelectedFilter(newFilter);
-    // Update preserved filter
-    preservedFilter = newFilter;
-  }, [selectedFilter]);
+  const handleFilterPress = useCallback(
+    (filterType: string) => {
+      const newFilter = selectedFilter === filterType ? null : filterType;
+      setSelectedFilter(newFilter);
+      preservedFilter = newFilter;
+    },
+    [selectedFilter]
+  );
 
   const handleSearchPress = useCallback(() => {
-    // TODO: Implement search functionality
     console.log("Search pressed");
   }, []);
 
@@ -280,7 +320,6 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, []);
 
   const handleCityLocateMe = useCallback(() => {
-    // TODO: Get user's current location and set city
     console.log("Locate me pressed from city modal");
   }, []);
 
@@ -288,13 +327,15 @@ export default function PropertyListScreen(): React.JSX.Element {
     setFilterModalVisible(true);
   }, []);
 
-  const handleSearchFilters = useCallback((filters: SearchFilterState, count: number) => {
-    preservedSearchFilters = filters;
-    setSearchFilters(filters);
-    setFilterModalVisible(false);
-  }, []);
+  const handleSearchFilters = useCallback(
+    (filters: SearchFilterState, count: number) => {
+      preservedSearchFilters = filters;
+      setSearchFilters(filters);
+      setFilterModalVisible(false);
+    },
+    []
+  );
 
-  // Update preserved search filters when they change
   useEffect(() => {
     if (searchFilters) {
       preservedSearchFilters = searchFilters;
@@ -305,10 +346,8 @@ export default function PropertyListScreen(): React.JSX.Element {
     navigation.navigate("AddListing");
   }, [navigation]);
 
-  // Helper function to get numeric price value for sorting
   const getNumericPrice = useCallback(
     (property: Property) => {
-      // For daily listings, use dailyPrice
       if (listingType === "daily") {
         const dailyProperty = property as any;
         if (dailyProperty.dailyPrice) {
@@ -316,7 +355,6 @@ export default function PropertyListScreen(): React.JSX.Element {
         }
       }
 
-      // For rent/sale, use price field
       const rentSaleProperty = property as any;
       if (rentSaleProperty.price) {
         const priceStr = String(rentSaleProperty.price);
@@ -334,45 +372,35 @@ export default function PropertyListScreen(): React.JSX.Element {
     [listingType]
   );
 
-  // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters)
   const filteredPropertiesForModal = useMemo(() => {
     if (listingType !== "daily") return properties;
-    
+
     let filtered = [...properties];
-    
-    // Filter by city if selected
+
     if (selectedCity && selectedCity !== "City") {
       filtered = filtered.filter((p) => {
         const city = (p as any).city;
         return city && city.toLowerCase() === selectedCity.toLowerCase();
       });
     }
-    
-    // Filter based on selected dates
-    if (
-      effectiveSelectedDates.startDate &&
-      effectiveSelectedDates.endDate
-    ) {
+
+    if (effectiveSelectedDates.startDate && effectiveSelectedDates.endDate) {
       const days = calculateDays(
         effectiveSelectedDates.startDate,
         effectiveSelectedDates.endDate
       );
-      
-      // Hide monthly properties if dates are less than 30 days
+
       if (days < 30) {
         filtered = filtered.filter(
           (p) => !("bookingType" in p && p.bookingType === "monthly")
         );
       }
-      
-      // Hide weekly properties if dates are less than 7 days
+
       if (days < 7) {
-        filtered = filtered.filter(
-          (p) => {
-            const dailyProp = p as any;
-            return !("bookingType" in p && dailyProp.bookingType === "weekly");
-          }
-        );
+        filtered = filtered.filter((p) => {
+          const dailyProp = p as any;
+          return !("bookingType" in p && dailyProp.bookingType === "weekly");
+        });
       }
     }
 
@@ -382,14 +410,14 @@ export default function PropertyListScreen(): React.JSX.Element {
   // Filter properties based on selected dates (for daily listings), city, and searchFilters
   const filteredProperties = useMemo(() => {
     if (listingType !== "daily") return properties;
-    
+
     let filtered = [...filteredPropertiesForModal];
 
     // Apply search filters if any
     if (searchFilters) {
       filtered = applySearchFilters(filtered, searchFilters);
     }
-    
+
     return filtered;
   }, [filteredPropertiesForModal, searchFilters, listingType, properties]);
 
@@ -431,37 +459,44 @@ export default function PropertyListScreen(): React.JSX.Element {
     getTypeLabel: (type: string) => string;
     calculateDailyPrice: (property: Property) => number | null;
   }>(
-    ({ item, listingType, selectedDates, onPress, getTypeLabel, calculateDailyPrice }) => {
+    ({
+      item,
+      listingType,
+      selectedDates,
+      onPress,
+      getTypeLabel,
+      calculateDailyPrice,
+    }) => {
       const typeLabel = getTypeLabel(item.type) || "Property";
 
       const { title, priceLine } = useMemo(() => {
-      let priceLine = "";
-      let title = "";
+        let priceLine = "";
+        let title = "";
 
-      if (listingType === "daily") {
-        title = typeLabel || "Property";
-        const calculatedPrice = calculateDailyPrice(item);
-        if (calculatedPrice) {
-          priceLine = `${calculatedPrice} SAR`;
+        if (listingType === "daily") {
+          title = typeLabel || "Property";
+          const calculatedPrice = calculateDailyPrice(item);
+          if (calculatedPrice) {
+            priceLine = `${calculatedPrice} SAR`;
+          } else {
+            const dailyProperty = item as any;
+            priceLine =
+              dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
+          }
+        } else if (listingType === "rent") {
+          title = `${typeLabel} for rent`;
+          const rentProperty = item as any;
+          const formattedPrice = rentProperty.price
+            ? formatPrice(rentProperty.price)
+            : "0";
+          priceLine = `${formattedPrice} SAR / Yearly`;
         } else {
-          const dailyProperty = item as any;
-          priceLine =
-            dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
-        }
-      } else if (listingType === "rent") {
-        title = `${typeLabel} for rent`;
-        const rentProperty = item as any;
-        const formattedPrice = rentProperty.price
-          ? formatPrice(rentProperty.price)
-          : "0";
-        priceLine = `${formattedPrice} SAR / Yearly`;
-      } else {
-        title = `${typeLabel} for sale`;
-        const saleProperty = item as any;
-        const formattedPrice = saleProperty.price
-          ? formatPrice(saleProperty.price)
-          : "0";
-        priceLine = `${formattedPrice} SAR`;
+          title = `${typeLabel} for sale`;
+          const saleProperty = item as any;
+          const formattedPrice = saleProperty.price
+            ? formatPrice(saleProperty.price)
+            : "0";
+          priceLine = `${formattedPrice} SAR`;
         }
 
         return { title, priceLine };
@@ -471,7 +506,6 @@ export default function PropertyListScreen(): React.JSX.Element {
         onPress(item);
       }, [item, onPress]);
 
-      // Use DailyBookingListCard for daily listings, PropertyCard for others
       if (listingType === "daily") {
         const calculatedPrice = calculateDailyPrice(item);
         return (
@@ -495,26 +529,23 @@ export default function PropertyListScreen(): React.JSX.Element {
       );
     },
     (prevProps, nextProps) => {
-      // Custom comparison for better performance
-      // Return true if props are equal (skip re-render), false if different (re-render)
       if (prevProps.item.id !== nextProps.item.id) return false;
       if (prevProps.listingType !== nextProps.listingType) return false;
-      if (prevProps.item !== nextProps.item) return false; // Check object reference
-      
-      // Compare selectedDates
+      if (prevProps.item !== nextProps.item) return false;
+
       const prevStart = prevProps.selectedDates?.startDate;
       const nextStart = nextProps.selectedDates?.startDate;
       const prevEnd = prevProps.selectedDates?.endDate;
       const nextEnd = nextProps.selectedDates?.endDate;
-      
+
       if (prevStart !== nextStart || prevEnd !== nextEnd) return false;
-      
-      // Compare function references (they should be stable due to useCallback)
+
       if (prevProps.onPress !== nextProps.onPress) return false;
       if (prevProps.getTypeLabel !== nextProps.getTypeLabel) return false;
-      if (prevProps.calculateDailyPrice !== nextProps.calculateDailyPrice) return false;
-      
-      return true; // All props are equal, skip re-render
+      if (prevProps.calculateDailyPrice !== nextProps.calculateDailyPrice)
+        return false;
+
+      return true;
     }
   );
 
@@ -531,15 +562,19 @@ export default function PropertyListScreen(): React.JSX.Element {
         calculateDailyPrice={calculateDailyPrice}
       />
     ),
-    [listingType, effectiveSelectedDates, handlePropertyPress, getTypeLabel, calculateDailyPrice]
+    [
+      listingType,
+      effectiveSelectedDates,
+      handlePropertyPress,
+      getTypeLabel,
+      calculateDailyPrice,
+    ]
   );
 
   const keyExtractor = useCallback((item: Property) => item.id.toString(), []);
 
-  // Handle scroll events - collapse when scrolling, expand when stopped
   const handleScrollBegin = useCallback(() => {
     setIsScrolling(true);
-    // Clear any existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
       scrollTimeoutRef.current = null;
@@ -547,11 +582,10 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, []);
 
   const handleScrollEnd = useCallback(() => {
-    // Set timeout to expand after scrolling stops
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
-    
+
     scrollTimeoutRef.current = setTimeout(() => {
       setIsScrolling(false);
       scrollTimeoutRef.current = null;
@@ -559,10 +593,8 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, []);
 
   const handleScroll = useCallback(() => {
-    // Keep scrolling state active while scrolling
     setIsScrolling(true);
-    
-    // Reset timeout on each scroll event
+
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
@@ -584,24 +616,8 @@ export default function PropertyListScreen(): React.JSX.Element {
     </TouchableOpacity>
   );
 
-  // Custom header with green back button
-  const customHeader = (
-    <View style={styles.header}>
-      <TouchableOpacity
-        onPress={handleBackPress}
-        style={styles.backButton}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="arrow-back" size={wp(6.5)} color={COLORS.backButton} />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Listings</Text>
-      {searchIcon}
-    </View>
-  );
-
   const isDailyListing = listingType === "daily";
 
-  // Memoize ListHeaderComponent to prevent unnecessary re-renders
   const listHeaderComponent = useMemo(() => {
     if (!isDailyListing) return null;
     return (
@@ -615,10 +631,16 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   return (
     <View style={[styles.container]}>
-      {/* Header - Only show for non-daily listings */}
-      {!isDailyListing && customHeader}
+      {!isDailyListing && (
+        <ScreenHeader
+          title="Listings"
+          onBackPress={handleBackPress}
+          showRightSide={true}
+          rightComponent={searchIcon}
+          fontWeightBold={true}
+        />
+      )}
 
-      {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top) */}
       {isDailyListing && (
         <View style={styles.dailyHeaderFixedContainer}>
           <DailyHeaderBoxes
@@ -631,69 +653,68 @@ export default function PropertyListScreen(): React.JSX.Element {
         </View>
       )}
 
-      {/* Filter Tabs - Only show for non-daily listings */}
       {!isDailyListing && (
-      <View style={styles.filterContainer}>
-        <View style={styles.filterTabsWrapper}>
-          <TouchableOpacity
-            style={[
-              styles.filterTab,
-              selectedFilter === "latest" && styles.filterTabActive,
-            ]}
-            onPress={() => handleFilterPress("latest")}
-            activeOpacity={0.7}
-          >
-            <Text
+        <View style={styles.filterContainer}>
+          <View style={styles.filterTabsWrapper}>
+            <TouchableOpacity
               style={[
-                styles.filterText,
-                selectedFilter === "latest" && styles.filterTextActive,
+                styles.filterTab,
+                selectedFilter === "latest" && styles.filterTabActive,
               ]}
+              onPress={() => handleFilterPress("latest")}
+              activeOpacity={0.7}
             >
-              Latest
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedFilter === "latest" && styles.filterTextActive,
+                ]}
+              >
+                Latest
+              </Text>
+            </TouchableOpacity>
 
-          <View style={styles.filterSeparator} />
+            <View style={styles.filterSeparator} />
 
-          <TouchableOpacity
-            style={[
-              styles.filterTab,
-              selectedFilter === "price" && styles.filterTabActive,
-            ]}
-            onPress={() => handleFilterPress("price")}
-            activeOpacity={0.7}
-          >
-            <Text
+            <TouchableOpacity
               style={[
-                styles.filterText,
-                selectedFilter === "price" && styles.filterTextActive,
+                styles.filterTab,
+                selectedFilter === "price" && styles.filterTabActive,
               ]}
+              onPress={() => handleFilterPress("price")}
+              activeOpacity={0.7}
             >
-              Price
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedFilter === "price" && styles.filterTextActive,
+                ]}
+              >
+                Price
+              </Text>
+            </TouchableOpacity>
 
-          <View style={styles.filterSeparator} />
+            <View style={styles.filterSeparator} />
 
-          <TouchableOpacity
-            style={[
-              styles.filterTab,
-              selectedFilter === "nearest" && styles.filterTabActive,
-            ]}
-            onPress={() => handleFilterPress("nearest")}
-            activeOpacity={0.7}
-          >
-            <Text
+            <TouchableOpacity
               style={[
-                styles.filterText,
-                selectedFilter === "nearest" && styles.filterTextActive,
+                styles.filterTab,
+                selectedFilter === "nearest" && styles.filterTabActive,
               ]}
+              onPress={() => handleFilterPress("nearest")}
+              activeOpacity={0.7}
             >
-              Nearest
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedFilter === "nearest" && styles.filterTextActive,
+                ]}
+              >
+                Nearest
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       )}
 
       <FlatList
@@ -721,22 +742,19 @@ export default function PropertyListScreen(): React.JSX.Element {
       />
 
       {/* Bottom Actions - Show Map and Add buttons */}
-      <View style={[
-        styles.bottomActions,
-        isDailyListing && styles.dailyBottomActions,
-      ]}>
+      <View
+        style={[
+          styles.bottomActions,
+          isDailyListing && styles.dailyBottomActions,
+        ]}
+      >
         <TouchableOpacity
-          style={[
-            styles.showMapBtn,
-            isScrolling && styles.showMapBtnCompact,
-          ]}
+          style={[styles.showMapBtn, isScrolling && styles.showMapBtnCompact]}
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
           <Ionicons name="map-sharp" size={wp(6)} color="#617381" />
-          {!isScrolling && (
-            <Text style={styles.showMapText}>Show map</Text>
-          )}
+          {!isScrolling && <Text style={styles.showMapText}>Show map</Text>}
         </TouchableOpacity>
 
         {/* Add button - Only show for daily listings */}
@@ -777,19 +795,16 @@ export default function PropertyListScreen(): React.JSX.Element {
   );
 }
 
-// Apply search filters to properties
 function applySearchFilters(
   properties: Property[],
   filters: SearchFilterState
 ): Property[] {
   let filtered = [...properties];
 
-  // Filter by property type
   if (filters.selectedPropertyType) {
     filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
   }
 
-  // Filter by price (for daily properties, use dailyPrice or monthlyPrice)
   if (filters.fromPrice || filters.toPrice) {
     filtered = filtered.filter((p) => {
       let price: number | null = null;
@@ -825,19 +840,16 @@ function applySearchFilters(
     }
   }
 
-  // Filter by living rooms
   if (filters.livingRooms) {
     const livingRooms = parseInt(filters.livingRooms.replace("+", ""));
     filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
   }
 
-  // Filter by WC
   if (filters.wc) {
     const wc = parseInt(filters.wc.replace("+", ""));
     filtered = filtered.filter((p) => p.restrooms >= wc);
   }
 
-  // Filter by features (toggles)
   const featureFilters: { [key: string]: string } = {
     furnished: "Furnished",
     carEntrance: "Car Entrance",
@@ -877,29 +889,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: wp(4),
-    paddingVertical: hp(1.5),
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  backButton: {
-    width: wp(10),
-    height: wp(10),
-    justifyContent: "center",
-    alignItems: "flex-start",
-  },
-  headerTitle: {
-    fontSize: wp(5),
-    fontWeight: "bold",
-    flex: 1,
-    // textAlign: "center",
-    color: "#111827",
-  },
   searchButtonContainer: {
     width: wp(10),
     height: wp(10),
@@ -912,9 +901,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(2),
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#358dcd",
-    backgroundColor: "#0091ea",
+    backgroundColor: "#1a253d",
   },
   dailyHeaderFixedContainer: {
     position: "absolute",
@@ -924,11 +911,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
     backgroundColor: COLORS.background,
     paddingTop: hp(1),
-    // paddingBottom: hp(0.3),
   },
   unitsCountContainer: {
-    // paddingHorizontal: wp(4),
-    // paddingTop: hp(0.3),
     paddingBottom: hp(1),
     backgroundColor: COLORS.background,
   },
@@ -956,7 +940,7 @@ const styles = StyleSheet.create({
     fontSize: wp(8),
     fontWeight: "400",
     marginBottom: hp(-1),
-    marginTop: hp(-0.5),
+    // marginTop: hp(-0.5),
   },
   addText: {
     color: COLORS.addBtnText,
@@ -1026,10 +1010,11 @@ const styles = StyleSheet.create({
   },
   dailyAddBtn: {
     backgroundColor: "#fffefd",
-    paddingHorizontal: wp(3),
+    paddingHorizontal: wp(2.8),
+    paddingVertical: hp(0.5),
     borderRadius: wp(2),
-    borderWidth: 2,
-    borderColor: "#0091ea", // Blue border
+    borderWidth: 1.5,
+    borderColor: "#1a253d",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -1039,17 +1024,16 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   dailyPlusIcon: {
-    color: "#0091ea", // Blue plus icon
-    fontSize: wp(8),
+    color: "#1a253d",
+    fontSize: wp(5),
     fontWeight: "400",
-    marginBottom: hp(-1),
-    marginTop: hp(-0.5),
+    marginBottom: hp(-0.5),
   },
   dailyAddText: {
-    color: "#0091ea", // Blue text
+    color: "#1a253d",
     fontWeight: "400",
-    fontSize: wp(4),
-    marginTop: hp(0.3),
+    fontSize: wp(3),
+    marginTop: hp(0.2),
   },
   showMapBtn: {
     flexDirection: "row",

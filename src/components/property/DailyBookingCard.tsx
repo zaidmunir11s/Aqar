@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     color: COLORS.dailyCardPrice,
   },
   reserveButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: COLORS.modalButton,
     paddingHorizontal: wp(6),
     paddingVertical: hp(1.8),
     borderRadius: wp(3),

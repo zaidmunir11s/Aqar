@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
     },
     tabBarContainer: {
-
+    
     },
     yesSection: {
     },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
         height: hp(6),
         backgroundColor: COLORS.white,
         borderRadius: wp(2),
-        borderWidth: 1.2,
+        borderWidth: 1,
         borderColor: "#ccc",
         paddingHorizontal: wp(4),
         fontSize: wp(4),
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     textInputFocused: {
         backgroundColor: '#e6fff6',
         borderColor: COLORS.primary,
-        borderWidth: 1.5,
+        borderWidth: 1,
     },
     errorText: {
         color: COLORS.error,

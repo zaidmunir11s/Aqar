@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -12,7 +11,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader, ListingFooter } from "../../../../components";
+import { ScreenHeader, ListingFooter, TextInput } from "../../../../components";
 import { COLORS } from "@/constants";
 import { useSearchRequest } from "@/context/searchRequest-context";
 
@@ -32,7 +31,6 @@ export default function DescriptionScreen(): React.JSX.Element {
   const { addRequest } = useSearchRequest();
   
   const [description, setDescription] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
   const [showCategoryError, setShowCategoryError] = useState(false);
 
   // Check if category is selected
@@ -85,20 +83,17 @@ export default function DescriptionScreen(): React.JSX.Element {
         <Text style={styles.sectionTitle}>Description</Text>
 
         {/* Text Input Field */}
-        <View style={[styles.inputContainer, isFocused && styles.inputContainerActive]}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Please enter any additional details about the desired property"
-            placeholderTextColor={COLORS.textTertiary}
-            multiline
-            numberOfLines={10}
-            textAlignVertical="top"
-            value={description}
-            onChangeText={setDescription}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-          />
-        </View>
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Please enter any additional details about the desired property"
+          multiline
+          numberOfLines={10}
+          containerStyle={styles.inputContainerStyle}
+          inputWrapperStyle={styles.inputContainer}
+          inputStyle={styles.textInput}
+          showFocusStates={true}
+        />
 
       </View>
 
@@ -141,6 +136,9 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: hp(2),
   },
+  inputContainerStyle: {
+    marginBottom: 0,
+  },
   inputContainer: {
     width: "100%",
     backgroundColor: COLORS.white,
@@ -148,18 +146,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: "#ccc",
     minHeight: hp(32),
-  },
-  inputContainerActive: {
-    backgroundColor: "#e6fff6",
-    borderColor: COLORS.primary,
-    borderWidth: 1.5,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: wp(4),
-    color: COLORS.textPrimary,
     paddingHorizontal: wp(4),
     paddingVertical: hp(2),
+  },
+  textInput: {
+    fontSize: wp(4),
+    color: COLORS.textPrimary,
     minHeight: hp(40),
   },
   errorContainer: {

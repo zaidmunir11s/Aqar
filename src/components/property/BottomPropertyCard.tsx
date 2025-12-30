@@ -22,6 +22,7 @@ import {
   getDefaultImageUrl,
 } from "../../utils";
 import type { Property, FilterOption } from "../../types/property";
+import { COLORS } from "../../constants/colors";
 
 export interface BottomPropertyCardProps {
   property: Property | null;
@@ -51,45 +52,50 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
           activeOpacity={0.9}
           onPress={onPress}
         >
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.bottomCardImage}
-            resizeMode="cover"
-          />
+          {/* Price on top */}
+          <View style={styles.priceContainer}>
+            <Text style={styles.bottomPrice}>
+              From {property.projectDetails.minPrice.toLocaleString()} SAR
+            </Text>
+          </View>
 
-          <View style={styles.bottomCardContent}>
-            <View style={styles.bottomCardHeader}>
+          {/* Image and details row */}
+          <View style={styles.contentRow}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.bottomCardImage}
+              resizeMode="cover"
+            />
+
+            <View style={styles.bottomCardContent}>
               <Text style={styles.bottomTitle}>
                 {property.projectNameArabic}
               </Text>
-              <Text style={styles.bottomPrice}>
-                From {property.projectDetails.minPrice.toLocaleString()} SAR
+
+              <View style={styles.bottomMetaRow}>
+                <View style={styles.bottomMetaItem}>
+                  <Ionicons name="business" size={wp(4)} color="#9ca3af" />
+                  <Text style={styles.bottomMetaText}>
+                    {property.projectDetails.unitCount} Units
+                  </Text>
+                </View>
+                <View style={styles.bottomMetaItem}>
+                  <MaterialCommunityIcons
+                    name="arrow-expand-horizontal"
+                    size={wp(4)}
+                    color="#9ca3af"
+                  />
+                  <Text style={styles.bottomMetaText}>
+                    {property.projectDetails.minArea}-
+                    {property.projectDetails.maxArea} m²
+                  </Text>
+                </View>
+              </View>
+
+              <Text numberOfLines={1} style={styles.bottomAddress}>
+                {property.address}
               </Text>
             </View>
-
-            <View style={styles.bottomMetaRow}>
-              <View style={styles.bottomMetaItem}>
-                <Ionicons name="business" size={wp(4)} color="#9ca3af" />
-                <Text style={styles.bottomMetaText}>
-                  {property.projectDetails.unitCount} Units
-                </Text>
-              </View>
-              <View style={styles.bottomMetaItem}>
-                <MaterialCommunityIcons
-                  name="arrow-expand-horizontal"
-                  size={wp(4)}
-                  color="#9ca3af"
-                />
-                <Text style={styles.bottomMetaText}>
-                  {property.projectDetails.minArea}-
-                  {property.projectDetails.maxArea} m²
-                </Text>
-              </View>
-            </View>
-
-            <Text numberOfLines={1} style={styles.bottomAddress}>
-              {property.address}
-            </Text>
           </View>
         </TouchableOpacity>
       );
@@ -113,7 +119,7 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
     } else if (listingType === "rent") {
       title = `${typeLabel} for rent`;
       const rentProperty = property as any;
-      priceLine = `${rentProperty.price.replace(" K", "000")} SAR / Yearly`;
+      priceLine = `${rentProperty.price.replace(" K", "000")} SAR`;
     } else {
       title = `${typeLabel} for sale`;
       const saleProperty = property as any;
@@ -134,49 +140,54 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
         activeOpacity={0.9}
         onPress={onPress}
       >
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.bottomCardImage}
-          resizeMode="cover"
-        />
+        {/* Price on top */}
+        <View style={styles.priceContainer}>
+          <Text
+            style={[
+              styles.bottomPrice,
+              !calculatedPrice &&
+                listingType === "daily" &&
+                styles.bookingTypeText,
+            ]}
+          >
+            {priceLine}
+          </Text>
+        </View>
 
-        <View style={styles.bottomCardContent}>
-          <View style={styles.bottomCardHeader}>
+        {/* Image and details row */}
+        <View style={styles.contentRow}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.bottomCardImage}
+            resizeMode="cover"
+          />
+
+          <View style={styles.bottomCardContent}>
             <Text style={styles.bottomTitle}>{title}</Text>
-            <Text
-              style={[
-                styles.bottomPrice,
-                !calculatedPrice &&
-                  listingType === "daily" &&
-                  styles.bookingTypeText,
-              ]}
-            >
-              {priceLine}
+
+            <View style={styles.bottomMetaRow}>
+              <View style={styles.bottomMetaItem}>
+                <MaterialCommunityIcons
+                  name="arrow-expand-horizontal"
+                  size={wp(4)}
+                  color="#9ca3af"
+                />
+                <Text style={styles.bottomMetaText}>{property.area} m2</Text>
+              </View>
+              <View style={styles.bottomMetaItem}>
+                <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
+                <Text style={styles.bottomMetaText}>{property.bedrooms}</Text>
+              </View>
+              <View style={styles.bottomMetaItem}>
+                <Ionicons name="person" size={wp(4)} color="#9ca3af" />
+                <Text style={styles.bottomMetaText}>{usageLabel}</Text>
+              </View>
+            </View>
+
+            <Text numberOfLines={1} style={styles.bottomAddress}>
+              {property.address}
             </Text>
           </View>
-
-          <View style={styles.bottomMetaRow}>
-            <View style={styles.bottomMetaItem}>
-              <MaterialCommunityIcons
-                name="arrow-expand-horizontal"
-                size={wp(4)}
-                color="#9ca3af"
-              />
-              <Text style={styles.bottomMetaText}>{property.area} m2</Text>
-            </View>
-            <View style={styles.bottomMetaItem}>
-              <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-              <Text style={styles.bottomMetaText}>{property.bedrooms}</Text>
-            </View>
-            <View style={styles.bottomMetaItem}>
-              <Ionicons name="person" size={wp(4)} color="#9ca3af" />
-              <Text style={styles.bottomMetaText}>{usageLabel}</Text>
-            </View>
-          </View>
-
-          <Text numberOfLines={1} style={styles.bottomAddress}>
-            {property.address}
-          </Text>
         </View>
       </TouchableOpacity>
     );
@@ -194,7 +205,6 @@ const styles = StyleSheet.create({
     marginHorizontal: wp(3),
     backgroundColor: "#fff",
     borderRadius: wp(4),
-    flexDirection: "row",
     overflow: "hidden",
     ...Platform.select({
       ios: {
@@ -206,28 +216,36 @@ const styles = StyleSheet.create({
       android: { elevation: 10 },
     }),
   },
+  priceContainer: {
+    paddingHorizontal: wp(3),
+    paddingTop: wp(3),
+    paddingBottom: hp(1),
+  },
+  bottomPrice: {
+    fontSize: wp(4.5),
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+  contentRow: {
+    flexDirection: "row",
+    paddingHorizontal: wp(3),
+    paddingBottom: wp(3),
+  },
   bottomCardImage: {
-    width: wp(30),
-    height: "100%",
+    width: wp(20),
+    height: wp(20),
+    borderRadius: wp(2),
     backgroundColor: "#e5e7eb",
+    marginRight: wp(3),
   },
   bottomCardContent: {
     flex: 1,
-    padding: wp(3),
-  },
-  bottomCardHeader: {
-    marginBottom: hp(0.8),
   },
   bottomTitle: {
-    fontSize: wp(4),
+    fontSize: wp(3.8),
     fontWeight: "700",
     color: "#111827",
-  },
-  bottomPrice: {
-    marginTop: hp(0.2),
-    fontSize: wp(3.5),
-    fontWeight: "700",
-    color: "#0e856a",
+    marginBottom: hp(0.5),
   },
   bottomMetaRow: {
     flexDirection: "row",

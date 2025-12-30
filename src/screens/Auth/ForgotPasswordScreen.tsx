@@ -19,15 +19,16 @@ import { Entypo } from "@expo/vector-icons";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
-export default function CreateAccountScreen(): React.JSX.Element {
+export default function ForgotPasswordScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
 
   const isFormValid = phoneNumber.trim().length > 0;
 
-  const handleSendVerification = useCallback(() => {
+  const handleContinue = useCallback(() => {
     if (!isFormValid) return;
-    console.log("Send verification code to:", phoneNumber);
+    console.log("Continue with phone number:", phoneNumber);
+    // TODO: Navigate to verification code screen or handle password reset
   }, [isFormValid, phoneNumber]);
 
   const handleBackPress = useCallback(() => {
@@ -51,7 +52,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.title}>Forgot Password</Text>
           <Text style={styles.subtitle}>
             Enter the mobile number of your account
           </Text>
@@ -73,20 +74,14 @@ export default function CreateAccountScreen(): React.JSX.Element {
           showFocusStates={true}
         />
 
-        {/* Send Verification Code Button */}
+        {/* Continue Button */}
         <PrimaryButton
-          text="Send verification code"
-          onPress={handleSendVerification}
+          text="Continue"
+          onPress={handleContinue}
           disabled={!isFormValid}
-          style={styles.sendButton}
+          style={styles.continueButton}
           showArrow={true}
         />
-
-
-        {/* Privacy Note */}
-        <Text style={styles.privacyNote}>
-          * Your mobile number will not be shown until you add a listing.
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -100,7 +95,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: wp(4),
-    // paddingTop: Platform.OS === "ios" ? hp(2.5) : hp(0.5),
     paddingBottom: hp(3),
   },
   header: {
@@ -117,13 +111,8 @@ const styles = StyleSheet.create({
     color: "#666",
     lineHeight: hp(3),
   },
-  sendButton: {
+  continueButton: {
     marginTop: hp(2),
   },
-  privacyNote: {
-    fontSize: wp(3.5),
-    color: "#666",
-    lineHeight: hp(2.5),
-    marginTop: hp(22),
-  },
 });
+

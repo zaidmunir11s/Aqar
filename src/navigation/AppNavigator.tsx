@@ -43,6 +43,7 @@ const getTabBarStyle = (route: Route<string, object | undefined>) => {
     "ChooseLocation",
     "Description",
     "MatchedListings",
+    "ForgotPassword",
   ];
 
   if (hideTabBarRoutes.includes(routeName)) {

@@ -6,11 +6,13 @@ import {
   Platform,
   ViewStyle,
   TextStyle,
+  View,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants";
 
 export interface PrimaryButtonProps {
@@ -19,13 +21,14 @@ export interface PrimaryButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  showArrow?: boolean;
 }
 
 /**
  * Reusable primary button component
  */
 const PrimaryButton = memo<PrimaryButtonProps>(
-  ({ onPress, text, disabled = false, style, textStyle }) => {
+  ({ onPress, text, disabled = false, style, textStyle, showArrow = false }) => {
     return (
       <TouchableOpacity
         style={[styles.button, disabled && styles.buttonDisabled, style]}
@@ -33,7 +36,20 @@ const PrimaryButton = memo<PrimaryButtonProps>(
         activeOpacity={0.8}
         disabled={disabled}
       >
-        <Text style={[styles.buttonText, textStyle]}>{text}</Text>
+        <Text style={[
+          styles.buttonText, 
+          disabled && styles.buttonTextDisabled,
+          textStyle
+        ]}>{text}</Text>
+        {showArrow && (
+          <View style={styles.arrowContainer}>
+            <Ionicons 
+              name="arrow-forward" 
+              size={wp(5)} 
+              color={disabled ? "#9ca3af" : COLORS.primary} 
+            />
+          </View>
+        )}
       </TouchableOpacity>
     );
   }
@@ -44,23 +60,16 @@ PrimaryButton.displayName = "PrimaryButton";
 const styles = StyleSheet.create({
   button: {
     backgroundColor: COLORS.primary,
-    borderRadius: wp(3),
+    borderRadius: wp(6),
     height: hp(6),
     justifyContent: "center",
     alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-      },
-      android: { elevation: 4 },
-    }),
+    paddingHorizontal: wp(4),
+    position: "relative",
   },
   buttonDisabled: {
-    backgroundColor: COLORS.primaryLight,
-    opacity: 0.6,
+    backgroundColor: COLORS.disabledButton,
+    opacity: 1,
     ...Platform.select({
       ios: {
         shadowOpacity: 0,
@@ -71,7 +80,20 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: wp(4.5),
     fontWeight: "500",
-    color: "#fff",
+    color: COLORS.white,
+  },
+  buttonTextDisabled: {
+    color: COLORS.textDisabled,
+  },
+  arrowContainer: {
+    position: "absolute",
+    right: wp(1),
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
+    backgroundColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

@@ -16,9 +16,10 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   BackButton,
   PrimaryButton,
-  PhoneInput,
-  PasswordInput,
+  TextInput,
 } from "../../components";
+import { COLORS } from "../../constants";
+import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -41,9 +42,8 @@ export default function LoginScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleForgotPassword = useCallback(() => {
-    // TODO: Navigate to forgot password screen
-    console.log("Forgot password");
-  }, []);
+    navigation.navigate("ForgotPassword");
+  }, [navigation]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -79,14 +79,41 @@ export default function LoginScreen(): React.JSX.Element {
         </View>
 
         {/* Phone Number Input */}
-        <PhoneInput value={phoneNumber} onChangeText={setPhoneNumber} />
+        <TextInput
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          label="Phone number"
+          labelIcon={{
+            name: "mobile",
+            library: "Entypo",
+            color: COLORS.numberLabel,
+          }}
+          prefix="+966"
+          placeholder=""
+          keyboardType="phone-pad"
+          showFocusStates={true}
+        />
 
         {/* Password Input */}
-        <PasswordInput
+        <TextInput
           value={password}
           onChangeText={setPassword}
-          showForgotPassword={true}
-          onForgotPassword={handleForgotPassword}
+          label="Password"
+          labelIcon={{
+            name: "lock",
+            library: "MaterialCommunityIcons",
+            color: COLORS.passwordLabel,
+          }}
+          placeholder="Password"
+          isPassword={true}
+          showPasswordToggle={true}
+          showFocusStates={true}
+          headerLayout="space-between"
+          rightAction={{
+            type: "text",
+            content: "Forgot your password?",
+            onPress: handleForgotPassword,
+          }}
         />
 
         {/* Login Button */}
@@ -95,6 +122,7 @@ export default function LoginScreen(): React.JSX.Element {
           onPress={handleLogin}
           disabled={!isFormValid}
           style={styles.loginButton}
+          showArrow={true}
         />
 
         {/* Divider */}
@@ -119,8 +147,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: wp(6),
-    paddingTop: Platform.OS === "ios" ? hp(2.5) : hp(0.5),
+    paddingHorizontal: wp(4),
+    // paddingTop: Platform.OS === "ios" ? hp(2.5) : hp(0.5),
     paddingBottom: hp(3),
   },
   header: {

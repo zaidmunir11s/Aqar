@@ -6,5 +6,6 @@ export { default as ProjectsCard } from "./ProjectsCard";
 export { default as CityModal } from "./CityModal";
 export { default as LocationSearchModal } from "./LocationSearchModal";
 export { default as SearchFilterModal } from "./SearchFilterModal";
+export { default as ProjectSearchModal } from "./ProjectSearchModal";
 export type { SearchFilterState, SearchFilterModalProps } from "./SearchFilterModal";
 export { default as MapBottomActions } from "./MapBottomActions";

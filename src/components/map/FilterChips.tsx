@@ -18,16 +18,17 @@ export interface FilterChipsProps {
   filterOptions: FilterOption[];
   activeFilter: string;
   onFilterChange: (filterId: string) => void;
+  onSearchPress?: () => void;
 }
 
 /**
  * Filter chips component for map screen
  */
 const FilterChips = memo<FilterChipsProps>(
-  ({ filterOptions, activeFilter, onFilterChange }) => {
+  ({ filterOptions, activeFilter, onFilterChange, onSearchPress }) => {
     return (
       <View style={styles.chipsContainer}>
-        <TouchableOpacity style={styles.searchButton}>
+        <TouchableOpacity style={styles.searchButton} onPress={onSearchPress}>
           <Text style={styles.searchText}>Search</Text>
           <Ionicons name="search" size={wp(4.5)} color="#fff" />
         </TouchableOpacity>

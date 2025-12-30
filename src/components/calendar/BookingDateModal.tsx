@@ -525,9 +525,9 @@ const styles = StyleSheet.create({
   searchBtn: {
     width: "50%",
     alignSelf: "flex-end",
-    backgroundColor: BLUE,
+    backgroundColor: COLORS.primary,
     height: hp(6),
-    borderRadius: wp(2),
+    borderRadius: wp(7),
     justifyContent: "center",
     alignItems: "center",
   },

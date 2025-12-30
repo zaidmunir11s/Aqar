@@ -10,8 +10,8 @@ import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { PROPERTY_DATA, SALE_FILTER_OPTIONS } from "../../data/propertyData";
-import { RIYADH_REGION, COLORS } from "../../constants";
+import { PROPERTY_DATA, SALE_FILTER_OPTIONS, RENT_FILTER_OPTIONS } from "../../data/propertyData";
+import { RIYADH_REGION, COLORS, CITY_REGIONS } from "../../constants";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -22,6 +22,7 @@ import {
   MapTabs,
   FilterChips,
   MapBottomActions,
+  ProjectSearchModal,
 } from "../../components";
 import type { TabType } from "../../components/map/MapTabs";
 import type { ProjectProperty, Property } from "../../types/property";
@@ -45,27 +46,40 @@ export default function ProjectsScreen(): React.JSX.Element {
   const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
+  const [searchModalVisible, setSearchModalVisible] = useState<boolean>(false);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedPropertyType, setSelectedPropertyType] = useState<string | null>(null);
   const { getCurrentLocation } = useLocation();
 
   const filteredProjects = useMemo(() => {
-    if (activeTab !== "sale") {
-      return [];
-    }
-
     let projects = PROPERTY_DATA.filter(
       (p): p is ProjectProperty =>
-        isProjectProperty(p) && p.listingType === "sale"
+        isProjectProperty(p) && p.listingType === activeTab
     );
 
+    // Filter by city if selected
+    if (selectedCity) {
+      projects = projects.filter((p) => {
+        const city = (p as any).city;
+        return city && city.toLowerCase() === selectedCity.toLowerCase();
+      });
+    }
+
+    // Filter by property type if selected
+    if (selectedPropertyType) {
+      projects = projects.filter((p) => p.type === selectedPropertyType);
+    }
+
     if (activeFilter !== "all") {
-      const f = SALE_FILTER_OPTIONS.find((x) => x.id === activeFilter);
+      const filterOptions = activeTab === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS;
+      const f = filterOptions.find((x) => x.id === activeFilter);
       if (f?.type) {
         projects = projects.filter((p) => p.type === f.type);
       }
     }
 
     return projects;
-  }, [activeTab, activeFilter]);
+  }, [activeTab, activeFilter, selectedCity, selectedPropertyType]);
 
   // Get projects currently visible on map
   const visibleProjects = useMemo(() => {
@@ -99,6 +113,7 @@ export default function ProjectsScreen(): React.JSX.Element {
   // Handlers
   const handleTabChange = useCallback((tab: TabType) => {
     setActiveTab(tab);
+    setActiveFilter("all"); // Reset filter when switching tabs
     // Reset map to original starting point when switching between tabs
     if (mapRef.current) {
       mapRef.current.animateToRegion(RIYADH_REGION, 800);
@@ -143,14 +158,40 @@ export default function ProjectsScreen(): React.JSX.Element {
     }
   }, []);
 
+  // Helper function to find the closest city based on map coordinates
+  const findClosestCity = useCallback((lat: number, lng: number): string | null => {
+    let closestCity: string | null = null;
+    let minDistance = Infinity;
+
+    for (const [cityName, cityRegion] of Object.entries(CITY_REGIONS)) {
+      const distance = Math.sqrt(
+        Math.pow(lat - cityRegion.latitude, 2) + Math.pow(lng - cityRegion.longitude, 2)
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestCity = cityName;
+      }
+    }
+
+    // Only return city if it's reasonably close (within ~0.3 degrees, roughly 33km)
+    return minDistance < 0.3 ? closestCity : null;
+  }, []);
+
   const handleRegionChangeComplete = useCallback(
     (newRegion: typeof RIYADH_REGION) => {
       setRegion(newRegion);
+      
+      // Detect which city the map is centered on and update selectedCity
+      const detectedCity = findClosestCity(newRegion.latitude, newRegion.longitude);
+      if (detectedCity && detectedCity !== selectedCity) {
+        setSelectedCity(detectedCity);
+      }
+      
       mapMoveTimeoutRef.current = setTimeout(() => {
         setIsMapMoving(false);
       }, 500);
     },
-    []
+    [findClosestCity, selectedCity]
   );
 
   const handleShowList = useCallback(() => {
@@ -167,6 +208,20 @@ export default function ProjectsScreen(): React.JSX.Element {
 
   const handleToggleSatellite = useCallback(() => {
     setIsSatelliteMode((prev) => !prev);
+  }, []);
+
+  const handleSearchPress = useCallback(() => {
+    setSearchModalVisible(true);
+  }, []);
+
+  const handleSearch = useCallback((city: string | null, propertyType: string | null) => {
+    setSelectedCity(city);
+    setSelectedPropertyType(propertyType);
+    
+    // Move map to selected city if city is provided
+    if (city && CITY_REGIONS[city] && mapRef.current) {
+      mapRef.current.animateToRegion(CITY_REGIONS[city], 800);
+    }
   }, []);
 
   const renderMarker = useCallback(
@@ -206,9 +261,19 @@ export default function ProjectsScreen(): React.JSX.Element {
 
       {/* Filter chips */}
       <FilterChips
-        filterOptions={SALE_FILTER_OPTIONS}
+        filterOptions={activeTab === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS}
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
+        onSearchPress={handleSearchPress}
+      />
+
+      {/* Search Modal */}
+      <ProjectSearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSearch={handleSearch}
+        selectedCity={selectedCity || undefined}
+        selectedPropertyType={selectedPropertyType}
       />
 
       {/* Bottom actions */}

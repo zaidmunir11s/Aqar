@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo, memo } from "react";
 import {
   View,
   Text,
@@ -14,31 +14,10 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { COLORS } from "../../constants";
+import { COLORS, CITY_REGIONS } from "../../constants";
 
-// Common Saudi cities - you can expand this list
-const SAUDI_CITIES = [
-  "Riyadh",
-  "Jeddah",
-  "Mecca",
-  "Medina",
-  "Dammam",
-  "Khobar",
-  "Abha",
-  "Tabuk",
-  "Buraidah",
-  "Khamis Mushait",
-  "Hail",
-  "Najran",
-  "Jazan",
-  "Yanbu",
-  "Al Jubail",
-  "Al Khobar",
-  "Al Bukayriyah",
-  "Al Qatif",
-  "Arar",
-  "Sakaka",
-];
+// Get all cities from CITY_REGIONS (in original order)
+const SAUDI_CITIES = Object.keys(CITY_REGIONS);
 
 export interface LocationSearchModalProps {
   visible: boolean;
@@ -63,8 +42,9 @@ export default function LocationSearchModal({
     }
   }, [visible, searchQuery]);
 
-  const filteredCities = SAUDI_CITIES.filter((city) =>
-    city.toLowerCase().includes(searchText.toLowerCase())
+  const filteredCities = useMemo(
+    () => SAUDI_CITIES.filter((city) => city.toLowerCase().includes(searchText.toLowerCase())),
+    [searchText]
   );
 
   const handleSelect = useCallback(
@@ -80,6 +60,41 @@ export default function LocationSearchModal({
     setSearchText("");
     onClose();
   }, [onClose]);
+
+  // Memoized city item component for better performance
+  const CityItem = memo<{ city: string; index: number; total: number; onSelect: (city: string) => void }>(
+    ({ city, index, total, onSelect }) => (
+      <View>
+        <TouchableOpacity
+          style={styles.cityItem}
+          onPress={() => onSelect(city)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.cityText}>{city}</Text>
+        </TouchableOpacity>
+        {index < total - 1 && <View style={styles.divider} />}
+      </View>
+    )
+  );
+  CityItem.displayName = "CityItem";
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: string; index: number }) => (
+      <CityItem city={item} index={index} total={filteredCities.length} onSelect={handleSelect} />
+    ),
+    [filteredCities.length, handleSelect]
+  );
+
+  const keyExtractor = useCallback((item: string) => item, []);
+
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      length: hp(1.5) + 1 + hp(1.5), // cityItem padding + divider + next cityItem padding
+      offset: (hp(1.5) + 1 + hp(1.5)) * index,
+      index,
+    }),
+    []
+  );
 
   return (
     <Modal
@@ -130,19 +145,9 @@ export default function LocationSearchModal({
           {/* Results List */}
           <FlatList
             data={filteredCities}
-            keyExtractor={(item) => item}
-            renderItem={({ item, index }) => (
-              <View>
-                <TouchableOpacity
-                  style={styles.cityItem}
-                  onPress={() => handleSelect(item)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.cityText}>{item}</Text>
-                </TouchableOpacity>
-                {index < filteredCities.length - 1 && <View style={styles.divider} />}
-              </View>
-            )}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            getItemLayout={getItemLayout}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No cities found</Text>
@@ -150,6 +155,11 @@ export default function LocationSearchModal({
             }
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            updateCellsBatchingPeriod={50}
+            initialNumToRender={15}
+            windowSize={5}
           />
         </View>
       </View>

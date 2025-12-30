@@ -19,12 +19,10 @@ import {
   PhoneCard,
   ActionButtons,
   AqarCard,
-  PromotionServiceCard,
   ActivityItem,
   AddButton,
   MenuList,
   ClientsSection,
-  FinancialInformationSection,
   AccountManagementSection,
 } from "../../components";
 import type { MenuItem } from "../../components/profile/MenuList";
@@ -59,10 +57,6 @@ export default function ProfileDetailScreen(): React.JSX.Element {
     console.log("Aqar+ pressed");
   };
 
-  const handlePromotionServicePress = () => {
-    console.log("Promotion Services pressed");
-  };
-
   const handleActivityPress = () => {
     console.log("Activity pressed");
   };
@@ -73,18 +67,6 @@ export default function ProfileDetailScreen(): React.JSX.Element {
 
   const handleMyClientsPress = () => {
     console.log("My Clients pressed");
-  };
-
-  const handlePaymentsPress = () => {
-    console.log("Payments pressed");
-  };
-
-  const handleFinancialSettingsPress = () => {
-    console.log("Financial Settings pressed");
-  };
-
-  const handleManageCardsPress = () => {
-    console.log("Manage Cards pressed");
   };
 
   const handleUpdateProfilePress = () => {
@@ -105,11 +87,6 @@ export default function ProfileDetailScreen(): React.JSX.Element {
 
   const menuItems: MenuItem[] = [
     {
-      title: "My Ads",
-      subtitle: "Published, expired and marketing requests",
-      onPress: () => console.log("My Ads pressed"),
-    },
-    {
       title: "My Deals",
       subtitle: "Verify the deals you have completed",
       onPress: () => console.log("My Deals pressed"),
@@ -123,12 +100,6 @@ export default function ProfileDetailScreen(): React.JSX.Element {
       title: "My Bookings",
       subtitle: "Booking history for daily/monthly rental units",
       onPress: () => console.log("My Bookings pressed"),
-    },
-    {
-      title: "Unit reservation requests",
-      subtitle: "Register project unit reservation request",
-      onPress: () => console.log("Unit reservation requests pressed"),
-      showNewBadge: true,
     },
   ];
 
@@ -160,16 +131,10 @@ export default function ProfileDetailScreen(): React.JSX.Element {
           onAlertsPress={handleAlertsPress}
         />
         <AqarCard onPress={handleAqarPress} />
-        <PromotionServiceCard onPress={handlePromotionServicePress} />
         <ActivityItem onPress={handleActivityPress} />
         <AddButton onPress={handleAddPress} />
         <MenuList items={menuItems} />
         <ClientsSection onMyClientsPress={handleMyClientsPress} />
-        <FinancialInformationSection
-          onPaymentsPress={handlePaymentsPress}
-          onFinancialSettingsPress={handleFinancialSettingsPress}
-          onManageCardsPress={handleManageCardsPress}
-        />
         <AccountManagementSection
           onUpdateProfilePress={handleUpdateProfilePress}
           onChangePasswordPress={handleChangePasswordPress}

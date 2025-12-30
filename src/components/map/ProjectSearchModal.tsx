@@ -12,6 +12,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, CITY_REGIONS } from "../../constants";
 import { SALE_FILTER_OPTIONS } from "../../data/propertyData";
 import WheelPickerModal from "../common/WheelPickerModal";
@@ -31,6 +32,7 @@ export default function ProjectSearchModal({
   selectedCity,
   selectedPropertyType,
 }: ProjectSearchModalProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
   const [propertyTypeModalVisible, setPropertyTypeModalVisible] = useState<boolean>(false);
   const [currentCity, setCurrentCity] = useState<string>(selectedCity || "Riyadh");
@@ -169,7 +171,7 @@ export default function ProjectSearchModal({
             </View>
 
             {/* Footer Buttons */}
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
               <TouchableOpacity
                 style={styles.clearButton}
                 onPress={handleClear}
@@ -231,7 +233,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: wp(5),
     width: "100%",
     maxHeight: hp(40),
-    paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
   },
   header: {
     flexDirection: "row",
@@ -288,6 +289,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     paddingHorizontal: wp(4),
+    paddingTop: hp(2),
     justifyContent: "space-between",
     gap: wp(3),
   },

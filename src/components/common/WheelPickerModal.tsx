@@ -1,4 +1,11 @@
-import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  memo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -88,7 +95,10 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
       handleClose();
     }, [options, selectedIndex, onSelect, handleClose]);
 
-    const keyExtractor = useCallback((item: string, i: number) => `${item}-${i}`, []);
+    const keyExtractor = useCallback(
+      (item: string, i: number) => `${item}-${i}`,
+      []
+    );
 
     const renderItem = useCallback(
       ({ item, index }: { item: string; index: number }) => {
@@ -160,15 +170,16 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={handleClose} />
           <Animated.View
-            style={[
-              styles.pickerContainer,
-              { transform: [{ translateY }] },
-            ]}
+            style={[styles.pickerContainer, { transform: [{ translateY }] }]}
           >
             {/* HEADER */}
             <View style={styles.pickerHeader}>
               <TouchableOpacity onPress={handleClose} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={wp(6)} color={COLORS.primary} />
+                <Ionicons
+                  name="arrow-back"
+                  size={wp(6)}
+                  color={COLORS.primary}
+                />
               </TouchableOpacity>
               <Text style={styles.pickerHeaderText}>{title}</Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
@@ -179,37 +190,40 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
             {/* WHEEL */}
             <View style={styles.wheelWrapper}>
               <Animated.FlatList
-              ref={flatListRef}
-              data={options}
-              keyExtractor={keyExtractor}
-              renderItem={renderItem}
-              getItemLayout={getItemLayout}
-              showsVerticalScrollIndicator={false}
-              snapToInterval={ITEM_HEIGHT}
-              decelerationRate="fast"
-              bounces={false}
-              contentContainerStyle={{
-                paddingVertical:
-                  (ITEM_HEIGHT * VISIBLE_ITEMS) / 2 - ITEM_HEIGHT / 2,
-              }}
-              onScroll={Animated.event(
-                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                { useNativeDriver: true }
-              )}
-              scrollEventThrottle={16}
-              onMomentumScrollEnd={(e) => {
-                const index = Math.round(
-                  e.nativeEvent.contentOffset.y / ITEM_HEIGHT
-                );
-                const clampedIndex = Math.max(0, Math.min(index, options.length - 1));
-                setSelectedIndex(clampedIndex);
-              }}
-              removeClippedSubviews={true}
-              maxToRenderPerBatch={10}
-              updateCellsBatchingPeriod={50}
-              initialNumToRender={10}
-              windowSize={5}
-            />
+                ref={flatListRef}
+                data={options}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
+                getItemLayout={getItemLayout}
+                showsVerticalScrollIndicator={false}
+                snapToInterval={ITEM_HEIGHT}
+                decelerationRate="fast"
+                bounces={false}
+                contentContainerStyle={{
+                  paddingVertical:
+                    (ITEM_HEIGHT * VISIBLE_ITEMS) / 2 - ITEM_HEIGHT / 2,
+                }}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                  { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
+                onMomentumScrollEnd={(e) => {
+                  const index = Math.round(
+                    e.nativeEvent.contentOffset.y / ITEM_HEIGHT
+                  );
+                  const clampedIndex = Math.max(
+                    0,
+                    Math.min(index, options.length - 1)
+                  );
+                  setSelectedIndex(clampedIndex);
+                }}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                updateCellsBatchingPeriod={50}
+                initialNumToRender={10}
+                windowSize={5}
+              />
             </View>
           </Animated.View>
         </View>
@@ -254,6 +268,7 @@ const styles = StyleSheet.create({
   },
   pickerHeaderText: {
     flex: 1,
+    flexShrink: 1,
     fontSize: wp(4.5),
     fontWeight: "bold",
     color: "#111827",
@@ -261,9 +276,9 @@ const styles = StyleSheet.create({
   },
   okButton: {
     backgroundColor: COLORS.okButton,
-    paddingHorizontal: wp(4),
     paddingVertical: hp(1.2),
     borderRadius: wp(4),
+    paddingHorizontal: wp(3),
   },
   okButtonText: {
     color: "#ffffff",

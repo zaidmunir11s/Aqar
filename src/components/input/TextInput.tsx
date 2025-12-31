@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: wp(1.5),
     paddingHorizontal: wp(4),
-    minHeight: hp(5),
+    minHeight: hp(6),
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.error,
   },
   prefix: {
-    fontSize: wp(4.5),
+    fontSize: wp(4),
     color: COLORS.numberLabel,
     fontWeight: "400",
     marginRight: wp(2),
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     fontSize: wp(4.5),
     color: "#1f2937",
     padding: 0,
-    minHeight: hp(3),
+    minHeight: hp(4),
   },
   inputPlaceholder: {
     fontSize: wp(3.5),

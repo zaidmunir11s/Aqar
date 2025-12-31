@@ -4,6 +4,7 @@ import LoginScreen from "../../screens/Auth/LoginScreen";
 import CreateAccountScreen from "../../screens/Auth/CreateAccountScreen";
 import ForgotPasswordScreen from "../../screens/Auth/ForgotPasswordScreen";
 import ProfileDetailScreen from "../../screens/profile/ProfileDetailScreen";
+import UpdateProfileScreen from "../../screens/profile/UpdateProfileScreen";
 import UserProfileAdsScreen from "../../screens/profile/UserProfileAdsScreen";
 import PayBrokerCommissionScreen from "../../screens/profile/PayBrokerCommissionScreen";
 
@@ -16,6 +17,7 @@ export default function AuthStack(): React.JSX.Element {
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} />
+      <Stack.Screen name="UpdateProfile" component={UpdateProfileScreen} />
       <Stack.Screen name="UserProfileAds" component={UserProfileAdsScreen} />
       <Stack.Screen
         name="PayBrokerCommission"

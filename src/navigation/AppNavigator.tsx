@@ -44,6 +44,7 @@ const getTabBarStyle = (route: Route<string, object | undefined>) => {
     "Description",
     "MatchedListings",
     "ForgotPassword",
+    "UpdateProfile",
   ];
 
   if (hideTabBarRoutes.includes(routeName)) {

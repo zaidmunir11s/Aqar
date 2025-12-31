@@ -197,7 +197,7 @@ export default function ProjectsScreen(): React.JSX.Element {
   const handleShowList = useCallback(() => {
     const params = {
       properties: visibleProjects,
-      listingType: "sale",
+      listingType: "projects",
     };
     navigation.navigate("PropertyList", params);
   }, [visibleProjects, navigation]);

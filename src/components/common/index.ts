@@ -12,3 +12,4 @@ export { default as DeleteConfirmationModal } from "./DeleteConfirmationModal";
 export { default as SegmentedControl } from "./SegmentedControl";
 export { default as WheelPickerModal } from "./WheelPickerModal";
 export { default as ToggleSwitch } from "./ToggleSwitch";
+export { default as ErrorBoundary } from "./ErrorBoundary";

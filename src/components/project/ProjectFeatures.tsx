@@ -110,13 +110,17 @@ const getFeatureIcon = (featureName: string): FeatureIconConfig => {
 };
 
 export interface ProjectFeaturesProps {
-  features: string[];
+  features?: string[];
 }
 
 /**
  * Project features component
  */
-const ProjectFeatures = memo<ProjectFeaturesProps>(({ features }) => {
+const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
+  if (!features || features.length === 0) {
+    return null;
+  }
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Project Features</Text>

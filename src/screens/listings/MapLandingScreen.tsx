@@ -8,7 +8,7 @@ import React, {
 import { View, StyleSheet, Animated, Platform, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   PROPERTY_DATA,
@@ -34,13 +34,21 @@ import type { Property } from "../../types/property";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
+interface RouteParams {
+  listingType?: "rent" | "sale";
+}
+
 export default function MapLandingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute();
+  const params = route.params as RouteParams | undefined;
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [activeTab, setActiveTab] = useState<TabType>("rent");
+  // Set initial tab from route params, default to "rent"
+  const initialTab = params?.listingType === "sale" ? "sale" : "rent";
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [region, setRegion] = useState(RIYADH_REGION);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -57,6 +65,13 @@ export default function MapLandingScreen(): React.JSX.Element {
     if (activeTab === "rent") return RENT_FILTER_OPTIONS;
     return SALE_FILTER_OPTIONS;
   }, [activeTab]);
+
+  // Update active tab when route params change
+  useEffect(() => {
+    if (params?.listingType === "sale" || params?.listingType === "rent") {
+      setActiveTab(params.listingType);
+    }
+  }, [params?.listingType]);
 
   // Reset filter when tab changes
   useEffect(() => {

@@ -277,10 +277,13 @@ export default function PropertyListScreen(): React.JSX.Element {
         selectedCity: selectedCity !== "City" ? selectedCity : undefined,
         searchFilters: searchFilters,
       });
-    } else if (listingType === "projects" || listingType === "sale") {
+    } else if (listingType === "projects") {
       navigation.navigate("ProjectsMap");
     } else {
-      navigation.navigate("MapLanding");
+      // Pass listingType to MapLanding to preserve the active tab (rent/sale)
+      navigation.navigate("MapLanding", {
+        listingType: listingType === "sale" ? "sale" : "rent",
+      });
     }
   }, [
     navigation,

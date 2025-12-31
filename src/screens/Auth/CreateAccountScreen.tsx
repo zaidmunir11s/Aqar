@@ -61,7 +61,6 @@ export default function CreateAccountScreen(): React.JSX.Element {
     // TODO: Navigate to Privacy screen
   }, []);
 
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -87,13 +86,14 @@ export default function CreateAccountScreen(): React.JSX.Element {
             placeholder="First name"
             showFocusStates={true}
             containerStyle={styles.nameInputContainer}
+            inputWrapperStyle={styles.inputWrapperNoBottomRadius}
           />
           <TextInput
             value={lastName}
             onChangeText={setLastName}
             placeholder="Last name"
             showFocusStates={true}
-            inputWrapperStyle={styles.lastNameInputWrapper}
+            hideTopBorder={true}
           />
         </View>
 
@@ -184,8 +184,9 @@ const styles = StyleSheet.create({
   nameInputContainer: {
     marginBottom: 0,
   },
-  lastNameInputWrapper: {
-    borderRadius: 0,
+  inputWrapperNoBottomRadius: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   legalContainer: {
     marginTop: hp(1),

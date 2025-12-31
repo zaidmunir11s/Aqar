@@ -19,7 +19,7 @@ import { COLORS } from "../../constants";
 export interface TextInputProps extends Omit<RNTextInputProps, "style"> {
   value: string;
   onChangeText: (text: string) => void;
-  
+
   // Label
   label?: string;
   labelIcon?: {
@@ -28,15 +28,15 @@ export interface TextInputProps extends Omit<RNTextInputProps, "style"> {
     color?: string;
     size?: number;
   };
-  
+
   // Prefix (like country code)
   prefix?: string;
   prefixStyle?: TextStyle;
-  
+
   // Suffix (like currency)
   suffix?: string;
   suffixStyle?: TextStyle;
-  
+
   // Right action (like show/hide, forgot password)
   rightAction?: {
     type: "text" | "icon" | "custom";
@@ -47,29 +47,32 @@ export interface TextInputProps extends Omit<RNTextInputProps, "style"> {
     style?: ViewStyle;
     textStyle?: TextStyle;
   };
-  
+
   // Password specific
   isPassword?: boolean;
   showPasswordToggle?: boolean;
-  
+
   // Error handling
   error?: string;
   touched?: boolean;
-  
+
   // Container styling
   containerStyle?: ViewStyle;
   inputWrapperStyle?: ViewStyle;
   inputStyle?: TextStyle;
-  
+
   // Placeholder styling
   placeholderFontSize?: number;
-  
+
   // Focus states
   showFocusStates?: boolean;
   focusedBorderColor?: string; // Defaults to COLORS.primary if not specified
-  
+
   // Header layout (for password with forgot password)
   headerLayout?: "default" | "space-between";
+
+  // Border control for grouped inputs
+  hideTopBorder?: boolean; // Hide top border when input is part of a group (2nd, 3rd, etc.)
 }
 
 /**
@@ -98,6 +101,7 @@ const TextInput = memo<TextInputProps>(
     showFocusStates = true,
     focusedBorderColor,
     headerLayout = "default",
+    hideTopBorder = false,
     placeholder,
     placeholderTextColor = COLORS.textSecondary,
     keyboardType,
@@ -116,12 +120,14 @@ const TextInput = memo<TextInputProps>(
     // Render label icon
     const renderLabelIcon = () => {
       if (!labelIcon) return null;
-      
-      const IconComponent = 
-        labelIcon.library === "Entypo" ? Entypo :
-        labelIcon.library === "Ionicons" ? Ionicons :
-        MaterialCommunityIcons;
-      
+
+      const IconComponent =
+        labelIcon.library === "Entypo"
+          ? Entypo
+          : labelIcon.library === "Ionicons"
+            ? Ionicons
+            : MaterialCommunityIcons;
+
       return (
         <IconComponent
           name={labelIcon.name as any}
@@ -145,19 +151,25 @@ const TextInput = memo<TextInputProps>(
           </TouchableOpacity>
         );
       }
-      
+
       // Don't render text rightAction in input wrapper if it's in header
-      if (rightAction && headerLayout === "space-between" && rightAction.type === "text") {
+      if (
+        rightAction &&
+        headerLayout === "space-between" &&
+        rightAction.type === "text"
+      ) {
         return null;
       }
-      
+
       if (rightAction) {
         if (rightAction.type === "icon") {
-          const IconComponent = 
-            rightAction.iconLibrary === "Entypo" ? Entypo :
-            rightAction.iconLibrary === "Ionicons" ? Ionicons :
-            MaterialCommunityIcons;
-          
+          const IconComponent =
+            rightAction.iconLibrary === "Entypo"
+              ? Entypo
+              : rightAction.iconLibrary === "Ionicons"
+                ? Ionicons
+                : MaterialCommunityIcons;
+
           return (
             <TouchableOpacity
               onPress={rightAction.onPress}
@@ -181,7 +193,7 @@ const TextInput = memo<TextInputProps>(
           );
         }
       }
-      
+
       return null;
     };
 
@@ -190,28 +202,44 @@ const TextInput = memo<TextInputProps>(
     const actualFocusedBorderColor = focusedBorderColor || COLORS.primary;
 
     return (
-      <View style={[styles.container, containerStyle]}>
+      <View
+        style={[
+          styles.container,
+          hideTopBorder && styles.containerNoMargin,
+          containerStyle,
+        ]}
+      >
         {/* Label Section */}
         {(label || labelIcon) && (
           <View
             style={[
               styles.labelContainer,
-              headerLayout === "space-between" && styles.labelContainerSpaceBetween,
+              headerLayout === "space-between" &&
+                styles.labelContainerSpaceBetween,
             ]}
           >
             <View style={styles.labelRow}>
               {labelIcon && renderLabelIcon()}
               {label && (
-                <Text style={[styles.labelText, labelIcon && styles.labelTextWithIcon]}>
+                <Text
+                  style={[
+                    styles.labelText,
+                    labelIcon && styles.labelTextWithIcon,
+                  ]}
+                >
                   {label}
                 </Text>
               )}
             </View>
-            {rightAction && rightAction.type === "text" && headerLayout === "space-between" && (
-              <TouchableOpacity onPress={rightAction.onPress}>
-                <Text style={styles.rightActionText}>{rightAction.content}</Text>
-              </TouchableOpacity>
-            )}
+            {rightAction &&
+              rightAction.type === "text" &&
+              headerLayout === "space-between" && (
+                <TouchableOpacity onPress={rightAction.onPress}>
+                  <Text style={styles.rightActionText}>
+                    {rightAction.content}
+                  </Text>
+                </TouchableOpacity>
+              )}
           </View>
         )}
 
@@ -221,15 +249,15 @@ const TextInput = memo<TextInputProps>(
             styles.inputWrapper,
             inputWrapperStyle,
             hasError && !isFocused && styles.inputWrapperError,
-            isFocused && showFocusStates && {
-              borderColor: actualFocusedBorderColor,
-            },
+            isFocused &&
+              showFocusStates && {
+                borderColor: actualFocusedBorderColor,
+              },
+            hideTopBorder && styles.inputWrapperNoTopBorder,
           ]}
         >
           {/* Prefix */}
-          {prefix && (
-            <Text style={[styles.prefix, prefixStyle]}>{prefix}</Text>
-          )}
+          {prefix && <Text style={[styles.prefix, prefixStyle]}>{prefix}</Text>}
 
           {/* Text Input */}
           <RNTextInput
@@ -237,7 +265,9 @@ const TextInput = memo<TextInputProps>(
               styles.input,
               multiline && styles.inputMultiline,
               !value && !placeholderFontSize && styles.inputPlaceholder,
-              !value && placeholderFontSize ? { fontSize: placeholderFontSize } : null,
+              !value && placeholderFontSize
+                ? { fontSize: placeholderFontSize }
+                : null,
               inputStyle,
             ].filter(Boolean)}
             value={value}
@@ -261,18 +291,14 @@ const TextInput = memo<TextInputProps>(
           />
 
           {/* Suffix */}
-          {suffix && (
-            <Text style={[styles.suffix, suffixStyle]}>{suffix}</Text>
-          )}
+          {suffix && <Text style={[styles.suffix, suffixStyle]}>{suffix}</Text>}
 
           {/* Right Action */}
           {renderRightAction()}
         </View>
 
         {/* Error Message */}
-        {hasError && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
+        {hasError && <Text style={styles.errorText}>{error}</Text>}
       </View>
     );
   }
@@ -283,6 +309,9 @@ TextInput.displayName = "TextInput";
 const styles = StyleSheet.create({
   container: {
     marginBottom: hp(3),
+  },
+  containerNoMargin: {
+    marginBottom: 0,
   },
   labelContainer: {
     flexDirection: "row",
@@ -316,6 +345,11 @@ const styles = StyleSheet.create({
   },
   inputWrapperError: {
     borderColor: COLORS.error,
+  },
+  inputWrapperNoTopBorder: {
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   prefix: {
     fontSize: wp(4),
@@ -368,4 +402,3 @@ const styles = StyleSheet.create({
 });
 
 export default TextInput;
-

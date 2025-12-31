@@ -16,10 +16,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import {
-  PrimaryButton,
-  TextInput,
-} from "../../components";
+import { PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -103,8 +100,8 @@ export default function LoginScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
       >
         {/* Close Button */}
-        <TouchableOpacity 
-          onPress={handleBackPress} 
+        <TouchableOpacity
+          onPress={handleBackPress}
           style={styles.closeButton}
           activeOpacity={0.7}
         >
@@ -114,9 +111,7 @@ export default function LoginScreen(): React.JSX.Element {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Log in to AQAR</Text>
-          <Text style={styles.subtitle}>
-            Verify to continue
-          </Text>
+          <Text style={styles.subtitle}>Verify to continue</Text>
         </View>
 
         {/* Phone Number Input */}
@@ -127,7 +122,8 @@ export default function LoginScreen(): React.JSX.Element {
           prefix="+966"
           keyboardType="phone-pad"
           showFocusStates={true}
-          containerStyle={styles.inputContainer}
+          containerStyle={styles.inputContainerNoMargin}
+          inputWrapperStyle={styles.inputWrapperNoBottomRadius}
         />
 
         {/* Password Input */}
@@ -138,7 +134,8 @@ export default function LoginScreen(): React.JSX.Element {
           isPassword={true}
           showPasswordToggle={true}
           showFocusStates={true}
-          containerStyle={styles.inputContainer}
+          containerStyle={styles.inputContainerNoMargin}
+          hideTopBorder={true}
           rightAction={{
             type: "text",
             content: "Forgot your password?",
@@ -232,6 +229,13 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: hp(2.5),
+  },
+  inputContainerNoMargin: {
+    marginBottom: 0,
+  },
+  inputWrapperNoBottomRadius: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   loginButton: {
     marginTop: hp(1),

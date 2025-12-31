@@ -112,7 +112,7 @@ export default function AddListingScreen(): React.JSX.Element {
           <Text style={styles.sectionTitle}>
             What type of service are you looking for ?
           </Text>
-          {(ADD_SCREEN_SERVICES_LISTING as ListingOption[]).slice(0, 3).map((option) => (
+          {(ADD_SCREEN_SERVICES_LISTING as ListingOption[]).slice(1,2).map((option) => (
             <ListingOptionCard
               key={option.id}
               icon={option.icon}
@@ -124,7 +124,7 @@ export default function AddListingScreen(): React.JSX.Element {
           ))}
         </View>
 
-        {/* <View style={styles.section}> */}
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Requests</Text>
           {(ADD_SCREEN_SERVICES_LISTING as ListingOption[]).slice(3,5).map((option) => (
             <ListingOptionCard
@@ -136,7 +136,7 @@ export default function AddListingScreen(): React.JSX.Element {
               onPress={() => handleOptionPress(option.id)}
             />
           ))}
-        {/* </View> */}
+        </View>
       </ScrollView>
     </View>
   );
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: hp(2),
-    marginBottom: hp(3),
+    // marginBottom: hp(2),
   },
   sectionTitle: {
     fontSize: wp(4.5),

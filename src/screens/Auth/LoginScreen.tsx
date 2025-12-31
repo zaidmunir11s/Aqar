@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 
@@ -25,15 +25,103 @@ export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [submitAttempted, setSubmitAttempted] = useState<boolean>(false);
 
+  // Validation functions
+  const validatePhoneNumber = (phone: string): string => {
+    if (phone.trim().length === 0) {
+      return "Phone number is required";
+    }
+    if (!/^\d+$/.test(phone)) {
+      return "Invalid phone number";
+    }
+    return "";
+  };
+
+  const validatePassword = (pwd: string): string => {
+    if (pwd.trim().length === 0) {
+      return "Password is required";
+    }
+    if (pwd.length < 8) {
+      return "Invalid password";
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      return "Invalid password";
+    }
+    if (!/[a-z]/.test(pwd)) {
+      return "Invalid password";
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
+      return "Invalid password";
+    }
+    return "";
+  };
+
+  // Keep errors visible once shown (only hide when button is pressed with valid value)
+  const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
+  const [passwordErrorShown, setPasswordErrorShown] = useState<boolean>(false);
+  const [storedPhoneError, setStoredPhoneError] = useState<string>("");
+  const [storedPasswordError, setStoredPasswordError] = useState<string>("");
+  
+  // Validate fields
+  const phoneError = validatePhoneNumber(phoneNumber);
+  const passwordError = validatePassword(password);
+  
+  // Display errors only if they've been shown (after submit attempt)
+  // Keep showing the stored error message even if field becomes valid while typing
+  const displayPhoneError = phoneErrorShown ? storedPhoneError : "";
+  const displayPasswordError = passwordErrorShown ? storedPasswordError : "";
+
+  // Button enabled when both fields have values (not checking validation)
   const isFormValid =
     phoneNumber.trim().length > 0 && password.trim().length > 0;
 
+  const handlePhoneChange = useCallback((text: string) => {
+    // Filter to only allow numbers
+    const filteredText = text.replace(/[^0-9]/g, "");
+    setPhoneNumber(filteredText);
+  }, []);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    setPassword(text);
+  }, []);
+
   const handleLogin = useCallback(() => {
-    if (!isFormValid) return;
+    setSubmitAttempted(true);
+    
+    const phoneErr = validatePhoneNumber(phoneNumber);
+    const pwdErr = validatePassword(password);
+    
+    // Update error visibility based on validation when button is pressed
+    if (phoneErr !== "") {
+      // Phone is invalid → show error and store it
+      setPhoneErrorShown(true);
+      setStoredPhoneError(phoneErr);
+    } else {
+      // Phone is valid → hide error only when button is pressed
+      setPhoneErrorShown(false);
+      setStoredPhoneError("");
+    }
+    
+    if (pwdErr !== "") {
+      // Password is invalid → show error and store it
+      setPasswordErrorShown(true);
+      setStoredPasswordError(pwdErr);
+    } else {
+      // Password is valid → hide error only when button is pressed
+      setPasswordErrorShown(false);
+      setStoredPasswordError("");
+    }
+    
+    if (phoneErr !== "" || pwdErr !== "") {
+      // Validation failed, return early
+      return;
+    }
+    
+    // Validation passed, proceed with login
     console.log("Login with:", phoneNumber, password);
     navigation.navigate("ProfileDetail");
-  }, [isFormValid, phoneNumber, password, navigation]);
+  }, [phoneNumber, password, navigation]);
 
   const handleCreateAccount = useCallback(() => {
     navigation.navigate("CreateAccount");
@@ -44,16 +132,12 @@ export default function LoginScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleBackPress = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
+    // Always navigate to Listings tab, don't go back through navigation history
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate("Listings");
     } else {
-      // Navigate to Listings tab when there's no back history
-      const parent = navigation.getParent();
-      if (parent) {
-        parent.navigate("Listings");
-      } else {
-        navigation.navigate("Listings");
-      }
+      navigation.navigate("Listings");
     }
   }, [navigation]);
 
@@ -117,25 +201,29 @@ export default function LoginScreen(): React.JSX.Element {
         {/* Phone Number Input */}
         <TextInput
           value={phoneNumber}
-          onChangeText={setPhoneNumber}
+          onChangeText={handlePhoneChange}
           placeholder="Phone number"
           prefix="+966"
           keyboardType="phone-pad"
           showFocusStates={true}
           containerStyle={styles.inputContainerNoMargin}
           inputWrapperStyle={styles.inputWrapperNoBottomRadius}
+          error={displayPhoneError}
+          touched={phoneErrorShown}
         />
 
         {/* Password Input */}
         <TextInput
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           placeholder="Password"
           isPassword={true}
           showPasswordToggle={true}
           showFocusStates={true}
           containerStyle={styles.inputContainerNoMargin}
           hideTopBorder={true}
+          error={displayPasswordError}
+          touched={passwordErrorShown}
           rightAction={{
             type: "text",
             content: "Forgot your password?",
@@ -238,7 +326,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
   },
   loginButton: {
-    marginTop: hp(1),
+    marginTop: hp(3),
   },
   dividerContainer: {
     flexDirection: "row",

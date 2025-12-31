@@ -70,7 +70,7 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   };
 
   const handleUpdateProfilePress = () => {
-    console.log("Update profile pressed");
+    navigation.navigate("UpdateProfile");
   };
 
   const handleChangePasswordPress = () => {

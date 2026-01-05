@@ -18,9 +18,6 @@ export interface IconButtonProps {
   activeOpacity?: number;
 }
 
-/**
- * Reusable icon button component
- */
 const IconButton = memo<IconButtonProps>(
   ({ onPress, children, style, disabled = false, activeOpacity = 0.7 }) => {
     return (

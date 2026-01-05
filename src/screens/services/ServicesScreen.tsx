@@ -103,14 +103,14 @@ export default function ServicesScreen(): React.JSX.Element {
     // },
     // {
     //   id: "9",
-    //   title: "StayBid Residential Stats",
+    //   title: "Bayt Residential Stats",
     //   icon: "stats-chart-outline",
     //   iconLib: "Ionicons" as const,
     //   accent: "#06b6d4",
     // },
     {
       id: "10",
-      title: "StayBid Blog",
+      title: "Bayt Blog",
       icon: "book",
       iconLib: "Ionicons" as const,
       accent: "#f59e0b",

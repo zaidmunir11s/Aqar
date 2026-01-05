@@ -102,7 +102,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
 
           {/* Heading */}
           <Text style={styles.heading}>
-            StayBid issues advertisement licenses for owners and agents
+            Bayt issues advertisement licenses for owners and agents
           </Text>
 
           {/* Steps Section */}

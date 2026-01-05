@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "StayBid",
-    "slug": "expo-supabase-starter",
+    "name": "Bayt",
+    "slug": "bayt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "expo-supabase-starter",
+    "scheme": "bayt",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.flemingvincent.expo-supabase-starter",
+      "bundleIdentifier": "com.flemingvincent.bayt",
       "config": {
         "googleMapsApiKey": "AIzaSyD6rcuWRjrWv0WzoFIW9ZM4OvsBgVF2WhQ"
       }
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.flemingvincent.exposupabasestarter",
+      "package": "com.flemingvincent.bayt",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyD6rcuWRjrWv0WzoFIW9ZM4OvsBgVF2WhQ"

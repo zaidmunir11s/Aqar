@@ -194,7 +194,7 @@ export default function LoginScreen(): React.JSX.Element {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Log in to StayBid</Text>
+          <Text style={styles.title}>Log in to Bayt</Text>
           <Text style={styles.subtitle}>Verify to continue</Text>
         </View>
 

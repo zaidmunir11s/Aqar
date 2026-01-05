@@ -33,7 +33,7 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalHeading}>AQAR</Text>
+            <Text style={styles.modalHeading}>Bayt</Text>
             <Text style={styles.modalText}>
               Are you sure you want to delete this task
             </Text>

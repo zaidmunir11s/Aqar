@@ -5,22 +5,20 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   Platform,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   ScreenHeader,
-  ServiceCard,
-  ServiceListItem,
   SocialMediaIcon,
 } from "../../components";
+import { COLORS } from "@/constants/colors";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -41,52 +39,90 @@ export default function ServicesScreen(): React.JSX.Element {
 
   const handleServicePress = useCallback((service: string) => {
     console.log("Service pressed:", service);
-    // TODO: Navigate to service details
   }, []);
 
-  const handleLanguagePress = useCallback(() => {
-    handleServicePress("Language");
-  }, [handleServicePress]);
 
-  const handleCartPress = useCallback(() => {
-    handleServicePress("Cart");
-  }, [handleServicePress]);
-
-  const handleCustomerServicePress = useCallback(() => {
-    handleServicePress("Customer Service");
-  }, [handleServicePress]);
-
-  const services: Array<{
-    icon: string;
-    library: "Ionicons" | "MaterialCommunityIcons";
-    title: string;
-  }> = [
+  const services = [
     {
-      icon: "file-document-outline",
-      library: "MaterialCommunityIcons",
-      title: "Subscriptions",
+      id: "1",
+      title: "Customer Service",
+      subtitle: "24/7 Support",
+      icon: "headset",
+      iconLib: "Ionicons" as const,
+      accent: "#0e856a",
     },
     {
+      id: "2",
+      title: "Commission",
+      subtitle: "Selling & Leasing",
       icon: "hand-coin-outline",
-      library: "MaterialCommunityIcons",
-      title: "Selling and leasing Commission",
+      iconLib: "MaterialCommunityIcons" as const,
+      accent: "#3b82f6",
+    },
+    // {
+    //   id: "3",
+    //   title: "Subscriptions",
+    //   icon: "file-document-outline",
+    //   iconLib: "MaterialCommunityIcons" as const,
+    //   accent: "#6366f1",
+    // },
+    // {
+    //   id: "4",
+    //   title: "Developers Services",
+    //   icon: "rocket-outline",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#ec4899",
+    // },
+    {
+      id: "5",
+      title: "Today Ads",
+      icon: "megaphone",
+      iconLib: "Ionicons" as const,
+      accent: "#8b5cf6",
+    },
+    // {
+    //   id: "6",
+    //   title: "Lease Contracts",
+    //   icon: "document-text-outline",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#14b8a6",
+    // },
+    // {
+    //   id: "7",
+    //   title: "Search Requests",
+    //   icon: "search-outline",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#f59e0b",
+    // },
+    // {
+    //   id: "8",
+    //   title: "Exclusive marketing services",
+    //   icon: "star-outline",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#ef4444",
+    // },
+    // {
+    //   id: "9",
+    //   title: "StayBid Residential Stats",
+    //   icon: "stats-chart-outline",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#06b6d4",
+    // },
+    {
+      id: "10",
+      title: "StayBid Blog",
+      icon: "book",
+      iconLib: "Ionicons" as const,
+      accent: "#f59e0b",
     },
     {
-      icon: "rocket-outline",
-      library: "Ionicons",
-      title: "Developers Services",
+      id: "11",
+      title: "Legal Documents",
+      icon: "document-text",
+      iconLib: "Ionicons" as const,
+      accent: "#10b981",
     },
   ];
-
-  const serviceListItems = [
-    "Today Ads",
-    "Lease Contracts",
-    "Search Requests",
-    "Exclusive marketing services",
-    "Aqar Residential Stats",
-  ];
-
-  const aqarAppItems = ["AQAR blog", "Legal documents"];
 
   const socialMediaItems: Array<{
     name: string;
@@ -130,133 +166,76 @@ export default function ServicesScreen(): React.JSX.Element {
     },
   ];
 
+  const renderIcon = (iconName: string, iconLib: string, size: number, color: string) => {
+    if (iconLib === "MaterialCommunityIcons") {
+      return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
+    }
+    return <Ionicons name={iconName as any} size={size} color={color} />;
+  };
+
   return (
     <View style={styles.container}>
       <ScreenHeader
         title="Services"
         onBackPress={handleBackPress}
-        rightComponent={
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={handleLanguagePress}
-            >
-              <Text style={styles.arabicText}>العربية</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={handleCartPress}
-            >
-              <Ionicons name="cart-outline" size={wp(6)} color="#10b981" />
-            </TouchableOpacity>
-          </View>
-        }
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity
-          style={styles.customerServiceCard}
-          activeOpacity={0.7}
-          onPress={handleCustomerServicePress}
-        >
-          <Ionicons name="headset" size={wp(7)} color="#0e856a" />
-          <Text style={styles.customerServiceText}>Customer Service</Text>
-        </TouchableOpacity>
-
-        <View style={styles.topCardsRow}>
-          {services.map((service, index) => (
-            <ServiceCard
-              key={index}
-              iconName={service.icon}
-              iconLibrary={service.library}
-              title={service.title}
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Services Grid */}
+        <View style={styles.gridContainer}>
+          {services.map((service) => (
+            <TouchableOpacity
+              key={service.id}
+              style={styles.serviceTile}
+              activeOpacity={0.8}
               onPress={() => handleServicePress(service.title)}
-            />
+            >
+              <View style={[styles.tileIconWrapper, { backgroundColor: service.accent + "15" }]}>
+                {renderIcon(service.icon, service.iconLib, wp(8), service.accent)}
+              </View>
+              <Text style={styles.tileTitle} numberOfLines={2}>
+                {service.title}
+              </Text>
+              {service.subtitle && (
+                <Text style={styles.tileSubtitle} numberOfLines={1}>
+                  {service.subtitle}
+                </Text>
+              )}
+            </TouchableOpacity>
           ))}
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="hand-heart-outline"
-              size={wp(6)}
-              color="#6b7280"
-            />
-            <Text style={styles.sectionTitle}>Services</Text>
-          </View>
-
-          <View style={styles.listContainer}>
-            {serviceListItems.map((item, index) => (
-              <ServiceListItem
+        {/* Social Media Section */}
+        <View style={styles.socialSection}>
+          <Text style={styles.socialTitle}>Follow Us</Text>
+          <View style={styles.socialGrid}>
+            {socialMediaItems.map((item, index) => (
+              <TouchableOpacity
                 key={index}
-                text={item}
-                onPress={() => handleServicePress(item)}
-                isLast={index === serviceListItems.length - 1}
-              />
+                activeOpacity={0.7}
+                onPress={() => handleSocialMedia(item.platform)}
+              >
+                <SocialMediaIcon
+                  name={item.name}
+                  icon={item.icon}
+                  library={item.library}
+                  bgColor={item.bgColor}
+                  iconColor={item.iconColor}
+                  onPress={() => handleSocialMedia(item.platform)}
+                />
+              </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Aqar App Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="pricetag-outline" size={wp(6)} color="#6b7280" />
-            <Text style={styles.sectionTitle}>Aqar App</Text>
-          </View>
-
-          <View style={styles.listContainer}>
-            {aqarAppItems.map((item, index) => (
-              <ServiceListItem
-                key={index}
-                text={item}
-                onPress={() => handleServicePress(item)}
-                isLast={index === aqarAppItems.length - 1}
-              />
-            ))}
-          </View>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.versionText}>Version 3.4.17</Text>
         </View>
-
-        {/* Social Media Icons */}
-        <View style={styles.socialMediaContainer}>
-          {socialMediaItems.map((item) => (
-            <SocialMediaIcon
-              key={item.name}
-              name={item.name}
-              icon={item.icon}
-              library={item.library}
-              bgColor={item.bgColor}
-              iconColor={item.iconColor}
-              onPress={() => handleSocialMedia(item.platform)}
-            />
-          ))}
-        </View>
-
-        {/* Certification Badges */}
-        <View style={styles.badgesContainer}>
-          <Image
-            source={{ uri: "https://via.placeholder.com/80x80.png?text=VAT" }}
-            style={styles.badge}
-            resizeMode="contain"
-          />
-          <Image
-            source={{ uri: "https://via.placeholder.com/80x80.png?text=REGA" }}
-            style={styles.badge}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Quick Donation */}
-        <View style={styles.donationContainer}>
-          <Text style={styles.donationText}>Quick Donation</Text>
-          <Image
-            source={{ uri: "https://via.placeholder.com/60x60.png?text=Ehsan" }}
-            style={styles.donationLogo}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Version */}
-        <Text style={styles.versionText}>V 3.4.17</Text>
 
         <View style={{ height: hp(3) }} />
       </ScrollView>
@@ -267,119 +246,90 @@ export default function ServicesScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f3f4f6",
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerButton: {
-    marginLeft: wp(3),
-  },
-  arabicText: {
-    fontSize: wp(4),
-    color: "#10b981",
-    fontWeight: "600",
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
   },
-  customerServiceCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    marginHorizontal: wp(4),
-    marginTop: hp(2),
-    marginBottom: hp(2),
-    paddingVertical: hp(1),
-    borderRadius: wp(3),
-    borderWidth: 2,
-    borderColor: "#0e856a",
-
+  scrollContent: {
+    paddingTop: hp(3),
+    paddingBottom: hp(2),
   },
-  customerServiceText: {
-    fontSize: wp(4.5),
-    fontWeight: "700",
-    color: "#0e856a",
-    marginLeft: wp(2),
-  },
-  topCardsRow: {
+  gridContainer: {
     flexDirection: "row",
+    flexWrap: "wrap",
     paddingHorizontal: wp(4),
-    marginBottom: hp(2),
     justifyContent: "space-between",
   },
-  section: {
-    marginTop: hp(2),
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+  serviceTile: {
+    width: wp(43),
+    backgroundColor: "#fafbfc",
+    borderRadius: wp(4),
+    paddingVertical: hp(3),
     paddingHorizontal: wp(4),
-    marginBottom: hp(1.5),
-  },
-  sectionTitle: {
-    fontSize: wp(4.5),
-    fontWeight: "600",
-    color: "#6b7280",
-    marginLeft: wp(2),
-  },
-  listContainer: {
-    backgroundColor: "#fff",
-    marginHorizontal: wp(4),
-    borderRadius: wp(3),
-    overflow: "hidden",
+    marginBottom: hp(2.5),
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
         shadowOpacity: 0.05,
-        shadowRadius: 3,
-        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
       },
-      android: { elevation: 2 },
+      android: {
+        elevation: 3,
+      },
     }),
   },
-  socialMediaContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+  tileIconWrapper: {
+    width: wp(16),
+    height: wp(16),
+    borderRadius: wp(8),
     alignItems: "center",
-    marginTop: hp(3),
+    justifyContent: "center",
     marginBottom: hp(2),
+  },
+  tileTitle: {
+    fontSize: wp(4),
+    fontWeight: "600",
+    color: "#1a202c",
+    textAlign: "center",
+    marginBottom: hp(0.5),
+    lineHeight: hp(2.5),
+  },
+  tileSubtitle: {
+    fontSize: wp(3.2),
+    color: "#64748b",
+    textAlign: "center",
+    fontWeight: "400",
+  },
+  socialSection: {
+    marginTop: hp(2),
     paddingHorizontal: wp(4),
   },
-  badgesContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: hp(2),
-    marginBottom: hp(2),
-  },
-  badge: {
-    width: wp(20),
-    height: wp(20),
-    marginHorizontal: wp(2),
-  },
-  donationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: hp(2),
-    marginBottom: hp(1),
-  },
-  donationText: {
+  socialTitle: {
     fontSize: wp(4),
-    color: "#6b7280",
-    marginRight: wp(2),
+    fontWeight: "600",
+    color: "#1a202c",
+    marginBottom: hp(2),
+    textAlign: "center",
   },
-  donationLogo: {
-    width: wp(12),
-    height: wp(12),
+  socialGrid: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: wp(4),
+    flexWrap: "wrap",
+  },
+  footer: {
+    alignItems: "center",
+    marginTop: hp(3),
   },
   versionText: {
-    fontSize: wp(3.5),
-    color: "#9ca3af",
-    textAlign: "center",
-    marginBottom: hp(2),
+    fontSize: wp(3.2),
+    color: "#94a3b8",
+    fontWeight: "400",
   },
 });

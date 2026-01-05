@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
+  Keyboard,
+  Platform,
+  Animated,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -32,6 +35,7 @@ export default function DescriptionScreen(): React.JSX.Element {
   
   const [description, setDescription] = useState("");
   const [showCategoryError, setShowCategoryError] = useState(false);
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   // Check if category is selected
   const isCategorySelected = !!params.orderFormData?.category;
@@ -39,6 +43,37 @@ export default function DescriptionScreen(): React.JSX.Element {
   const handleBackPress = () => {
     navigation.goBack();
   };
+
+  // Listen to keyboard show/hide events
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        // Set keyboard height to position footer just above keyboard
+        Animated.timing(keyboardHeight, {
+          toValue: event.endCoordinates.height,
+          duration: event.duration || 250,
+          useNativeDriver: false, // Can't use native driver for bottom positioning
+        }).start();
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => {
+        // Reset keyboard height to 0 to bring footer back to original position
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: event.duration || 250,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [keyboardHeight]);
 
   const handleSubmitPress = async () => {
     // Always allow click, but validate
@@ -106,16 +141,25 @@ export default function DescriptionScreen(): React.JSX.Element {
       )}
 
       {/* Footer */}
-      <ListingFooter
-        currentStep={3}
-        totalSteps={3}
-        onBackPress={handleBackPress}
-        onNextPress={handleSubmitPress}
-        backText="Back"
-        nextText="Submit"
-        showBack={true}
-        showNext={true}
-      />
+      <Animated.View
+        style={[
+          styles.footerContainer,
+          {
+            bottom: keyboardHeight,
+          },
+        ]}
+      >
+        <ListingFooter
+          currentStep={3}
+          totalSteps={3}
+          onBackPress={handleBackPress}
+          onNextPress={handleSubmitPress}
+          backText="Back"
+          nextText="Submit"
+          showBack={true}
+          showNext={true}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -129,6 +173,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: wp(5),
     paddingTop: hp(2),
+    paddingBottom: hp(12), // Extra padding for footer
   },
   sectionTitle: {
     fontSize: wp(5),
@@ -171,5 +216,25 @@ const styles = StyleSheet.create({
     fontSize: wp(3.8),
     color: COLORS.error,
     fontWeight: "500",
+  },
+  footerContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.white,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
 });

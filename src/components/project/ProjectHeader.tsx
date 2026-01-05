@@ -18,11 +18,15 @@ const ProjectHeader = memo<ProjectHeaderProps>(({ project }) => {
     <View style={styles.titleSection}>
       <Text style={styles.projectType}>Floor for sale</Text>
       <View style={styles.projectHeader}>
+        {project.developerLogo && (
+          <View style={styles.logoContainer}>
         <Image
           source={{ uri: project.developerLogo }}
           style={styles.developerLogo}
-          resizeMode="contain"
+              resizeMode="cover"
         />
+          </View>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={styles.projectTitle}>{project.projectNameArabic}</Text>
           <Text style={styles.projectAddress}>{project.address}</Text>
@@ -42,24 +46,33 @@ const styles = StyleSheet.create({
   projectType: {
     backgroundColor: "#d0d7e1",
     paddingVertical: hp(1),
-    marginRight: wp(70),
+    paddingHorizontal: wp(3),
     fontSize: wp(3.5),
     color: "#374151",
     marginBottom: hp(1),
+    borderRadius: wp(1),
+    overflow: "hidden",
+    alignSelf: "flex-start",
   },
   projectHeader: {
     flexDirection: "row",
     alignItems: "center",
   },
-  developerLogo: {
+  logoContainer: {
     width: wp(20),
     height: wp(20),
+    maxWidth: wp(20),
+    maxHeight: wp(20),
     backgroundColor: "#f3f4f6",
     borderRadius: wp(2),
     marginRight: wp(3),
-    padding: wp(2),
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    overflow: "hidden",
+  },
+  developerLogo: {
+    width: "100%",
+    height: "100%",
   },
   projectTitle: {
     fontSize: wp(5),

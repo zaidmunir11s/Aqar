@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     paddingHorizontal: wp(4),
-    paddingTop: hp(2),
+    // paddingTop: hp(2),
     justifyContent: "space-between",
     gap: wp(3),
   },

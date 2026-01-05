@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -106,6 +107,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   const deedOwnerOptions = ["Electronic/Eye Record", "Other"];
   const ownerTypeOptions = ["Individual", "Multi/Agent", "Company"];
@@ -297,6 +299,37 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     navigation.navigate("MarketingRequestPlaceholder");
   }, [navigation]);
 
+  // Listen to keyboard show/hide events
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        // Set keyboard height to position footer just above keyboard
+        Animated.timing(keyboardHeight, {
+          toValue: event.endCoordinates.height,
+          duration: event.duration || 250,
+          useNativeDriver: false, // Can't use native driver for bottom positioning
+        }).start();
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => {
+        // Reset keyboard height to 0 to bring footer back to original position
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: event.duration || 250,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [keyboardHeight]);
+
   const openDatePicker = useCallback((type: "owner" | "agent" | "company") => {
     setActiveCalendarType(type);
     const titles = {
@@ -480,13 +513,14 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   }, [ownerType, fields, renderTextInput, renderDateSelector, renderPhoneInput, validators]);
 
   return (
+    <View style={styles.container}>
     <KeyboardAvoidingView
-      style={styles.container}
+        style={styles.keyboardView}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <View style={{ flex: 1 }}>
+          <View style={styles.mainContainer}>
           <ScreenHeader
             title="Add Listing"
             onBackPress={handleBackPress}
@@ -538,7 +572,18 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
               <Text style={styles.contactLinkText}>Have a question? Contact us</Text>
             </TouchableOpacity>
           </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
 
+      <Animated.View
+        style={[
+          styles.footerContainer,
+          {
+            bottom: keyboardHeight,
+          },
+        ]}
+      >
           <ListingFooter
             currentStep={2}
             totalSteps={2}
@@ -548,8 +593,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
             nextText="Next"
             nextDisabled={false}
           />
-        </View>
-      </TouchableWithoutFeedback>
+      </Animated.View>
 
       <DatePickerModal
         visible={datePickerVisible}
@@ -570,7 +614,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         onBack={handleCancelBack}
         onConfirm={handleCancelYes}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -579,12 +623,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ebf1f1",
   },
+  keyboardView: {
+    flex: 1,
+  },
+  mainContainer: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: wp(4),
-    paddingBottom: hp(2),
+    paddingBottom: hp(12), // Extra padding for footer
+  },
+  footerContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   closeButton: {
     width: wp(12),

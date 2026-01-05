@@ -1130,7 +1130,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: wp(4),
     paddingTop: hp(1),
-    paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
+    paddingBottom: Platform.OS === "ios" ? hp(2) : hp(2),
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     justifyContent: "space-between",

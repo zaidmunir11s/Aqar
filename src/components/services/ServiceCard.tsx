@@ -11,6 +11,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { COLORS } from "@/constants/colors";
 
 export interface ServiceCardProps {
   iconName: string;
@@ -29,12 +30,12 @@ const ServiceCard = memo<ServiceCardProps>(
         return (
           <MaterialCommunityIcons
             name={iconName as any}
-            size={wp(10)}
-            color="#6b7280"
+            size={wp(8)}
+            color={COLORS.primary}
           />
         );
       }
-      return <Ionicons name={iconName as any} size={wp(10)} color="#6b7280" />;
+      return <Ionicons name={iconName as any} size={wp(8)} color={COLORS.primary} />;
     };
 
     return (
@@ -54,34 +55,41 @@ ServiceCard.displayName = "ServiceCard";
 
 const styles = StyleSheet.create({
   serviceCard: {
-    width: wp(28),
-    backgroundColor: "#fff",
-    borderRadius: wp(3),
+    width: wp(31),
+    backgroundColor: "#ffffff",
+    borderRadius: wp(3.5),
     padding: wp(3),
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
         shadowOffset: { width: 0, height: 2 },
       },
-      android: { elevation: 3 },
+      android: { 
+        elevation: 2,
+        backgroundColor: "#ffffff",
+      },
     }),
   },
   serviceIconContainer: {
-    width: wp(18),
-    height: wp(18),
-    backgroundColor: "#f3f4f6",
-    borderRadius: wp(3),
+    width: wp(15),
+    height: wp(15),
+    backgroundColor: "#f0fdfa",
+    borderRadius: wp(4),
     alignItems: "center",
     justifyContent: "center",
     marginBottom: hp(1.5),
+    borderWidth: 1,
+    borderColor: "#d1fae5",
   },
   serviceCardTitle: {
     fontSize: wp(3.5),
-    fontWeight: "600",
-    color: "#1f2937",
+    fontWeight: "500",
+    color: COLORS.textPrimary,
     textAlign: "center",
     lineHeight: hp(2.2),
   },

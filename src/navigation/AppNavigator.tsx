@@ -1,11 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import {
-  Ionicons,
-  FontAwesome6,
-  Entypo,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -87,7 +82,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Profile",
           tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="circle-user" size={wp(6)} color={color} />
+            <Ionicons name="person" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -107,7 +102,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Listings",
           tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="map-location-dot" size={wp(7)} color={color} />
+            <Ionicons name="albums" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -120,7 +115,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Projects",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="stats-chart-outline" size={wp(6)} color={color} />
+            <Ionicons name="business" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -133,7 +128,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Bookings",
           tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="calendar-days" size={wp(6)} color={color} />
+            <Ionicons name="calendar" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -204,7 +199,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Chat",
           tabBarIcon: ({ color }) => (
-            <Entypo name="chat" size={wp(6)} color={color} />
+            <Ionicons name="chatbubbles" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
         })}
@@ -224,11 +219,7 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Services",
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons
-              name="dots-grid"
-              size={wp(6)}
-              color={color}
-            />
+            <Ionicons name="construct" size={wp(6)} color={color} />
           ),
           tabBarBadge: "New",
           tabBarBadgeStyle: {

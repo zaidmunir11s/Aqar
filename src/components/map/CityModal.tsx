@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     paddingHorizontal: wp(4),
-    paddingTop: hp(2),
+    // paddingTop: hp(2),
     paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
     gap: wp(3),
   },

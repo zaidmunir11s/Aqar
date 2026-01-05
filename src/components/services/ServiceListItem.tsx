@@ -5,6 +5,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { COLORS } from "@/constants/colors";
 
 export interface ServiceListItemProps {
   text: string;
@@ -24,7 +25,7 @@ const ServiceListItem = memo<ServiceListItemProps>(
         onPress={onPress}
       >
         <Text style={styles.listItemText}>{text}</Text>
-        <Ionicons name="chevron-forward" size={wp(5)} color="#d1d5db" />
+        <Ionicons name="chevron-forward" size={wp(5)} color={COLORS.textTertiary} />
       </TouchableOpacity>
     );
   }
@@ -37,17 +38,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: hp(2),
-    paddingHorizontal: wp(4),
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
+    paddingVertical: hp(2.2),
+    paddingHorizontal: wp(4.5),
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+    backgroundColor: "#ffffff",
   },
   lastListItem: {
     borderBottomWidth: 0,
   },
   listItemText: {
     fontSize: wp(4),
-    color: "#1f2937",
+    color: COLORS.textPrimary,
     fontWeight: "500",
   },
 });

@@ -19,15 +19,16 @@ export interface FilterChipsProps {
   activeFilter: string;
   onFilterChange: (filterId: string) => void;
   onSearchPress?: () => void;
+  variant?: "map" | "list"; // Variant for map (absolute) or list (relative) positioning
 }
 
 /**
  * Filter chips component for map screen
  */
 const FilterChips = memo<FilterChipsProps>(
-  ({ filterOptions, activeFilter, onFilterChange, onSearchPress }) => {
+  ({ filterOptions, activeFilter, onFilterChange, onSearchPress, variant = "map" }) => {
     return (
-      <View style={styles.chipsContainer}>
+      <View style={[styles.chipsContainer, variant === "list" && styles.chipsContainerList]}>
         <TouchableOpacity style={styles.searchButton} onPress={onSearchPress}>
           <Text style={styles.searchText}>Search</Text>
           <Ionicons name="search" size={wp(4.5)} color="#fff" />
@@ -69,6 +70,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     zIndex: 90,
+  },
+  chipsContainerList: {
+    position: "relative",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   searchButton: {
     flexDirection: "row",

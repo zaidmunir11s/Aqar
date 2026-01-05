@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  Keyboard,
+  Platform,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -52,6 +55,7 @@ const CATEGORY_OPTIONS = [
 
 export default function NewOrderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
   
   // Get all state, handlers, and computed values from the hook
   const form = useOrderForm();
@@ -59,6 +63,37 @@ export default function NewOrderScreen(): React.JSX.Element {
   const handleBackPress = () => {
     navigation.goBack();
   };
+
+  // Listen to keyboard show/hide events
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        // Set keyboard height to position footer just above keyboard
+        Animated.timing(keyboardHeight, {
+          toValue: event.endCoordinates.height,
+          duration: event.duration || 250,
+          useNativeDriver: false, // Can't use native driver for bottom positioning
+        }).start();
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => {
+        // Reset keyboard height to 0 to bring footer back to original position
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: event.duration || 250,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [keyboardHeight]);
 
   const handleNextPress = () => {
     // Collect all form data - get all properties from form object
@@ -1621,14 +1656,23 @@ export default function NewOrderScreen(): React.JSX.Element {
       </ScrollView>
 
       {/* Footer */}
-      <ListingFooter
-        currentStep={1}
-        totalSteps={3}
-        onBackPress={handleBackPress}
-        onNextPress={handleNextPress}
-        showBack={true}
-        showNext={true}
-      />
+      <Animated.View
+        style={[
+          styles.footerContainer,
+          {
+            bottom: keyboardHeight,
+          },
+        ]}
+      >
+        <ListingFooter
+          currentStep={1}
+          totalSteps={3}
+          onBackPress={handleBackPress}
+          onNextPress={handleNextPress}
+          showBack={true}
+          showNext={true}
+        />
+      </Animated.View>
 
       {/* Modals */}
       <WheelPickerModal
@@ -1751,7 +1795,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: wp(5),
     paddingTop: hp(2),
-    // paddingBottom: hp(15),
+    paddingBottom: hp(12), // Extra padding for footer
+  },
+  footerContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.white,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   section: {
     marginBottom: hp(2.5),

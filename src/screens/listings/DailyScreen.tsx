@@ -118,12 +118,26 @@ export default function DailyScreen(): React.JSX.Element {
   const { calculatePrice: calculateDailyPrice } = useDailyPrice(selectedDates);
   const { modalVisible, openModal: openBookingDateModal, closeModal: closeBookingDateModal } = useBookingModal();
   
+  // Track if we've shown the calendar modal on first visit
+  const hasShownCalendarOnMount = useRef<boolean>(false);
+  
   // Sync selectedDates when route params change (when navigating from list screen)
   useEffect(() => {
     if (routeParams?.selectedDates) {
       setSelectedDates(routeParams.selectedDates);
     }
   }, [routeParams?.selectedDates, setSelectedDates]);
+  
+  // Show calendar modal automatically on first visit if no dates are selected
+  useEffect(() => {
+    if (!hasShownCalendarOnMount.current && !selectedDates.startDate && !selectedDates.endDate) {
+      hasShownCalendarOnMount.current = true;
+      // Small delay to ensure the screen is fully mounted
+      setTimeout(() => {
+        openBookingDateModal();
+      }, 300);
+    }
+  }, [selectedDates.startDate, selectedDates.endDate, openBookingDateModal]);
 
   // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters)
   const filteredPropertiesForModal = useMemo(() => {

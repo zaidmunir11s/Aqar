@@ -43,11 +43,14 @@ import {
   CityModal,
   SearchFilterModal,
   ScreenHeader,
+  FilterChips,
+  ProjectListCard,
+  ProjectSearchModal,
 } from "../../components";
 import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import { COLORS, CITY_REGIONS } from "../../constants";
 import { useCalendar, useBookingModal } from "../../hooks";
-import type { Property } from "../../types/property";
+import type { Property, ProjectProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -143,6 +146,14 @@ export default function PropertyListScreen(): React.JSX.Element {
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
     params?.searchFilters || preservedSearchFilters
   );
+  
+  // For projects: activeFilter for FilterChips (All For Sale, Villa, Land, Apartment)
+  const [activeProjectFilter, setActiveProjectFilter] = useState<string>("all");
+  
+  // For projects: search modal and filters
+  const [projectSearchModalVisible, setProjectSearchModalVisible] = useState<boolean>(false);
+  const [projectSelectedCity, setProjectSelectedCity] = useState<string | null>(null);
+  const [projectSelectedPropertyType, setProjectSelectedPropertyType] = useState<string | null>(null);
 
   useEffect(() => {
     if (params?.selectedCity) {
@@ -185,6 +196,9 @@ export default function PropertyListScreen(): React.JSX.Element {
     closeModal: closeBookingDateModal,
   } = useBookingModal();
 
+  // Track if we've shown the calendar modal on first visit
+  const hasShownCalendarOnMount = useRef<boolean>(false);
+
   useEffect(() => {
     if (selectedDatesFromParams) {
       preservedDates = selectedDatesFromParams;
@@ -205,6 +219,22 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, [calendarSelectedDates]);
 
   const effectiveSelectedDates = calendarSelectedDates;
+  
+  // Show calendar modal automatically on first visit if no dates are selected
+  useEffect(() => {
+    if (
+      listingType === "daily" &&
+      !hasShownCalendarOnMount.current &&
+      !effectiveSelectedDates.startDate &&
+      !effectiveSelectedDates.endDate
+    ) {
+      hasShownCalendarOnMount.current = true;
+      // Small delay to ensure the screen is fully mounted
+      setTimeout(() => {
+        openBookingDateModal();
+      }, 300);
+    }
+  }, [listingType, effectiveSelectedDates.startDate, effectiveSelectedDates.endDate, openBookingDateModal]);
 
   const reservationText = useMemo(() => {
     if (
@@ -253,6 +283,14 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   const handlePropertyPress = useCallback(
     (item: Property) => {
+      // Check if it's a project and navigate to ProjectDetails instead
+      if (listingType === "projects" && "isProject" in item && item.isProject) {
+        navigation.navigate("ProjectDetails", {
+          propertyId: item.id,
+        });
+        return;
+      }
+
       const navParams: any = {
         propertyId: item.id,
         visiblePropertyIds: properties.map((p) => p.id),
@@ -304,6 +342,20 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   const handleSearchPress = useCallback(() => {
     console.log("Search pressed");
+  }, []);
+
+  const handleProjectFilterChange = useCallback((filterId: string) => {
+    setActiveProjectFilter(filterId);
+  }, []);
+
+  const handleProjectSearchPress = useCallback(() => {
+    setProjectSearchModalVisible(true);
+  }, []);
+
+  const handleProjectSearch = useCallback((city: string | null, propertyType: string | null) => {
+    setProjectSelectedCity(city);
+    setProjectSelectedPropertyType(propertyType);
+    setProjectSearchModalVisible(false);
   }, []);
 
   const handleChooseReservation = useCallback(() => {
@@ -412,6 +464,35 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   // Filter properties based on selected dates (for daily listings), city, and searchFilters
   const filteredProperties = useMemo(() => {
+    if (listingType === "projects") {
+      // Filter projects based on activeProjectFilter, city, and property type
+      let filtered = [...properties] as ProjectProperty[];
+      
+      // Filter by city if selected
+      if (projectSelectedCity) {
+        filtered = filtered.filter((p) => {
+          const city = (p as any).city;
+          return city && city.toLowerCase() === projectSelectedCity.toLowerCase();
+        });
+      }
+      
+      // Filter by property type if selected
+      if (projectSelectedPropertyType) {
+        filtered = filtered.filter((p) => p.type === projectSelectedPropertyType);
+      }
+      
+      // Filter by activeProjectFilter (All For Sale, Villa, Land, Apartment)
+      if (activeProjectFilter !== "all") {
+        const filterOptions = SALE_FILTER_OPTIONS; // Projects are typically for sale
+        const f = filterOptions.find((x) => x.id === activeProjectFilter);
+        if (f?.type) {
+          filtered = filtered.filter((p) => p.type === f.type);
+        }
+      }
+      
+      return filtered;
+    }
+    
     if (listingType !== "daily") return properties;
 
     let filtered = [...filteredPropertiesForModal];
@@ -422,7 +503,7 @@ export default function PropertyListScreen(): React.JSX.Element {
     }
 
     return filtered;
-  }, [filteredPropertiesForModal, searchFilters, listingType, properties]);
+  }, [filteredPropertiesForModal, searchFilters, listingType, properties, activeProjectFilter, projectSelectedCity, projectSelectedPropertyType]);
 
   // Sort properties based on selected filter
   const sortedProperties = useMemo(() => {
@@ -517,6 +598,21 @@ export default function PropertyListScreen(): React.JSX.Element {
             onPress={handlePress}
             priceLine={priceLine || "Price not available"}
             calculatedPrice={calculatedPrice}
+          />
+        );
+      }
+
+      // Use ProjectListCard for projects
+      if (listingType === "projects" && "isProject" in item && item.isProject) {
+        const filterOptions = 
+          (item as ProjectProperty).listingType === "sale" 
+            ? SALE_FILTER_OPTIONS 
+            : RENT_FILTER_OPTIONS;
+        return (
+          <ProjectListCard
+            project={item as ProjectProperty}
+            onPress={handlePress}
+            filterOptions={filterOptions}
           />
         );
       }
@@ -620,6 +716,14 @@ export default function PropertyListScreen(): React.JSX.Element {
   );
 
   const isDailyListing = listingType === "daily";
+  const isProjectsListing = listingType === "projects";
+  
+  // Get filter options for projects (based on first project's listingType, or default to sale)
+  const projectFilterOptions = useMemo(() => {
+    if (!isProjectsListing || properties.length === 0) return SALE_FILTER_OPTIONS;
+    const firstProject = properties[0] as ProjectProperty;
+    return firstProject.listingType === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS;
+  }, [isProjectsListing, properties]);
 
   const listHeaderComponent = useMemo(() => {
     if (!isDailyListing) return null;
@@ -632,9 +736,19 @@ export default function PropertyListScreen(): React.JSX.Element {
     );
   }, [isDailyListing, sortedProperties.length]);
 
+  const listEmptyComponent = useMemo(() => {
+    if (!isProjectsListing) return null;
+    if (sortedProperties.length > 0) return null;
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>Project not found</Text>
+      </View>
+    );
+  }, [isProjectsListing, sortedProperties.length]);
+
   return (
     <View style={[styles.container]}>
-      {!isDailyListing && (
+      {!isDailyListing && !isProjectsListing && (
         <ScreenHeader
           title="Listings"
           onBackPress={handleBackPress}
@@ -656,7 +770,20 @@ export default function PropertyListScreen(): React.JSX.Element {
         </View>
       )}
 
-      {!isDailyListing && (
+      {/* FilterChips for Projects */}
+      {isProjectsListing && (
+        <View style={styles.projectsFilterContainer}>
+          <FilterChips
+            filterOptions={projectFilterOptions}
+            activeFilter={activeProjectFilter}
+            onFilterChange={handleProjectFilterChange}
+            onSearchPress={handleProjectSearchPress}
+            variant="list"
+          />
+        </View>
+      )}
+
+      {!isDailyListing && !isProjectsListing && (
         <View style={styles.filterContainer}>
           <View style={styles.filterTabsWrapper}>
             <TouchableOpacity
@@ -729,6 +856,7 @@ export default function PropertyListScreen(): React.JSX.Element {
           isDailyListing && styles.dailyListContent,
         ]}
         ListHeaderComponent={listHeaderComponent}
+        ListEmptyComponent={listEmptyComponent}
         showsVerticalScrollIndicator={false}
         onScrollBeginDrag={handleScrollBegin}
         onScrollEndDrag={handleScrollEnd}
@@ -794,6 +922,17 @@ export default function PropertyListScreen(): React.JSX.Element {
         onSearch={handleSearchFilters}
         properties={filteredPropertiesForModal}
       />
+
+      {/* Project Search Modal - Only for projects listings */}
+      {isProjectsListing && (
+        <ProjectSearchModal
+          visible={projectSearchModalVisible}
+          onClose={() => setProjectSearchModalVisible(false)}
+          onSearch={handleProjectSearch}
+          selectedCity={projectSelectedCity || undefined}
+          selectedPropertyType={projectSelectedPropertyType}
+        />
+      )}
     </View>
   );
 }
@@ -951,6 +1090,12 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     marginTop: hp(0.3),
   },
+  projectsFilterContainer: {
+    paddingTop: hp(1),
+    paddingBottom: hp(1.5),
+    paddingHorizontal: wp(4),
+    backgroundColor: COLORS.background,
+  },
   filterContainer: {
     paddingVertical: hp(1),
     paddingHorizontal: wp(4),
@@ -1053,5 +1198,16 @@ const styles = StyleSheet.create({
     fontSize: wp(3.2),
     color: "#333",
     marginLeft: wp(2),
+  },
+  emptyContainer: {
+    // paddingTop: hp(1),
+    paddingBottom: hp(3),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: wp(4),
+    color: "#000000",
+    fontWeight: "400",
   },
 });

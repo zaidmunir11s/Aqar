@@ -297,8 +297,8 @@ export const CITY_REGIONS: Record<string, { latitude: number; longitude: number;
     longitudeDelta: 0.1,
   },
   "AlShinana": {
-    latitude: 24.7500,
-    longitude: 46.6333,
+    latitude: 25.8122,
+    longitude: 43.4444,
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   },

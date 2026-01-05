@@ -22,7 +22,7 @@ const SocialMediaIcon = memo<SocialMediaIconProps>(
         return (
           <Ionicons
             name={icon as any}
-            size={wp(8)}
+            size={wp(6)}
             color={iconColor || "#fff"}
           />
         );
@@ -30,7 +30,7 @@ const SocialMediaIcon = memo<SocialMediaIconProps>(
       return (
         <FontAwesome5
           name={icon as any}
-          size={wp(8)}
+          size={wp(6)}
           color={iconColor || "#fff"}
         />
       );
@@ -51,8 +51,8 @@ SocialMediaIcon.displayName = "SocialMediaIcon";
 
 const styles = StyleSheet.create({
   socialIcon: {
-    width: wp(18),
-    height: wp(18),
+    width: wp(13),
+    height: wp(13),
     borderRadius: wp(3),
     backgroundColor: "#fff",
     alignItems: "center",

@@ -5,3 +5,4 @@ export { default as ProjectDetails } from "./ProjectDetails";
 export { default as ProjectFeatures } from "./ProjectFeatures";
 export { default as ProjectLocation } from "./ProjectLocation";
 export { default as ProjectMarker } from "./ProjectMarker";
+export { default as ProjectListCard } from "./ProjectListCard";

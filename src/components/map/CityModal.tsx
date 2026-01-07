@@ -14,6 +14,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../../constants";
 import { useLocation } from "../../hooks";
@@ -47,6 +48,7 @@ export default function CityModal({
   const [showLocationSearch, setShowLocationSearch] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
   const { getCurrentLocation } = useLocation();
+  const insets = useSafeAreaInsets();
 
   // Load last locations from storage
   useEffect(() => {
@@ -196,7 +198,7 @@ export default function CityModal({
             )}
 
             {/* Bottom Buttons */}
-            <View style={styles.buttonContainer}>
+            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
               <TouchableOpacity
                 style={styles.locateMeButton}
                 onPress={handleLocateMe}
@@ -247,7 +249,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: wp(5),
     width: "100%",
     height: hp(75),
-    paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
     flexDirection: "column",
   },
   header: {
@@ -320,8 +321,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     paddingHorizontal: wp(4),
-    // paddingTop: hp(2),
-    paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
+    paddingTop: hp(1),
     gap: wp(3),
   },
   locateMeButton: {

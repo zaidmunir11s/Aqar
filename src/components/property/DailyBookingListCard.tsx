@@ -46,7 +46,8 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
     const handleImageScroll = useCallback(
       (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const scrollPosition = event.nativeEvent.contentOffset.x;
-        const index = Math.round(scrollPosition / SCREEN_WIDTH);
+        const imageWidth = SCREEN_WIDTH - wp(8); // Account for container margins
+        const index = Math.round(scrollPosition / imageWidth);
         setCurrentImageIndex(index);
       },
       []
@@ -70,13 +71,27 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
 
     const renderImage = useCallback(
       ({ item }: { item: string }) => (
-        <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
+        <View style={styles.imageWrapper}>
+          <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
+        </View>
       ),
       []
     );
 
     const keyExtractor = useCallback(
       (item: string, index: number) => index.toString(),
+      []
+    );
+
+    const getItemLayout = useCallback(
+      (data: any, index: number) => {
+        const imageWidth = SCREEN_WIDTH - wp(8); // Account for container margins
+        return {
+          length: imageWidth,
+          offset: imageWidth * index,
+          index,
+        };
+      },
       []
     );
 
@@ -113,7 +128,12 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
             scrollEventThrottle={16}
             renderItem={renderImage}
             keyExtractor={keyExtractor}
+            getItemLayout={getItemLayout}
             onScrollToIndexFailed={() => {}}
+            removeClippedSubviews={false}
+            snapToInterval={SCREEN_WIDTH - wp(8)}
+            decelerationRate="fast"
+            snapToAlignment="start"
           />
 
           {images.length > 1 && (
@@ -235,8 +255,12 @@ const styles = StyleSheet.create({
       android: { elevation: 3 },
     }),
   },
+  imageWrapper: {
+    width: SCREEN_WIDTH - wp(8), // Account for container margins
+    height: hp(25),
+  },
   image: {
-    width: SCREEN_WIDTH - wp(9), // Account for container margins
+    width: SCREEN_WIDTH - wp(8), // Account for container margins
     height: hp(25),
   },
 

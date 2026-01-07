@@ -54,13 +54,19 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
   }) => {
     const renderImage = useCallback(
       ({ item }: { item: string }) => (
-        <TouchableOpacity activeOpacity={0.9} onPress={onImageViewerOpen}>
-          <Image
-            source={{ uri: item }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
+        <View style={styles.imageWrapper}>
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={onImageViewerOpen}
+            style={styles.imageTouchable}
+          >
+            <Image
+              source={{ uri: item }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        </View>
       ),
       [onImageViewerOpen]
     );
@@ -70,10 +76,22 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
       []
     );
 
+    const getItemLayout = useCallback(
+      (data: any, index: number) => ({
+        length: SCREEN_WIDTH,
+        offset: SCREEN_WIDTH * index,
+        index,
+      }),
+      []
+    );
+
+    // Ensure we have valid images array
+    const validImages = images && images.length > 0 ? images : [];
+
     return (
       <View style={styles.imageSection}>
         <FlatList
-          data={images}
+          data={validImages}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -81,6 +99,11 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
           scrollEventThrottle={16}
           renderItem={renderImage}
           keyExtractor={keyExtractor}
+          getItemLayout={getItemLayout}
+          removeClippedSubviews={false}
+          snapToInterval={SCREEN_WIDTH}
+          decelerationRate="fast"
+          snapToAlignment="start"
         />
 
         {/* Header Icons Overlay - hide when sticky header is shown */}
@@ -117,15 +140,17 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
         )}
 
         {/* See All Photos Button */}
-        <TouchableOpacity
-          style={styles.seeAllPhotosBtn}
-          onPress={onImageViewerOpen}
-        >
-          <Ionicons name="images" size={wp(4.5)} color="#fff" />
-          <Text style={styles.seeAllPhotosText}>
-            {images.length} See all photos...
-          </Text>
-        </TouchableOpacity>
+        {validImages.length > 0 && (
+          <TouchableOpacity
+            style={styles.seeAllPhotosBtn}
+            onPress={onImageViewerOpen}
+          >
+            <Ionicons name="images" size={wp(4.5)} color="#fff" />
+            <Text style={styles.seeAllPhotosText}>
+              {validImages.length} See all photos...
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -137,6 +162,15 @@ const styles = StyleSheet.create({
   imageSection: {
     height: hp(30),
     backgroundColor: "#000",
+    width: "100%",
+  },
+  imageWrapper: {
+    width: SCREEN_WIDTH,
+    height: hp(30),
+  },
+  imageTouchable: {
+    width: "100%",
+    height: "100%",
   },
   image: {
     width: SCREEN_WIDTH,

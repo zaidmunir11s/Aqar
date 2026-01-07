@@ -17,7 +17,7 @@ export const COLORS = {
   markerProjectBlack: "#1f2937",
 
   // UI colors
-  background: "#ebf1f1",
+  background: "#e8ecf0",
   backgroundLight: "#f9fafb",
   white: "#fff",
   black: "#000",

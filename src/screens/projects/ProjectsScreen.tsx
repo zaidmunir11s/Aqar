@@ -253,7 +253,7 @@ export default function ProjectsScreen(): React.JSX.Element {
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}
       >
-        {filteredProjects.map(renderMarker)}
+        {visibleProjects.map(renderMarker)}
       </MapView>
 
       {/* Top tabs */}

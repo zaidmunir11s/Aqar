@@ -74,11 +74,11 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   };
 
   const handleChangePasswordPress = () => {
-    console.log("Change password pressed");
+    navigation.navigate("ChangePassword");
   };
 
   const handleChangePhoneNumberPress = () => {
-    console.log("Change phone number pressed");
+    navigation.navigate("ChangePhoneNumber");
   };
 
   const handleLogoutPress = () => {

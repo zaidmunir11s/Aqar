@@ -14,6 +14,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../../constants";
 import { TabBarSection, ToggleRow } from "../orderForm";
 import { ToggleSwitch } from "../common";
@@ -112,6 +113,7 @@ export default function SearchFilterModal({
 }: SearchFilterModalProps): React.JSX.Element {
   const [filters, setFilters] = useState<SearchFilterState>(defaultFilterState);
   const [focusedPriceInput, setFocusedPriceInput] = useState<"from" | "to" | null>(null);
+  const insets = useSafeAreaInsets();
 
   // Reset filters when modal closes
   useEffect(() => {
@@ -772,7 +774,7 @@ export default function SearchFilterModal({
           </ScrollView>
 
           {/* Footer */}
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
             {hasFilters ? (
               <>
                 <TouchableOpacity
@@ -1130,7 +1132,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: wp(4),
     paddingTop: hp(1),
-    paddingBottom: Platform.OS === "ios" ? hp(2) : hp(2),
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     justifyContent: "space-between",

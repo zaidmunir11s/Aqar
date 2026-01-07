@@ -86,7 +86,7 @@ DailyBookingCard.displayName = "DailyBookingCard";
 const styles = StyleSheet.create({
   fixedBottomCard: {
     position: "absolute",
-    bottom: hp(11),
+    bottom: hp(9),
     left: 0,
     right: 0,
     backgroundColor: "#fff",
@@ -109,12 +109,10 @@ const styles = StyleSheet.create({
   },
   fixedCardText: {
     fontSize: wp(4),
-    fontWeight: "600",
-    color: "#111827",
     flex: 1,
   },
   fixedChooseButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: COLORS.modalButton,
     paddingHorizontal: wp(6),
     paddingVertical: hp(1.5),
     borderRadius: wp(3),

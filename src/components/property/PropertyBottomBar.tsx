@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -15,6 +15,7 @@ export interface PropertyBottomBarProps {
   onCall: () => void;
   onWhatsApp: () => void;
   onChat: () => void;
+  isDailyListing?: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
     onCall,
     onWhatsApp,
     onChat,
+    isDailyListing = false,
   }) => {
     const insets = useSafeAreaInsets();
 
@@ -54,25 +56,32 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
           />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.bottomBarBtn, styles.callBtn]}
-          onPress={onCall}
-        >
-          <Ionicons name="call" size={wp(5.5)} color="#0e856a" />
-        </TouchableOpacity>
+        {!isDailyListing && (
+          <>
+            <TouchableOpacity
+              style={[styles.bottomBarBtn, styles.callBtn]}
+              onPress={onCall}
+            >
+              <Ionicons name="call" size={wp(5.5)} color="#0e856a" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.bottomBarBtn, styles.waBtn]}
+              onPress={onWhatsApp}
+            >
+              <FontAwesome name="whatsapp" size={wp(5.5)} color="#0e856a" />
+            </TouchableOpacity>
+          </>
+        )}
 
         <TouchableOpacity
-          style={[styles.bottomBarBtn, styles.waBtn]}
-          onPress={onWhatsApp}
-        >
-          <FontAwesome name="whatsapp" size={wp(5.5)} color="#0e856a" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.bottomBarBtn, styles.chatBtnBottom]}
+          style={[styles.bottomBarBtn, styles.chatBtnBottom, isDailyListing && styles.chatBtnWithText]}
           onPress={onChat}
         >
           <MaterialIcons name="chat" size={wp(5.5)} color="#3b82f6" />
+          {isDailyListing && (
+            <Text style={styles.chatButtonText}>Contact Advertiser</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -137,6 +146,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderColor: "#3b82f6",
     borderWidth: 2,
+  },
+  chatBtnWithText: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: wp(3),
+    flex: 1,
+    marginHorizontal: wp(2),
+  },
+  chatButtonText: {
+    fontSize: wp(4),
+    color: "#3b82f6",
+    fontWeight: "600",
+    marginLeft: wp(2),
   },
 });
 

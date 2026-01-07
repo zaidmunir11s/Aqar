@@ -11,6 +11,7 @@ export { default as PropertyLocation } from "./PropertyLocation";
 export { default as PropertyAdvertiser } from "./PropertyAdvertiser";
 export { default as PropertyTabs } from "./PropertyTabs";
 export { default as PropertyBottomBar } from "./PropertyBottomBar";
+export { default as UnitRules } from "./UnitRules";
 export { default as AverageCard } from "./AverageCard";
 export { default as FinancingOptionsCard } from "./FinancingOptionsCard";
 export { default as AverageSaleCard } from "./AverageSaleCard";

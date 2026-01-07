@@ -101,7 +101,9 @@ export default function MatchedListingsScreen(): React.JSX.Element {
   }, [matchedProperties, selectedFilter, getNumericPrice]);
 
   const handlePropertyPress = useCallback((property: Property) => {
-    navigation.navigate("PropertyDetails", {
+    // Navigate to DailyDetails for daily listings, PropertyDetails for rent/sale
+    const screenName = property.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
+    navigation.navigate(screenName, {
       propertyId: property.id,
       visiblePropertyIds: matchedProperties.map((p) => p.id),
       listingType: property.listingType,

@@ -22,7 +22,7 @@ export interface ScreenHeaderProps {
   rightComponent?: ReactNode;
   fontWeightBold?: boolean;
   fontSize?: number;
-  
+  backButtonColor?: string;
 }
 
 const ScreenHeader = memo<ScreenHeaderProps>(
@@ -36,6 +36,7 @@ const ScreenHeader = memo<ScreenHeaderProps>(
     rightComponent,
     fontWeightBold = false,
     fontSize,
+    backButtonColor = "#0e856a",
   }) => {
     const renderRightSide = () => {
       if (!showRightSide) {
@@ -73,7 +74,7 @@ const ScreenHeader = memo<ScreenHeaderProps>(
               onPress={onBackPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={wp(7)} color={"#0e856a"} />
+              <Ionicons name="arrow-back" size={wp(7)} color={backButtonColor} />
             </TouchableOpacity>
           )}
           <Text
@@ -128,10 +129,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: wp(4),
+    fontSize: wp(5),
+    fontWeight: "500",
   },
   titleBold: {
-    fontWeight: "bold",
+    // fontWeight: "bold",
   },
   rightContainer: {
     flexDirection: "row",

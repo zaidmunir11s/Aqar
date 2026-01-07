@@ -69,6 +69,8 @@ export interface BaseProperty {
   images?: string[];
   description?: string;
   features?: string[]; // Property features (e.g., "Furnished", "Pool", "Car Entrance")
+  advertiserName?: string; // Property owner/advertiser name
+  advertiserId?: string | number; // Property owner/advertiser ID
 }
 
 export interface RentSaleProperty extends BaseProperty {

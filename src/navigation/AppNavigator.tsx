@@ -7,7 +7,7 @@ import {
 } from "react-native-responsive-screen";
 import { getFocusedRouteNameFromRoute, Route } from "@react-navigation/native";
 
-import { AuthStack, ListingsStack, ProjectsStack, DailyStack } from "./stacks";
+import { AuthStack, ListingsStack, ProjectsStack, DailyStack, ChatStack } from "./stacks";
 import ServicesScreen from "../screens/services/ServicesScreen";
 import { COLORS } from "../constants";
 
@@ -23,6 +23,8 @@ const getTabBarStyle = (route: Route<string, object | undefined>) => {
     "Login",
     "CreateAccount",
     "PropertyDetails",
+    "DailyDetails",
+    "ContactHost",
     // "PropertyList",
     "ProjectDetails",
     "AddListing",
@@ -40,6 +42,9 @@ const getTabBarStyle = (route: Route<string, object | undefined>) => {
     "MatchedListings",
     "ForgotPassword",
     "UpdateProfile",
+    "ChangePassword",
+    "ChangePhoneNumber",
+    "Conversation",
   ];
 
   if (hideTabBarRoutes.includes(routeName)) {
@@ -195,20 +200,13 @@ export default function AppNavigator(): React.JSX.Element {
       {/* ---------------- Chat ---------------- */}
       <Tab.Screen
         name="Chat"
-        component={AuthStack}
+        component={ChatStack}
         options={({ route }) => ({
           tabBarLabel: "Chat",
           tabBarIcon: ({ color }) => (
             <Ionicons name="chatbubbles" size={wp(6)} color={color} />
           ),
           tabBarStyle: getTabBarStyle(route),
-        })}
-        listeners={({ navigation }) => ({
-          tabPress: () => {
-            requestAnimationFrame(() => {
-              navigation.navigate("Chat", { screen: "Login" });
-            });
-          },
         })}
       />
 

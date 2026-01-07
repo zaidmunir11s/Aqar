@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Animated, Platform, Text} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -197,7 +197,12 @@ export default function MapLandingScreen(): React.JSX.Element {
       listingType: activeTab,
     };
 
-    navigation.navigate("PropertyDetails", params);
+    // Navigate to DailyDetails for daily listings, PropertyDetails for rent/sale
+    if (selectedProperty.listingType === "daily") {
+      navigation.navigate("DailyDetails", params);
+    } else {
+      navigation.navigate("PropertyDetails", params);
+    }
   }, [
     navigation,
     selectedProperty,
@@ -293,7 +298,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}
       >
-        {filteredProperties.map(renderMarker)}
+        {visibleProperties.map(renderMarker)}
       </MapView>
 
       <MapTabs activeTab={activeTab} onTabChange={handleTabChange} />

@@ -23,29 +23,27 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   PROPERTY_DATA,
-  RENT_FILTER_OPTIONS,
-  SALE_FILTER_OPTIONS,
+  DAILY_FILTER_OPTIONS,
 } from "../../data/propertyData";
 import {
-  openPhoneDialer,
-  openWhatsApp,
+  calculateDays,
   getDefaultImageUrl,
 } from "../../utils";
 import {
+  CalendarModal,
   InfoItem,
   FeatureItem,
+  DailyBookingCard,
   PropertyImageGallery,
   PropertyHeader,
   PropertyLocation,
-  PropertyAdvertiser,
   PropertyTabs,
   PropertyBottomBar,
-  AverageCard,
-  FinancingOptionsCard,
-  AverageSaleCard,
   IconButton,
+  UnitRules,
 } from "../../components";
-import type { Property } from "../../types/property";
+import { useCalendar } from "../../hooks";
+import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
@@ -61,7 +59,7 @@ interface RouteParams {
   listingType?: string;
 }
 
-export default function PropertyDetailsScreen(): React.JSX.Element {
+export default function DailyDetailScreen(): React.JSX.Element {
   const route = useRoute();
   const params = route.params as RouteParams;
   const {
@@ -79,12 +77,17 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     useState<boolean>(false);
   const [liked, setLiked] = useState<boolean>(false);
   const [favorited, setFavorited] = useState<boolean>(false);
+  const [calendarVisible, setCalendarVisible] = useState<boolean>(false);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // Use calendar hook for daily bookings
+  const { selectedDates, markedDates, handleDateSelect, resetDates } =
+    useCalendar(passedDates);
+
   const property = useMemo(
-    () => PROPERTY_DATA.find((p) => p.id === propertyId),
+    () => PROPERTY_DATA.find((p) => p.id === propertyId) as DailyProperty | undefined,
     [propertyId]
   );
 
@@ -153,47 +156,15 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     []
   );
 
-  const handleCall = useCallback(() => {
-    openPhoneDialer("+966123456789");
-  }, []);
-
-  const handleWhatsApp = useCallback(() => {
-    openWhatsApp("966123456789");
-  }, []);
-
   const handleChat = useCallback(() => {
     if (!property) return;
     
-    // Navigate to conversation screen with default message
-    const defaultMessage = `In regard of ad number #${property.id}`;
-    // Get advertiser name from property data, fallback to default
-    const advertiserName = property.advertiserName || "Property Owner";
-    const advertiserId = property.advertiserId || `advertiser-${property.id}`;
-    
-    // Navigate to Chat -> Conversation
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          propertyId: property.id,
-          advertiserName,
-          advertiserId,
-          defaultMessage,
-        },
-      });
-    } else {
-      navigation.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          propertyId: property.id,
-          advertiserName,
-          advertiserId,
-          defaultMessage,
-        },
-      });
-    }
-  }, [navigation, property]);
+    // Navigate to ContactHostScreen
+    navigation.navigate("ContactHost", {
+      propertyId: property.id,
+      selectedDates: selectedDates,
+    });
+  }, [navigation, property, selectedDates]);
 
   const handleShare = useCallback(() => {
     console.log("Share property");
@@ -231,20 +202,21 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     setActiveTab(tab);
   }, []);
 
+  const openCalendar = useCallback(() => {
+    setCalendarVisible(true);
+  }, []);
 
+  const closeCalendar = useCallback(() => {
+    setCalendarVisible(false);
+  }, []);
+
+  const handleReserve = useCallback(() => {
+    console.log("Handle reservation");
+  }, []);
 
   const handleCopyId = useCallback(() => {
     console.log("Copy ID:", property?.id);
   }, [property]);
-
-  const handleFinancingOptions = useCallback(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("ProfileTab", { screen: "Login" });
-    } else {
-      navigation.navigate("ProfileTab", { screen: "Login" });
-    }
-  }, [navigation]);
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -301,10 +273,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   // Get type label from filter options
   const getPropertyTypeLabel = useCallback(() => {
-    let filterOptions;
-    if (property.listingType === "rent") filterOptions = RENT_FILTER_OPTIONS;
-    else filterOptions = SALE_FILTER_OPTIONS;
-
+    const filterOptions = DAILY_FILTER_OPTIONS;
     const option = filterOptions.find((opt) => opt.type === property.type);
     return option
       ? option.label
@@ -312,25 +281,20 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   }, [property]);
 
   const typeLabel = getPropertyTypeLabel();
-  const listingText =
-    property.listingType === "rent"
-      ? "for rent"
-      : property.listingType === "sale"
-        ? "for sale"
-        : "";
 
+  // Calculate display price for daily properties
   const displayPrice = useMemo(() => {
-    if (property.listingType === "rent") {
-      const rentProperty = property as any;
-      return `${rentProperty.price.replace(" K", ",000")} SAR / Yearly`;
-    } else if (property.listingType === "sale") {
-      const saleProperty = property as any;
-      return `${saleProperty.price
-        .replace(" M", ",000,000")
-        .replace(" K", ",000")} SAR`;
+    const dailyProperty = property as DailyProperty;
+    if (selectedDates.startDate && selectedDates.endDate) {
+      const days = calculateDays(
+        selectedDates.startDate,
+        selectedDates.endDate
+      );
+      return `${(dailyProperty.dailyPrice || 0) * days} SAR`;
+    } else {
+      return dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
     }
-    return "";
-  }, [property]);
+  }, [property, selectedDates]);
 
   return (
     <>
@@ -390,28 +354,18 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             favorited={favorited}
             showStickyHeader={showStickyHeader}
           />
+          
           {/* Property Header */}
           <View style={styles.headerContainer}>
             <PropertyHeader
               property={property}
               typeLabel={typeLabel}
-              listingText={listingText}
+              listingText=""
               displayPrice={displayPrice}
+              selectedDates={selectedDates}
+              onCalendarPress={openCalendar}
             />
           </View>
-
-          {/* Average Card - Only for Rent */}
-          {property.listingType === "rent" && (
-            <AverageCard property={property} />
-          )}
-
-          {/* Financing Options Card and Average Sale Card - Only for Sale */}
-          {property.listingType === "sale" && (
-            <>
-              <FinancingOptionsCard onPress={handleFinancingOptions} />
-              <AverageSaleCard property={property} />
-            </>
-          )}
 
           {/* Property Information */}
           <View style={styles.sectionContainer}>
@@ -521,17 +475,12 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           </View>
           <View style={styles.sectionSeparator} />
 
+          {/* Unit Rules - Only for Daily Listings */}
+          <UnitRules property={property as DailyProperty} />
+          <View style={styles.sectionSeparator} />
 
           {/* Location Map */}
           <PropertyLocation property={property} />
-          <View style={styles.sectionSeparator} />
-
-          {/* Advertiser Information */}
-          <PropertyAdvertiser
-            onCall={handleCall}
-            onWhatsApp={handleWhatsApp}
-            onChat={handleChat}
-          />
           <View style={styles.sectionSeparator} />
 
           {/* Tabs Section */}
@@ -552,9 +501,17 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           </View>
           <View style={styles.sectionSeparator} />
 
-          <View style={{ height: hp(12) }} />
+          {/* Extra spacing for daily booking card */}
+          <View style={{ height: hp(22) }} />
         </ScrollView>
 
+        {/* Fixed Bottom Card for Daily Bookings */}
+        <DailyBookingCard
+          property={property as DailyProperty}
+          selectedDates={selectedDates}
+          onChooseDate={openCalendar}
+          onReserve={handleReserve}
+        />
 
         {/* Bottom Contact Bar with Navigation Arrows */}
         <PropertyBottomBar
@@ -562,12 +519,23 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           canGoNext={canGoNext}
           onPrevPress={handlePrevProperty}
           onNextPress={handleNextProperty}
-          onCall={handleCall}
-          onWhatsApp={handleWhatsApp}
+          onCall={() => {}}
+          onWhatsApp={() => {}}
           onChat={handleChat}
+          isDailyListing={true}
         />
       </View>
 
+      {/* Calendar Modal for Daily Bookings */}
+      <CalendarModal
+        visible={calendarVisible}
+        onClose={closeCalendar}
+        markedDates={markedDates}
+        onDayPress={handleDateSelect}
+        selectedDates={selectedDates}
+        onResetDates={resetDates}
+        property={property as DailyProperty}
+      />
 
       {/* Full Screen Image Viewer */}
       <Modal
@@ -628,7 +596,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: wp(4),
-    // paddingTop: Platform.OS === "ios" ? hp(6) : hp(5),
     paddingBottom: hp(2),
     backgroundColor: "#fff",
     zIndex: 1000,
@@ -759,3 +726,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+

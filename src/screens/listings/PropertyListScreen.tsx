@@ -301,7 +301,12 @@ export default function PropertyListScreen(): React.JSX.Element {
         navParams.selectedDates = effectiveSelectedDates;
       }
 
-      navigation.navigate("PropertyDetails", navParams);
+      // Navigate to DailyDetails for daily listings, PropertyDetails for rent/sale
+      if (listingType === "daily") {
+        navigation.navigate("DailyDetails", navParams);
+      } else {
+        navigation.navigate("PropertyDetails", navParams);
+      }
     },
     [properties, listingType, effectiveSelectedDates, navigation]
   );

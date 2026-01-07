@@ -41,6 +41,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 5,
     address: "Central Riyadh, Block 1",
     city: "Riyadh",
+    advertiserName: "Abdullah Fawaz",
+    advertiserId: "advertiser-1",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -64,6 +66,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 8,
     address: "Villa in Al Wusta",
     city: "Riyadh",
+    advertiserName: "Salam Real Estate",
+    advertiserId: "advertiser-2",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -94,6 +98,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 3,
     address: "Apartment near Al Wusta",
     city: "Riyadh",
+    advertiserName: "Abdullah Fawaz",
+    advertiserId: "advertiser-1",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -117,6 +123,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 2,
     address: "Small lounge, central Riyadh",
     city: "Riyadh",
+    advertiserName: "Mohammed Ali",
+    advertiserId: "advertiser-3",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -139,6 +147,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 6,
     address: "Family villa, central area",
     city: "Riyadh",
+    advertiserName: "Salam Real Estate",
+    advertiserId: "advertiser-2",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -161,6 +171,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 4,
     address: "Apartment north of center",
     city: "Riyadh",
+    advertiserName: "Abdullah Fawaz",
+    advertiserId: "advertiser-1",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -183,6 +195,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 7,
     address: "Favorite villa listing",
     city: "Riyadh",
+    advertiserName: "Ahmed Realty Group",
+    advertiserId: "advertiser-4",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
@@ -205,6 +219,8 @@ export const PROPERTY_DATA: Property[] = [
     estateAge: 1,
     address: "Highlighted room near services",
     city: "Riyadh",
+    advertiserName: "Mohammed Ali",
+    advertiserId: "advertiser-3",
     images: [
       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",

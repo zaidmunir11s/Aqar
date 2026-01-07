@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
     width: "100%",
-    maxHeight: hp(40),
+    minHeight: hp(45),
   },
   header: {
     flexDirection: "row",
@@ -289,7 +289,6 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     paddingHorizontal: wp(4),
-    // paddingTop: hp(2),
     justifyContent: "space-between",
     gap: wp(3),
   },

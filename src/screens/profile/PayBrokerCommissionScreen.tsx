@@ -14,12 +14,14 @@ type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function PayBrokerCommissionScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const [selectedIndex, setSelectedIndex] = React.useState<number>(0);
 
   const handleBackPress = () => {
     navigation.goBack();
   };
 
   const handleSegmentChange = (index: number) => {
+    setSelectedIndex(index);
     console.log("Segment changed to:", index);
   };
 
@@ -49,7 +51,8 @@ export default function PayBrokerCommissionScreen(): React.JSX.Element {
         <View style={styles.segmentedControlContainer}>
           <SegmentedControl
             options={["buy", "Rent"]}
-            onValueChange={handleSegmentChange}
+            selectedIndex={selectedIndex}
+            onSelect={handleSegmentChange}
           />
         </View>
       </ScrollView>

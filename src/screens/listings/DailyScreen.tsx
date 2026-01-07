@@ -281,7 +281,7 @@ export default function DailyScreen(): React.JSX.Element {
       );
     }
 
-    navigation.navigate("PropertyDetails", params);
+    navigation.navigate("DailyDetails", params);
   }, [
     navigation,
     selectedProperty,
@@ -430,7 +430,7 @@ export default function DailyScreen(): React.JSX.Element {
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}
       >
-        {filteredProperties.map(renderMarker)}
+        {visibleProperties.map(renderMarker)}
       </MapView>
 
       {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top) */}

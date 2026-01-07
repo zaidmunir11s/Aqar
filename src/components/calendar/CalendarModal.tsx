@@ -13,6 +13,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { getTodayISO, calculateDays } from "../../utils";
 import type { CalendarDates, MarkedDates } from "../../hooks/useCalendar";
@@ -41,6 +42,10 @@ const CalendarModal = memo<CalendarModalProps>(
   }) => {
     const [showWarning, setShowWarning] = useState<boolean>(false);
     const fadeAnim = useState(new Animated.Value(0))[0];
+    const insets = useSafeAreaInsets();
+    
+    // Calculate bottom padding: safe area + small buffer for tab bar
+    const bottomPadding = Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) + hp(2);
     useEffect(() => {
       if (
         property?.bookingType === "monthly" &&
@@ -90,7 +95,7 @@ const CalendarModal = memo<CalendarModalProps>(
             activeOpacity={1}
             onPress={onClose}
           />
-          <View style={styles.calendarContainer}>
+          <View style={[styles.calendarContainer, { paddingBottom: bottomPadding }]}>
             <View style={styles.calendarHeader}>
               <TouchableOpacity onPress={onClose} style={styles.backButton}>
                 <Ionicons name="arrow-back" size={wp(6)} color={COLORS.arrows} />
@@ -196,7 +201,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: wp(5),
     borderTopRightRadius: wp(5),
-    paddingBottom: hp(3),
     maxHeight: hp(70),
   },
   calendarHeader: {
@@ -233,7 +237,8 @@ const styles = StyleSheet.create({
   },
   calendarFooter: {
     padding: wp(1),
-    paddingTop: hp(1),
+    paddingTop: hp(1.5),
+    // paddingBottom: hp(1),
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     alignItems: "center",

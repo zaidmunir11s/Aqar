@@ -6,11 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
   Animated,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,7 +21,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
-import { ScreenHeader, TextInput } from "../../components";
+import { ScreenHeader, TextInput, CancelModal } from "../../components";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -32,6 +32,7 @@ export default function UpdateProfileScreen(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
   const [bio, setBio] = useState<string>("");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   // Check for pending image picker results (in case app restarted during cropping)
@@ -121,21 +122,17 @@ export default function UpdateProfileScreen(): React.JSX.Element {
   }, [name, email, bio]);
 
   const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            console.log("Delete account");
-            // TODO: Implement delete account functionality
-          },
-        },
-      ]
-    );
+    setShowDeleteModal(true);
+  }, []);
+
+  const handleDeleteCancel = useCallback(() => {
+    setShowDeleteModal(false);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(() => {
+    setShowDeleteModal(false);
+    console.log("Delete account");
+    // TODO: Implement delete account functionality
   }, []);
 
   return (
@@ -253,6 +250,17 @@ export default function UpdateProfileScreen(): React.JSX.Element {
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      <CancelModal
+        visible={showDeleteModal}
+        title="Delete Account"
+        description="Are you sure you want to delete your account?"
+        onBack={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        backText="NO"
+        confirmText="Yes"
+        confirmButtonColor={"#c13234"}
+      />
     </View>
   );
 }
@@ -317,7 +325,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   deleteButton: {
-    backgroundColor: COLORS.error,
+    backgroundColor: "#c13234",
     borderRadius: wp(2),
     height: hp(5),
     justifyContent: "center",

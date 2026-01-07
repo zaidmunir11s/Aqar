@@ -16,10 +16,12 @@ import { COLORS } from "../../constants";
 export interface CancelModalProps {
   visible: boolean;
   title?: string;
+  description?: string;
   onBack: () => void;
   onConfirm: () => void;
   backText?: string;
   confirmText?: string;
+  confirmButtonColor?: string;
 }
 
 /**
@@ -29,10 +31,12 @@ const CancelModal = memo<CancelModalProps>(
   ({
     visible,
     title = "Do you want to cancel adding ads?",
+    description,
     onBack,
     onConfirm,
     backText = "Back",
     confirmText = "Yes",
+    confirmButtonColor,
   }) => {
     return (
       <Modal
@@ -43,7 +47,9 @@ const CancelModal = memo<CancelModalProps>(
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalText}>{title}</Text>
+            {title && !description && <Text style={styles.modalText}>{title}</Text>}
+            {title && description && <Text style={styles.modalHeading}>{title}</Text>}
+            {description && <Text style={styles.modalText}>{description}</Text>}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalBackButton}
@@ -57,7 +63,10 @@ const CancelModal = memo<CancelModalProps>(
                 onPress={onConfirm}
                 activeOpacity={0.7}
               >
-                <Text style={styles.modalYesButtonText}>{confirmText}</Text>
+                <Text style={[
+                  styles.modalYesButtonText,
+                  confirmButtonColor && { color: confirmButtonColor }
+                ]}>{confirmText}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -93,12 +102,17 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  modalHeading: {
+    fontSize: wp(5),
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: hp(1.5),
+  },
   modalText: {
     fontSize: wp(4),
     fontWeight: "400",
-    color: "#353f49",
-    textAlign: "center",
-    marginVertical: hp(2),
+    color: COLORS.textSecondary,
+    marginBottom: hp(2),
   },
   modalButtons: {
     flexDirection: "row",

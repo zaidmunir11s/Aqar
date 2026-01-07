@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: wp(4),
-    fontWeight: "400",
-    color: COLORS.error,
+    fontWeight: "500",
+    color: "#c13234",
   },
   separator: {
     height: 1,

@@ -1,6 +1,8 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import DailyScreen from "../../screens/listings/DailyScreen";
+import DailyDetailScreen from "../../screens/listings/DailyDetailScreen";
+import ContactHostScreen from "../../screens/listings/ContactHostScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
 import PropertyListScreen from "../../screens/listings/PropertyListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
@@ -27,6 +29,8 @@ export default function DailyStack(): React.JSX.Element {
       initialRouteName="PropertyList"
     >
       <Stack.Screen name="DailyMap" component={DailyScreen} />
+      <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
+      <Stack.Screen name="ContactHost" component={ContactHostScreen} />
       <Stack.Screen name="PropertyDetails" component={PropertyDetailsScreen} />
       <Stack.Screen name="PropertyList" component={PropertyListScreen} />
       <Stack.Screen name="AddListing" component={AddListingScreen} />

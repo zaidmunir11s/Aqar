@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { getFocusedRouteNameFromRoute, Route } from "@react-navigation/native";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { AuthStack, ListingsStack, ProjectsStack, DailyStack, ChatStack } from "./stacks";
 import ServicesScreen from "../screens/services/ServicesScreen";
@@ -75,6 +76,8 @@ const defaultTabBarOptions = {
 };
 
 export default function AppNavigator(): React.JSX.Element {
+  const { isSignedIn, isLoaded } = useAuth();
+
   return (
     <Tab.Navigator
       initialRouteName="Listings"
@@ -92,10 +95,21 @@ export default function AppNavigator(): React.JSX.Element {
           tabBarStyle: getTabBarStyle(route),
         })}
         listeners={({ navigation }) => ({
-          tabPress: () => {
-            requestAnimationFrame(() => {
-              navigation.navigate("ProfileTab", { screen: "Login" });
-            });
+          tabPress: (e) => {
+            // Check if user is signed in
+            if (isLoaded && isSignedIn) {
+              // User is signed in, go to ProfileDetail
+              e.preventDefault();
+              requestAnimationFrame(() => {
+                navigation.navigate("ProfileTab", { screen: "ProfileDetail" });
+              });
+            } else {
+              // User is not signed in, go to Login
+              e.preventDefault();
+              requestAnimationFrame(() => {
+                navigation.navigate("ProfileTab", { screen: "Login" });
+              });
+            }
           },
         })}
       />

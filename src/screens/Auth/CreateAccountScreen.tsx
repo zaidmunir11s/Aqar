@@ -119,8 +119,10 @@ export default function CreateAccountScreen(): React.JSX.Element {
       phoneNumber,
       password,
     });
-    // Navigate to Login screen
-    navigation.navigate("Login");
+    // Navigate to VerifyPhoneNumber screen
+    navigation.navigate("VerifyPhoneNumber", {
+      phoneNumber,
+    });
   }, [
     isFormValid,
     firstName,

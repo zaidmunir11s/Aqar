@@ -21,6 +21,7 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PROPERTY_DATA } from "../../data/propertyData";
 import { openPhoneDialer, getDefaultImageUrl } from "../../utils";
 import { IconButton } from "../../components";
@@ -31,7 +32,9 @@ import {
   ProjectFeatures,
   ProjectLocation,
 } from "../../components";
+import ScreenHeader from "../../components/common/ScreenHeader";
 import type { ProjectProperty } from "../../types/property";
+import { COLORS } from "@/constants";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -46,11 +49,13 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const { propertyId } = params;
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-100)).current; // Start off-screen
   const scrollViewRef = useRef<ScrollView>(null);
 
   const project = useMemo(
@@ -83,12 +88,22 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
       const offsetY = event.nativeEvent.contentOffset.y;
       // Show sticky header when scrolled past image gallery (approximately hp(30))
       const threshold = hp(30) - hp(10); // Show header slightly before image ends
-      setShowStickyHeader(offsetY > threshold);
+      const shouldShow = offsetY > threshold;
+      
+      if (shouldShow !== showStickyHeader) {
+        setShowStickyHeader(shouldShow);
+        // Animate header sliding down/up
+        Animated.timing(headerTranslateY, {
+          toValue: shouldShow ? 0 : -100,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      }
 
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY]
+    [scrollY, showStickyHeader, headerTranslateY]
   );
 
   const handleBackPress = useCallback(() => {
@@ -107,33 +122,6 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
     setImageViewerVisible(false);
   }, []);
 
-  const renderFullScreenImage = useCallback(
-    ({ item }: { item: string }) => (
-      <View style={styles.fullScreenImageContainer}>
-        <Image
-          source={{ uri: item }}
-          style={styles.fullScreenImage}
-          resizeMode="contain"
-        />
-      </View>
-    ),
-    []
-  );
-
-  const keyExtractorFullscreen = useCallback(
-    (item: string, index: number) => `fullscreen-${index}`,
-    []
-  );
-
-  const getItemLayout = useCallback(
-    (data: any, index: number) => ({
-      length: SCREEN_WIDTH,
-      offset: SCREEN_WIDTH * index,
-      index,
-    }),
-    []
-  );
-
   if (!project) {
     return (
       <View style={styles.center}>
@@ -150,15 +138,12 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   return (
     <>
       <View style={styles.container}>
-        {/* Sticky Header - appears on scroll */}
-        {showStickyHeader && (
-          <View style={styles.stickyHeader}>
+        {/* Icons - Always visible, absolute positioned */}
+        <View style={styles.headerIcons}>
             <IconButton onPress={handleBackPress}>
               <Ionicons name="arrow-back" size={wp(6)} color="#10b981" />
             </IconButton>
-            <Text style={styles.stickyHeaderTitle} numberOfLines={1}>
-              {project.projectNameArabic || project.projectName}
-            </Text>
+          <View style={styles.headerIconsSpacer} />
             <IconButton onPress={handleShare}>
               <Ionicons
                 name="share-social-outline"
@@ -167,7 +152,20 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
               />
             </IconButton>
           </View>
-        )}
+
+        {/* Sticky Header Background with Title - slides in to join icons on scroll */}
+        <Animated.View
+          style={[
+            styles.stickyHeaderBackground,
+            {
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        >
+          <Text style={styles.stickyHeaderTitle} numberOfLines={1}>
+            {project.projectNameArabic || project.projectName}
+          </Text>
+        </Animated.View>
 
         <ScrollView
           ref={scrollViewRef}
@@ -233,30 +231,35 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
         statusBarTranslucent={true}
       >
         <View style={styles.imageViewerContainer}>
-          <TouchableOpacity
-            style={styles.closeImageViewer}
-            onPress={closeImageViewer}
-          >
-            <Ionicons name="close-circle" size={wp(10)} color="#fff" />
-          </TouchableOpacity>
-
-          <FlatList
-            data={projectImages}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={currentImageIndex}
-            getItemLayout={getItemLayout}
-            onScroll={handleImageScroll}
-            scrollEventThrottle={16}
-            renderItem={renderFullScreenImage}
-            keyExtractor={keyExtractorFullscreen}
-          />
-
-          <View style={styles.fullScreenCounter}>
-            <Text style={styles.fullScreenCounterText}>
-              {currentImageIndex + 1} / {projectImages.length}
-            </Text>
+          <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
+            <ScreenHeader
+              title="Listing media"
+              onBackPress={closeImageViewer}
+              backButtonColor={COLORS.backButton}
+            />
+          </View>
+          
+          <View style={styles.imageViewerContent}>
+            <View style={styles.imagesSectionHeader}>
+              <Text style={styles.imagesSectionTitle}>Images</Text>
+              <View style={styles.imagesSectionBorder} />
+            </View>
+            
+            <ScrollView
+              style={styles.imagesScrollView}
+              contentContainerStyle={styles.imagesScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              {projectImages.map((imageUri, index) => (
+                <View key={`image-${index}`} style={styles.imageItemContainer}>
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.imageItem}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -274,21 +277,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stickyHeader: {
+  headerIcons: {
     position: "absolute",
-    top: 0,
+    top: Platform.OS === "ios" ? hp(3) : hp(2),
     left: 0,
     right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: wp(4),
-    // paddingTop: Platform.OS === "ios" ? hp(6) : hp(5),
-    paddingBottom: hp(2),
+    zIndex: 1001,
+  },
+  headerIconsSpacer: {
+    flex: 1,
+  },
+  stickyHeaderBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: Platform.OS === "ios" ? hp(10) : hp(9),
     backgroundColor: "#fff",
     zIndex: 1000,
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: wp(4),
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -300,12 +317,10 @@ const styles = StyleSheet.create({
     }),
   },
   stickyHeaderTitle: {
-    flex: 1,
     fontSize: wp(4.5),
     fontWeight: "600",
     color: "#111827",
     textAlign: "center",
-    marginHorizontal: wp(2),
   },
   content: {
     flex: 1,
@@ -360,38 +375,50 @@ const styles = StyleSheet.create({
   },
   imageViewerContainer: {
     flex: 1,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#ebf1f1",
   },
-  closeImageViewer: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? hp(7) : hp(5),
-    right: wp(4),
-    zIndex: 100,
+  imageViewerHeaderContainer: {
+    backgroundColor: "#fff",
   },
-  fullScreenImageContainer: {
-    width: SCREEN_WIDTH,
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+  imageViewerContent: {
+    flex: 1,
+    backgroundColor: "#ebf1f1",
   },
-  fullScreenImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fullScreenCounter: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? hp(7) : hp(5),
-    alignSelf: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  imagesSectionHeader: {
+    backgroundColor: "#ebf1f1",
     paddingHorizontal: wp(4),
-    paddingVertical: hp(1),
-    borderRadius: wp(5),
+    paddingTop: hp(2),
+    paddingBottom: hp(1.5),
   },
-  fullScreenCounterText: {
-    color: "#fff",
-    fontSize: wp(4),
-    fontWeight: "600",
+  imagesSectionTitle: {
+    fontSize: wp(4.5),
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: hp(1),
+    textAlign: "center",
+  },
+  imagesSectionBorder: {
+    height: 2,
+    backgroundColor: COLORS.primary,
+    width: "100%",
+  },
+  imagesScrollView: {
+    flex: 1,
+  },
+  imagesScrollContent: {
+    paddingHorizontal: wp(4),
+    paddingTop: hp(2),
+    paddingBottom: hp(4),
+  },
+  imageItemContainer: {
+    marginBottom: hp(2),
+    borderRadius: wp(2),
+    overflow: "hidden",
+    backgroundColor: "#fff",
+  },
+  imageItem: {
+    width: "100%",
+    height: hp(40),
+    borderRadius: wp(2),
   },
 });

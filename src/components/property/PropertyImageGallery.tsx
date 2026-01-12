@@ -16,8 +16,6 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { IconButton } from "../common";
-import { COLORS } from "@/constants";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -60,12 +58,12 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
             onPress={onImageViewerOpen}
             style={styles.imageTouchable}
           >
-            <Image
-              source={{ uri: item }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
+          <Image
+            source={{ uri: item }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
         </View>
       ),
       [onImageViewerOpen]
@@ -106,50 +104,18 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
           snapToAlignment="start"
         />
 
-        {/* Header Icons Overlay - hide when sticky header is shown */}
-        {!showStickyHeader && (
-          <View style={styles.headerOverlay}>
-            <IconButton onPress={onBackPress}>
-              <Ionicons name="arrow-back" size={wp(6)} color={COLORS.backButton} />
-            </IconButton>
-
-            <View style={styles.headerRight}>
-              <IconButton onPress={onLikePress}>
-                <Ionicons
-                  name={liked ? "thumbs-up" : "thumbs-up-outline"}
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-              <IconButton onPress={onSharePress}>
-                <Ionicons
-                  name="share-social-outline"
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-              <IconButton onPress={onFavoritePress}>
-                <Ionicons
-                  name={favorited ? "heart" : "heart-outline"}
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-            </View>
-          </View>
-        )}
 
         {/* See All Photos Button */}
         {validImages.length > 0 && (
-          <TouchableOpacity
-            style={styles.seeAllPhotosBtn}
-            onPress={onImageViewerOpen}
-          >
-            <Ionicons name="images" size={wp(4.5)} color="#fff" />
-            <Text style={styles.seeAllPhotosText}>
+        <TouchableOpacity
+          style={styles.seeAllPhotosBtn}
+          onPress={onImageViewerOpen}
+        >
+          <Ionicons name="images" size={wp(4.5)} color="#fff" />
+          <Text style={styles.seeAllPhotosText}>
               {validImages.length} See all photos...
-            </Text>
-          </TouchableOpacity>
+          </Text>
+        </TouchableOpacity>
         )}
       </View>
     );
@@ -175,18 +141,6 @@ const styles = StyleSheet.create({
   image: {
     width: SCREEN_WIDTH,
     height: hp(30),
-  },
-  headerOverlay: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? hp(6) : hp(5),
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: wp(4),
-  },
-  headerRight: {
-    flexDirection: "row",
   },
   seeAllPhotosBtn: {
     position: "absolute",

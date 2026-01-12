@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Text,
   Platform,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,7 +17,7 @@ import {
 } from "react-native-responsive-screen";
 import { ScreenHeader } from "../../components";
 import { COLORS } from "../../constants";
-import { MOCK_CONVERSATIONS, getUserName } from "../../data/chatData";
+import { MOCK_CONVERSATIONS, getUserName, getUserAvatar } from "../../data/chatData";
 import type { ChatConversation } from "../../types/chat";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -43,6 +44,8 @@ interface ChatListItemProps {
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLast = false }) => {
+  const avatar = conversation.userAvatar || getUserAvatar(conversation.userId);
+  
   return (
     <TouchableOpacity
       style={[styles.chatItem, isLast && styles.chatItemLast]}
@@ -50,7 +53,15 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLa
       activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
-        <Ionicons name="person" size={wp(6)} color={COLORS.textTertiary} />
+        {avatar ? (
+          <Image
+            source={typeof avatar === "string" ? { uri: avatar } : avatar}
+            style={styles.avatarImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Ionicons name="person" size={wp(6)} color={COLORS.textTertiary} />
+        )}
       </View>
       <View style={styles.chatContent}>
         <View style={styles.chatHeader}>
@@ -217,6 +228,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: wp(3),
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   chatContent: {
     flex: 1,

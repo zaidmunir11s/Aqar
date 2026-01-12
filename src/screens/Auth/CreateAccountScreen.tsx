@@ -38,7 +38,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
     const checkPendingResult = async () => {
       try {
         const result = await ImagePicker.getPendingResultAsync();
-        if (result && 'assets' in result && result.assets && result.assets[0]) {
+        if (result && "assets" in result && result.assets && result.assets[0]) {
           setProfileImage(result.assets[0].uri);
         }
       } catch (error) {
@@ -123,7 +123,16 @@ export default function CreateAccountScreen(): React.JSX.Element {
     navigation.navigate("VerifyPhoneNumber", {
       phoneNumber,
     });
-  }, [isFormValid, firstName, lastName, phoneNumber, password, phoneError, passwordError, navigation]);
+  }, [
+    isFormValid,
+    firstName,
+    lastName,
+    phoneNumber,
+    password,
+    phoneError,
+    passwordError,
+    navigation,
+  ]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -146,7 +155,8 @@ export default function CreateAccountScreen(): React.JSX.Element {
   const handleImagePicker = useCallback(async () => {
     try {
       // Request permission
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
@@ -157,7 +167,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
       // Launch image picker with safer options
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7, // Reduced quality to prevent memory issues

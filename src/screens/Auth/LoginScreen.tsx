@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import {
@@ -16,6 +17,8 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import { useSSO, useAuth } from "@clerk/clerk-expo";
+import * as Linking from "expo-linking";
 import { PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 
@@ -23,11 +26,26 @@ type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { startSSOFlow } = useSSO();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [submitAttempted, setSubmitAttempted] = useState<boolean>(false);
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
 
-  // Validation functions
+  // Check if user is already signed in when screen loads
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      // User is already signed in, redirect to profile
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("ProfileTab", { screen: "ProfileDetail" });
+      } else {
+        navigation.navigate("ProfileDetail");
+      }
+    }
+  }, [isLoaded, isSignedIn, navigation]);
+
   const validatePhoneNumber = (phone: string): string => {
     if (phone.trim().length === 0) {
       return "Phone number is required";
@@ -57,27 +75,20 @@ export default function LoginScreen(): React.JSX.Element {
     return "";
   };
 
-  // Keep errors visible once shown (only hide when button is pressed with valid value)
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
   const [passwordErrorShown, setPasswordErrorShown] = useState<boolean>(false);
   const [storedPhoneError, setStoredPhoneError] = useState<string>("");
   const [storedPasswordError, setStoredPasswordError] = useState<string>("");
-  
-  // Validate fields
+
   const phoneError = validatePhoneNumber(phoneNumber);
   const passwordError = validatePassword(password);
-  
-  // Display errors only if they've been shown (after submit attempt)
-  // Keep showing the stored error message even if field becomes valid while typing
+
   const displayPhoneError = phoneErrorShown ? storedPhoneError : "";
   const displayPasswordError = passwordErrorShown ? storedPasswordError : "";
-
-  // Button enabled when both fields have values (not checking validation)
   const isFormValid =
     phoneNumber.trim().length > 0 && password.trim().length > 0;
 
   const handlePhoneChange = useCallback((text: string) => {
-    // Filter to only allow numbers
     const filteredText = text.replace(/[^0-9]/g, "");
     setPhoneNumber(filteredText);
   }, []);
@@ -88,37 +99,30 @@ export default function LoginScreen(): React.JSX.Element {
 
   const handleLogin = useCallback(() => {
     setSubmitAttempted(true);
-    
+
     const phoneErr = validatePhoneNumber(phoneNumber);
     const pwdErr = validatePassword(password);
-    
-    // Update error visibility based on validation when button is pressed
+
     if (phoneErr !== "") {
-      // Phone is invalid → show error and store it
       setPhoneErrorShown(true);
       setStoredPhoneError(phoneErr);
     } else {
-      // Phone is valid → hide error only when button is pressed
       setPhoneErrorShown(false);
       setStoredPhoneError("");
     }
-    
+
     if (pwdErr !== "") {
-      // Password is invalid → show error and store it
       setPasswordErrorShown(true);
       setStoredPasswordError(pwdErr);
     } else {
-      // Password is valid → hide error only when button is pressed
       setPasswordErrorShown(false);
       setStoredPasswordError("");
     }
-    
+
     if (phoneErr !== "" || pwdErr !== "") {
-      // Validation failed, return early
       return;
     }
-    
-    // Validation passed, proceed with login
+
     console.log("Login with:", phoneNumber, password);
     navigation.navigate("ProfileDetail");
   }, [phoneNumber, password, navigation]);
@@ -132,7 +136,6 @@ export default function LoginScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleBackPress = useCallback(() => {
-    // Always navigate to Listings tab, don't go back through navigation history
     const parent = navigation.getParent();
     if (parent) {
       parent.navigate("Listings");
@@ -141,10 +144,66 @@ export default function LoginScreen(): React.JSX.Element {
     }
   }, [navigation]);
 
-  const handleGoogleLogin = useCallback(() => {
-    console.log("Continue with Google");
-    // TODO: Implement Google login
-  }, []);
+  const handleGoogleLogin = useCallback(async () => {
+    try {
+      setIsLoadingGoogle(true);
+
+      if (isSignedIn) {
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.navigate("ProfileTab", { screen: "ProfileDetail" });
+        } else {
+          navigation.navigate("ProfileDetail");
+        }
+        return;
+      }
+
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: "oauth_google",
+        redirectUrl: Linking.createURL("/oauth-native-callback", {
+          scheme: "bayt",
+        }),
+      });
+
+      if (createdSessionId) {
+        await setActive!({ session: createdSessionId });
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.navigate("ProfileTab", { screen: "ProfileDetail" });
+        } else {
+          navigation.navigate("ProfileDetail");
+        }
+      }
+    } catch (err: any) {
+      console.error("OAuth error", err);
+
+      if (err?.errors?.[0]?.code === "oauth_cancelled") {
+        return;
+      }
+
+      const errorMessage = err?.errors?.[0]?.message || err?.message || "";
+      if (
+        err?.errors?.[0]?.code === "session_exists" ||
+        errorMessage.includes("already signed in") ||
+        errorMessage.includes("Session already exists")
+      ) {
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.navigate("ProfileTab", { screen: "ProfileDetail" });
+        } else {
+          navigation.navigate("ProfileDetail");
+        }
+        return;
+      }
+
+      Alert.alert(
+        "Login Error",
+        err?.errors?.[0]?.message || "Failed to sign in with Google"
+      );
+    } finally {
+      setIsLoadingGoogle(false);
+    }
+  }, [startSSOFlow, navigation, isSignedIn]);
 
   const handleAppleLogin = useCallback(() => {
     console.log("Continue with Apple");
@@ -249,12 +308,18 @@ export default function LoginScreen(): React.JSX.Element {
 
         {/* Social Login Buttons */}
         <TouchableOpacity
-          style={styles.socialButton}
+          style={[
+            styles.socialButton,
+            isLoadingGoogle && styles.socialButtonDisabled,
+          ]}
           onPress={handleGoogleLogin}
           activeOpacity={0.7}
+          disabled={isLoadingGoogle}
         >
           <GoogleLogo />
-          <Text style={styles.socialButtonText}>Continue with Google</Text>
+          <Text style={styles.socialButtonText}>
+            {isLoadingGoogle ? "Signing in..." : "Continue with Google"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -366,6 +431,9 @@ const styles = StyleSheet.create({
     fontSize: wp(4.5),
     color: "#111827",
     fontWeight: "500",
+  },
+  socialButtonDisabled: {
+    opacity: 0.6,
   },
   createAccountContainer: {
     flexDirection: "row",

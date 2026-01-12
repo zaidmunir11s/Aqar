@@ -105,6 +105,17 @@ export default function PropertyListScreen(): React.JSX.Element {
         (p) => p.listingType === "daily" && !("isProject" in p && p.isProject)
       );
     }
+    if (listingType === "sale") {
+      // Include both regular sale properties and projects for sale
+      return PROPERTY_DATA.filter(
+        (p) => p.listingType === "sale"
+      );
+    }
+    if (listingType === "rent") {
+      return PROPERTY_DATA.filter(
+        (p) => p.listingType === "rent" && !("isProject" in p && p.isProject)
+      );
+    }
     return [];
   }, [params?.properties, listingType]);
 
@@ -305,7 +316,7 @@ export default function PropertyListScreen(): React.JSX.Element {
       if (listingType === "daily") {
         navigation.navigate("DailyDetails", navParams);
       } else {
-        navigation.navigate("PropertyDetails", navParams);
+      navigation.navigate("PropertyDetails", navParams);
       }
     },
     [properties, listingType, effectiveSelectedDates, navigation]
@@ -607,8 +618,8 @@ export default function PropertyListScreen(): React.JSX.Element {
         );
       }
 
-      // Use ProjectListCard for projects
-      if (listingType === "projects" && "isProject" in item && item.isProject) {
+      // Use ProjectListCard for projects (both in projects listing and sale listing)
+      if (("isProject" in item && item.isProject) && (listingType === "projects" || listingType === "sale")) {
         const filterOptions = 
           (item as ProjectProperty).listingType === "sale" 
             ? SALE_FILTER_OPTIONS 

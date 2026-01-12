@@ -16,8 +16,6 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { IconButton } from "../common";
-import { COLORS } from "@/constants";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -79,24 +77,6 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
           keyExtractor={keyExtractor}
         />
 
-        {/* Header Icons Overlay - hide when sticky header is shown */}
-        {!showStickyHeader && (
-          <View style={styles.headerOverlay}>
-            <IconButton onPress={onBackPress}>
-              <Ionicons name="arrow-back" size={wp(6)} color={COLORS.backButton} />
-            </IconButton>
-
-            <View style={styles.headerRight}>
-              <IconButton onPress={onSharePress}>
-                <Ionicons
-                  name="share-social-outline"
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-            </View>
-          </View>
-        )}
 
         {/* Image Counter Indicator */}
         {images.length > 1 && (
@@ -142,18 +122,6 @@ const styles = StyleSheet.create({
   image: {
     width: SCREEN_WIDTH,
     height: hp(30),
-  },
-  headerOverlay: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? hp(6) : hp(5),
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: wp(4),
-  },
-  headerRight: {
-    flexDirection: "row",
   },
   seeAllPhotosBtn: {
     position: "absolute",

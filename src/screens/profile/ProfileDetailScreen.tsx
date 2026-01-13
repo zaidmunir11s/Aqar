@@ -72,7 +72,17 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   };
 
   const handleAddPress = () => {
-    console.log("Add pressed");
+    // Navigate to AddListing screen in Listings tab
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate("Listings", {
+        screen: "AddListing",
+      });
+    } else {
+      navigation.navigate("Listings", {
+        screen: "AddListing",
+      });
+    }
   };
 
   const handleMyClientsPress = () => {

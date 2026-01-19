@@ -3,3 +3,7 @@ export * from "./dateHelpers";
 export * from "./propertyHelpers";
 export * from "./linkingHelpers";
 export * from "./navigationHelpers";
+export * from "./criteriaMatching";
+export * from "./featureMapping";
+export * from "./orderFormHelpers";
+export * from "./propertyMatching";

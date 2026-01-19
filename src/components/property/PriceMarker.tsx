@@ -16,6 +16,19 @@ export interface PriceMarkerProps {
 }
 
 /**
+ * Format number to compact notation (e.g., 1000 -> 1 K, 1000000 -> 1 M)
+ */
+const formatCompactNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1).replace(/\.0$/, "")} M`;
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1).replace(/\.0$/, "")} K`;
+  }
+  return num.toString();
+};
+
+/**
  * Price marker component for map
  */
 const PriceMarker = memo<PriceMarkerProps>(
@@ -34,7 +47,8 @@ const PriceMarker = memo<PriceMarkerProps>(
 
       // Show calculated price if dates selected, otherwise show booking type
       if (calculatedPrice !== null && calculatedPrice !== undefined) {
-        displayText = `${calculatedPrice} SAR`;
+        const formattedPrice = formatCompactNumber(calculatedPrice);
+        displayText = formattedPrice;
       } else {
         const dailyProperty = property as any;
         displayText =
@@ -58,6 +72,16 @@ const PriceMarker = memo<PriceMarkerProps>(
         <View style={[styles.pointer, { borderTopColor: bg }]} />
       </View>
     );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison: re-render if selection state, visited state, or listing type changes
+    return (
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.isVisited === nextProps.isVisited &&
+      prevProps.listingType === nextProps.listingType &&
+      prevProps.calculatedPrice === nextProps.calculatedPrice &&
+      prevProps.property.id === nextProps.property.id
+    );
   }
 );
 
@@ -66,12 +90,12 @@ PriceMarker.displayName = "PriceMarker";
 const styles = StyleSheet.create({
   markerContainer: {
     alignItems: "center",
+    justifyContent: "center",
   },
   priceBubble: {
-    paddingHorizontal: wp(0.5),
+    paddingHorizontal: wp(2),
     paddingVertical: hp(0.6),
     borderRadius: wp(1),
-    minWidth: wp(10),
     alignItems: "center",
     justifyContent: "center",
   },

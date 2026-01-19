@@ -7,8 +7,9 @@ import {
   Text,
   Platform,
   Image,
+  BackHandler,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -127,15 +128,36 @@ export default function ChatScreen(): React.JSX.Element {
     return unsubscribe;
   }, [navigation, loadConversations]);
 
-  const handleBackPress = () => {
-    // Navigate back to Listings tab
+  const handleBackPress = useCallback(() => {
+    // Navigate back to Listings tab and reset to MapLandingScreen
     const parent = navigation.getParent();
     if (parent) {
-      parent.navigate("Listings");
+      // Navigate to Listings tab -> MapLanding screen (initial route)
+      parent.navigate("Listings", {
+        screen: "MapLanding",
+      });
     } else {
-      navigation.navigate("Listings");
+      // Fallback: try to navigate directly
+      navigation.navigate("Listings", {
+        screen: "MapLanding",
+      });
     }
-  };
+    return true; // Prevent default back behavior
+  }, [navigation]);
+
+  // Handle mobile back button to always go to Listings
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBackPress();
+        return true; // Prevent default back behavior
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => backHandler.remove();
+    }, [handleBackPress])
+  );
 
   const handleChatPress = (conversation: ChatConversation) => {
     // Navigate to Chat tab -> Conversation screen

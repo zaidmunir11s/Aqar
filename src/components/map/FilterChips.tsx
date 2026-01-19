@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.2),
     borderRadius: wp(3.5),
     marginRight: wp(2),
-    gap: wp(2),
+    // gap: wp(2),
   },
   searchText: {
     color: "#fff",

@@ -21,6 +21,27 @@ interface RouteParams {
   orderFormData?: any;
 }
 
+// Helper functions to validate coordinates
+const isValidCoordinate = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+};
+
+const isValidLongitude = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+};
+
 export default function ChooseLocationScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
@@ -54,12 +75,22 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   // The marker is fixed at center visually, but we track the center coordinate
   // This ensures we always know the exact location the user is pointing at
   const handleRegionChangeComplete = (newRegion: typeof RIYADH_REGION) => {
-    // Update selected location to match the center of the map
-    // This is the location that will be used for property search
-    setSelectedLocation({
-      latitude: newRegion.latitude,
-      longitude: newRegion.longitude,
-    });
+    // Validate region before setting state
+    if (
+      isValidCoordinate(newRegion.latitude) &&
+      isValidLongitude(newRegion.longitude) &&
+      isValidCoordinate(newRegion.latitudeDelta) &&
+      isValidLongitude(newRegion.longitudeDelta) &&
+      newRegion.latitudeDelta > 0 &&
+      newRegion.longitudeDelta > 0
+    ) {
+      // Update selected location to match the center of the map
+      // This is the location that will be used for property search
+      setSelectedLocation({
+        latitude: newRegion.latitude,
+        longitude: newRegion.longitude,
+      });
+    }
   };
 
   return (

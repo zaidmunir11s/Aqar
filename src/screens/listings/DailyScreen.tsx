@@ -45,12 +45,45 @@ import {
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
+// Helper function to validate coordinates
+function isValidCoordinate(value: number | undefined | null): boolean {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+}
+
+// Helper function to validate longitude
+function isValidLongitude(value: number | undefined | null): boolean {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+}
+
+// Helper function to check if property has valid coordinates
+function hasValidCoordinates(property: Property): boolean {
+  return (
+    isValidCoordinate(property.lat) &&
+    isValidLongitude(property.lng)
+  );
+}
+
 export default function DailyScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMarkerPressTimeRef = useRef<number>(0);
+  const isMountedRef = useRef<boolean>(true);
 
   const [region, setRegion] = useState(RIYADH_REGION);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
@@ -128,6 +161,22 @@ export default function DailyScreen(): React.JSX.Element {
     }
   }, [routeParams?.selectedDates, setSelectedDates]);
   
+  // Track component mount state and cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (mapMoveTimeoutRef.current) {
+        clearTimeout(mapMoveTimeoutRef.current);
+        mapMoveTimeoutRef.current = null;
+      }
+      if (markerPressTimeoutRef.current) {
+        clearTimeout(markerPressTimeoutRef.current);
+        markerPressTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // Show calendar modal automatically on first visit if no dates are selected
   useEffect(() => {
     if (!hasShownCalendarOnMount.current && !selectedDates.startDate && !selectedDates.endDate) {
@@ -142,7 +191,10 @@ export default function DailyScreen(): React.JSX.Element {
   // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters)
   const filteredPropertiesForModal = useMemo(() => {
     let properties = PROPERTY_DATA.filter(
-      (p) => p.listingType === "daily" && !("isProject" in p && p.isProject)
+      (p) => 
+        p.listingType === "daily" && 
+        !("isProject" in p && p.isProject) &&
+        hasValidCoordinates(p)
     );
 
     // Filter by city if selected
@@ -203,11 +255,24 @@ export default function DailyScreen(): React.JSX.Element {
 
   // Get visible properties
   const visibleProperties = useMemo(() => {
+    // Validate region values
+    if (
+      !isValidCoordinate(region.latitude) ||
+      !isValidLongitude(region.longitude) ||
+      !isValidCoordinate(region.latitudeDelta) ||
+      !isValidLongitude(region.longitudeDelta) ||
+      region.latitudeDelta <= 0 ||
+      region.longitudeDelta <= 0
+    ) {
+      return [];
+    }
+
     const latHalf = region.latitudeDelta / 2;
     const lngHalf = region.longitudeDelta / 2;
 
     return regularPropertiesOnly.filter(
       (p) =>
+        hasValidCoordinates(p) &&
         p.lat >= region.latitude - latHalf &&
         p.lat <= region.latitude + latHalf &&
         p.lng >= region.longitude - lngHalf &&
@@ -248,12 +313,42 @@ export default function DailyScreen(): React.JSX.Element {
 
   const handleMarkerPress = useCallback(
     (property: Property) => {
-    setSelectedId(property.id);
-    setVisitedIds((prev) => {
-      const next = new Set(prev);
-      next.add(property.id);
-      return next;
-    });
+      // Prevent rapid clicks (debounce - minimum 300ms between clicks)
+      const now = Date.now();
+      if (now - lastMarkerPressTimeRef.current < 300) {
+        return;
+      }
+      lastMarkerPressTimeRef.current = now;
+
+      // Clear any pending marker press timeout
+      if (markerPressTimeoutRef.current) {
+        clearTimeout(markerPressTimeoutRef.current);
+        markerPressTimeoutRef.current = null;
+      }
+
+      // Don't handle marker press if component is unmounted
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      // Use timeout to ensure map state is stable before state update
+      markerPressTimeoutRef.current = setTimeout(() => {
+        // Double-check component is still mounted
+        if (!isMountedRef.current) {
+          return;
+        }
+
+        try {
+          setSelectedId(property.id);
+          setVisitedIds((prev) => {
+            const next = new Set(prev);
+            next.add(property.id);
+            return next;
+          });
+        } catch (error) {
+          console.warn("Error handling marker press:", error);
+        }
+      }, 100);
     },
     []
   );
@@ -313,7 +408,18 @@ export default function DailyScreen(): React.JSX.Element {
 
   const handleRegionChangeComplete = useCallback(
     (newRegion: typeof RIYADH_REGION) => {
-      setRegion(newRegion);
+      // Validate region before setting state
+      if (
+        isValidCoordinate(newRegion.latitude) &&
+        isValidLongitude(newRegion.longitude) &&
+        isValidCoordinate(newRegion.latitudeDelta) &&
+        isValidLongitude(newRegion.longitudeDelta) &&
+        newRegion.latitudeDelta > 0 &&
+        newRegion.longitudeDelta > 0
+      ) {
+        setRegion(newRegion);
+      }
+      
       mapMoveTimeoutRef.current = setTimeout(() => {
         setIsMapMoving(false);
       }, 500);
@@ -391,24 +497,32 @@ export default function DailyScreen(): React.JSX.Element {
 
   const renderMarker = useCallback(
     (p: Property) => {
+      // Double-check coordinates before rendering marker
+      if (!hasValidCoordinates(p)) {
+        return null;
+      }
+
+      const isSelected = selectedId === p.id;
+      const isVisited = visitedIds.has(p.id);
+      const calculatedPriceValue =
+        p.listingType === "daily"
+          ? calculateDailyPrice(p as DailyProperty)
+          : null;
+
       return (
         <Marker
-          key={p.id}
+          key={`${p.id}-${isSelected ? 'selected' : 'unselected'}-${isVisited ? 'visited' : 'unvisited'}-${calculatedPriceValue || 'no-price'}`}
           coordinate={{ latitude: p.lat, longitude: p.lng }}
           anchor={{ x: 0.5, y: 1 }}
           onPress={() => handleMarkerPress(p)}
-          zIndex={selectedId === p.id ? 999 : 1}
+          zIndex={isSelected ? 999 : 1}
         >
           <PriceMarker
             property={p}
-            isSelected={selectedId === p.id}
-            isVisited={visitedIds.has(p.id)}
+            isSelected={isSelected}
+            isVisited={isVisited}
             listingType="daily"
-            calculatedPrice={
-              p.listingType === "daily"
-                ? calculateDailyPrice(p as DailyProperty)
-                : null
-            }
+            calculatedPrice={calculatedPriceValue}
           />
         </Marker>
       );
@@ -430,7 +544,7 @@ export default function DailyScreen(): React.JSX.Element {
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}
       >
-        {visibleProperties.map(renderMarker)}
+        {visibleProperties.map(renderMarker).filter(Boolean)}
       </MapView>
 
       {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top) */}

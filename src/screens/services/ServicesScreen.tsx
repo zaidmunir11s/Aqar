@@ -17,6 +17,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   ScreenHeader,
   SocialMediaIcon,
+  LanguageConverter,
 } from "../../components";
 import { COLORS } from "@/constants/colors";
 
@@ -178,6 +179,8 @@ export default function ServicesScreen(): React.JSX.Element {
       <ScreenHeader
         title="Services"
         onBackPress={handleBackPress}
+        showRightSide={true}
+        rightComponent={<LanguageConverter language="english" />}
       />
 
       <ScrollView 

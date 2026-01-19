@@ -13,15 +13,59 @@ import {
 } from "react-native-responsive-screen";
 import MapView, { Marker, Circle } from "react-native-maps";
 import type { ProjectProperty } from "../../types/property";
-import { COLORS } from "../../constants";
+import { COLORS, RIYADH_REGION } from "../../constants";
 export interface ProjectLocationProps {
   project: ProjectProperty;
 }
+
+// Helper functions to validate coordinates
+const isValidCoordinate = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+};
+
+const isValidLongitude = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+};
 
 /**
  * Project location map component
  */
 const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
+  // Validate coordinates and use fallback if invalid
+  const isValidLat = isValidCoordinate(project.lat);
+  const isValidLng = isValidLongitude(project.lng);
+  const hasValidCoords = isValidLat && isValidLng;
+
+  // Use fallback coordinates (Riyadh center) if project coordinates are invalid
+  const latitude = hasValidCoords ? project.lat : RIYADH_REGION.latitude;
+  const longitude = hasValidCoords ? project.lng : RIYADH_REGION.longitude;
+
+  // Don't render map if coordinates are completely invalid
+  if (!hasValidCoords) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Nearby Landmarks</Text>
+        <View style={styles.mapContainer}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Location data unavailable</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Nearby Landmarks</Text>
@@ -29,8 +73,8 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
         <MapView
           style={styles.map}
           initialRegion={{
-            latitude: project.lat,
-            longitude: project.lng,
+            latitude,
+            longitude,
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
           }}
@@ -39,11 +83,11 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
           zoomEnabled={false}
         >
           <Marker
-            coordinate={{ latitude: project.lat, longitude: project.lng }}
+            coordinate={{ latitude, longitude }}
             pinColor={COLORS.PinColor}  
           />
           <Circle
-            center={{ latitude: project.lat, longitude: project.lng }}
+            center={{ latitude, longitude }}
             radius={1000}
             strokeColor="#0b7f33"
             fillColor="rgba(16, 185, 129, 0.2)"
@@ -110,6 +154,17 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     fontWeight: "600",
     marginLeft: wp(2),
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+  },
+  errorText: {
+    fontSize: wp(3.5),
+    color: "#6b7280",
+    textAlign: "center",
   },
 });
 

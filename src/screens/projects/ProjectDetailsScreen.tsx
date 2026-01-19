@@ -141,14 +141,14 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
         {/* Icons - Always visible, absolute positioned */}
         <View style={styles.headerIcons}>
             <IconButton onPress={handleBackPress}>
-              <Ionicons name="arrow-back" size={wp(6)} color="#10b981" />
+              <Ionicons name="arrow-back" size={wp(6)} color={COLORS.primary} />
             </IconButton>
           <View style={styles.headerIconsSpacer} />
             <IconButton onPress={handleShare}>
               <Ionicons
                 name="share-social-outline"
                 size={wp(5.5)}
-                color="#10b981"
+                color={COLORS.primary}
               />
             </IconButton>
           </View>
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f3f4",
   },
   contactButton: {
-    backgroundColor: "#0ab739",
+    backgroundColor: COLORS.primary,
     paddingVertical: hp(1.5),
     borderRadius: wp(1.5),
     alignItems: "center",

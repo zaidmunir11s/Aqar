@@ -1,4 +1,5 @@
 import React from "react";
+import { View, Text, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -233,19 +234,40 @@ export default function AppNavigator(): React.JSX.Element {
         options={({ route }) => ({
           tabBarLabel: "Services",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="construct" size={wp(6)} color={color} />
+            <View style={styles.servicesIconContainer}>
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>New</Text>
+              </View>
+              <Ionicons name="construct" size={wp(6)} color={color} />
+            </View>
           ),
-          tabBarBadge: "New",
-          tabBarBadgeStyle: {
-            backgroundColor: "#ef4444",
-            color: "#fff",
-            fontSize: wp(2),
-            fontWeight: "bold",
-            maxWidth: wp(10),
-          },
           tabBarStyle: getTabBarStyle(route),
         })}
       />
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  servicesIconContainer: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newBadge: {
+    position: "absolute",
+    left: -wp(8),
+    backgroundColor: "#ef4444",
+    paddingHorizontal: wp(2),
+    paddingVertical: hp(0.3),
+    borderRadius: wp(1),
+    zIndex: 1,
+    marginBottom: hp(0.5),
+  },
+  newBadgeText: {
+    color: "#fff",
+    fontSize: wp(2),
+    fontWeight: "bold",
+  },
+});

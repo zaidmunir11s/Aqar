@@ -7,16 +7,69 @@ import {
 } from "react-native-responsive-screen";
 import MapView, { Marker } from "react-native-maps";
 import type { Property } from "../../types/property";
-import { COLORS } from "../../constants";
+import { COLORS, RIYADH_REGION } from "../../constants";
   
 export interface PropertyLocationProps {
   property: Property;
 }
 
+// Helper functions to validate coordinates
+const isValidCoordinate = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+};
+
+const isValidLongitude = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+};
+
 /**
  * Property location map component
  */
 const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
+  // Validate coordinates and use fallback if invalid
+  const isValidLat = isValidCoordinate(property.lat);
+  const isValidLng = isValidLongitude(property.lng);
+  const hasValidCoords = isValidLat && isValidLng;
+
+  // Use fallback coordinates (Riyadh center) if property coordinates are invalid
+  const latitude = hasValidCoords ? property.lat : RIYADH_REGION.latitude;
+  const longitude = hasValidCoords ? property.lng : RIYADH_REGION.longitude;
+
+  // Don't render map if coordinates are completely invalid
+  if (!hasValidCoords) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Location</Text>
+        <View style={styles.mapWrapper}>
+          <View style={styles.mapContainer}>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Location data unavailable</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.locationAlert}>
+          <Ionicons name="information-circle" size={wp(5)} color="#3b82f6" />
+          <Text style={styles.locationAlertText}>
+            Location on the map with the location according to the title deed:
+            Please match the location on the map with the location
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Location</Text>
@@ -25,8 +78,8 @@ const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
           <MapView
             style={styles.map}
             initialRegion={{
-              latitude: property.lat,
-              longitude: property.lng,
+              latitude,
+              longitude,
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             }}
@@ -36,8 +89,8 @@ const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
           >
             <Marker
               coordinate={{
-                latitude: property.lat,
-                longitude: property.lng,
+                latitude,
+                longitude,
               }}
               pinColor={COLORS.PinColor}
             />
@@ -98,6 +151,17 @@ const styles = StyleSheet.create({
     fontSize: wp(3),
     color: "#374151",
     marginLeft: wp(2),
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+  },
+  errorText: {
+    fontSize: wp(3.5),
+    color: "#6b7280",
+    textAlign: "center",
   },
 });
 

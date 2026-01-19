@@ -10,7 +10,10 @@ import {
   FlatList,
   ScrollView,
   Image,
+  Keyboard,
+  Animated,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -29,7 +32,6 @@ import {
 } from "../../data/chatData";
 import type { ChatMessage } from "../../types/chat";
 import { COLORS } from "../../constants";
-import { ScreenHeader } from "../../components";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -91,6 +93,8 @@ export default function ConversationScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const navigation = useNavigation<NavigationProp>();
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   const {
     conversationId,
@@ -171,11 +175,50 @@ export default function ConversationScreen(): React.JSX.Element {
     }
   }, [messages.length]);
 
-  const handleBackPress = () => {
-    // Navigate back to ChatScreen within the same stack
-    // Fallback: navigate to ChatScreen
-    navigation.navigate("ChatScreen");
+  // Handle keyboard show/hide
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        Animated.timing(keyboardHeight, {
+          toValue: e.endCoordinates.height,
+          duration: Platform.OS === 'ios' ? e.duration || 250 : 100,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
 
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      (e) => {
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? e.duration || 250 : 100,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, [keyboardHeight]);
+
+  const handleBackPress = () => {
+    // Always navigate to ChatScreen (main screen of Chat tab)
+    // This ensures consistent behavior regardless of where user came from
+    // (ChatScreen, PropertyDetailsScreen, ContactHostScreen, etc.)
+    const parent = navigation.getParent();
+    if (parent) {
+      // Navigate to Chat tab -> ChatScreen
+      parent.navigate("Chat", {
+        screen: "ChatScreen",
+      });
+    } else {
+      // Fallback: navigate directly to ChatScreen
+      navigation.navigate("ChatScreen");
+    }
   };
 
   const handleMenuPress = useCallback(() => {
@@ -311,13 +354,8 @@ export default function ConversationScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
-        {/* Header */}
-        <View style={styles.headerWrapper}>
+      {/* Header */}
+      <View style={styles.headerWrapper}>
           <View style={styles.customHeader}>
             <View style={styles.headerLeft}>
               {handleBackPress && (
@@ -357,29 +395,54 @@ export default function ConversationScreen(): React.JSX.Element {
         </View>
 
         {/* Chat Messages */}
-        {messages.length > 0 ? (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={keyExtractor}
-            contentContainerStyle={styles.messagesList}
-            style={styles.messagesContainer}
-            inverted={false}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          <View style={styles.emptyMessagesContainer}>
-            <Text style={styles.emptyMessagesText}>No messages yet</Text>
-            <Text style={styles.emptyMessagesSubtext}>
-              Start the conversation by sending a message
-            </Text>
-          </View>
-        )}
+        <Animated.View
+          style={[
+            styles.messagesContainer,
+            {
+              marginBottom: keyboardHeight,
+            },
+          ]}
+        >
+          {messages.length > 0 ? (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={keyExtractor}
+              contentContainerStyle={styles.messagesList}
+              inverted={false}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            />
+          ) : (
+            <View style={styles.emptyMessagesContainer}>
+              <Text style={styles.emptyMessagesText}>No messages yet</Text>
+              <Text style={styles.emptyMessagesSubtext}>
+                Start the conversation by sending a message
+              </Text>
+            </View>
+          )}
+        </Animated.View>
 
         {/* Input Bar - Hidden for admin chat */}
         {!isAdminChat && (
-          <View style={styles.inputContainer}>
+          <Animated.View
+            style={[
+              styles.inputContainer,
+              {
+                paddingBottom: hp(1),
+                transform: [
+                  {
+                    translateY: keyboardHeight.interpolate({
+                      inputRange: [0, 1000],
+                      outputRange: [0, -1000],
+                      extrapolate: 'clamp',
+                    }) as any,
+                  },
+                ],
+              },
+            ]}
+          >
             <View
               style={[
                 styles.inputWrapper,
@@ -409,9 +472,8 @@ export default function ConversationScreen(): React.JSX.Element {
                 style={{ transform: [{ rotate: '-180deg' }] }}
               />
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         )}
-      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -553,12 +615,24 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     backgroundColor: "#fff",
-    // borderTopWidth: 1,
-    // borderTopColor: "#e5e7eb",
     paddingHorizontal: wp(4),
-    paddingVertical: hp(1),
+    paddingTop: hp(1),
     flexDirection: "row",
     alignItems: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   inputWrapper: {
     flex: 1,

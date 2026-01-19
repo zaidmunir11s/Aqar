@@ -16,17 +16,25 @@ export interface ProjectMarkerProps {
  * No selection logic - just displays project tag
  */
 const ProjectMarker = memo<ProjectMarkerProps>(({ project }) => {
+  // Validate project exists
+  if (!project) {
+    return null;
+  }
+
   // Use custom color if available, otherwise default purple
-  const markerColor = project.markerColor || COLORS.markerProject;
+  const markerColor = project.markerColor || COLORS.markerProject || "#8b5cf6";
 
   // Display project name or price if available
   const displayText = project.projectName || project.price || "Project";
+
+  // Ensure displayText is a string
+  const safeDisplayText = typeof displayText === "string" ? displayText : "Project";
 
   return (
     <View style={styles.markerContainer}>
       <View style={[styles.tagBubble, { backgroundColor: markerColor }]}>
         <Text style={styles.tagText} numberOfLines={1}>
-          {displayText}
+          {safeDisplayText}
         </Text>
       </View>
       <View style={[styles.pointer, { borderTopColor: markerColor }]} />
@@ -39,13 +47,12 @@ ProjectMarker.displayName = "ProjectMarker";
 const styles = StyleSheet.create({
   markerContainer: {
     alignItems: "center",
+    justifyContent: "center",
   },
   tagBubble: {
     paddingHorizontal: wp(2),
     paddingVertical: hp(0.6),
     borderRadius: wp(1),
-    minWidth: wp(12),
-    maxWidth: wp(20),
     alignItems: "center",
     justifyContent: "center",
   },

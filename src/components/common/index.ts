@@ -13,3 +13,4 @@ export { default as SegmentedControl } from "./SegmentedControl";
 export { default as WheelPickerModal } from "./WheelPickerModal";
 export { default as ToggleSwitch } from "./ToggleSwitch";
 export { default as ErrorBoundary } from "./ErrorBoundary";
+export { default as LanguageConverter } from "./LanguageConverter";

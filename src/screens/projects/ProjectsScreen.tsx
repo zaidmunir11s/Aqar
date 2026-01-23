@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { View, StyleSheet, Animated, Platform, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -25,6 +26,7 @@ import {
 } from "../../components";
 import type { TabType } from "../../components/map/MapTabs";
 import type { ProjectProperty, Property } from "../../types/property";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -65,6 +67,7 @@ function hasValidCoordinates(project: ProjectProperty): boolean {
 
 export default function ProjectsScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -498,6 +501,16 @@ export default function ProjectsScreen(): React.JSX.Element {
         totalCount={totalCount}
         counterFadeAnim={counterFadeAnim}
       />
+
+      {/* Location Error Message */}
+      {showLocationError && (
+        <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
+          <Ionicons name="warning" size={wp(5)} color={COLORS.error} />
+          <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
+            {t("listings.locationError")}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -525,5 +538,11 @@ const styles = StyleSheet.create({
     fontSize: wp(3.5),
     color: COLORS.error,
     fontWeight: "500",
+  },
+  errorMessageContainerRTL: {
+    flexDirection: "row-reverse",
+  },
+  errorMessageTextRTL: {
+    textAlign: "right",
   },
 });

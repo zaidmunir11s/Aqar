@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export type TabType = "rent" | "sale";
 
@@ -18,48 +19,66 @@ export interface MapTabsProps {
  * Map tabs component for switching between rent/sale
  */
 const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
-  const tabs = [
-    { id: "rent" as TabType, icon: "door-open", label: "For Rent" },
-    { id: "sale" as TabType, icon: "key", label: "For Sale" },
-  ];
+  const { t, isRTL } = useLocalization();
+
+  // Memoize tabs with translations
+  const tabs = useMemo(
+    () => [
+      { id: "rent" as TabType, icon: "door-open", label: t("listings.forRent") },
+      { id: "sale" as TabType, icon: "key", label: t("listings.forSale") },
+    ],
+    [t]
+  );
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      topTabs: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      tab: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+    }),
+    [isRTL]
+  );
 
   return (
-<View style={styles.topTabs}>
-  {tabs.map((tab, index) => (
-    <React.Fragment key={tab.id}>
-      <TouchableOpacity
-        style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-        onPress={() => onTabChange(tab.id)}
-      >
-        {tab.id === "sale" ? (
-          <Ionicons
-            name="key"
-            size={wp(5)}
-            color={activeTab === tab.id ? COLORS.activeTopTabBar : "#666"}
-          />
-        ) : (
-          <FontAwesome6
-            name={tab.icon as any}
-            size={wp(5)}
-            color={activeTab === tab.id ? COLORS.activeTopTabBar : "#666"}
-          />
-        )}
-        <Text
-          style={[
-            styles.tabLabel,
-            activeTab === tab.id && styles.activeTabLabel,
-          ]}
-        >
-          {tab.label}
-        </Text>
-      </TouchableOpacity>
+    <View style={[styles.topTabs, rtlStyles.topTabs]}>
+      {tabs.map((tab, index) => (
+        <React.Fragment key={tab.id}>
+          <TouchableOpacity
+            style={[styles.tab, rtlStyles.tab, activeTab === tab.id && styles.activeTab]}
+            onPress={() => onTabChange(tab.id)}
+          >
+            {tab.id === "sale" ? (
+              <Ionicons
+                name="key"
+                size={wp(5)}
+                color={activeTab === tab.id ? COLORS.activeTopTabBar : "#666"}
+              />
+            ) : (
+              <FontAwesome6
+                name={tab.icon as any}
+                size={wp(5)}
+                color={activeTab === tab.id ? COLORS.activeTopTabBar : "#666"}
+              />
+            )}
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === tab.id && styles.activeTabLabel,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
 
-      {/* Add separator except after last item */}
-      {index < tabs.length - 1 && <View style={styles.separator} />}
-    </React.Fragment>
-  ))}
-</View>
-
+          {/* Add separator except after last item */}
+          {index < tabs.length - 1 && <View style={styles.separator} />}
+        </React.Fragment>
+      ))}
+    </View>
   );
 });
 

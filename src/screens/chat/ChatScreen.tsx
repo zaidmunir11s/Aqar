@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -18,24 +18,37 @@ import {
 } from "react-native-responsive-screen";
 import { ScreenHeader } from "../../components";
 import { COLORS } from "../../constants";
-import { MOCK_CONVERSATIONS, getUserName, getUserAvatar } from "../../data/chatData";
+import { MOCK_CONVERSATIONS, getUserName, getUserAvatar, isAdminUser } from "../../data/chatData";
 import type { ChatConversation } from "../../types/chat";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 // Format time for last message - show year/month/day and time
-const formatLastMessageTime = (date: Date | number | undefined): string => {
+const formatLastMessageTime = (date: Date | number | undefined, isRTL: boolean): string => {
   if (!date) return "";
   const d = typeof date === "number" ? new Date(date) : date;
   
-  // Format as YYYY/MM/DD HH:MM
+  // Format date and time components
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
   
-  return `${year}/${month}/${day} ${hours}:${minutes}`;
+  const datePart = `${year}/${month}/${day}`;
+  const timePart = `${hours}:${minutes}`;
+  
+  // In RTL, show time first, then date (HH:MM YYYY/MM/DD)
+  // In LTR, show date first, then time (YYYY/MM/DD HH:MM)
+  const dateStr = isRTL ? `${timePart} ${datePart}` : `${datePart} ${timePart}`;
+  
+  // Convert Arabic-Indic numerals to Western numerals for RTL
+  if (isRTL) {
+    return dateStr.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
+  }
+  
+  return dateStr;
 };
 
 interface ChatListItemProps {
@@ -45,15 +58,46 @@ interface ChatListItemProps {
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLast = false }) => {
+  const { t, isRTL } = useLocalization();
   const avatar = conversation.userAvatar || getUserAvatar(conversation.userId);
+  
+  const rtlStyles = useMemo(
+    () => ({
+      chatItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      avatarContainer: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      chatHeader: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      chatName: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      chatTime: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+      chatLastMessage: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      unreadBadge: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+    }),
+    [isRTL]
+  );
   
   return (
     <TouchableOpacity
-      style={[styles.chatItem, isLast && styles.chatItemLast]}
+      style={[styles.chatItem, isLast && styles.chatItemLast, rtlStyles.chatItem]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={styles.avatarContainer}>
+      <View style={[styles.avatarContainer, rtlStyles.avatarContainer]}>
         {avatar ? (
           <Image
             source={typeof avatar === "string" ? { uri: avatar } : avatar}
@@ -65,24 +109,31 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLa
         )}
       </View>
       <View style={styles.chatContent}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.chatName} numberOfLines={1}>
-            {conversation.userName || "Unknown"}
+        <View style={[styles.chatHeader, rtlStyles.chatHeader]}>
+          <Text style={[styles.chatName, rtlStyles.chatName]} numberOfLines={1}>
+            {(() => {
+              // For admin, always show Arabic name
+              if (isAdminUser(conversation.userId)) {
+                return "تطبيق العقارات";
+              }
+              // For others, use stored name - no translation
+              return conversation.userName || "Unknown";
+            })()}
           </Text>
           {conversation.lastMessageTime ? (
-            <Text style={styles.chatTime}>
-              {formatLastMessageTime(conversation.lastMessageTime)}
+            <Text style={[styles.chatTime, rtlStyles.chatTime]}>
+              {formatLastMessageTime(conversation.lastMessageTime, isRTL)}
             </Text>
           ) : null}
         </View>
         {conversation.lastMessage ? (
-          <Text style={styles.chatLastMessage} numberOfLines={1}>
+          <Text style={[styles.chatLastMessage, rtlStyles.chatLastMessage]} numberOfLines={1}>
             {conversation.lastMessage}
           </Text>
         ) : null}
       </View>
       {conversation.unreadCount && conversation.unreadCount > 0 ? (
-        <View style={styles.unreadBadge}>
+        <View style={[styles.unreadBadge, rtlStyles.unreadBadge]}>
           <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
         </View>
       ) : null}
@@ -92,6 +143,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLa
 
 export default function ChatScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t } = useLocalization();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
 
   // Load and filter conversations that have messages
@@ -99,10 +151,20 @@ export default function ChatScreen(): React.JSX.Element {
     const filtered = MOCK_CONVERSATIONS.filter(
       (conv) => conv.lastMessage && conv.lastMessage.trim().length > 0
     );
-    // Ensure all conversations have userName set
+    // Set userName from data - don't translate, keep as is
+    // For admin, always use Arabic name
     filtered.forEach((conv) => {
-      if (!conv.userName || conv.userName === "Property Owner") {
-        conv.userName = getUserName(conv.userId);
+      if (isAdminUser(conv.userId)) {
+        conv.userName = "تطبيق العقارات";
+      } else if (!conv.userName || conv.userName === "Property Owner") {
+        const nameFromUsers = getUserName(conv.userId);
+        // Use name from data - no translation
+        if (nameFromUsers && nameFromUsers !== "Property Owner") {
+          conv.userName = nameFromUsers;
+        } else if (!conv.userName) {
+          // Only set default if userName is completely missing
+          conv.userName = "Property Owner";
+        }
       }
     });
     // Sort by last message time (newest first)
@@ -197,16 +259,16 @@ export default function ChatScreen(): React.JSX.Element {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="chatbubbles-outline" size={wp(15)} color={COLORS.textTertiary} />
-      <Text style={styles.emptyText}>No conversations yet</Text>
+      <Text style={styles.emptyText}>{t("chat.noConversationsYet")}</Text>
       <Text style={styles.emptySubtext}>
-        Start a chat from a property listing
+        {t("chat.startChatFromProperty")}
       </Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Chat" onBackPress={handleBackPress} />
+      <ScreenHeader title={t("chat.title")} onBackPress={handleBackPress} />
       {conversations.length > 0 ? (
         <FlatList
           data={conversations}

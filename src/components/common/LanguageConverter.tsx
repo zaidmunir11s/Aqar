@@ -6,6 +6,7 @@ import {
 } from "react-native-responsive-screen";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
+import { useLocalization } from "@/hooks/useLocalization";
 
 interface LanguageConverterProps {
   language?: "english" | "arabic";
@@ -13,19 +14,35 @@ interface LanguageConverterProps {
 }
 
 const LanguageConverter: React.FC<LanguageConverterProps> = ({
-  language = "english",
-  onPress,
+  language: propLanguage,
+  onPress: propOnPress,
 }) => {
+  const { language, toggleLanguage, isRTL } = useLocalization();
+  
+  // Use Redux language state if prop not provided, otherwise use prop
+  const currentLanguage = propLanguage 
+    ? (propLanguage === "english" ? "en" : "ar")
+    : language;
+  
   // Show the language you'll switch TO (opposite of current)
-  const languageText = language === "english" ? "العربية" : "English";
-  const rightBubbleChar = language === "english" ? "ε" : "ع";
+  const languageText = currentLanguage === "en" ? "العربية" : "English";
+  const rightBubbleChar = currentLanguage === "en" ? "ε" : "ع";
 
-  const isEnglish = language === "english";
+  const isEnglish = currentLanguage === "en";
+  
+  const handlePress = () => {
+    if (propOnPress) {
+      propOnPress();
+    } else {
+      toggleLanguage();
+    }
+  };
 
+  // Keep layout consistent regardless of RTL/LTR
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
       {isEnglish && (

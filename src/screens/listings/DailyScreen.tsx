@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { View, StyleSheet, Animated, Platform, TouchableOpacity, Text } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -22,6 +22,7 @@ import { RIYADH_REGION, COLORS, CITY_REGIONS } from "../../constants";
 import { useLocation, useCalendar, useDailyPrice, useBookingModal } from "../../hooks";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { calculateDays, formatDateRange } from "../../utils";
+import { useLocalization } from "../../hooks/useLocalization";
 import {
   PriceMarker,
   BottomPropertyCard,
@@ -78,6 +79,7 @@ function hasValidCoordinates(property: Property): boolean {
 export default function DailyScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
+  const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,6 +162,21 @@ export default function DailyScreen(): React.JSX.Element {
       setSelectedDates(routeParams.selectedDates);
     }
   }, [routeParams?.selectedDates, setSelectedDates]);
+
+  // Sync searchFilters from preserved state when screen comes into focus
+  // This ensures filters cleared in PropertyListScreen are reflected in DailyScreen
+  const previousFiltersRef = useRef<string>("");
+  useFocusEffect(
+    useCallback(() => {
+      const preservedFilters = getPreservedSearchFilters();
+      const preservedFiltersString = JSON.stringify(preservedFilters);
+      // Only update if different to avoid unnecessary re-renders
+      if (preservedFiltersString !== previousFiltersRef.current) {
+        previousFiltersRef.current = preservedFiltersString;
+        setSearchFilters(preservedFilters);
+      }
+    }, [])
+  );
   
   // Track component mount state and cleanup on unmount
   useEffect(() => {
@@ -198,7 +215,7 @@ export default function DailyScreen(): React.JSX.Element {
     );
 
     // Filter by city if selected
-    if (selectedCity && selectedCity !== "City") {
+    if (selectedCity && selectedCity !== t("listings.city")) {
       properties = properties.filter((p) => {
         const city = (p as any).city;
         return city && city.toLowerCase() === selectedCity.toLowerCase();
@@ -234,7 +251,7 @@ export default function DailyScreen(): React.JSX.Element {
     }
 
     return properties;
-  }, [selectedDates, selectedCity]);
+  }, [selectedDates, selectedCity, t]);
 
   // Filter properties - only daily listings (includes searchFilters)
   const filteredProperties = useMemo(() => {
@@ -290,10 +307,10 @@ export default function DailyScreen(): React.JSX.Element {
   // Get reservation text to display
   const reservationText = useMemo(() => {
     if (selectedDates.startDate && selectedDates.endDate) {
-      return formatDateRange(selectedDates.startDate, selectedDates.endDate);
+      return formatDateRange(selectedDates.startDate, selectedDates.endDate, t, isRTL);
     }
-    return "Choose Reservation";
-  }, [selectedDates]);
+    return t("listings.chooseReservation");
+  }, [selectedDates, t, isRTL]);
 
   // Animate counter fade
   useEffect(() => {
@@ -477,11 +494,60 @@ export default function DailyScreen(): React.JSX.Element {
     setFilterModalVisible(true);
   }, []);
 
-  const handleSearchFilters = useCallback((filters: SearchFilterState, count: number) => {
+  const handleSearchFilters = useCallback((filters: SearchFilterState | null, count: number, shouldClose?: boolean) => {
     setPreservedSearchFilters(filters);
     setSearchFilters(filters);
-    setFilterModalVisible(false);
+    // Only close modal if explicitly requested (when user presses search button)
+    if (shouldClose) {
+      setFilterModalVisible(false);
+    }
   }, [setPreservedSearchFilters]);
+
+  // Count active filters - price range counts as 1, property type counts as 1, all sub-options count separately
+  const activeFilterCount = useMemo(() => {
+    if (!searchFilters) return 0;
+    let count = 0;
+    
+    // Price range counts as 1 filter (if either from or to is set)
+    if (searchFilters.fromPrice !== "" || searchFilters.toPrice !== "") {
+      count++;
+    }
+    
+    // Property type counts as 1 filter
+    if (searchFilters.selectedPropertyType !== null) {
+      count++;
+      
+      // Only count sub-options if property type is selected
+      // Usage type
+      if (searchFilters.usageType !== null) count++;
+      
+      // Bedrooms
+      if (searchFilters.bedrooms !== "" && searchFilters.bedrooms !== "All") count++;
+      
+      // Living rooms
+      if (searchFilters.livingRooms !== "" && searchFilters.livingRooms !== "All") count++;
+      
+      // WC
+      if (searchFilters.wc !== "" && searchFilters.wc !== "All") count++;
+      
+      // Villa type
+      if (searchFilters.villaType !== null) count++;
+      
+      // Count boolean filters
+      const booleanFilters = [
+        "furnished", "carEntrance", "airConditioned", "privateRoof",
+        "apartmentInVilla", "twoEntrances", "specialEntrances", "nearBus",
+        "nearMetro", "pool", "footballPitch", "volleyballCourt", "tent",
+        "kitchen", "playground", "familySection", "stairs", "driverRoom",
+        "maidRoom", "basement"
+      ];
+      booleanFilters.forEach(key => {
+        if (searchFilters[key as keyof SearchFilterState] === true) count++;
+      });
+    }
+    
+    return count;
+  }, [searchFilters]);
 
   const handleSearchBookingDate = useCallback(() => {
     closeBookingDateModal();
@@ -555,15 +621,16 @@ export default function DailyScreen(): React.JSX.Element {
           onCityPress={handleCityPress}
           onFiltersPress={handleFiltersPress}
           cityText={selectedCity}
+          filterCount={activeFilterCount}
         />
       </View>
 
       {/* Error Message */}
       {showLocationError && (
-        <View style={styles.errorMessageContainer}>
+        <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
           <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
-          <Text style={styles.errorMessageText}>
-            Sorry, you cannot search for properties outside the Kingdom of Saudi Arabia
+          <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
+            {t("listings.locationError")}
           </Text>
         </View>
       )}
@@ -617,6 +684,7 @@ export default function DailyScreen(): React.JSX.Element {
         onClose={() => setFilterModalVisible(false)}
         onSearch={handleSearchFilters}
         properties={filteredPropertiesForModal}
+        initialFilters={searchFilters}
       />
     </View>
   );
@@ -740,6 +808,12 @@ const styles = StyleSheet.create({
     fontSize: wp(3.5),
     color: COLORS.error,
     fontWeight: "500",
+  },
+  errorMessageContainerRTL: {
+    flexDirection: "row-reverse",
+  },
+  errorMessageTextRTL: {
+    textAlign: "right",
   },
   dailyHeaderFixedContainer: {
     position: "absolute",

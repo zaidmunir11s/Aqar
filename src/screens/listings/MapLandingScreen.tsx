@@ -21,6 +21,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 import {
   PriceMarker,
   BottomPropertyCard,
@@ -73,6 +74,7 @@ export default function MapLandingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
+  const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -541,6 +543,9 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.2),
     gap: wp(2),
     zIndex: 1000,
+  },
+  errorMessageContainerRTL: {
+    flexDirection: "row-reverse",
   },
   errorMessageText: {
     flex: 1,

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useOrderForm } from "@/hooks/useOrderForm";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 import {
   ScreenHeader,
@@ -56,9 +57,215 @@ const CATEGORY_OPTIONS = [
 export default function NewOrderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const keyboardHeight = useRef(new Animated.Value(0)).current;
+  const { t } = useLocalization();
   
   // Get all state, handlers, and computed values from the hook
   const form = useOrderForm();
+
+  // Helper function to map category ID to translation key
+  function getCategoryTranslationKey(categoryId: string): string {
+    const categoryMap: Record<string, string> = {
+      // For Sale
+      "sale-1": "listings.propertyTypes.villaForSale",
+      "sale-2": "listings.propertyTypes.landForSale",
+      "sale-3": "listings.propertyTypes.apartmentForSale",
+      "sale-4": "listings.propertyTypes.buildingForSale",
+      "sale-5": "listings.propertyTypes.smallHouseForSale",
+      "sale-6": "listings.propertyTypes.loungeForSale",
+      "sale-7": "listings.propertyTypes.farmForSale",
+      "sale-8": "listings.propertyTypes.storeForSale",
+      "sale-9": "listings.propertyTypes.floorForSale",
+      // For Rent
+      "rent-1": "listings.propertyTypes.apartmentForRent",
+      "rent-2": "listings.propertyTypes.villaForRent",
+      "rent-3": "listings.propertyTypes.bigFlatForRent",
+      "rent-4": "listings.propertyTypes.loungeForRent",
+      "rent-5": "listings.propertyTypes.smallHouseForRent",
+      "rent-6": "listings.propertyTypes.storeForRent",
+      "rent-7": "listings.propertyTypes.buildingForRent",
+      "rent-8": "listings.propertyTypes.landForRent",
+      "rent-9": "listings.propertyTypes.roomForRent",
+      "rent-10": "listings.propertyTypes.officeForRent",
+      "rent-11": "listings.propertyTypes.tentForRent",
+      "rent-12": "listings.propertyTypes.warehouseForRent",
+      "rent-13": "listings.propertyTypes.chaletForRent",
+    };
+    return categoryMap[categoryId] || "";
+  }
+
+  // Category options with translation and mapping
+  const categoryOptions = useMemo(() => {
+    const translatedCategories = ALL_CATEGORIES.map((cat) => {
+      const translationKey = getCategoryTranslationKey(cat.id);
+      return translationKey ? t(translationKey) : cat.text;
+    });
+    return [...translatedCategories, t("listings.other")];
+  }, [t]);
+
+  // Create mapping from original to translated category names
+  const categoryTranslationMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    ALL_CATEGORIES.forEach((cat) => {
+      const translationKey = getCategoryTranslationKey(cat.id);
+      if (translationKey) {
+        map[cat.text] = t(translationKey);
+      } else {
+        map[cat.text] = cat.text;
+      }
+    });
+    map["Other"] = t("listings.other");
+    return map;
+  }, [t]);
+
+  // Get translated category value for display
+  const getTranslatedCategoryValue = useCallback((originalValue: string | null): string => {
+    if (!originalValue) return "";
+    return categoryTranslationMap[originalValue] || originalValue;
+  }, [categoryTranslationMap]);
+
+  // Helper function to translate option
+  const translateOption = useCallback((opt: string, type: "streetDirection" | "floor" | "age" | "streetWidth"): string => {
+    if (opt === "All") return t("listings.all");
+    
+    if (type === "streetDirection") {
+      if (opt === "North") return t("listings.address.north");
+      if (opt === "East") return t("listings.address.east");
+      if (opt === "West") return t("listings.address.west");
+      if (opt === "South") return t("listings.address.south");
+      if (opt === "Northeast") return t("listings.address.northeast");
+      if (opt === "Southeast") return t("listings.address.southeast");
+      if (opt === "Southwest") return t("listings.address.southwest");
+      if (opt === "Northwest") return t("listings.address.northwest");
+      if (opt === "3 Streets") return t("listings.threeStreets");
+      if (opt === "4 Streets") return t("listings.fourStreets");
+    } else if (type === "floor") {
+      if (opt === "First floor") return t("listings.firstFloor");
+      if (opt === "Second floor") return t("listings.secondFloor");
+    } else if (type === "age") {
+      if (opt.startsWith("Less than")) {
+        const years = opt.match(/\d+/)?.[0] || "";
+        return t("listings.lessThanYears", { years });
+      }
+    } else if (type === "streetWidth") {
+      if (opt.startsWith("More than")) {
+        const width = opt.match(/\d+/)?.[0] || "";
+        return t("listings.moreThan", { width });
+      }
+    }
+    return opt;
+  }, [t]);
+
+  // Translated picker options
+  const translatedStreetDirectionOptions = useMemo(
+    () => STREET_DIRECTION_OPTIONS.map((opt) => translateOption(opt, "streetDirection")),
+    [translateOption]
+  );
+
+  const translatedFloorOptions = useMemo(
+    () => FLOOR_OPTIONS.map((opt) => translateOption(opt, "floor")),
+    [translateOption]
+  );
+
+  const translatedAgeOptions = useMemo(
+    () => AGE_OPTIONS.map((opt) => translateOption(opt, "age")),
+    [translateOption]
+  );
+
+  const translatedStreetWidthOptions = useMemo(
+    () => STREET_WIDTH_OPTIONS.map((opt) => translateOption(opt, "streetWidth")),
+    [translateOption]
+  );
+
+  // Create reverse mapping for picker options (translated -> original)
+  const createReverseMap = useCallback((originalOptions: string[], translatedOptions: string[]): Record<string, string> => {
+    const map: Record<string, string> = {};
+    originalOptions.forEach((original, index) => {
+      map[translatedOptions[index]] = original;
+    });
+    return map;
+  }, []);
+
+  const streetDirectionReverseMap = useMemo(
+    () => createReverseMap(STREET_DIRECTION_OPTIONS, translatedStreetDirectionOptions),
+    [createReverseMap, translatedStreetDirectionOptions]
+  );
+
+  const floorReverseMap = useMemo(
+    () => createReverseMap(FLOOR_OPTIONS, translatedFloorOptions),
+    [createReverseMap, translatedFloorOptions]
+  );
+
+  const ageReverseMap = useMemo(
+    () => createReverseMap(AGE_OPTIONS, translatedAgeOptions),
+    [createReverseMap, translatedAgeOptions]
+  );
+
+  const streetWidthReverseMap = useMemo(
+    () => createReverseMap(STREET_WIDTH_OPTIONS, translatedStreetWidthOptions),
+    [createReverseMap, translatedStreetWidthOptions]
+  );
+
+  // Helper functions to get translated initial values
+  const getTranslatedInitialValue = useCallback((originalValue: string | null, reverseMap: Record<string, string>, translatedOptions: string[]): string => {
+    if (!originalValue) return "";
+    // Find the translated value that corresponds to the original
+    const originalIndex = Object.values(reverseMap).indexOf(originalValue);
+    return originalIndex >= 0 ? translatedOptions[originalIndex] : originalValue;
+  }, []);
+
+  // Helper function to translate picker values for display in FieldWithModal
+  const getTranslatedPickerValue = useCallback((originalValue: string | null, type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"): string => {
+    if (!originalValue) return "";
+    
+    if (type === "floor") {
+      return getTranslatedInitialValue(originalValue, floorReverseMap, translatedFloorOptions);
+    } else if (type === "age") {
+      return getTranslatedInitialValue(originalValue, ageReverseMap, translatedAgeOptions);
+    } else if (type === "streetDirection") {
+      return getTranslatedInitialValue(originalValue, streetDirectionReverseMap, translatedStreetDirectionOptions);
+    } else if (type === "streetWidth") {
+      return getTranslatedInitialValue(originalValue, streetWidthReverseMap, translatedStreetWidthOptions);
+    } else if (type === "stores") {
+      // Stores options: ["All", "1", "2", "3", "4"]
+      if (originalValue === "All") return t("listings.all");
+      return originalValue; // Numbers don't need translation
+    }
+    
+    return originalValue;
+  }, [getTranslatedInitialValue, floorReverseMap, translatedFloorOptions, ageReverseMap, translatedAgeOptions, streetDirectionReverseMap, translatedStreetDirectionOptions, streetWidthReverseMap, translatedStreetWidthOptions, t]);
+
+  // Translated tab bar options
+  const translatedVillaTypeOptions = useMemo(
+    () =>
+      VILLA_TYPE_OPTIONS.map((opt) => {
+        if (opt === "Standalone") return t("listings.standalone");
+        if (opt === "Duplex") return t("listings.duplex");
+        if (opt === "Townhouse") return t("listings.townhouse");
+        return opt;
+      }),
+    [t]
+  );
+
+  const translatedResidentialCommercialOptions = useMemo(
+    () =>
+      RESIDENTIAL_COMMERCIAL_OPTIONS.map((opt) => {
+        if (opt === "Residential") return t("listings.residential");
+        if (opt === "Commercial") return t("listings.commercial");
+        return opt;
+      }),
+    [t]
+  );
+
+  // Create reverse maps for tab bar options
+  const villaTypeReverseMap = useMemo(
+    () => createReverseMap(VILLA_TYPE_OPTIONS, translatedVillaTypeOptions),
+    [createReverseMap, translatedVillaTypeOptions]
+  );
+
+  const residentialCommercialReverseMap = useMemo(
+    () => createReverseMap(RESIDENTIAL_COMMERCIAL_OPTIONS, translatedResidentialCommercialOptions),
+    [createReverseMap, translatedResidentialCommercialOptions]
+  );
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -370,7 +577,7 @@ export default function NewOrderScreen(): React.JSX.Element {
     <View style={styles.container}>
       {/* HEADER */}
       <ScreenHeader
-        title="New Order"
+        title={t("listings.newOrder")}
         onBackPress={handleBackPress}
         fontWeightBold
         fontSize={wp(4.5)}
@@ -383,9 +590,9 @@ export default function NewOrderScreen(): React.JSX.Element {
       >
         {/* Category Field */}
         <FieldWithModal
-          label="Category"
-          value={form.category}
-          placeholder="Select category"
+          label={t("listings.category")}
+          value={getTranslatedCategoryValue(form.category)}
+          placeholder={t("listings.selectCategory")}
           onPress={() => form.setShowCategoryModal(true)}
         />
 
@@ -400,7 +607,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             {form.showYearlyContent && (
               <>
                 <View style={styles.section}>
-                  <Text style={styles.label}>Payment options</Text>
+                  <Text style={styles.label}>{t("listings.paymentOptions")}</Text>
                   <PaymentChips
                     selectedPayment={form.selectedPayment}
                     onSelect={form.handlePaymentChipPress}
@@ -419,7 +626,7 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             {form.showPriceSection && (
               <PriceInputSection
-                label="Price"
+                label={t("listings.price")}
                 fromValue={form.priceFrom}
                 toValue={form.priceTo}
                 onFromChange={form.setPriceFrom}
@@ -436,75 +643,75 @@ export default function NewOrderScreen(): React.JSX.Element {
             )}
 
             <TabBarSection
-              label="Bedrooms"
+              label={t("listings.bedrooms")}
               options={BEDROOM_OPTIONS}
               selectedValue={form.selectedBedroom}
               onSelect={form.handleBedroomPress}
             />
 
             <TabBarSection
-              label="Living Rooms"
+              label={t("listings.livingRooms")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <TabBarSection
-              label="WC"
+              label={t("listings.wc")}
               options={WC_OPTIONS}
               selectedValue={form.selectedWc}
               onSelect={form.handleWcPress}
             />
 
             <FieldWithModal
-              label="Floor"
-              value={form.floor}
-              placeholder="Select floor"
+              label={t("listings.floor")}
+              value={getTranslatedPickerValue(form.floor, "floor")}
+              placeholder={t("listings.selectFloor")}
               onPress={() => form.setShowFloorModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
-              value={form.age}
-              placeholder="Select age"
+              label={t("listings.age")}
+              value={getTranslatedPickerValue(form.age, "age")}
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <View style={styles.section}>
               <ToggleRow
-                label="Furnished"
+                label={t("listings.furnished")}
                 value={form.furnished}
                 onValueChange={form.setFurnished}
               />
               <ToggleRow
-                label="Car entrance"
+                label={t("listings.carEntrance")}
                 value={form.carEntrance}
                 onValueChange={form.setCarEntrance}
               />
               <ToggleRow
-                label="Air conditioned"
+                label={t("listings.airConditioned")}
                 value={form.airConditioned}
                 onValueChange={form.setAirConditioned}
               />
               <ToggleRow
-                label="Private roof"
+                label={t("listings.privateRoof")}
                 value={form.privateRoof}
                 onValueChange={form.setPrivateRoof}
               />
               <ToggleRow
-                label="Apartment in villa"
+                label={t("listings.apartmentInVilla")}
                 value={form.apartmentInVilla}
                 onValueChange={form.setApartmentInVilla}
               />
               <ToggleRow
-                label="Two entrances"
+                label={t("listings.twoEntrances")}
                 value={form.twoEntrances}
                 onValueChange={form.setTwoEntrances}
               />
               <ToggleRow
-                label="Special entrances"
+                label={t("listings.specialEntrances")}
                 value={form.specialEntrances}
                 onValueChange={form.setSpecialEntrances}
               />
@@ -516,7 +723,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isVillaForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.villaPriceFrom}
               toValue={form.villaPriceTo}
               onFromChange={form.setVillaPriceFrom}
@@ -524,103 +731,106 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Apartments"
+              label={t("listings.apartments")}
               options={APARTMENT_OPTIONS}
               selectedValue={form.selectedApartment}
               onSelect={form.handleApartmentPress}
             />
 
             <TabBarSection
-              label="Bedrooms"
+              label={t("listings.bedrooms")}
               options={BEDROOM_OPTIONS}
               selectedValue={form.selectedBedroom}
               onSelect={form.handleBedroomPress}
             />
 
             <FieldWithModal
-              label="Street Direction"
-              value={form.streetDirection}
-              placeholder="Select street direction"
+              label={t("listings.streetDirection")}
+              value={getTranslatedPickerValue(form.streetDirection, "streetDirection")}
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <TabBarSection
-              label="Living Rooms"
+              label={t("listings.livingRooms")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <TabBarSection
-              label="WC"
+              label={t("listings.wc")}
               options={WC_OPTIONS}
               selectedValue={form.selectedWc}
               onSelect={form.handleWcPress}
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.areaFrom}
               toValue={form.areaTo}
               onFromChange={form.setAreaFrom}
               onToChange={form.setAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.streetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.streetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <View style={styles.section}>
-              <ToggleRow label="Stairs" value={form.stairs} onValueChange={form.setStairs} />
+              <ToggleRow label={t("listings.stairs")} value={form.stairs} onValueChange={form.setStairs} />
             </View>
 
             <FieldWithModal
-              label="Age"
-              value={form.age}
-              placeholder="Select age"
+              label={t("listings.age")}
+              value={getTranslatedPickerValue(form.age, "age")}
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <View style={styles.section}>
               <ToggleRow
-                label="Driver room"
+                label={t("listings.driverRoom")}
                 value={form.driverRoom}
                 onValueChange={form.setDriverRoom}
               />
-              <ToggleRow label="Maid room" value={form.maidRoom} onValueChange={form.setMaidRoom} />
-              <ToggleRow label="Pool" value={form.pool} onValueChange={form.setPool} />
+              <ToggleRow label={t("listings.maidRoom")} value={form.maidRoom} onValueChange={form.setMaidRoom} />
+              <ToggleRow label={t("listings.pool")} value={form.pool} onValueChange={form.setPool} />
               <ToggleRow
-                label="Furnished"
+                label={t("listings.furnished")}
                 value={form.villaFurnished}
                 onValueChange={form.setVillaFurnished}
               />
-              <ToggleRow label="Kitchen" value={form.kitchen} onValueChange={form.setKitchen} />
+              <ToggleRow label={t("listings.kitchen")} value={form.kitchen} onValueChange={form.setKitchen} />
               <ToggleRow
-                label="Car entrance"
+                label={t("listings.carEntrance")}
                 value={form.villaCarEntrance}
                 onValueChange={form.setVillaCarEntrance}
               />
-              <ToggleRow label="Basement" value={form.basement} onValueChange={form.setBasement} />
+              <ToggleRow label={t("listings.basement")} value={form.basement} onValueChange={form.setBasement} />
             </View>
 
             <TabBarSection
-              label="Villa Type"
-              options={VILLA_TYPE_OPTIONS}
-              selectedValue={form.selectedVillaType}
-              onSelect={form.handleVillaTypePress}
+              label={t("listings.villaType")}
+              options={translatedVillaTypeOptions}
+              selectedValue={getTranslatedInitialValue(form.selectedVillaType, villaTypeReverseMap, translatedVillaTypeOptions)}
+              onSelect={(translatedValue: string) => {
+                const originalValue = villaTypeReverseMap[translatedValue] || translatedValue;
+                form.handleVillaTypePress(originalValue);
+              }}
             />
 
             <View style={styles.section}>
-              <ToggleRow label="Near bus" value={form.nearBus} onValueChange={form.setNearBus} />
-              <ToggleRow label="Near metro" value={form.nearMetro} onValueChange={form.setNearMetro} />
+              <ToggleRow label={t("listings.nearBus")} value={form.nearBus} onValueChange={form.setNearBus} />
+              <ToggleRow label={t("listings.nearMetro")} value={form.nearMetro} onValueChange={form.setNearMetro} />
             </View>
           </>
         )}
@@ -629,7 +839,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isLandForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.landPriceFrom}
               toValue={form.landPriceTo}
               onFromChange={form.setLandPriceFrom}
@@ -637,41 +847,44 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              options={RESIDENTIAL_COMMERCIAL_OPTIONS}
-              selectedValue={form.selectedLandType}
-              onSelect={form.handleLandTypePress}
+              options={translatedResidentialCommercialOptions}
+              selectedValue={getTranslatedInitialValue(form.selectedLandType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
+              onSelect={(translatedValue: string) => {
+                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+                form.handleLandTypePress(originalValue);
+              }}
             />
 
             <FieldWithModal
-              label="Street Direction"
-              value={form.landStreetDirection}
-              placeholder="Select street direction"
+              label={t("listings.streetDirection")}
+              value={getTranslatedPickerValue(form.landStreetDirection, "streetDirection")}
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.landAreaFrom}
               toValue={form.landAreaTo}
               onFromChange={form.setLandAreaFrom}
               onToChange={form.setLandAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.landStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.landStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -681,7 +894,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isApartmentForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.apartmentSalePriceFrom}
               toValue={form.apartmentSalePriceTo}
               onFromChange={form.setApartmentSalePriceFrom}
@@ -689,61 +902,61 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Bedrooms"
+              label={t("listings.bedrooms")}
               options={BEDROOM_OPTIONS}
               selectedValue={form.selectedBedroom}
               onSelect={form.handleBedroomPress}
             />
 
             <TabBarSection
-              label="Living Rooms"
+              label={t("listings.livingRooms")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <TabBarSection
-              label="WC"
+              label={t("listings.wc")}
               options={WC_OPTIONS}
               selectedValue={form.selectedWc}
               onSelect={form.handleWcPress}
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.apartmentSaleAreaFrom}
               toValue={form.apartmentSaleAreaTo}
               onFromChange={form.setApartmentSaleAreaFrom}
               onToChange={form.setApartmentSaleAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Floor"
+              label={t("listings.floor")}
               value={form.floor}
-              placeholder="Select floor"
+              placeholder={t("listings.selectFloor")}
               onPress={() => form.setShowFloorModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Car entrance", value: form.apartmentSaleCarEntrance, onValueChange: form.setApartmentSaleCarEntrance },
-                { label: "Private roof", value: form.apartmentSalePrivateRoof, onValueChange: form.setApartmentSalePrivateRoof },
-                { label: "Apartment in villa", value: form.apartmentSaleInVilla, onValueChange: form.setApartmentSaleInVilla },
-                { label: "Two entrances", value: form.apartmentSaleTwoEntrances, onValueChange: form.setApartmentSaleTwoEntrances },
-                { label: "Special entrances", value: form.apartmentSaleSpecialEntrances, onValueChange: form.setApartmentSaleSpecialEntrances },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.carEntrance"), value: form.apartmentSaleCarEntrance, onValueChange: form.setApartmentSaleCarEntrance },
+                { label: t("listings.privateRoof"), value: form.apartmentSalePrivateRoof, onValueChange: form.setApartmentSalePrivateRoof },
+                { label: t("listings.apartmentInVilla"), value: form.apartmentSaleInVilla, onValueChange: form.setApartmentSaleInVilla },
+                { label: t("listings.twoEntrances"), value: form.apartmentSaleTwoEntrances, onValueChange: form.setApartmentSaleTwoEntrances },
+                { label: t("listings.specialEntrances"), value: form.apartmentSaleSpecialEntrances, onValueChange: form.setApartmentSaleSpecialEntrances },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -753,7 +966,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isBuildingForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.buildingPriceFrom}
               toValue={form.buildingPriceTo}
               onFromChange={form.setBuildingPriceFrom}
@@ -761,64 +974,67 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Apartments"
+              label={t("listings.apartments")}
               options={APARTMENT_OPTIONS}
               selectedValue={form.buildingApartments}
               onSelect={form.handleApartmentPress}
             />
 
             <TabBarSection
-              options={RESIDENTIAL_COMMERCIAL_OPTIONS}
-              selectedValue={form.selectedBuildingType}
-              onSelect={form.handleBuildingTypePress}
+              options={translatedResidentialCommercialOptions}
+              selectedValue={getTranslatedInitialValue(form.selectedBuildingType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
+              onSelect={(translatedValue: string) => {
+                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+                form.handleBuildingTypePress(originalValue);
+              }}
             />
 
             <FieldWithModal
-              label="Street Direction"
+              label={t("listings.streetDirection")}
               value={form.buildingStreetDirection}
-              placeholder="Select street direction"
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Stores"
+              label={t("listings.stores")}
               value={form.stores}
-              placeholder="Select stores"
+              placeholder={t("listings.selectStores")}
               onPress={() => form.setShowStoresModal(true)}
               backgroundColor="background"
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.buildingAreaFrom}
               toValue={form.buildingAreaTo}
               onFromChange={form.setBuildingAreaFrom}
               onToChange={form.setBuildingAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.streetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.streetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
-              value={form.age}
-              placeholder="Select age"
+              label={t("listings.age")}
+              value={getTranslatedPickerValue(form.age, "age")}
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -828,7 +1044,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isSmallHouseForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.smallHousePriceFrom}
               toValue={form.smallHousePriceTo}
               onFromChange={form.setSmallHousePriceFrom}
@@ -836,59 +1052,59 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Bedrooms"
+              label={t("listings.bedrooms")}
               options={BEDROOM_OPTIONS}
               selectedValue={form.selectedBedroom}
               onSelect={form.handleBedroomPress}
             />
 
             <FieldWithModal
-              label="Street Direction"
+              label={t("listings.streetDirection")}
               value={form.smallHouseStreetDirection}
-              placeholder="Select street direction"
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <TabBarSection
-              label="Living room"
+              label={t("listings.livingRoom")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.smallHouseAreaFrom}
               toValue={form.smallHouseAreaTo}
               onFromChange={form.setSmallHouseAreaFrom}
               onToChange={form.setSmallHouseAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.smallHouseStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.smallHouseStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Furnished", value: form.smallHouseFurnished, onValueChange: form.setSmallHouseFurnished },
-                { label: "Tent", value: form.tent, onValueChange: form.setTent },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.furnished"), value: form.smallHouseFurnished, onValueChange: form.setSmallHouseFurnished },
+                { label: t("listings.tent"), value: form.tent, onValueChange: form.setTent },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -898,7 +1114,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isLoungeForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.loungePriceFrom}
               toValue={form.loungePriceTo}
               onFromChange={form.setLoungePriceFrom}
@@ -906,35 +1122,35 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.loungeAreaFrom}
               toValue={form.loungeAreaTo}
               onFromChange={form.setLoungeAreaFrom}
               onToChange={form.setLoungeAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
+              label={t("listings.streetWidth")}
               value={form.loungeStreetWidth}
-              placeholder="Select street width"
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -944,7 +1160,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isFarmForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.farmPriceFrom}
               toValue={form.farmPriceTo}
               onFromChange={form.setFarmPriceFrom}
@@ -952,19 +1168,19 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.farmAreaFrom}
               toValue={form.farmAreaTo}
               onFromChange={form.setFarmAreaFrom}
               onToChange={form.setFarmAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -974,7 +1190,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isStoreForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.storePriceFrom}
               toValue={form.storePriceTo}
               onFromChange={form.setStorePriceFrom}
@@ -982,27 +1198,27 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.storeAreaFrom}
               toValue={form.storeAreaTo}
               onFromChange={form.setStoreAreaFrom}
               onToChange={form.setStoreAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.storeStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.storeStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1012,7 +1228,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isFloorForSale && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.floorSalePriceFrom}
               toValue={form.floorSalePriceTo}
               onFromChange={form.setFloorSalePriceFrom}
@@ -1020,43 +1236,43 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Living rooms"
+              label={t("listings.livingRooms")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.floorSaleAreaFrom}
               toValue={form.floorSaleAreaTo}
               onFromChange={form.setFloorSaleAreaFrom}
               onToChange={form.setFloorSaleAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Floor"
+              label={t("listings.floor")}
               value={form.floor}
-              placeholder="Select floor"
+              placeholder={t("listings.selectFloor")}
               onPress={() => form.setShowFloorModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Car entrance", value: form.floorSaleCarEntrance, onValueChange: form.setFloorSaleCarEntrance },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.carEntrance"), value: form.floorSaleCarEntrance, onValueChange: form.setFloorSaleCarEntrance },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1123,7 +1339,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.bigFlatPriceFrom}
               toValue={form.bigFlatPriceTo}
               onFromChange={form.setBigFlatPriceFrom}
@@ -1131,61 +1347,61 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Bedrooms"
+              label={t("listings.bedrooms")}
               options={BEDROOM_OPTIONS}
               selectedValue={form.selectedBedroom}
               onSelect={form.handleBedroomPress}
             />
 
             <TabBarSection
-              label="Living Rooms"
+              label={t("listings.livingRooms")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <TabBarSection
-              label="WC"
+              label={t("listings.wc")}
               options={WC_OPTIONS}
               selectedValue={form.selectedWc}
               onSelect={form.handleWcPress}
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.bigFlatAreaFrom}
               toValue={form.bigFlatAreaTo}
               onFromChange={form.setBigFlatAreaFrom}
               onToChange={form.setBigFlatAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Floor"
+              label={t("listings.floor")}
               value={form.floor}
-              placeholder="Select floor"
+              placeholder={t("listings.selectFloor")}
               onPress={() => form.setShowFloorModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Car entrance", value: form.bigFlatCarEntrance, onValueChange: form.setBigFlatCarEntrance },
-                { label: "Air conditioned", value: form.bigFlatAirConditioned, onValueChange: form.setBigFlatAirConditioned },
-                { label: "Apartment in villa", value: form.bigFlatInVilla, onValueChange: form.setBigFlatInVilla },
-                { label: "Two entrances", value: form.bigFlatTwoEntrances, onValueChange: form.setBigFlatTwoEntrances },
-                { label: "Special entrances", value: form.bigFlatSpecialEntrances, onValueChange: form.setBigFlatSpecialEntrances },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.carEntrance"), value: form.bigFlatCarEntrance, onValueChange: form.setBigFlatCarEntrance },
+                { label: t("listings.airConditioned"), value: form.bigFlatAirConditioned, onValueChange: form.setBigFlatAirConditioned },
+                { label: t("listings.apartmentInVilla"), value: form.bigFlatInVilla, onValueChange: form.setBigFlatInVilla },
+                { label: t("listings.twoEntrances"), value: form.bigFlatTwoEntrances, onValueChange: form.setBigFlatTwoEntrances },
+                { label: t("listings.specialEntrances"), value: form.bigFlatSpecialEntrances, onValueChange: form.setBigFlatSpecialEntrances },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1200,7 +1416,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.loungeRentPriceFrom}
               toValue={form.loungeRentPriceTo}
               onFromChange={form.setLoungeRentPriceFrom}
@@ -1208,26 +1424,26 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.loungeRentAreaFrom}
               toValue={form.loungeRentAreaTo}
               onFromChange={form.setLoungeRentAreaFrom}
               onToChange={form.setLoungeRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Pool", value: form.loungeRentPool, onValueChange: form.setLoungeRentPool },
-                { label: "Football pitch", value: form.footballPitch, onValueChange: form.setFootballPitch },
-                { label: "Volleyball Court", value: form.volleyballCourt, onValueChange: form.setVolleyballCourt },
-                { label: "Tent", value: form.loungeRentTent, onValueChange: form.setLoungeRentTent },
-                { label: "Kitchen", value: form.loungeRentKitchen, onValueChange: form.setLoungeRentKitchen },
-                { label: "Playground", value: form.playground, onValueChange: form.setPlayground },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
-                { label: "Family section", value: form.familySection, onValueChange: form.setFamilySection },
+                { label: t("listings.pool"), value: form.loungeRentPool, onValueChange: form.setLoungeRentPool },
+                { label: t("listings.footballPitch"), value: form.footballPitch, onValueChange: form.setFootballPitch },
+                { label: t("listings.volleyballCourt"), value: form.volleyballCourt, onValueChange: form.setVolleyballCourt },
+                { label: t("listings.tent"), value: form.loungeRentTent, onValueChange: form.setLoungeRentTent },
+                { label: t("listings.kitchen"), value: form.loungeRentKitchen, onValueChange: form.setLoungeRentKitchen },
+                { label: t("listings.playground"), value: form.playground, onValueChange: form.setPlayground },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.familySection"), value: form.familySection, onValueChange: form.setFamilySection },
               ]}
             />
           </>
@@ -1237,7 +1453,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isSmallHouseForRent && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.smallHouseRentPriceFrom}
               toValue={form.smallHouseRentPriceTo}
               onFromChange={form.setSmallHouseRentPriceFrom}
@@ -1245,60 +1461,60 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Bedrooms"
+              label={t("listings.bedrooms")}
               options={BEDROOM_OPTIONS}
               selectedValue={form.selectedBedroom}
               onSelect={form.handleBedroomPress}
             />
 
             <FieldWithModal
-              label="Street Direction"
-              value={form.smallHouseRentStreetDirection}
-              placeholder="Select street direction"
+              label={t("listings.streetDirection")}
+              value={getTranslatedPickerValue(form.smallHouseRentStreetDirection, "streetDirection")}
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <TabBarSection
-              label="Living room"
+              label={t("listings.livingRoom")}
               options={LIVING_ROOM_OPTIONS}
               selectedValue={form.selectedLivingRoom}
               onSelect={form.handleLivingRoomPress}
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.smallHouseRentAreaFrom}
               toValue={form.smallHouseRentAreaTo}
               onFromChange={form.setSmallHouseRentAreaFrom}
               onToChange={form.setSmallHouseRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.smallHouseRentStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.smallHouseRentStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Furnished", value: form.smallHouseRentFurnished, onValueChange: form.setSmallHouseRentFurnished },
-                { label: "Tent", value: form.smallHouseRentTent, onValueChange: form.setSmallHouseRentTent },
-                { label: "Kitchen", value: form.smallHouseRentKitchen, onValueChange: form.setSmallHouseRentKitchen },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.furnished"), value: form.smallHouseRentFurnished, onValueChange: form.setSmallHouseRentFurnished },
+                { label: t("listings.tent"), value: form.smallHouseRentTent, onValueChange: form.setSmallHouseRentTent },
+                { label: t("listings.kitchen"), value: form.smallHouseRentKitchen, onValueChange: form.setSmallHouseRentKitchen },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1308,7 +1524,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isStoreForRent && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.storeRentPriceFrom}
               toValue={form.storeRentPriceTo}
               onFromChange={form.setStoreRentPriceFrom}
@@ -1316,27 +1532,27 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.storeRentAreaFrom}
               toValue={form.storeRentAreaTo}
               onFromChange={form.setStoreRentAreaFrom}
               onToChange={form.setStoreRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.storeRentStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.storeRentStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1346,7 +1562,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isBuildingForRent && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.buildingRentPriceFrom}
               toValue={form.buildingRentPriceTo}
               onFromChange={form.setBuildingRentPriceFrom}
@@ -1354,64 +1570,67 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <TabBarSection
-              label="Apartments"
+              label={t("listings.apartments")}
               options={APARTMENT_OPTIONS}
               selectedValue={form.buildingRentApartments}
               onSelect={form.handleApartmentPress}
             />
 
             <TabBarSection
-              options={RESIDENTIAL_COMMERCIAL_OPTIONS}
-              selectedValue={form.selectedBuildingRentType}
-              onSelect={form.handleBuildingRentTypePress}
+              options={translatedResidentialCommercialOptions}
+              selectedValue={getTranslatedInitialValue(form.selectedBuildingRentType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
+              onSelect={(translatedValue: string) => {
+                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+                form.handleBuildingRentTypePress(originalValue);
+              }}
             />
 
             <FieldWithModal
-              label="Street Direction"
-              value={form.buildingRentStreetDirection}
-              placeholder="Select street direction"
+              label={t("listings.streetDirection")}
+              value={getTranslatedPickerValue(form.buildingRentStreetDirection, "streetDirection")}
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Stores"
-              value={form.buildingRentStores}
-              placeholder="Select stores"
+              label={t("listings.stores")}
+              value={getTranslatedPickerValue(form.buildingRentStores, "stores")}
+              placeholder={t("listings.selectStores")}
               onPress={() => form.setShowStoresModal(true)}
               backgroundColor="background"
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.buildingRentAreaFrom}
               toValue={form.buildingRentAreaTo}
               onFromChange={form.setBuildingRentAreaFrom}
               onToChange={form.setBuildingRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.buildingRentStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.buildingRentStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <FieldWithModal
-              label="Age"
+              label={t("listings.age")}
               value={form.age}
-              placeholder="Select age"
+              placeholder={t("listings.selectAge")}
               onPress={() => form.setShowAgeModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1421,41 +1640,44 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isLandForRent && (
           <>
             <TabBarSection
-              options={RESIDENTIAL_COMMERCIAL_OPTIONS}
-              selectedValue={form.selectedLandRentType}
-              onSelect={form.handleLandRentTypePress}
+              options={translatedResidentialCommercialOptions}
+              selectedValue={getTranslatedInitialValue(form.selectedLandRentType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
+              onSelect={(translatedValue: string) => {
+                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+                form.handleLandRentTypePress(originalValue);
+              }}
             />
 
             <FieldWithModal
-              label="Street Direction"
-              value={form.landRentStreetDirection}
-              placeholder="Select street direction"
+              label={t("listings.streetDirection")}
+              value={getTranslatedPickerValue(form.landRentStreetDirection, "streetDirection")}
+              placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.landRentAreaFrom}
               toValue={form.landRentAreaTo}
               onFromChange={form.setLandRentAreaFrom}
               onToChange={form.setLandRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.landRentStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.landRentStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1470,7 +1692,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.roomRentPriceFrom}
               toValue={form.roomRentPriceTo}
               onFromChange={form.setRoomRentPriceFrom}
@@ -1479,9 +1701,9 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <ToggleGroup
               toggles={[
-                { label: "Kitchen", value: form.roomRentKitchen, onValueChange: form.setRoomRentKitchen },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.kitchen"), value: form.roomRentKitchen, onValueChange: form.setRoomRentKitchen },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1491,7 +1713,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isOfficeForRent && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.officeRentPriceFrom}
               toValue={form.officeRentPriceTo}
               onFromChange={form.setOfficeRentPriceFrom}
@@ -1499,28 +1721,28 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.officeRentAreaFrom}
               toValue={form.officeRentAreaTo}
               onFromChange={form.setOfficeRentAreaFrom}
               onToChange={form.setOfficeRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.officeRentStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.officeRentStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Furnished", value: form.officeRentFurnished, onValueChange: form.setOfficeRentFurnished },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.furnished"), value: form.officeRentFurnished, onValueChange: form.setOfficeRentFurnished },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1536,9 +1758,9 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
-                { label: "Family section", value: form.familySection, onValueChange: form.setFamilySection },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.familySection"), value: form.familySection, onValueChange: form.setFamilySection },
               ]}
             />
           </>
@@ -1548,7 +1770,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isWarehouseForRent && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.warehouseRentPriceFrom}
               toValue={form.warehouseRentPriceTo}
               onFromChange={form.setWarehouseRentPriceFrom}
@@ -1556,27 +1778,27 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.warehouseRentAreaFrom}
               toValue={form.warehouseRentAreaTo}
               onFromChange={form.setWarehouseRentAreaFrom}
               onToChange={form.setWarehouseRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <FieldWithModal
-              label="Street Width"
-              value={form.warehouseRentStreetWidth}
-              placeholder="Select street width"
+              label={t("listings.streetWidth")}
+              value={getTranslatedPickerValue(form.warehouseRentStreetWidth, "streetWidth")}
+              placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1591,7 +1813,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.chaletRentPriceFrom}
               toValue={form.chaletRentPriceTo}
               onFromChange={form.setChaletRentPriceFrom}
@@ -1599,26 +1821,26 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.chaletRentAreaFrom}
               toValue={form.chaletRentAreaTo}
               onFromChange={form.setChaletRentAreaFrom}
               onToChange={form.setChaletRentAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Pool", value: form.chaletRentPool, onValueChange: form.setChaletRentPool },
-                { label: "Football pitch", value: form.chaletFootballPitch, onValueChange: form.setChaletFootballPitch },
-                { label: "Volleyball Court", value: form.chaletVolleyballCourt, onValueChange: form.setChaletVolleyballCourt },
-                { label: "Tent", value: form.chaletRentTent, onValueChange: form.setChaletRentTent },
-                { label: "Kitchen", value: form.chaletRentKitchen, onValueChange: form.setChaletRentKitchen },
-                { label: "Playground", value: form.chaletPlayground, onValueChange: form.setChaletPlayground },
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
-                { label: "Family section", value: form.familySection, onValueChange: form.setFamilySection },
+                { label: t("listings.pool"), value: form.chaletRentPool, onValueChange: form.setChaletRentPool },
+                { label: t("listings.footballPitch"), value: form.chaletFootballPitch, onValueChange: form.setChaletFootballPitch },
+                { label: t("listings.volleyballCourt"), value: form.chaletVolleyballCourt, onValueChange: form.setChaletVolleyballCourt },
+                { label: t("listings.tent"), value: form.chaletRentTent, onValueChange: form.setChaletRentTent },
+                { label: t("listings.kitchen"), value: form.chaletRentKitchen, onValueChange: form.setChaletRentKitchen },
+                { label: t("listings.playground"), value: form.chaletPlayground, onValueChange: form.setChaletPlayground },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.familySection"), value: form.familySection, onValueChange: form.setFamilySection },
               ]}
             />
           </>
@@ -1628,7 +1850,7 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isOther && (
           <>
             <PriceInputSection
-              label="Price"
+              label={t("listings.price")}
               fromValue={form.otherPriceFrom}
               toValue={form.otherPriceTo}
               onFromChange={form.setOtherPriceFrom}
@@ -1636,19 +1858,19 @@ export default function NewOrderScreen(): React.JSX.Element {
             />
 
             <PriceInputSection
-              label="Area (m²)"
+              label={t("listings.areaM2")}
               fromValue={form.otherAreaFrom}
               toValue={form.otherAreaTo}
               onFromChange={form.setOtherAreaFrom}
               onToChange={form.setOtherAreaTo}
-              fromPlaceholder="From area"
-              toPlaceholder="To area"
+              fromPlaceholder={t("listings.fromArea")}
+              toPlaceholder={t("listings.toArea")}
             />
 
             <ToggleGroup
               toggles={[
-                { label: "Near bus", value: form.nearBus, onValueChange: form.setNearBus },
-                { label: "Near metro", value: form.nearMetro, onValueChange: form.setNearMetro },
+                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
+                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
               ]}
             />
           </>
@@ -1671,6 +1893,8 @@ export default function NewOrderScreen(): React.JSX.Element {
           onNextPress={handleNextPress}
           showBack={true}
           showNext={true}
+          backText={t("common.back")}
+          nextText={t("common.next")}
         />
       </Animated.View>
 
@@ -1678,37 +1902,52 @@ export default function NewOrderScreen(): React.JSX.Element {
       <WheelPickerModal
         visible={form.showCategoryModal}
         onClose={() => form.setShowCategoryModal(false)}
-        onSelect={form.handleCategorySelect}
-        title="Select Category"
-        options={CATEGORY_OPTIONS}
-        initialValue={form.category}
+        onSelect={(translatedValue: string) => {
+          // Find original value from translated value
+          const originalValue = Object.keys(categoryTranslationMap).find(
+            (key) => categoryTranslationMap[key] === translatedValue
+          ) || translatedValue;
+          form.handleCategorySelect(originalValue);
+        }}
+        title={t("listings.selectCategory")}
+        options={categoryOptions}
+        initialValue={getTranslatedCategoryValue(form.category)}
       />
 
       <WheelPickerModal
         visible={form.showFloorModal}
         onClose={() => form.setShowFloorModal(false)}
-        onSelect={form.handleFloorSelect}
-        title="Select Floor"
-        options={FLOOR_OPTIONS}
-        initialValue={form.floor}
+        onSelect={(translatedValue: string) => {
+          const originalValue = floorReverseMap[translatedValue] || translatedValue;
+          form.handleFloorSelect(originalValue);
+        }}
+        title={t("listings.selectFloor")}
+        options={translatedFloorOptions}
+        initialValue={getTranslatedInitialValue(form.floor, floorReverseMap, translatedFloorOptions)}
       />
 
       <WheelPickerModal
         visible={form.showAgeModal}
         onClose={() => form.setShowAgeModal(false)}
-        onSelect={form.handleAgeSelect}
-        title="Select Age"
-        options={AGE_OPTIONS}
-        initialValue={form.age}
+        onSelect={(translatedValue: string) => {
+          const originalValue = ageReverseMap[translatedValue] || translatedValue;
+          form.handleAgeSelect(originalValue);
+        }}
+        title={t("listings.selectAge")}
+        options={translatedAgeOptions}
+        initialValue={getTranslatedInitialValue(form.age, ageReverseMap, translatedAgeOptions)}
       />
 
       <WheelPickerModal
         visible={form.showStreetDirectionModal}
         onClose={() => form.setShowStreetDirectionModal(false)}
-        onSelect={form.handleStreetDirectionSelect}
-        title="Select Street Direction"
-        options={STREET_DIRECTION_OPTIONS}
-        initialValue={
+        onSelect={(translatedValue: string) => {
+          const originalValue = streetDirectionReverseMap[translatedValue] || translatedValue;
+          form.handleStreetDirectionSelect(originalValue);
+        }}
+        title={t("listings.selectStreetDirection")}
+        options={translatedStreetDirectionOptions}
+        initialValue={getTranslatedInitialValue(
           form.isVillaForSale
             ? form.streetDirection
             : form.isLandForSale
@@ -1725,17 +1964,22 @@ export default function NewOrderScreen(): React.JSX.Element {
             ? form.buildingRentStreetDirection
             : form.isLandForRent
             ? form.landRentStreetDirection
-            : ""
-        }
+            : "",
+          streetDirectionReverseMap,
+          translatedStreetDirectionOptions
+        )}
       />
 
       <WheelPickerModal
         visible={form.showStreetWidthModal}
         onClose={() => form.setShowStreetWidthModal(false)}
-        onSelect={form.handleStreetWidthSelect}
-        title="Select Street Width"
-        options={STREET_WIDTH_OPTIONS}
-        initialValue={
+        onSelect={(translatedValue: string) => {
+          const originalValue = streetWidthReverseMap[translatedValue] || translatedValue;
+          form.handleStreetWidthSelect(originalValue);
+        }}
+        title={t("listings.selectStreetWidth")}
+        options={translatedStreetWidthOptions}
+        initialValue={getTranslatedInitialValue(
           form.isVillaForSale
             ? form.streetWidth
             : form.isLandForSale
@@ -1762,8 +2006,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             ? form.officeRentStreetWidth
             : form.isWarehouseForRent
             ? form.warehouseRentStreetWidth
-            : ""
-        }
+            : "",
+          streetWidthReverseMap,
+          translatedStreetWidthOptions
+        )}
       />
 
       <WheelPickerModal
@@ -1776,7 +2022,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             form.handleBuildingRentStoresSelect(value);
           }
         }}
-        title="Select Stores"
+        title={t("listings.selectStores")}
         options={STORES_OPTIONS}
         initialValue={form.isBuildingForSale ? form.stores : form.buildingRentStores}
       />

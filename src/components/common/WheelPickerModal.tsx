@@ -22,6 +22,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -44,6 +45,7 @@ const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
  */
 const WheelPickerModal = memo<WheelPickerModalProps>(
   ({ visible, onClose, onSelect, title, options, initialValue }) => {
+    const { t, isRTL } = useLocalization();
     const [selectedIndex, setSelectedIndex] = useState(() => {
       if (initialValue) {
         const index = options.findIndex((opt) => opt === initialValue);
@@ -55,6 +57,21 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
     const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef<any>(null);
+
+    // RTL-aware styles for header only
+    const headerRtlStyles = useMemo(
+      () => ({
+        pickerHeader: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        pickerHeaderText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
+      }),
+      [isRTL]
+    );
 
     // Initialize scroll position when modal opens
     useEffect(() => {
@@ -173,17 +190,17 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
             style={[styles.pickerContainer, { transform: [{ translateY }] }]}
           >
             {/* HEADER */}
-            <View style={styles.pickerHeader}>
+            <View style={[styles.pickerHeader, headerRtlStyles.pickerHeader]}>
               <TouchableOpacity onPress={handleClose} style={styles.backButton}>
                 <Ionicons
-                  name="arrow-back"
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
                   size={wp(6)}
                   color={COLORS.primary}
                 />
               </TouchableOpacity>
-              <Text style={styles.pickerHeaderText}>{title}</Text>
+              <Text style={[styles.pickerHeaderText, headerRtlStyles.pickerHeaderText]}>{title}</Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
-                <Text style={styles.okButtonText}>Confirm</Text>
+                <Text style={styles.okButtonText}>{t("common.confirm")}</Text>
               </TouchableOpacity>
             </View>
 

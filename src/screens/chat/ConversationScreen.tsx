@@ -12,6 +12,7 @@ import {
   Image,
   Keyboard,
   Animated,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,6 +33,7 @@ import {
 } from "../../data/chatData";
 import type { ChatMessage } from "../../types/chat";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -43,38 +45,51 @@ interface RouteParams {
   defaultMessage?: string;
 }
 
-// Format date like "2026 January 06"
-const formatDate = (date: Date | number): string => {
+// Format date like "2026 January 06" or "06 January 2026" in RTL
+const formatDate = (date: Date | number, t: any, isRTL: boolean): string => {
   const d = typeof date === "number" ? new Date(date) : date;
   const year = d.getFullYear();
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+  const monthKeys = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
   ];
-  const month = monthNames[d.getMonth()];
+  const month = t(`listings.calendar.months.${monthKeys[d.getMonth()]}`);
   const day = d.getDate().toString().padStart(2, "0");
+  
+  // In RTL, show day first, then month, then year (DD Month YYYY)
+  // In LTR, show year first, then month, then day (YYYY Month DD)
+  if (isRTL) {
+    return `${day} ${month} ${year}`;
+  }
   return `${year} ${month} ${day}`;
 };
 
-// Format time like "01:33 PM"
-const formatTime = (date: Date | number): string => {
+// Format time like "01:33 PM" or "01:33 م" in RTL
+const formatTime = (date: Date | number, t: any, isRTL: boolean): string => {
   const d = typeof date === "number" ? new Date(date) : date;
   let hours = d.getHours();
   const minutes = d.getMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
+  const ampm = hours >= 12 ? t("listings.time.pm") : t("listings.time.am");
   hours = hours % 12;
   hours = hours ? hours : 12; // the hour '0' should be '12'
-  return `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+  const timeStr = `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+  
+  // Convert Arabic-Indic numerals to Western numerals for RTL
+  if (isRTL) {
+    return timeStr.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
+  }
+  
+  return timeStr;
 };
 
 // Check if two dates are on the same day
@@ -92,6 +107,7 @@ export default function ConversationScreen(): React.JSX.Element {
   const route = useRoute();
   const params = route.params as RouteParams;
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useRef(new Animated.Value(0)).current;
@@ -99,11 +115,11 @@ export default function ConversationScreen(): React.JSX.Element {
   const {
     conversationId,
     propertyId,
-    advertiserName = "Property Owner",
+    advertiserName,
     advertiserId,
     defaultMessage,
   } = params;
-
+  
   // Get or create conversation
   const conversation = useMemo(() => {
     let conv = null;
@@ -111,28 +127,49 @@ export default function ConversationScreen(): React.JSX.Element {
       // Find existing conversation by conversationId (which is now based on advertiserId)
       const { MOCK_CONVERSATIONS } = require("../../data/chatData");
       conv = MOCK_CONVERSATIONS.find((c: any) => c.id === conversationId);
-      // Ensure userName is set
-      if (conv && (!conv.userName || conv.userName === "Property Owner")) {
-        conv.userName = getUserName(conv.userId) || advertiserName || "Property Owner";
-      }
-      // Ensure userAvatar is set
-      if (conv && !conv.userAvatar) {
-        const avatar = getUserAvatar(conv.userId);
-        if (avatar) {
-          conv.userAvatar = avatar;
+      if (conv) {
+        // Use advertiserName from params if available, otherwise use stored name or get from data
+        if (advertiserName) {
+          conv.userName = advertiserName;
+        } else if (!conv.userName || conv.userName === "Property Owner") {
+          // Get name from data - don't translate, keep as is
+          const nameFromUsers = getUserName(conv.userId);
+          conv.userName = nameFromUsers !== "Property Owner" 
+            ? nameFromUsers 
+            : (advertiserName || "Property Owner");
+        }
+        // For admin, always use Arabic name
+        if (isAdminUser(conv.userId)) {
+          conv.userName = "تطبيق العقارات";
+        }
+        // Ensure userAvatar is set
+        if (!conv.userAvatar) {
+          const avatar = getUserAvatar(conv.userId);
+          if (avatar) {
+            conv.userAvatar = avatar;
+          }
         }
       }
     } else if (propertyId && advertiserId) {
       // Create or find conversation by advertiserId (owner)
       // This ensures same owner = same conversation
+      const defaultName = advertiserName || getUserName(advertiserId) || "Property Owner";
       conv = getOrCreateConversationForProperty(
         propertyId,
-        advertiserName,
+        defaultName,
         advertiserId
       );
+      // Use advertiserName from params if available (keep as is, no translation)
+      if (advertiserName && conv) {
+        conv.userName = advertiserName;
+      }
+      // For admin, always use Arabic name
+      if (conv && isAdminUser(conv.userId)) {
+        conv.userName = "تطبيق العقارات";
+      }
     }
     return conv;
-  }, [conversationId, propertyId, advertiserName, advertiserId]);
+  }, [conversationId, propertyId, advertiserId, advertiserName]);
 
   // Check if this is an admin conversation
   const isAdminChat = useMemo(() => {
@@ -142,6 +179,10 @@ export default function ConversationScreen(): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState(defaultMessage || "");
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [blockConfirmationModalVisible, setBlockConfirmationModalVisible] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const modalSlideAnim = useRef(new Animated.Value(0)).current;
 
   // Load messages - only show messages that have been sent
   useEffect(() => {
@@ -222,8 +263,48 @@ export default function ConversationScreen(): React.JSX.Element {
   };
 
   const handleMenuPress = useCallback(() => {
-    // TODO: Implement menu actions
-    console.log("Menu pressed");
+    setOptionsModalVisible(true);
+    // Animate modal slide up
+    Animated.spring(modalSlideAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
+  }, [modalSlideAnim]);
+
+  const handleCloseOptionsModal = useCallback(() => {
+    // Animate modal slide down
+    Animated.timing(modalSlideAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setOptionsModalVisible(false);
+    });
+  }, [modalSlideAnim]);
+
+  const handleBlockUser = useCallback(() => {
+    // If already blocked, unblock directly
+    if (isBlocked) {
+      setIsBlocked(false);
+      handleCloseOptionsModal();
+      return;
+    }
+    // If not blocked, show confirmation modal
+    setBlockConfirmationModalVisible(true);
+    handleCloseOptionsModal();
+  }, [isBlocked, handleCloseOptionsModal]);
+
+  const handleBlockConfirm = useCallback(() => {
+    setIsBlocked(true);
+    setBlockConfirmationModalVisible(false);
+    // TODO: Implement actual block functionality (API call, etc.)
+    console.log("User blocked");
+  }, []);
+
+  const handleBlockCancel = useCallback(() => {
+    setBlockConfirmationModalVisible(false);
   }, []);
 
   const handleSend = useCallback(() => {
@@ -315,31 +396,44 @@ export default function ConversationScreen(): React.JSX.Element {
         <View>
           {showDateSeparator && (
             <View style={styles.dateContainer}>
-              <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+              <Text style={styles.dateText}>{formatDate(item.createdAt, t, isRTL)}</Text>
             </View>
           )}
           <View
             style={[
               styles.messageContainer,
-              isCurrentUser ? styles.messageRight : styles.messageLeft,
+              // In RTL: user messages on left, received on right
+              // In LTR: user messages on right, received on left
+              isRTL
+                ? (isCurrentUser ? styles.messageLeft : styles.messageRight)
+                : (isCurrentUser ? styles.messageRight : styles.messageLeft),
             ]}
           >
             <View
               style={[
                 styles.messageBubble,
-                isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft,
+                // In RTL: swap margins but keep colors
+                // User messages: white background, on left in RTL (use left margins), on right in LTR (use right margins)
+                // Received messages: primaryLight background, on right in RTL (use right margins), on left in LTR (use left margins)
+                isRTL
+                  ? (isCurrentUser ? styles.messageBubbleLeft : styles.messageBubbleRight)
+                  : (isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft),
+                // Override background color to maintain: user messages = white, received = primaryLight
+                {
+                  backgroundColor: isCurrentUser ? "#fff" : COLORS.primaryLight,
+                },
               ]}
             >
               {renderMessageText(item.text, !isCurrentUser)}
               <Text style={[styles.timeText, !isCurrentUser && styles.receivedTimeText]}>
-                {formatTime(item.createdAt)}
+                {formatTime(item.createdAt, t, isRTL)}
               </Text>
             </View>
           </View>
         </View>
       );
     },
-    [messages, renderMessageText]
+    [messages, renderMessageText, t, isRTL]
   );
 
   const keyExtractor = useCallback((item: ChatMessage) => String(item._id), []);
@@ -347,28 +441,101 @@ export default function ConversationScreen(): React.JSX.Element {
   if (!conversation) {
     return (
       <View style={styles.container}>
-        <Text>Conversation not found</Text>
+        <Text>{t("chat.conversationNotFound")}</Text>
       </View>
     );
   }
+  
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      customHeader: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      headerLeft: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      backButton: {
+        marginRight: isRTL ? 0 : 0,
+        marginLeft: isRTL ? 0 : 0,
+      },
+      headerAvatarContainer: {
+        marginRight: isRTL ? 0 : wp(2.5),
+        marginLeft: isRTL ? wp(2.5) : 0,
+      },
+      headerTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        marginLeft: isRTL ? 0 : wp(2.5),
+        marginRight: isRTL ? wp(2.5) : 0,
+      },
+      menuButton: {
+        alignItems: (isRTL ? "flex-start" : "flex-end") as "flex-start" | "flex-end",
+      },
+      inputContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      textInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      sendButton: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+      modalHeader: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      modalTitle: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      modalOptionItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      modalOptionText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      blockModalContent: {
+        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+      },
+      blockModalText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      blockModalButtons: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        justifyContent: (isRTL ? "flex-end" : "flex-end") as "flex-start" | "flex-end",
+      },
+      blockModalCancelText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      blockModalOkText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerWrapper}>
-          <View style={styles.customHeader}>
-            <View style={styles.headerLeft}>
+          <View style={[styles.customHeader, rtlStyles.customHeader]}>
+            <View style={[styles.headerLeft, rtlStyles.headerLeft]}>
               {handleBackPress && (
                 <TouchableOpacity
-                  style={styles.backButton}
+                  style={[styles.backButton, rtlStyles.backButton]}
                   onPress={handleBackPress}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="arrow-back" size={wp(7)} color={COLORS.backButton} />
+                  <Ionicons 
+                    name={isRTL ? "arrow-forward" : "arrow-back"} 
+                    size={wp(7)} 
+                    color={COLORS.backButton} 
+                  />
                 </TouchableOpacity>
               )}
               {conversation?.userAvatar && (
-                <View style={styles.headerAvatarContainer}>
+                <View style={[styles.headerAvatarContainer, rtlStyles.headerAvatarContainer]}>
                   <Image
                     source={typeof conversation.userAvatar === "string" ? { uri: conversation.userAvatar } : conversation.userAvatar}
                     style={styles.headerAvatar}
@@ -376,12 +543,19 @@ export default function ConversationScreen(): React.JSX.Element {
                   />
                 </View>
               )}
-              <Text style={styles.headerTitle}>
-                {conversation?.userName || advertiserName || "Property Owner"}
+              <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
+                {(() => {
+                  // For admin, always show Arabic name
+                  if (conversation && isAdminUser(conversation.userId)) {
+                    return "تطبيق العقارات";
+                  }
+                  // For others, use stored name or fallback - no translation
+                  return conversation?.userName || advertiserName || "Property Owner";
+                })()}
               </Text>
             </View>
             <TouchableOpacity
-              style={styles.menuButton}
+              style={[styles.menuButton, rtlStyles.menuButton]}
               onPress={handleMenuPress}
               activeOpacity={0.7}
             >
@@ -416,9 +590,9 @@ export default function ConversationScreen(): React.JSX.Element {
             />
           ) : (
             <View style={styles.emptyMessagesContainer}>
-              <Text style={styles.emptyMessagesText}>No messages yet</Text>
+              <Text style={styles.emptyMessagesText}>{t("chat.noMessagesYet")}</Text>
               <Text style={styles.emptyMessagesSubtext}>
-                Start the conversation by sending a message
+                {t("chat.startConversation")}
               </Text>
             </View>
           )}
@@ -429,6 +603,7 @@ export default function ConversationScreen(): React.JSX.Element {
           <Animated.View
             style={[
               styles.inputContainer,
+              rtlStyles.inputContainer,
               {
                 paddingBottom: hp(1),
                 transform: [
@@ -450,10 +625,10 @@ export default function ConversationScreen(): React.JSX.Element {
               ]}
             >
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, rtlStyles.textInput]}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder=""
+                placeholder={t("chat.typeMessage")}
                 multiline
                 placeholderTextColor="#9ca3af"
                 onFocus={() => setIsInputFocused(true)}
@@ -461,7 +636,7 @@ export default function ConversationScreen(): React.JSX.Element {
               />
             </View>
             <TouchableOpacity
-              style={styles.sendButton}
+              style={[styles.sendButton, rtlStyles.sendButton]}
               onPress={handleSend}
               disabled={!inputText.trim()}
             >
@@ -469,11 +644,118 @@ export default function ConversationScreen(): React.JSX.Element {
                 name="send-sharp"
                 size={wp(6)}
                 color={inputText.trim() ? "#0ab63a" : "#9ca3af"}
-                style={{ transform: [{ rotate: '-180deg' }] }}
+                style={{ transform: [{ rotate: isRTL ? '0deg' : '-180deg' }] }}
               />
             </TouchableOpacity>
           </Animated.View>
         )}
+
+      {/* Options Modal */}
+      <Modal
+        visible={optionsModalVisible}
+        transparent={true}
+        animationType="none"
+        onRequestClose={handleCloseOptionsModal}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={handleCloseOptionsModal}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Animated.View
+              style={[
+                styles.modalContent,
+                {
+                  transform: [
+                    {
+                      translateY: modalSlideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [hp(50), 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+            {/* Header */}
+            <View style={[styles.modalHeader, rtlStyles.modalHeader]}>
+              <TouchableOpacity
+                style={styles.modalBackButton}
+                onPress={handleCloseOptionsModal}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
+                  size={wp(6)}
+                  color={COLORS.arrows}
+                />
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, rtlStyles.modalTitle]}>
+                {t("chat.options")}
+              </Text>
+              <View style={styles.modalHeaderSpacer} />
+            </View>
+            <View style={styles.modalSeparator} />
+
+            {/* Options List */}
+            <View style={styles.modalOptionsListContainer}>
+              <View style={styles.modalOptionsList}>
+                <TouchableOpacity
+                  style={[styles.modalOptionItem, rtlStyles.modalOptionItem]}
+                  onPress={handleBlockUser}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.modalOptionText, rtlStyles.modalOptionText]}>
+                    {isBlocked ? t("chat.unblockUser") : t("chat.blockUser")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalSeparator} />
+            </View>
+            </Animated.View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Block User Confirmation Modal */}
+      <Modal
+        visible={blockConfirmationModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleBlockCancel}
+      >
+        <View style={styles.blockModalOverlay}>
+          <View style={[styles.blockModalContent, rtlStyles.blockModalContent]}>
+            <Text style={[styles.blockModalText, rtlStyles.blockModalText]}>
+              {t("chat.blockUserConfirmation")}
+            </Text>
+            <View style={[styles.blockModalButtons, rtlStyles.blockModalButtons]}>
+              <TouchableOpacity
+                style={styles.blockModalCancelButton}
+                onPress={handleBlockCancel}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.blockModalCancelText, rtlStyles.blockModalCancelText]}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.blockModalOkButton}
+                onPress={handleBlockConfirm}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.blockModalOkText, rtlStyles.blockModalOkText]}>
+                  {t("common.ok")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -543,6 +825,7 @@ const styles = StyleSheet.create({
     width: wp(12),
     height: wp(12),
     justifyContent: "center",
+    alignItems: "center",
   },
   headerAvatarContainer: {
     width: wp(10),
@@ -679,5 +962,114 @@ const styles = StyleSheet.create({
     fontSize: wp(3.5),
     color: COLORS.textSecondary,
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: wp(5),
+    borderTopRightRadius: wp(5),
+    width: "100%",
+    minHeight: hp(16),
+    flexDirection: "column",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingHorizontal: wp(4),
+    paddingTop: hp(1),
+    paddingBottom: hp(1.5),
+  },
+  modalBackButton: {
+    padding: wp(0.5),
+  },
+  modalTitle: {
+    fontSize: wp(4.5),
+    fontWeight: "bold",
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  modalHeaderSpacer: {
+    // Spacer for alignment
+  },
+  modalSeparator: {
+    height: 1.5,
+    backgroundColor: "#d1d5db",
+    width: "100%",
+  },
+  modalOptionsListContainer: {
+    paddingTop: hp(0.5),
+    paddingBottom: hp(2),
+  },
+  modalOptionsList: {
+    paddingHorizontal: wp(4),
+  },
+  modalOptionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: hp(1.2),
+    gap: wp(2),
+  },
+  modalOptionText: {
+    fontSize: wp(4.2),
+    color: COLORS.textSecondary,
+  },
+  blockModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  blockModalContent: {
+    backgroundColor: "#fff",
+    padding: wp(5),
+    width: wp(80),
+    borderRadius: wp(0.5),
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  blockModalText: {
+    fontSize: wp(4),
+    fontWeight: "400",
+    color: COLORS.textPrimary,
+    marginBottom: hp(2),
+  },
+  blockModalButtons: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "flex-end",
+  },
+  blockModalCancelButton: {
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(4),
+    borderRadius: wp(2),
+  },
+  blockModalCancelText: {
+    fontSize: wp(4.5),
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  blockModalOkButton: {
+    borderRadius: wp(2),
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(6),
+  },
+  blockModalOkText: {
+    fontSize: wp(4.5),
+    fontWeight: "600",
+    color: "#c13234",
   },
 });

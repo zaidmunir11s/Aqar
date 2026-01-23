@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface CancelModalProps {
   visible: boolean;
@@ -30,14 +31,44 @@ export interface CancelModalProps {
 const CancelModal = memo<CancelModalProps>(
   ({
     visible,
-    title = "Do you want to cancel adding ads?",
+    title,
     description,
     onBack,
     onConfirm,
-    backText = "Back",
-    confirmText = "Yes",
+    backText,
+    confirmText,
     confirmButtonColor,
   }) => {
+    const { t, isRTL } = useLocalization();
+    
+    // Use translations as defaults if not provided
+    const defaultTitle = t("common.cancelAddingAds");
+    const defaultBackText = t("common.back");
+    const defaultConfirmText = t("common.yes");
+    
+    const finalTitle = title ?? defaultTitle;
+    const finalBackText = backText ?? defaultBackText;
+    const finalConfirmText = confirmText ?? defaultConfirmText;
+
+    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    const rtlStyles = useMemo(
+      () => ({
+        modalHeading: {
+          textAlign: (isRTL ? "right" : undefined) as "right" | undefined,
+        },
+        modalText: {
+          textAlign: (isRTL ? "right" : undefined) as "right" | undefined,
+        },
+        modalButtons: isRTL
+          ? {
+              flexDirection: "row-reverse" as const,
+              justifyContent: "flex-end" as const, // flex-end in row-reverse puts buttons on the left
+            }
+          : {},
+      }),
+      [isRTL]
+    );
+
     return (
       <Modal
         visible={visible}
@@ -47,16 +78,28 @@ const CancelModal = memo<CancelModalProps>(
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {title && !description && <Text style={styles.modalText}>{title}</Text>}
-            {title && description && <Text style={styles.modalHeading}>{title}</Text>}
-            {description && <Text style={styles.modalText}>{description}</Text>}
-            <View style={styles.modalButtons}>
+            {finalTitle && !description && (
+              <Text style={[styles.modalText, rtlStyles.modalText]}>
+                {finalTitle}
+              </Text>
+            )}
+            {finalTitle && description && (
+              <Text style={[styles.modalHeading, rtlStyles.modalHeading]}>
+                {finalTitle}
+              </Text>
+            )}
+            {description && (
+              <Text style={[styles.modalText, rtlStyles.modalText]}>
+                {description}
+              </Text>
+            )}
+            <View style={[styles.modalButtons, rtlStyles.modalButtons]}>
               <TouchableOpacity
                 style={styles.modalBackButton}
                 onPress={onBack}
                 activeOpacity={0.7}
               >
-                <Text style={styles.modalBackButtonText}>{backText}</Text>
+                <Text style={styles.modalBackButtonText}>{finalBackText}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalYesButton}
@@ -66,7 +109,7 @@ const CancelModal = memo<CancelModalProps>(
                 <Text style={[
                   styles.modalYesButtonText,
                   confirmButtonColor && { color: confirmButtonColor }
-                ]}>{confirmText}</Text>
+                ]}>{finalConfirmText}</Text>
               </TouchableOpacity>
             </View>
           </View>

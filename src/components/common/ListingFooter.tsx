@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ListingFooterProps {
   currentStep: number;
@@ -39,13 +40,27 @@ const ListingFooter = memo<ListingFooterProps>(
     showNext = true,
     nextDisabled = false,
   }) => {
+    const { isRTL } = useLocalization();
     const progressPercentage = (currentStep / totalSteps) * 100;
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        progressBarBackground: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        buttonContainer: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+      }),
+      [isRTL]
+    );
 
     return (
       <View style={styles.container}>
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBackground}>
+          <View style={[styles.progressBarBackground, rtlStyles.progressBarBackground]}>
             <View
               style={[
                 styles.progressBarFill,
@@ -56,7 +71,7 @@ const ListingFooter = memo<ListingFooterProps>(
         </View>
 
         {/* Navigation Buttons */}
-        <View style={styles.buttonContainer}>
+        <View style={[styles.buttonContainer, rtlStyles.buttonContainer]}>
           {showBack && (
             <TouchableOpacity
               onPress={onBackPress}
@@ -103,6 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5e7eb",
     borderRadius: wp(0.5),
     overflow: "hidden",
+    flexDirection: "row",
   },
   progressBarFill: {
     height: "100%",

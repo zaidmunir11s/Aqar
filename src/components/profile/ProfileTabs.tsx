@@ -5,40 +5,76 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ProfileTabsProps {
-  tabs?: string[];
+  tabs?: string[];                    // English/default keys, e.g. ["Ads", "Deals", "Reviews"]
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
 
 const ProfileTabs = memo<ProfileTabsProps>(
   ({ tabs = ["Ads", "Deals", "Reviews"], activeTab, onTabChange }) => {
+    const { t, isRTL } = useLocalization();
+
     const [selectedTab, setSelectedTab] = useState(activeTab || tabs[0]);
 
-    const handleTabPress = (tab: string) => {
-      setSelectedTab(tab);
-      onTabChange?.(tab);
+    const handleTabPress = (tabKey: string) => {
+      setSelectedTab(tabKey);
+      onTabChange?.(tabKey);
+    };
+
+    // Optional: define translation keys for each tab
+    // You can also pass already translated strings if preferred
+    const getTabLabel = (tabKey: string) => {
+      const keyMap: Record<string, string> = {
+        Ads: "profile.ads",
+        Deals: "profile.deals",
+        Reviews: "listings.reviews",
+        // add more tabs here if needed
+      };
+
+      const translationKey = keyMap[tabKey];
+      return translationKey ? t(translationKey, { defaultValue: tabKey }) : tabKey;
     };
 
     return (
       <View style={styles.container}>
-        <View style={styles.tabsContainer}>
-          {tabs.map((tab) => {
-            const isActive = tab === selectedTab;
+        <View
+          style={[
+            styles.tabsContainer,
+            isRTL && { flexDirection: "row-reverse" },
+          ]}
+        >
+          {tabs.map((tabKey) => {
+            const isActive = tabKey === selectedTab;
+            const label = getTabLabel(tabKey);
+
             return (
               <TouchableOpacity
-                key={tab}
+                key={tabKey}
                 style={styles.tab}
-                onPress={() => handleTabPress(tab)}
+                onPress={() => handleTabPress(tabKey)}
                 activeOpacity={0.7}
               >
                 <Text
-                  style={[styles.tabText, isActive && styles.activeTabText]}
+                  style={[
+                    styles.tabText,
+                    isActive && styles.activeTabText,
+                    isRTL && styles.rtlTabText, // optional: if you need extra RTL tweaks
+                  ]}
                 >
-                  {tab}
+                  {label}
                 </Text>
-                {isActive && <View style={styles.activeIndicator} />}
+
+                {isActive && (
+                  <View
+                    style={[
+                      styles.activeIndicator,
+                      isRTL && { left: 0, right: 0 }, // already full width, but explicit
+                    ]}
+                  />
+                )}
               </TouchableOpacity>
             );
           })}
@@ -71,6 +107,10 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     fontWeight: "400",
   },
+  rtlTabText: {
+    // Usually not needed, but useful if font needs adjustment
+    // textAlign: "center", // already centered via alignItems
+  },
   activeTabText: {
     color: COLORS.textPrimary,
     fontWeight: "500",
@@ -80,7 +120,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    width: "100%",
     height: 2,
     backgroundColor: COLORS.primary,
     borderRadius: 1,

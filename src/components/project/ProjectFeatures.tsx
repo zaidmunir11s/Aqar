@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
   Ionicons,
@@ -9,6 +9,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 
 interface FeatureIconConfig {
   library: "Ionicons" | "MaterialCommunityIcons" | "FontAwesome5";
@@ -117,14 +118,43 @@ export interface ProjectFeaturesProps {
  * Project features component
  */
 const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
+  const { t, isRTL } = useLocalization();
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      featuresRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      featureItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        marginRight: isRTL ? 0 : wp(4),
+        marginLeft: isRTL ? wp(4) : 0,
+      },
+      featureIconBox: {
+        marginRight: isRTL ? 0 : wp(2.5),
+        marginLeft: isRTL ? wp(2.5) : 0,
+      },
+      featureText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   if (!features || features.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Project Features</Text>
-      <View style={styles.featuresRow}>
+      <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+        {t("projects.projectFeatures")}
+      </Text>
+      <View style={[styles.featuresRow, rtlStyles.featuresRow]}>
         {features.map((feature, index) => {
           const iconConfig = getFeatureIcon(feature);
           return (
@@ -152,7 +182,7 @@ const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
                   />
                 )}
               </View>
-              <Text style={styles.featureText}>{feature}</Text>
+              <Text style={[styles.featureText, rtlStyles.featureText]}>{feature}</Text>
             </View>
           );
         })}
@@ -195,7 +225,6 @@ const styles = StyleSheet.create({
     borderColor: "#e4e3e8",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: wp(2.5),
   },
   featureText: {
     fontSize: wp(3.8),

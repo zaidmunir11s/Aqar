@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ActionButtonsProps {
   onFavoritesPress?: () => void;
@@ -14,24 +15,57 @@ export interface ActionButtonsProps {
 
 const ActionButtons = memo<ActionButtonsProps>(
   ({ onFavoritesPress, onAlertsPress }) => {
+    const { isRTL, t } = useLocalization();
+
+    const rtlStyles = useMemo(
+      () => ({
+        container: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+        },
+        button: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+        },
+        text: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, rtlStyles.container]}>
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, rtlStyles.button]}
           onPress={onFavoritesPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="heart" size={wp(5)} color={COLORS.textSecondary} />
-          <Text style={styles.buttonText}>Favorites</Text>
+          <Ionicons
+            name="heart"
+            size={wp(5)}
+            color={COLORS.textSecondary}
+          />
+          <Text style={[styles.buttonText, rtlStyles.text]}>
+            {t("common.favorites", { defaultValue: "Favorites" })}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, rtlStyles.button]}
           onPress={onAlertsPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="notifications" size={wp(5)} color={COLORS.textSecondary} />
-          <Text style={styles.buttonText}>Alerts</Text>
+          <Ionicons
+            name="notifications"
+            size={wp(5)}
+            color={COLORS.textSecondary}
+          />
+          <Text style={[styles.buttonText, rtlStyles.text]}>
+            {t("common.alerts", { defaultValue: "Alerts" })}
+          </Text>
         </TouchableOpacity>
       </View>
     );

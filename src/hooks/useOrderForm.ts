@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocalization } from "./useLocalization";
 
 export type RentPeriod = "Yearly" | "Monthly" | null;
 
@@ -7,6 +8,8 @@ export type RentPeriod = "Yearly" | "Monthly" | null;
  * This centralizes all form logic to reduce component size
  */
 export function useOrderForm() {
+  const { t } = useLocalization();
+  
   // ========== CATEGORY STATE ==========
   const [category, setCategory] = useState<string>("");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -497,7 +500,7 @@ export function useOrderForm() {
     const showMonthlyContent = rentPeriod === "Monthly";
     const showPriceSection = (!rentPeriod || rentPeriod === "Monthly") && categoryChecks.isApartmentForRent;
     const showPaymentTypeTabBar = (!rentPeriod || rentPeriod === "Monthly") && categoryChecks.isApartmentForRent;
-    const priceLabel = selectedPayment === "Monthly" && showYearlyContent ? "Price monthly" : "Annual Price";
+    const priceLabel = selectedPayment === "Monthly" && showYearlyContent ? t("listings.priceMonthly") : t("listings.annualPrice");
     
     return {
       showYearlyContent,
@@ -506,7 +509,7 @@ export function useOrderForm() {
       showPaymentTypeTabBar,
       priceLabel,
     };
-  }, [rentPeriod, selectedPayment, categoryChecks.isApartmentForRent]);
+  }, [rentPeriod, selectedPayment, categoryChecks.isApartmentForRent, t]);
 
   // ========== RETURN ALL STATE AND HANDLERS ==========
   return {

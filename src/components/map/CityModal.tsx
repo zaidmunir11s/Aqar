@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../../constants";
 import { useLocation } from "../../hooks";
 import LocationSearchModal from "./LocationSearchModal";
+import { useLocalization } from "../../hooks/useLocalization";
 
 const LAST_LOCATIONS_KEY = "@city_modal_last_locations";
 const MAX_LAST_LOCATIONS = 5;
@@ -43,12 +44,149 @@ export default function CityModal({
   onLocateMe,
   selectedCity,
 }: CityModalProps): React.JSX.Element {
+  const { t, isRTL } = useLocalization();
   const [lastLocations, setLastLocations] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
   const [showLocationSearch, setShowLocationSearch] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
   const { getCurrentLocation } = useLocation();
   const insets = useSafeAreaInsets();
+
+  // Helper function to translate city name
+  const translateCityName = useCallback((cityName: string): string => {
+    if (!cityName || cityName === "City") {
+      return t("listings.city");
+    }
+    
+    // Normalize city name for key matching
+    const normalized = cityName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/`/g, "")
+      .replace(/'/g, "")
+      .replace(/al\s+/gi, "al");
+    
+    // Map of city names to their translation keys
+    const cityKeyMap: { [key: string]: string } = {
+      // Major cities
+      "riyadh": "riyadh",
+      "jeddah": "jeddah",
+      "dammam": "dammam",
+      "alkhobar": "khobar",
+      "medina": "medina",
+      "macca": "mecca",
+      "buraydah": "buraidah",
+      "taif": "taif",
+      "jazan": "jazan",
+      "abha": "abha",
+      "khamismushait": "khamisMushait",
+      "hail": "hail",
+      "najran": "najran",
+      "yanbu": "yanbu",
+      "aljubail": "alJubail",
+      "tabuk": "tabuk",
+      "qatif": "qatif",
+      "alkharj": "kharj",
+      "hafralbatin": "hafrAlBatin",
+      "riyadhalkhabra": "riyadhAlKhabra",
+      // Additional cities
+      "alhofuf": "alHofuf",
+      "unayzah": "unayzah",
+      "albukayriyah": "albukayriyah",
+      "addiriyah": "addiriyah",
+      "dhahran": "dhahran",
+      "almajmaah": "almajmaah",
+      "ahadrufaidah": "ahadrufaidah",
+      "thadiq": "thadiq",
+      "alquwaiiyah": "alquwaiiyah",
+      "abuarish": "abuArish",
+      "albahah": "albahah",
+      "shaqra": "shaqra",
+      "thuwal": "thuwal",
+      "azzulfi": "azzulfi",
+      "arrass": "arrass",
+      "albadayea": "albadayea",
+      "buqayq": "buqayq",
+      "alduwadimi": "alduwadimi",
+      "nairyah": "nairyah",
+      "safwa": "safwa",
+      "muhayil": "muhayil",
+      "kingabdullaheconomiccity": "kingabdullaheconomiccity",
+      "rabigh": "rabigh",
+      "alhenakiyah": "alhenakiyah",
+      "almajaridah": "almajaridah",
+      "sabya": "sabya",
+      "annabhaniyah": "annabhaniyah",
+      "alqunfudhah": "alqunfudhah",
+      "baish": "baish",
+      "alhayathem": "alhayathem",
+      "alshinana": "alshinana",
+      "baqaa": "baqaa",
+      "alghazalah": "alghazalah",
+      "bisha": "bisha",
+      "howtatbanitamin": "howtatbanitamin",
+      "rumah": "rumah",
+      "saihat": "saihat",
+      "khafji": "khafji",
+      "arar": "arar",
+      "ahadalmasrihah": "ahad almasrihah",
+      "alghat": "alghat",
+      "almithnab": "al mithnab",
+      "alqatif": "qatif",
+      "aljumum": "aljumum",
+      "samtah": "samtah",
+      "addilam": "addilam",
+      "afif": "afif",
+      "ashshimasiyah": "ashshimasiyah",
+      "dumahaljandal": "dumah aljandal",
+      "rastanura": "rastanura",
+      "sakaka": "sakaka",
+      "turbah": "turbah",
+      "assulayyil": "assulayyil",
+      "allith": "allith",
+      "billasmar": "billasmar",
+      "tayma": "tayma",
+      "mahdadhahab": "mahd adhdhahab",
+      "aluyun": "aluyun",
+      "alkamil": "alkamil",
+      "tarout": "tarout",
+      "rafha": "rafha",
+      "sharorah": "sharorah",
+      "alula": "alula",
+      "turaif": "turaif",
+      "duba": "duba",
+      "alhariq": "alhariq",
+      "alkhurma": "alkhurma",
+      "tathleeth": "tathleeth",
+      "ranyah": "ranyah",
+      "alqurayyat": "alqurayyat",
+      "anak": "anak",
+      "alwajh": "alwajh",
+      "umluj": "umluj",
+      "alwadiah": "alwadiah",
+      "khaybar": "khaybar",
+      "badr": "badr",
+    };
+    
+    const translationKey = cityKeyMap[normalized];
+    if (translationKey) {
+      const translated = t(`listings.cities.${translationKey}`);
+      // If translation exists and is different from the key, use it
+      if (translated && translated !== `listings.cities.${translationKey}`) {
+        return translated;
+      }
+    }
+    
+    // Fallback: try direct lookup with normalized name
+    const directKey = `listings.cities.${normalized}`;
+    const directTranslation = t(directKey);
+    if (directTranslation && directTranslation !== directKey) {
+      return directTranslation;
+    }
+    
+    return cityName;
+  }, [t]);
 
   // Load last locations from storage
   useEffect(() => {
@@ -144,11 +282,17 @@ export default function CityModal({
           />
           <View style={styles.modalContainer}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, isRTL && styles.headerRTL]}>
               <TouchableOpacity onPress={onClose} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={wp(6)} color={COLORS.arrows} />
+                <Ionicons 
+                  name={isRTL ? "arrow-forward" : "arrow-back"} 
+                  size={wp(6)} 
+                  color={COLORS.arrows} 
+                />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Choose City</Text>
+              <Text style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}>
+                {t("listings.chooseCity")}
+              </Text>
               <View style={styles.headerSpacer} />
             </View>
 
@@ -160,27 +304,35 @@ export default function CityModal({
             >
               {/* Text Input Button */}
               <TouchableOpacity
-                style={styles.inputButton}
+                style={[styles.inputButton, isRTL && styles.inputButtonRTL]}
                 onPress={handleInputPress}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.inputButtonText, !inputValue && styles.inputButtonPlaceholder]}>
-                  {inputValue || "Enter here..."}
+                <Text style={[
+                  styles.inputButtonText, 
+                  !inputValue && styles.inputButtonPlaceholder,
+                  isRTL && styles.inputButtonTextRTL
+                ]}>
+                  {inputValue ? translateCityName(inputValue) : t("listings.enterHere")}
                 </Text>
               </TouchableOpacity>
 
               {/* Last Locations Section */}
               {lastLocations.length > 0 && (
                 <View style={styles.lastLocationsSection}>
-                  <Text style={styles.lastLocationsTitle}>Last locations:</Text>
+                  <Text style={[styles.lastLocationsTitle, isRTL && styles.lastLocationsTitleRTL]}>
+                    {t("listings.lastLocations")}
+                  </Text>
                   {lastLocations.map((location, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.locationItem}
+                      style={[styles.locationItem, isRTL && styles.locationItemRTL]}
                       onPress={() => handleLastLocationPress(location)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.locationText}>{location}</Text>
+                      <Text style={[styles.locationText, isRTL && styles.locationTextRTL]}>
+                        {translateCityName(location)}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -189,30 +341,36 @@ export default function CityModal({
 
             {/* Error Message */}
             {showLocationError && (
-              <View style={styles.errorMessageContainer}>
+              <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
                 <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
-                <Text style={styles.errorMessageText}>
-                  Sorry, you cannot search for properties outside the Kingdom of Saudi Arabia
+                <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
+                  {t("listings.locationError")}
                 </Text>
               </View>
             )}
 
             {/* Bottom Buttons */}
-            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
+            <View style={[
+              styles.buttonContainer, 
+              isRTL && styles.buttonContainerRTL,
+              { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }
+            ]}>
               <TouchableOpacity
-                style={styles.locateMeButton}
+                style={[styles.locateMeButton, isRTL && styles.locateMeButtonRTL]}
                 onPress={handleLocateMe}
                 activeOpacity={0.7}
               >
                 <FontAwesome6 name="location-crosshairs" size={wp(5)} color="#333" />
-                <Text style={styles.locateMeText}>Locate Me</Text>
+                <Text style={[styles.locateMeText, isRTL && styles.locateMeTextRTL]}>
+                  {t("listings.locateMe")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.searchButton}
                 onPress={handleSearch}
                 activeOpacity={0.8}
               >
-                <Text style={styles.searchButtonText}>Search</Text>
+                <Text style={styles.searchButtonText}>{t("common.search")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -259,9 +417,10 @@ const styles = StyleSheet.create({
     paddingTop: hp(1),
     paddingBottom: hp(1.5),
   },
+  headerRTL: {
+    flexDirection: "row-reverse",
+  },
   backButton: {
-    // position: "absolute",
-    // left: wp(4),
     padding: wp(0.5),
   },
   headerTitle: {
@@ -269,6 +428,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: COLORS.textPrimary,
     marginLeft: wp(2),
+  },
+  headerTitleRTL: {
+    marginLeft: 0,
+    marginRight: wp(2),
+    textAlign: "right",
   },
   headerSpacer: {
     // width: wp(8),
@@ -292,9 +456,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  inputButtonRTL: {
+    textAlign: "right",
+  },
   inputButtonText: {
     fontSize: wp(4),
     color: COLORS.textPrimary,
+  },
+  inputButtonTextRTL: {
+    textAlign: "right",
   },
   inputButtonPlaceholder: {
     color: COLORS.textTertiary,
@@ -306,7 +476,9 @@ const styles = StyleSheet.create({
     fontSize: wp(4.5),
     fontWeight: "500",
     color: COLORS.textPrimary,
-    // marginBottom: hp(1.5),
+  },
+  lastLocationsTitleRTL: {
+    textAlign: "right",
   },
   locationItem: {
     flexDirection: "row",
@@ -314,15 +486,24 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.2),
     gap: wp(2),
   },
+  locationItemRTL: {
+    flexDirection: "row-reverse",
+  },
   locationText: {
     fontSize: wp(4.2),
     color: COLORS.textSecondary,
+  },
+  locationTextRTL: {
+    textAlign: "right",
   },
   buttonContainer: {
     flexDirection: "row",
     paddingHorizontal: wp(4),
     paddingTop: hp(1),
     gap: wp(3),
+  },
+  buttonContainerRTL: {
+    flexDirection: "row-reverse",
   },
   locateMeButton: {
     flex: 1,
@@ -336,10 +517,16 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.8),
     gap: wp(2),
   },
+  locateMeButtonRTL: {
+    flexDirection: "row-reverse",
+  },
   locateMeText: {
     fontSize: wp(4),
     fontWeight: "500",
     color: "#111827",
+  },
+  locateMeTextRTL: {
+    textAlign: "right",
   },
   searchButton: {
     flex: 1,
@@ -368,11 +555,17 @@ const styles = StyleSheet.create({
     marginBottom: hp(1.5),
     gap: wp(2),
   },
+  errorMessageContainerRTL: {
+    flexDirection: "row-reverse",
+  },
   errorMessageText: {
     flex: 1,
     fontSize: wp(3.5),
     color: COLORS.error,
     fontWeight: "500",
+  },
+  errorMessageTextRTL: {
+    textAlign: "right",
   },
 });
 

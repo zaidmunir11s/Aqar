@@ -26,6 +26,8 @@ import { ScreenHeader, UnitRules } from "../../components";
 import type { DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -40,6 +42,7 @@ export default function ContactHostScreen(): React.JSX.Element {
   const { propertyId, selectedDates } = params;
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t, isRTL } = useLocalization();
 
   const [message, setMessage] = useState<string>("");
   const [isPledgeChecked, setIsPledgeChecked] = useState<boolean>(false);
@@ -65,14 +68,14 @@ export default function ContactHostScreen(): React.JSX.Element {
     if (!isPledgeChecked || !property) return;
     
     // Create default message
-    const defaultMessage = `In regard of ad number #${property.id}`;
+    const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
     
     // Combine default message with user's custom message if they wrote something
     const combinedMessage = message.trim()
       ? `${defaultMessage}\n${message.trim()}`
       : defaultMessage;
     
-    // Get advertiser name from property data, fallback to default
+    // Get advertiser name from property data, fallback to default (don't translate - keep as is)
     const advertiserName = property.advertiserName || "Property Owner";
     const advertiserId = property.advertiserId || `advertiser-${property.id}`;
     
@@ -99,7 +102,7 @@ export default function ContactHostScreen(): React.JSX.Element {
         },
       });
     }
-  }, [isPledgeChecked, message, property, navigation]);
+  }, [isPledgeChecked, message, property, navigation, t]);
 
   // Listen to keyboard show/hide events
   useEffect(() => {
@@ -137,12 +140,98 @@ export default function ContactHostScreen(): React.JSX.Element {
     };
   }, [keyboardHeight, insets.bottom]);
 
+  // Function to get translated property type label
+  const getPropertyTypeLabel = useCallback(() => {
+    if (!property) return "";
+    
+    const type = property.type?.toLowerCase() || "";
+    
+    // Map property types to translation keys
+    const typeMap: Record<string, string> = {
+      "apartment": "apartmentForBooking",
+      "villa": "villaForBooking",
+      "studio": "studioForBooking",
+      "chalet": "chaletForBooking",
+      "lounge": "chaletForBooking",
+      "tent": "tentForBooking",
+      "farm": "farmForBooking",
+      "hall": "hallForBooking",
+    };
+    
+    const translationKey = typeMap[type];
+    if (translationKey) {
+      return t(`listings.propertyTypes.${translationKey}`);
+    }
+    
+    // Fallback: try direct translation
+    const directKey = `listings.propertyTypes.${type}`;
+    const translated = t(directKey, { defaultValue: "" });
+    if (translated && translated !== directKey) {
+      return translated;
+    }
+    
+    // Final fallback: use the label from DAILY_FILTER_OPTIONS or property type
+    return DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)?.label || property.type;
+  }, [property, t]);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      bookingTypeText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      contentRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      bottomCardImage: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      bottomTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      bottomMetaRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      bottomMetaItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        marginRight: isRTL ? 0 : wp(4),
+        marginLeft: isRTL ? wp(4) : 0,
+      },
+      bottomMetaText: {
+        marginLeft: isRTL ? 0 : wp(1),
+        marginRight: isRTL ? wp(1) : 0,
+      },
+      questionText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      input: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      checkboxContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      checkbox: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      checkboxText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      center: {
+        alignItems: "center" as const,
+        justifyContent: "center" as const,
+      },
+    }),
+    [isRTL]
+  );
+
   if (!property) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Contact Host" onBackPress={handleBackPress} />
-        <View style={styles.center}>
-          <Text>Property not found</Text>
+        <ScreenHeader title={t("navigation.contactHost")} onBackPress={handleBackPress} />
+        <View style={[styles.center, rtlStyles.center]}>
+          <Text style={rtlStyles.questionText}>{t("listings.propertyNotFound")}</Text>
         </View>
       </View>
     );
@@ -174,7 +263,7 @@ export default function ContactHostScreen(): React.JSX.Element {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScreenHeader title="Contact Host" onBackPress={handleBackPress} />
+      <ScreenHeader title={t("listings.contactHost")} onBackPress={handleBackPress} />
       
       <ScrollView
         ref={scrollViewRef}
@@ -200,17 +289,17 @@ export default function ContactHostScreen(): React.JSX.Element {
           <View style={styles.bookingCard}>
             {/* Booking Type on top */}
             <View style={styles.priceContainer}>
-              <Text style={[styles.bottomPrice, styles.bookingTypeText]}>
+              <Text style={[styles.bottomPrice, styles.bookingTypeText, rtlStyles.bookingTypeText]}>
                 {property.bookingType === "daily"
-                  ? "Daily"
+                  ? t("listings.daily")
                   : property.bookingType === "monthly"
-                    ? "Monthly"
-                    : "Weekly"}
+                    ? t("listings.monthly")
+                    : t("listings.weekly")}
               </Text>
             </View>
 
             {/* Image and details row */}
-            <View style={styles.contentRow}>
+            <View style={[styles.contentRow, rtlStyles.contentRow]}>
               <Image
                 source={{
                   uri:
@@ -218,41 +307,40 @@ export default function ContactHostScreen(): React.JSX.Element {
                       ? property.images[0]
                       : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
                 }}
-                style={styles.bottomCardImage}
+                style={[styles.bottomCardImage, rtlStyles.bottomCardImage]}
                 resizeMode="cover"
               />
 
               <View style={styles.bottomCardContent}>
-                <Text style={styles.bottomTitle}>
-                  {DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)
-                    ?.label || property.type}
+                <Text style={[styles.bottomTitle, rtlStyles.bottomTitle]}>
+                  {getPropertyTypeLabel()}
                 </Text>
 
-                <View style={styles.bottomMetaRow}>
-                  <View style={styles.bottomMetaItem}>
+                <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
+                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                     <MaterialCommunityIcons
                       name="arrow-expand-horizontal"
                       size={wp(4)}
                       color="#9ca3af"
                     />
-                    <Text style={styles.bottomMetaText}>{property.area} m2</Text>
+                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>{property.area} {t("listings.m2")}</Text>
                   </View>
-                  <View style={styles.bottomMetaItem}>
+                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                     <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                    <Text style={styles.bottomMetaText}>
+                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
                       {property.bedrooms}
                     </Text>
                   </View>
-                  <View style={styles.bottomMetaItem}>
+                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                     <Ionicons name="person" size={wp(4)} color="#9ca3af" />
-                    <Text style={styles.bottomMetaText}>
-                      {property.usage === "family" ? "Family" : "Single"}
+                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
+                      {property.usage === "family" ? t("listings.family") : t("listings.single")}
                     </Text>
                   </View>
                 </View>
 
-                <Text numberOfLines={1} style={styles.bottomAddress}>
-                  {property.address}
+                <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.questionText]}>
+                  {translateAddress(property.address, t)}
                 </Text>
               </View>
             </View>
@@ -266,8 +354,8 @@ export default function ContactHostScreen(): React.JSX.Element {
 
         {/* Question Text */}
         <View style={styles.questionContainer}>
-          <Text style={styles.questionText}>
-            Do you have any other questions?
+          <Text style={[styles.questionText, rtlStyles.questionText]}>
+            {t("listings.doYouHaveAnyOtherQuestions")}
           </Text>
         </View>
 
@@ -277,8 +365,9 @@ export default function ContactHostScreen(): React.JSX.Element {
             style={[
               styles.input,
               isInputFocused && styles.inputFocused,
+              rtlStyles.input,
             ]}
-            placeholder="Write details here..."
+            placeholder={t("listings.writeDetailsHere")}
             placeholderTextColor="#9ca3af"
             multiline
             numberOfLines={8}
@@ -291,11 +380,12 @@ export default function ContactHostScreen(): React.JSX.Element {
         </View>
 
         {/* Checkbox */}
-        <View style={styles.checkboxContainer}>
+        <View style={[styles.checkboxContainer, rtlStyles.checkboxContainer]}>
           <TouchableOpacity
             style={[
               styles.checkbox,
               isPledgeChecked && styles.checkboxChecked,
+              rtlStyles.checkbox,
             ]}
             onPress={() => setIsPledgeChecked(!isPledgeChecked)}
             activeOpacity={0.7}
@@ -304,9 +394,8 @@ export default function ContactHostScreen(): React.JSX.Element {
               <Ionicons name="checkmark" size={wp(4.5)} color="#fff" />
             )}
           </TouchableOpacity>
-          <Text style={styles.checkboxText}>
-            I pledge not to share any means of communication outside the Aqar
-            platform before completing the booking process.
+          <Text style={[styles.checkboxText, rtlStyles.checkboxText]}>
+            {t("listings.pledgeNotToShareCommunication")}
           </Text>
         </View>
       </ScrollView>
@@ -335,7 +424,7 @@ export default function ContactHostScreen(): React.JSX.Element {
                 !isPledgeChecked && styles.sendButtonTextDisabled,
               ]}
             >
-              Send
+              {t("chat.send")}
             </Text>
           </TouchableOpacity>
         </Animated.View>

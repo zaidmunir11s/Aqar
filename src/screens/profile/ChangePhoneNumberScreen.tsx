@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Animated,
+  TextStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,21 +19,30 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { ScreenHeader, TextInput } from "../../components";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function ChangePhoneNumberScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
   const [phoneTouched, setPhoneTouched] = useState<boolean>(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
 
+  const rtlStyles = useMemo(
+    () => ({
+      label: { textAlign: isRTL ? "right" : "left" },
+    }),
+    [isRTL]
+  );
+
   // Saudi Arabia phone number validation
   // Format: 05XXXXXXXX (10 digits, starts with 05)
   const validatePhoneNumber = (phone: string): string => {
     if (phone.trim().length === 0) {
-      return "Phone number is required";
+      return t("profile.phoneNumberRequired", { defaultValue: "Phone number is required" });
     }
     
     // Remove any non-digit characters for validation
@@ -40,12 +50,12 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
     
     // Check if it starts with 05
     if (!digitsOnly.startsWith("05")) {
-      return "Phone number must start with 05";
+      return t("profile.phoneNumberMustStartWith05", { defaultValue: "Phone number must start with 05" });
     }
     
     // Check exact length (10 digits: 05 + 8 more digits)
     if (digitsOnly.length !== 10) {
-      return "Phone number must be 10 digits";
+      return t("profile.phoneNumberMustBe10Digits", { defaultValue: "Phone number must be 10 digits" });
     }
     
     return "";
@@ -119,7 +129,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Change Phone Number"
+        title={t("profile.changePhoneNumber", { defaultValue: "Change Phone Number" })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
       />
@@ -139,7 +149,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
         >
           {/* Phone Number Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>New phone number</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.newPhoneNumber", { defaultValue: "New phone number" })}</Text>
             <TextInput
               value={phoneNumber}
               onChangeText={handlePhoneChange}
@@ -175,7 +185,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
           <Text style={[
             styles.continueButtonText,
             !isFormValid && styles.continueButtonTextDisabled
-          ]}>Continue</Text>
+          ]}>{t("auth.continue", { defaultValue: "Continue" })}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>

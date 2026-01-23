@@ -16,6 +16,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface DatePickerModalProps {
   visible: boolean;
@@ -32,19 +33,20 @@ const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const SPACER_HEIGHT = ITEM_HEIGHT * 2;
 const SNAP_DELAY = 150;
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+// Month names will be translated dynamically
+const MONTH_KEYS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
 ];
 
 /**
@@ -53,7 +55,14 @@ const MONTHS = [
  */
 const DatePickerModal = memo<DatePickerModalProps>(
   ({ visible, onClose, onDateSelect, title, initialDate }) => {
+    const { t, isRTL } = useLocalization();
     const currentDate = useMemo(() => initialDate || new Date(), [initialDate]);
+    
+    // Get translated month names
+    const months = useMemo(
+      () => MONTH_KEYS.map((key) => t(`listings.calendar.months.${key}`)),
+      [t]
+    );
     
     // State
     const [selectedMonth, setSelectedMonth] = useState(() => currentDate.getMonth());
@@ -149,6 +158,25 @@ const DatePickerModal = memo<DatePickerModalProps>(
       };
     }, []);
 
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        pickerHeader: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        pickerHeaderText: {
+          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+        },
+        pickerContent: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        pickerItemText: {
+          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+        },
+      }),
+      [isRTL]
+    );
+
     /**
      * Snap scroll to nearest item
      */
@@ -228,6 +256,7 @@ const DatePickerModal = memo<DatePickerModalProps>(
                     style={[
                       styles.pickerItemText,
                       isSelected && styles.pickerItemTextSelected,
+                      rtlStyles.pickerItemText,
                     ]}
                   >
                     {String(item)}
@@ -239,9 +268,10 @@ const DatePickerModal = memo<DatePickerModalProps>(
           </ScrollView>
         </View>
       );
-    }, [handleScrollEnd]);
+    }, [handleScrollEnd, rtlStyles]);
 
     const handleOk = useCallback(() => {
+      // Format date based on RTL: DD / MM / YYYY for both, but order columns differently
       const formattedDate = `${String(selectedDay).padStart(2, "0")} / ${String(selectedMonth + 1).padStart(2, "0")} / ${selectedYear}`;
       onDateSelect(formattedDate);
       onClose();
@@ -266,17 +296,25 @@ const DatePickerModal = memo<DatePickerModalProps>(
             onPress={onClose}
           />
           <View style={styles.pickerContainer}>
-            <View style={styles.pickerHeader}>
+            <View style={[styles.pickerHeader, rtlStyles.pickerHeader]}>
               <TouchableOpacity onPress={onClose} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={wp(6)} color={COLORS.primary} />
+                <Ionicons 
+                  name={isRTL ? "arrow-forward" : "arrow-back"} 
+                  size={wp(6)} 
+                  color={COLORS.primary} 
+                />
               </TouchableOpacity>
-              <Text style={styles.pickerHeaderText}>{title}</Text>
+              <Text style={[styles.pickerHeaderText, rtlStyles.pickerHeaderText]}>
+                {title}
+              </Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
-                <Text style={styles.okButtonText}>Confirm</Text>
+                <Text style={styles.okButtonText}>
+                  {t("common.confirm")}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.pickerContent}>
+            <View style={[styles.pickerContent, rtlStyles.pickerContent]}>
               {renderPickerColumn(
                 days,
                 Math.min(selectedDay - 1, days.length - 1),
@@ -285,7 +323,7 @@ const DatePickerModal = memo<DatePickerModalProps>(
                 dayScrollTimeoutRef
               )}
               {renderPickerColumn(
-                MONTHS,
+                months,
                 selectedMonth,
                 setSelectedMonth,
                 monthScrollRef,

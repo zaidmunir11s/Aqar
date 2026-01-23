@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { createBottomTabNavigator, BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -12,6 +12,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import { AuthStack, ListingsStack, ProjectsStack, DailyStack, ChatStack } from "./stacks";
 import ServicesScreen from "../screens/services/ServicesScreen";
 import { COLORS } from "../constants";
+import { useLocalization } from "../hooks/useLocalization";
 
 const Tab = createBottomTabNavigator();
 
@@ -66,6 +67,144 @@ const getTabBarStyle = (route: Route<string, object | undefined>) => {
 };
 
 /* ---------------------------------- */
+/* Custom Tab Bar Component for RTL */
+/* ---------------------------------- */
+const CustomTabBar = (props: BottomTabBarProps) => {
+  const { isRTL } = useLocalization();
+  
+  // Check if tab bar should be hidden for current route
+  const focusedRoute = props.state.routes[props.state.index];
+  const focusedRouteName = getFocusedRouteNameFromRoute(focusedRoute) ?? "";
+  
+  const hideTabBarRoutes = [
+    "Login",
+    "CreateAccount",
+    "PropertyDetails",
+    "DailyDetails",
+    "ContactHost",
+    "Reserve",
+    "ProjectDetails",
+    "AddListing",
+    "Licence",
+    "Step2AdLicense",
+    "PublishLicenseAdvertisement",
+    "DeedOwnerInformation",
+    "MarketingRequestPlaceholder",
+    "AddRentalUnitOnboarding",
+    "ChooseCategory",
+    "SearchRequest",
+    "NewOrder",
+    "ChooseLocation",
+    "Description",
+    "MatchedListings",
+    "ForgotPassword",
+    "VerifyPhoneNumber",
+    "UpdateProfile",
+    "ChangePassword",
+    "ChangePhoneNumber",
+    "Conversation",
+  ];
+
+  if (hideTabBarRoutes.includes(focusedRouteName)) {
+    return null;
+  }
+  
+  // Reverse routes for RTL, but keep original state for navigation logic
+  const displayRoutes = isRTL ? [...props.state.routes].reverse() : props.state.routes;
+  
+  return (
+    <View
+      style={[
+        {
+          flexDirection: "row",
+          height: hp(8.5),
+          paddingTop: hp(1),
+          paddingBottom: hp(1.2),
+          backgroundColor: "#fff",
+          borderTopWidth: 1,
+          borderTopColor: "#e5e5e5",
+        },
+      ]}
+    >
+      {displayRoutes.map((route, displayIndex) => {
+        // Find the original index in the state
+        const originalIndex = props.state.routes.findIndex((r) => r.key === route.key);
+        const isFocused = props.state.index === originalIndex;
+        const { options } = props.descriptors[route.key];
+
+        const label =
+          options.tabBarLabel !== undefined
+            ? options.tabBarLabel
+            : options.title !== undefined
+            ? options.title
+            : route.name;
+
+        const onPress = () => {
+          const event = props.navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            props.navigation.navigate(route.name, route.params);
+          }
+        };
+
+        const onLongPress = () => {
+          props.navigation.emit({
+            type: "tabLongPress",
+            target: route.key,
+          });
+        };
+
+        const color = isFocused
+          ? options.tabBarActiveTintColor || COLORS.activeTabBar
+          : options.tabBarInactiveTintColor || "#999";
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={(options as any).tabBarTestID || undefined}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {options.tabBarIcon &&
+              options.tabBarIcon({
+                focused: isFocused,
+                color,
+                size: wp(6),
+              })}
+            {typeof label === "string" && (
+              <Text
+                style={[
+                  {
+                    fontSize: wp(2.8),
+                    marginTop: hp(0.5),
+                    color,
+                  },
+                  options.tabBarLabelStyle,
+                ]}
+              >
+                {label}
+              </Text>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+/* ---------------------------------- */
 /* Default Options */
 /* ---------------------------------- */
 const defaultTabBarOptions = {
@@ -80,18 +219,20 @@ const defaultTabBarOptions = {
 
 export default function AppNavigator(): React.JSX.Element {
   const { isSignedIn, isLoaded } = useAuth();
+  const { t, isRTL } = useLocalization();
 
   return (
     <Tab.Navigator
       initialRouteName="Listings"
       screenOptions={defaultTabBarOptions}
+      tabBar={(props) => <CustomTabBar {...props} />}
     >
       {/* ---------------- Profile ---------------- */}
       <Tab.Screen
         name="ProfileTab"
         component={AuthStack}
         options={({ route }) => ({
-          tabBarLabel: "Profile",
+          tabBarLabel: t("navigation.profile"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="person" size={wp(6)} color={color} />
           ),
@@ -122,7 +263,7 @@ export default function AppNavigator(): React.JSX.Element {
         name="Listings"
         component={ListingsStack}
         options={({ route }) => ({
-          tabBarLabel: "Listings",
+          tabBarLabel: t("navigation.listings"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="albums" size={wp(6)} color={color} />
           ),
@@ -135,7 +276,7 @@ export default function AppNavigator(): React.JSX.Element {
         name="Projects"
         component={ProjectsStack}
         options={({ route }) => ({
-          tabBarLabel: "Projects",
+          tabBarLabel: t("navigation.projects"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="business" size={wp(6)} color={color} />
           ),
@@ -148,7 +289,7 @@ export default function AppNavigator(): React.JSX.Element {
         name="Bookings"
         component={DailyStack}
         options={({ route }) => ({
-          tabBarLabel: "Bookings",
+          tabBarLabel: t("navigation.bookings"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="calendar" size={wp(6)} color={color} />
           ),
@@ -219,7 +360,7 @@ export default function AppNavigator(): React.JSX.Element {
         name="Chat"
         component={ChatStack}
         options={({ route }) => ({
-          tabBarLabel: "Chat",
+          tabBarLabel: t("navigation.chat"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="chatbubbles" size={wp(6)} color={color} />
           ),
@@ -232,11 +373,11 @@ export default function AppNavigator(): React.JSX.Element {
         name="Services"
         component={ServicesScreen}
         options={({ route }) => ({
-          tabBarLabel: "Services",
+          tabBarLabel: t("navigation.services"),
           tabBarIcon: ({ color }) => (
             <View style={styles.servicesIconContainer}>
-              <View style={styles.newBadge}>
-                <Text style={styles.newBadgeText}>New</Text>
+              <View style={[styles.newBadge, isRTL && styles.newBadgeRTL]}>
+                <Text style={styles.newBadgeText}>{t("navigation.new")}</Text>
               </View>
               <Ionicons name="construct" size={wp(6)} color={color} />
             </View>
@@ -264,6 +405,10 @@ const styles = StyleSheet.create({
     borderRadius: wp(1),
     zIndex: 1,
     marginBottom: hp(0.5),
+  },
+  newBadgeRTL: {
+    // left: undefined,
+    // right: -wp(8),
   },
   newBadgeText: {
     color: "#fff",

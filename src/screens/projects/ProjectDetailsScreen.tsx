@@ -35,6 +35,7 @@ import {
 import ScreenHeader from "../../components/common/ScreenHeader";
 import type { ProjectProperty } from "../../types/property";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -50,6 +51,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const { propertyId } = params;
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t, isRTL } = useLocalization();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
@@ -69,10 +71,15 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const handleImageScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const scrollPosition = event.nativeEvent.contentOffset.x;
-      const index = Math.round(scrollPosition / SCREEN_WIDTH);
+      const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
+      // When RTL is active and gallery is inverted, adjust index calculation
+      const imagesLength = project?.images?.length || 1;
+      const index = isRTL && imagesLength > 0 
+        ? imagesLength - 1 - rawIndex 
+        : rawIndex;
       setCurrentImageIndex(index);
     },
-    []
+    [isRTL, project?.images?.length]
   );
 
   const handleCall = useCallback(() => {
@@ -125,7 +132,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   if (!project) {
     return (
       <View style={styles.center}>
-        <Text>Project not found</Text>
+        <Text style={isRTL && styles.centerTextRTL}>{t("projects.projectNotFound")}</Text>
       </View>
     );
   }
@@ -139,9 +146,13 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
     <>
       <View style={styles.container}>
         {/* Icons - Always visible, absolute positioned */}
-        <View style={styles.headerIcons}>
+        <View style={[styles.headerIcons, isRTL && styles.headerIconsRTL]}>
             <IconButton onPress={handleBackPress}>
-              <Ionicons name="arrow-back" size={wp(6)} color={COLORS.primary} />
+              <Ionicons 
+                name={isRTL ? "arrow-forward" : "arrow-back"} 
+                size={wp(6)} 
+                color={COLORS.primary} 
+              />
             </IconButton>
           <View style={styles.headerIconsSpacer} />
             <IconButton onPress={handleShare}>
@@ -157,12 +168,13 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
         <Animated.View
           style={[
             styles.stickyHeaderBackground,
+            isRTL && styles.stickyHeaderBackgroundRTL,
             {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}
         >
-          <Text style={styles.stickyHeaderTitle} numberOfLines={1}>
+          <Text style={[styles.stickyHeaderTitle, isRTL && styles.stickyHeaderTitleRTL]} numberOfLines={1}>
             {project.projectNameArabic || project.projectName}
           </Text>
         </Animated.View>
@@ -201,10 +213,14 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
 
           {/* Know More */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Know More</Text>
-            <TouchableOpacity style={styles.documentButton}>
+            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
+              {t("projects.knowMore")}
+            </Text>
+            <TouchableOpacity style={[styles.documentButton, isRTL && styles.documentButtonRTL]}>
               <FontAwesome6 name="file-pdf" size={wp(6)} color="#6b7280" />
-              <Text style={styles.documentText}>Introducing Document</Text>
+              <Text style={[styles.documentText, isRTL && styles.documentTextRTL]}>
+                {t("projects.introducingDocument")}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -217,7 +233,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
         {/* Bottom Contact Bar */}
         <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.contactButton} onPress={handleCall}>
-            <Text style={styles.contactButtonText}>Contact</Text>
+            <Text style={styles.contactButtonText}>{t("projects.contact")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -233,7 +249,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
         <View style={styles.imageViewerContainer}>
           <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
             <ScreenHeader
-              title="Listing media"
+              title={t("listings.listingMedia")}
               onBackPress={closeImageViewer}
               backButtonColor={COLORS.backButton}
             />
@@ -241,7 +257,9 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           
           <View style={styles.imageViewerContent}>
             <View style={styles.imagesSectionHeader}>
-              <Text style={styles.imagesSectionTitle}>Images</Text>
+              <Text style={[styles.imagesSectionTitle, isRTL && styles.imagesSectionTitleRTL]}>
+                {t("listings.images")}
+              </Text>
               <View style={styles.imagesSectionBorder} />
             </View>
             
@@ -276,6 +294,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  centerTextRTL: {
+    textAlign: "right",
+  },
+  headerIconsRTL: {
+    flexDirection: "row-reverse",
+  },
+  stickyHeaderBackgroundRTL: {
+    flexDirection: "row-reverse",
+  },
+  stickyHeaderTitleRTL: {
+    textAlign: "right",
+  },
+  sectionTitleRTL: {
+    textAlign: "right",
+  },
+  documentButtonRTL: {
+    flexDirection: "row-reverse",
+  },
+  documentTextRTL: {
+    marginLeft: 0,
+    marginRight: wp(3),
+  },
+  imagesSectionTitleRTL: {
+    textAlign: "right",
   },
   headerIcons: {
     position: "absolute",

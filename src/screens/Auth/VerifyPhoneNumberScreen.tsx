@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OtpInput } from "react-native-otp-entry";
 import { BackButton, TextInput as CustomTextInput } from "../../components";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -28,6 +29,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const route = useRoute();
   const params = route.params as RouteParams;
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const { phoneNumber: initialPhoneNumber } = params || {};
 
   const [phoneNumber, setPhoneNumber] = useState<string>(initialPhoneNumber || "");
@@ -86,6 +88,37 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
 
   const isOtpComplete = otp.length === 6;
 
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      backButtonContainer: {
+        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+      },
+      title: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      descriptionText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      label: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      phoneInput: {
+        textAlign: "left" as "left", // Always left-aligned so cursor starts from left (after prefix)
+      },
+      timerContainer: {
+        alignItems: (isRTL ? "flex-end" : "center") as "center" | "flex-end",
+      },
+      timerText: {
+        textAlign: (isRTL ? "right" : "center") as "center" | "right",
+      },
+      resendText: {
+        textAlign: (isRTL ? "right" : "center") as "center" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -96,37 +129,40 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <BackButton onPress={handleBackPress} />
+        <View style={rtlStyles.backButtonContainer}>
+          <BackButton onPress={handleBackPress} />
+        </View>
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Verify phone number</Text>
+          <Text style={[styles.title, rtlStyles.title]}>{t("auth.verifyPhoneNumber")}</Text>
         </View>
 
         {/* Description */}
         <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionText}>
-            Enter the mobile number of your account
+          <Text style={[styles.descriptionText, rtlStyles.descriptionText]}>
+            {t("auth.enterMobileNumber")}
           </Text>
         </View>
 
         {/* Phone Number Input */}
         <View style={styles.phoneSection} pointerEvents="none">
-          <Text style={styles.label}>Phone number</Text>
+          <Text style={[styles.label, rtlStyles.label]}>{t("auth.phoneNumber")}</Text>
           <CustomTextInput
             value={phoneNumber}
             onChangeText={handlePhoneChange}
-            placeholder="Phone number"
+            placeholder={t("auth.phoneNumber")}
             prefix="+966"
             keyboardType="phone-pad"
             showFocusStates={true}
             editable={false}
+            inputStyle={rtlStyles.phoneInput}
           />
         </View>
 
         {/* Verification Code Section */}
         <View style={styles.otpSection}>
-          <Text style={styles.label}>Verification code</Text>
+          <Text style={[styles.label, rtlStyles.label]}>{t("auth.verificationCode")}</Text>
           <OtpInput
             numberOfDigits={6}
             onTextChange={handleOtpChange}
@@ -141,17 +177,17 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         </View>
 
         {/* Timer */}
-        <View style={styles.timerContainer}>
+        <View style={[styles.timerContainer, rtlStyles.timerContainer]}>
           {isTimerActive ? (
-            <Text style={styles.timerText}>
-              Resend code in {formatTime(timeLeft)}
+            <Text style={[styles.timerText, rtlStyles.timerText]}>
+              {t("auth.resendCodeIn")} {formatTime(timeLeft)}
             </Text>
           ) : (
             <TouchableOpacity
               onPress={handleResendCode}
               activeOpacity={0.7}
             >
-              <Text style={styles.resendText}>Resend code</Text>
+              <Text style={[styles.resendText, rtlStyles.resendText]}>{t("auth.resendCode")}</Text>
             </TouchableOpacity>
           )}
         </View>

@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,9 +16,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { getUsageLabel, getDefaultImageUrl } from "../../utils";
+import { getDefaultImageUrl } from "../../utils";
 import type { Property } from "../../types/property";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 export interface PropertyCardProps {
   property: Property;
@@ -47,20 +49,94 @@ const PropertyCard = memo<PropertyCardProps>(
     listingType,
     matchedCriteria,
   }) => {
-    const usageLabel = getUsageLabel(property.usage);
+    const { t, isRTL } = useLocalization();
+    const usageLabel = property.usage === "family" 
+      ? t("listings.family") 
+      : t("listings.single");
     const imageUrl =
       property.images && property.images[0]
         ? property.images[0]
         : getDefaultImageUrl();
 
+    // Helper function to translate matched criteria items (property types)
+    const translateMatchedItem = (item: string): string => {
+      // Normalize the item to match translation key format (lowercase, underscores)
+      const normalizedType = item.toLowerCase().replace(/\s+/g, "_");
+      
+      // Try to find translation in propertyTypes
+      const translationKey = `listings.propertyTypes.${normalizedType}`;
+      const translated = t(translationKey);
+      
+      // If translation exists and is different from the key, use it
+      if (translated && translated !== translationKey) {
+        return translated;
+      }
+      
+      // Try with original lowercase format
+      const altKey = `listings.propertyTypes.${item.toLowerCase()}`;
+      const altTranslated = t(altKey);
+      if (altTranslated && altTranslated !== altKey) {
+        return altTranslated;
+      }
+      
+      // Fallback to original item
+      return item;
+    };
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        card: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        imageContainer: {
+          marginRight: isRTL ? 0 : wp(3),
+          marginLeft: isRTL ? wp(3) : 0,
+        },
+        metaRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        metaItem: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          marginRight: isRTL ? 0 : wp(4),
+          marginLeft: isRTL ? wp(4) : 0,
+        },
+        metaText: {
+          marginLeft: isRTL ? 0 : wp(1),
+          marginRight: isRTL ? wp(1) : 0,
+        },
+        addressRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        address: {
+          marginLeft: isRTL ? 0 : wp(1),
+          marginRight: isRTL ? wp(1) : 0,
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        matchedItemsContainer: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        matchedBadge: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        title: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        price: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, rtlStyles.card]}
         activeOpacity={0.8}
         onPress={onPress}
       >
         {/* Image Container */}
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, rtlStyles.imageContainer]}>
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
@@ -70,56 +146,64 @@ const PropertyCard = memo<PropertyCardProps>(
 
         {/* Content Section */}
         <View style={styles.cardContent}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, rtlStyles.title]}>{title}</Text>
 
-          <Text style={styles.price}>{priceLine}</Text>
+          <Text style={[styles.price, rtlStyles.price]}>{priceLine}</Text>
 
           {showMetaInfo && (
-            <View style={styles.metaRow}>
+            <View style={[styles.metaRow, rtlStyles.metaRow]}>
               {property.area != null && (
-                <View style={styles.metaItem}>
+                <View style={[styles.metaItem, rtlStyles.metaItem]}>
                   <MaterialCommunityIcons
                     name="arrow-expand-horizontal"
                     size={wp(4)}
                     color="#9ca3af"
                   />
-                  <Text style={styles.metaText}>{property.area} m2</Text>
+                  <Text style={[styles.metaText, rtlStyles.metaText]}>
+                    {property.area} {t("listings.m2")}
+                  </Text>
                 </View>
               )}
               {property.bedrooms != null && (
-                <View style={styles.metaItem}>
+                <View style={[styles.metaItem, rtlStyles.metaItem]}>
                   <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                  <Text style={styles.metaText}>{property.bedrooms}</Text>
+                  <Text style={[styles.metaText, rtlStyles.metaText]}>
+                    {property.bedrooms}
+                  </Text>
                 </View>
               )}
               {property.restrooms != null && (
-                <View style={styles.metaItem}>
+                <View style={[styles.metaItem, rtlStyles.metaItem]}>
                   <MaterialCommunityIcons
                     name="toilet"
                     size={wp(4)}
                     color="#9ca3af"
                   />
-                  <Text style={styles.metaText}>{property.restrooms}</Text>
+                  <Text style={[styles.metaText, rtlStyles.metaText]}>
+                    {property.restrooms}
+                  </Text>
                 </View>
               )}
               {property.usage && (
-                <View style={styles.metaItem}>
+                <View style={[styles.metaItem, rtlStyles.metaItem]}>
                   <Ionicons name="pricetag" size={wp(4)} color="#9ca3af" />
-                  <Text style={styles.metaText}>Residential</Text>
+                  <Text style={[styles.metaText, rtlStyles.metaText]}>
+                    {t("listings.residential")}
+                  </Text>
                 </View>
               )}
             </View>
           )}
 
           {property.address && (
-            <View style={styles.addressRow}>
+            <View style={[styles.addressRow, rtlStyles.addressRow]}>
               <Ionicons
                 name="location"
                 size={wp(4)}
                 color={COLORS.showListCardLocation}
               />
-              <Text numberOfLines={1} style={styles.address}>
-                {property.address}
+              <Text numberOfLines={1} style={[styles.address, rtlStyles.address]}>
+                {translateAddress(property.address, t)}
               </Text>
             </View>
           )}
@@ -127,15 +211,15 @@ const PropertyCard = memo<PropertyCardProps>(
           {/* Matched Criteria */}
           {matchedCriteria && matchedCriteria.matchedItems.length > 0 && (
             <View style={styles.criteriaContainer}>
-              <View style={styles.matchedItemsContainer}>
+              <View style={[styles.matchedItemsContainer, rtlStyles.matchedItemsContainer]}>
                 {matchedCriteria.matchedItems.map((item, index) => (
-                  <View key={index} style={styles.matchedBadge}>
+                  <View key={index} style={[styles.matchedBadge, rtlStyles.matchedBadge]}>
                     <Ionicons
                       name="checkmark-circle"
                       size={wp(3)}
                       color={COLORS.primary}
                     />
-                    <Text style={styles.matchedBadgeText}>{item}</Text>
+                    <Text style={styles.matchedBadgeText}>{translateMatchedItem(item)}</Text>
                   </View>
                 ))}
               </View>
@@ -174,7 +258,6 @@ const styles = StyleSheet.create({
     borderRadius: wp(3),
     overflow: "hidden",
     backgroundColor: "#e5e7eb",
-    marginRight: wp(3),
     position: "relative",
   },
   image: {
@@ -204,11 +287,9 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: wp(4),
     marginBottom: hp(0.5),
   },
   metaText: {
-    marginLeft: wp(1),
     fontSize: wp(2.9),
     color: "#6b7280",
   },
@@ -220,7 +301,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: wp(2.9),
     color: "#6b7280",
-    marginLeft: wp(1),
   },
   criteriaContainer: {
     marginTop: hp(1),

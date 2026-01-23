@@ -1,9 +1,10 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface FinancingOptionsCardProps {
   onPress: () => void;
@@ -14,17 +15,34 @@ export interface FinancingOptionsCardProps {
  * Shows "Would you like to own the property?" with financing options button
  */
 const FinancingOptionsCard = memo<FinancingOptionsCardProps>(({ onPress }) => {
+  const { t, isRTL } = useLocalization();
+  
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      card: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      questionText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+    }),
+    [isRTL]
+  );
+  
   return (
-    <View style={styles.card}>
-      <Text style={styles.questionText}>
-        Would you like to own the property?
+    <View style={[styles.card, rtlStyles.card]}>
+      <Text style={[styles.questionText, rtlStyles.questionText]}>
+        {t("listings.wouldYouLikeToOwnProperty")}
       </Text>
       <TouchableOpacity
         style={styles.button}
         onPress={onPress}
         activeOpacity={0.8}
       >
-        <Text style={styles.buttonText}>Financing options</Text>
+        <Text style={styles.buttonText}>{t("listings.financingOptions")}</Text>
       </TouchableOpacity>
     </View>
   );

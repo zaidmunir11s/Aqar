@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,8 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import type { Property, RentSaleProperty } from "../../types/property";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 export interface AverageSaleCardProps {
   property: Property;
@@ -16,27 +18,56 @@ export interface AverageSaleCardProps {
  * Shows average villa for sale area and price in location
  */
 const AverageSaleCard = memo<AverageSaleCardProps>(({ property }) => {
+  const { t, isRTL } = useLocalization();
+  
   // Calculate average price (in a real app, this would come from API)
   const saleProperty = property as RentSaleProperty;
   const averagePrice = saleProperty.price
     ? saleProperty.price.replace(" M", ",000,000").replace(" K", ",000")
     : "4,810,360";
-  const location = property.address || property.city || "عرفة";
+  
+  // Translate the location/address
+  const rawLocation = property.address || property.city || "";
+  const translatedLocation = useMemo(
+    () => rawLocation ? translateAddress(rawLocation, t) : t("listings.city"),
+    [rawLocation, t]
+  );
+  
   const minArea = 275;
   const maxArea = 400;
 
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      card: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      iconContainer: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      label: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      price: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-      <View style={styles.iconContainer}>
+    <TouchableOpacity style={[styles.card, rtlStyles.card]} activeOpacity={0.7}>
+      <View style={[styles.iconContainer, rtlStyles.iconContainer]}>
         <Ionicons name="bar-chart" size={wp(5.5)} color="#3b82f6" />
       </View>
       <View style={styles.content}>
-        <Text style={styles.label}>
-          Average Villa for sale Area ({minArea} - {maxArea})m² in {location}
+        <Text style={[styles.label, rtlStyles.label]}>
+          {t("listings.averageForSale", { minArea, maxArea, location: translatedLocation })}
         </Text>
-        <Text style={styles.price}>{averagePrice} SAR</Text>
+        <Text style={[styles.price, rtlStyles.price]}>{averagePrice} {t("listings.sar")}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={wp(5)} color="#9ca3af" />
+      <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={wp(5)} color="#9ca3af" />
     </TouchableOpacity>
   );
 });

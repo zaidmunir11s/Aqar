@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface DeleteConfirmationModalProps {
   visible: boolean;
@@ -24,6 +25,36 @@ export interface DeleteConfirmationModalProps {
  */
 const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
   ({ visible, onCancel, onConfirm }) => {
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    const rtlStyles = useMemo(
+      () => ({
+        modalContent: {
+          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        },
+        modalHeading: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        modalText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        modalButtons: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          justifyContent: (isRTL ? "flex-end" : "flex-end") as "flex-start" | "flex-end",
+          marginLeft: isRTL ? 0 : wp(3),
+          marginRight: isRTL ? wp(3) : 0,
+        },
+        modalNoButtonText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        modalYesButtonText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <Modal
         visible={visible}
@@ -32,25 +63,25 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
         onRequestClose={onCancel}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalHeading}>Bayt</Text>
-            <Text style={styles.modalText}>
-              Are you sure you want to delete this task
+          <View style={[styles.modalContent, rtlStyles.modalContent]}>
+            <Text style={[styles.modalHeading, rtlStyles.modalHeading]}>{t("common.appName")}</Text>
+            <Text style={[styles.modalText, rtlStyles.modalText]}>
+              {t("common.deleteRequestConfirm")}
             </Text>
-            <View style={styles.modalButtons}>
+            <View style={[styles.modalButtons, rtlStyles.modalButtons]}>
               <TouchableOpacity
                 style={styles.modalNoButton}
                 onPress={onCancel}
                 activeOpacity={0.7}
               >
-                <Text style={styles.modalNoButtonText}>No</Text>
+                <Text style={[styles.modalNoButtonText, rtlStyles.modalNoButtonText]}>{t("common.no")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalYesButton}
                 onPress={onConfirm}
                 activeOpacity={0.7}
               >
-                <Text style={styles.modalYesButtonText}>Yes</Text>
+                <Text style={[styles.modalYesButtonText, rtlStyles.modalYesButtonText]}>{t("common.yes")}</Text>
               </TouchableOpacity>
             </View>
           </View>

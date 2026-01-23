@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface FieldWithModalProps {
   label: string;
@@ -20,20 +21,43 @@ export interface FieldWithModalProps {
  */
 const FieldWithModal = memo<FieldWithModalProps>(
   ({ label, value, placeholder, onPress, backgroundColor = "white" }) => {
+    const { isRTL } = useLocalization();
+
+    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    const rtlStyles = useMemo(
+      () => ({
+        label: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        field: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        fieldText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <View style={styles.section}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
         <TouchableOpacity
           style={[
             styles.field,
+            rtlStyles.field,
             backgroundColor === "background" && styles.fieldBackground,
           ]}
           onPress={onPress}
         >
-          <Text style={[styles.fieldText, !value && styles.placeholder]}>
+          <Text style={[styles.fieldText, rtlStyles.fieldText, !value && styles.placeholder]}>
             {value || placeholder}
           </Text>
-          <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
+          <Ionicons 
+            name={isRTL ? "chevron-up" : "chevron-down"} 
+            size={wp(5)} 
+            color={COLORS.primary} 
+          />
         </TouchableOpacity>
       </View>
     );

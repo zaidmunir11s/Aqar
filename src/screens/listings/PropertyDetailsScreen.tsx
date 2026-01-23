@@ -53,6 +53,7 @@ import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -76,6 +77,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   } = params;
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t, isRTL } = useLocalization();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
@@ -186,10 +188,15 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const handleImageScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const scrollPosition = event.nativeEvent.contentOffset.x;
-      const index = Math.round(scrollPosition / SCREEN_WIDTH);
+      const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
+      // When RTL is active and gallery is inverted, adjust index calculation
+      const imagesLength = property?.images?.length || 1;
+      const index = isRTL && imagesLength > 0 
+        ? imagesLength - 1 - rawIndex 
+        : rawIndex;
       setCurrentImageIndex(index);
     },
-    []
+    [isRTL, property?.images?.length]
   );
 
   const handleCall = useCallback(() => {
@@ -204,8 +211,8 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     if (!property) return;
     
     // Navigate to conversation screen with default message
-    const defaultMessage = `In regard of ad number #${property.id}`;
-    // Get advertiser name from property data, fallback to default
+    const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
+    // Get advertiser name from property data, fallback to default (don't translate - keep as is)
     const advertiserName = property.advertiserName || "Property Owner";
     const advertiserId = property.advertiserId || `advertiser-${property.id}`;
     
@@ -232,7 +239,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
         },
       });
     }
-  }, [navigation, property]);
+  }, [navigation, property, t]);
 
   const handleShare = useCallback(() => {
     console.log("Share property");
@@ -344,7 +351,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   if (!property) {
     return (
       <View style={styles.center}>
-        <Text>Property not found</Text>
+        <Text style={isRTL && styles.centerTextRTL}>{t("listings.propertyNotFound")}</Text>
       </View>
     );
   }
@@ -354,49 +361,71 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       ? property.images
       : [getDefaultImageUrl()];
 
+  // Helper function to translate property type
+  const getTranslatedTypeLabel = useCallback(
+    (type: string, filterOptions: any[]) => {
+      const opt = filterOptions.find((o) => o.type === type);
+      if (!opt) return type;
+      
+      // Try to find translation in propertyTypes
+      const translationKey = `listings.propertyTypes.${type}`;
+      const translated = t(translationKey);
+      
+      // If translation exists and is different from the key, use it
+      if (translated && translated !== translationKey) {
+        return translated;
+      }
+      
+      // Fallback to filter option label
+      return opt.label;
+    },
+    [t]
+  );
+
   // Get type label from filter options
   const getPropertyTypeLabel = useCallback(() => {
     let filterOptions;
     if (property.listingType === "rent") filterOptions = RENT_FILTER_OPTIONS;
     else filterOptions = SALE_FILTER_OPTIONS;
 
-    const option = filterOptions.find((opt) => opt.type === property.type);
-    return option
-      ? option.label
-      : property.type.charAt(0).toUpperCase() + property.type.slice(1);
-  }, [property]);
+    return getTranslatedTypeLabel(property.type, filterOptions);
+  }, [property, getTranslatedTypeLabel]);
 
   const typeLabel = getPropertyTypeLabel();
   const listingText =
     property.listingType === "rent"
-      ? "for rent"
+      ? t("listings.forRent")
       : property.listingType === "sale"
-        ? "for sale"
+        ? t("listings.forSale")
         : "";
 
   const displayPrice = useMemo(() => {
     if (property.listingType === "rent") {
       const rentProperty = property as any;
-      return `${rentProperty.price.replace(" K", ",000")} SAR / Yearly`;
+      return `${rentProperty.price.replace(" K", ",000")} ${t("listings.sar")} / ${t("listings.yearly")}`;
     } else if (property.listingType === "sale") {
       const saleProperty = property as any;
       return `${saleProperty.price
         .replace(" M", ",000,000")
-        .replace(" K", ",000")} SAR`;
+        .replace(" K", ",000")} ${t("listings.sar")}`;
     }
     return "";
-  }, [property]);
+  }, [property, t]);
 
   return (
     <>
       <View style={styles.container} {...panResponder.panHandlers}>
         {/* Icons - Always visible, absolute positioned */}
-        <View style={styles.headerIcons}>
+        <View style={[styles.headerIcons, isRTL && styles.headerIconsRTL]}>
           <IconButton onPress={handleBackPress}>
-            <Ionicons name="arrow-back" size={wp(6)} color={COLORS.backButton} />
+            <Ionicons 
+              name={isRTL ? "arrow-forward" : "arrow-back"} 
+              size={wp(6)} 
+              color={COLORS.backButton} 
+            />
           </IconButton>
           <View style={styles.headerIconsSpacer} />  
-          <View style={styles.headerIconsRight}>
+          <View style={[styles.headerIconsRight, isRTL && styles.headerIconsRightRTL]}>
             <IconButton onPress={toggleLike}>
               <Ionicons
                 name={liked ? "thumbs-up" : "thumbs-up-outline"}
@@ -478,34 +507,36 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
           {/* Property Information */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Property Information</Text>
+            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
+              {t("listings.propertyInformation")}
+            </Text>
             <View style={styles.infoList}>
               {[
-                { icon: "resize", label: "Area", value: `${property.area}` },
+                { icon: "resize", label: t("listings.area"), value: `${property.area}` },
                 {
                   icon: "bed",
-                  label: "Bedrooms",
+                  label: t("listings.bedrooms"),
                   value: property.bedrooms.toString(),
                 },
                 {
                   icon: "home",
-                  label: "Living Rooms",
+                  label: t("listings.livingRooms"),
                   value: (property.livingRooms || 1).toString(),
                 },
                 {
                   icon: "water",
-                  label: "Restrooms",
+                  label: t("listings.restrooms"),
                   value: (property.restrooms || 2).toString(),
                 },
                 {
                   icon: "business",
-                  label: "Real estate age",
+                  label: t("listings.realEstateAge"),
                   value:
                     property.estateAge > 0
-                      ? `${property.estateAge} years`
-                      : "New",
+                      ? `${property.estateAge} ${t("listings.years")}`
+                      : t("listings.new"),
                 },
-                { icon: "pricetag", label: "Type", value: "Residential" },
+                { icon: "pricetag", label: t("listings.type"), value: t("listings.residential") },
               ].map((item, index) => (
                 <InfoItem
                   key={item.label}
@@ -521,14 +552,16 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
           {/* Property Features */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Property Features</Text>
+            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
+              {t("listings.propertyFeatures")}
+            </Text>
             <View style={styles.featuresList}>
               {[
-                { label: "Water" },
-                { label: "Electricity" },
-                { label: "Private Roof" },
-                { label: "Special Entrance" },
-                { label: "Near Bus" },
+                { label: t("listings.water") },
+                { label: t("listings.electricity") },
+                { label: t("listings.privateRoof") },
+                { label: t("listings.specialEntrance") },
+                { label: t("listings.nearBus") },
               ]
                 .reduce<Array<Array<{ label: string; index: number }>>>(
                   (rows, item, index) => {
@@ -546,6 +579,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                     key={rowIndex}
                     style={[
                       styles.featureRow,
+                      isRTL && styles.featureRowRTL,
                       {
                         backgroundColor:
                           rowIndex % 2 === 0 ? "#fff" : "#ebf1f1",
@@ -568,9 +602,11 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
           {/* Extra / Description */}
           <View style={styles.extraSection}>
-            <Text style={styles.sectionTitle}>Extra</Text>
+            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
+              {t("listings.extra")}
+            </Text>
             <Text
-              style={styles.description}
+              style={[styles.description, isRTL && styles.descriptionRTL]}
               numberOfLines={expandedDescription ? undefined : 3}
             >
               {property.description ||
@@ -578,7 +614,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             </Text>
             {!expandedDescription && (
               <TouchableOpacity onPress={expandDescription}>
-                <Text style={styles.readMore}>Read more</Text>
+                <Text style={[styles.readMore, isRTL && styles.readMoreRTL]}>
+                  {t("listings.readMore")}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -608,9 +646,11 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
           {/* Report Ad */}
           <View style={styles.reportAdSection}>
-            <TouchableOpacity style={styles.reportAd}>
+            <TouchableOpacity style={[styles.reportAd, isRTL && styles.reportAdRTL]}>
               <Ionicons name="flag" size={wp(5)} color="#ef4444" />
-              <Text style={styles.reportAdText}>Report Ad</Text>
+              <Text style={[styles.reportAdText, isRTL && styles.reportAdTextRTL]}>
+                {t("listings.reportAd")}
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.sectionSeparator} />
@@ -643,7 +683,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
         <View style={styles.imageViewerContainer}>
           <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
             <ScreenHeader
-              title="Listing media"
+              title={t("listings.listingMedia")}
               onBackPress={closeImageViewer}
               backButtonColor={COLORS.backButton}
             />
@@ -651,7 +691,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           
           <View style={styles.imageViewerContent}>
             <View style={styles.imagesSectionHeader}>
-              <Text style={styles.imagesSectionTitle}>Images</Text>
+              <Text style={[styles.imagesSectionTitle, isRTL && styles.imagesSectionTitleRTL]}>
+                {t("listings.images")}
+              </Text>
               <View style={styles.imagesSectionBorder} />
             </View>
             
@@ -686,6 +728,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  centerTextRTL: {
+    textAlign: "right",
+  },
+  headerIconsRTL: {
+    flexDirection: "row-reverse",
+  },
+  headerIconsRightRTL: {
+    flexDirection: "row-reverse",
+  },
+  sectionTitleRTL: {
+    textAlign: "right",
+  },
+  descriptionRTL: {
+    textAlign: "right",
+  },
+  readMoreRTL: {
+    textAlign: "right",
+  },
+  reportAdRTL: {
+    flexDirection: "row-reverse",
+  },
+  reportAdTextRTL: {
+    marginLeft: 0,
+    marginRight: wp(2),
+  },
+  imagesSectionTitleRTL: {
+    textAlign: "right",
   },
   headerIcons: {
     position: "absolute",
@@ -755,6 +825,9 @@ const styles = StyleSheet.create({
   featureRow: {
     flexDirection: "row",
     width: "100%",
+  },
+  featureRowRTL: {
+    flexDirection: "row-reverse",
   },
   extraSection: {
     backgroundColor: "#ebf1f1",

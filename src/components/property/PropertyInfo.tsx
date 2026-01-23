@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface InfoItemProps {
   icon: string;
@@ -25,14 +26,37 @@ export interface InfoItemProps {
  */
 export const InfoItem = memo<InfoItemProps>(
   ({ icon, label, value, backgroundColor }) => {
+    const { isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        infoItem: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        infoLeftSection: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        infoLabel: {
+          marginLeft: isRTL ? 0 : wp(3),
+          marginRight: isRTL ? wp(3) : 0,
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        infoValue: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
-      <View style={[styles.infoItem, { backgroundColor }]}>
-        <View style={styles.infoLeftSection}>
+      <View style={[styles.infoItem, { backgroundColor }, rtlStyles.infoItem]}>
+        <View style={[styles.infoLeftSection, rtlStyles.infoLeftSection]}>
           <Ionicons name={icon as any} size={wp(5)} color="#9ca3af" />
-          <Text style={styles.infoLabel}>{label}</Text>
+          <Text style={[styles.infoLabel, rtlStyles.infoLabel]}>{label}</Text>
         </View>
         <View style={styles.infoValueContainer}>
-          <Text style={styles.infoValue}>{value}</Text>
+          <Text style={[styles.infoValue, rtlStyles.infoValue]}>{value}</Text>
         </View>
       </View>
     );
@@ -52,10 +76,27 @@ export interface FeatureItemProps {
  */
 export const FeatureItem = memo<FeatureItemProps>(
   ({ label, backgroundColor, showBorder }) => {
+    const { isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        featureItem: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        featureLabel: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
-      <View style={[styles.featureItem, { backgroundColor }]}>
+      <View style={[styles.featureItem, { backgroundColor }, rtlStyles.featureItem]}>
         <Ionicons name="checkmark-circle" size={wp(5)} color={COLORS.checkmarkCircle} />
-        <Text style={styles.featureLabel}>{label}</Text>
+        <Text style={[styles.featureLabel, rtlStyles.featureLabel]}>{label}</Text>
       </View>
     );
   }
@@ -77,17 +118,42 @@ export interface DetailRowProps {
  */
 export const DetailRow = memo<DetailRowProps>(
   ({ label, value, showCopy, onCopy, backgroundColor, isLast }) => {
+    const { isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        detailRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        detailLabel: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        detailValueContainer: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          justifyContent: "center" as "center",
+        },
+        detailValue: {
+          marginRight: isRTL ? 0 : wp(2),
+          marginLeft: isRTL ? wp(2) : 0,
+          textAlign: "center" as "center",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <View
         style={[
           styles.detailRow,
           { backgroundColor },
           isLast && styles.lastDetailRow,
+          rtlStyles.detailRow,
         ]}
       >
-        <Text style={styles.detailLabel}>{label}</Text>
-        <View style={styles.detailValueContainer}>
-          <Text style={styles.detailValue}>{value}</Text>
+        <Text style={[styles.detailLabel, rtlStyles.detailLabel]}>{label}</Text>
+        <View style={[styles.detailValueContainer, rtlStyles.detailValueContainer]}>
+          <Text style={[styles.detailValue, rtlStyles.detailValue]}>{value}</Text>
           {showCopy && onCopy && (
             <TouchableOpacity onPress={onCopy}>
               <Ionicons name="copy-outline" size={wp(4.5)} color="#666" />
@@ -117,7 +183,6 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: wp(3.5),
     color: "#374151",
-    marginLeft: wp(3),
   },
   infoValueContainer: {
     flex: 1,
@@ -139,7 +204,6 @@ const styles = StyleSheet.create({
   featureLabel: {
     fontSize: wp(3.5),
     color: "#374151",
-    marginLeft: wp(2),
     flex: 1,
   },
   detailRow: {
@@ -157,15 +221,16 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: wp(3.5),
     color: "#6b7280",
+    flex: 1,
   },
   detailValueContainer: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   detailValue: {
     fontSize: wp(3.5),
     color: "#111827",
     fontWeight: "600",
-    marginRight: wp(2),
   },
 });

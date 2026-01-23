@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface UserInfoCardProps {
   sinceDate?: string;
@@ -14,15 +15,44 @@ export interface UserInfoCardProps {
 
 const UserInfoCard = memo<UserInfoCardProps>(
   ({ sinceDate = "2025/11/27", lastSeen = "now" }) => {
+    const { t, isRTL } = useLocalization();
+
+    // Translate "now" only when the value is exactly "now"
+    // (you can adjust this logic if lastSeen comes in other formats)
+    const displayedLastSeen =
+      lastSeen === "now"
+        ? t("profile.now", { defaultValue: "now" })
+        : lastSeen;
+
     return (
-      <View style={styles.card}>
+      <View
+        style={[
+          styles.card,
+          isRTL && { flexDirection: "row-reverse" },
+        ]}
+      >
         <View style={styles.item}>
-          <Ionicons name="calendar-outline" size={wp(6)} color={COLORS.primary} />
-          <Text style={styles.infoText}>Since {sinceDate}</Text>
+          <Ionicons
+            name="calendar-outline"
+            size={wp(6)}
+            color={COLORS.primary}
+          />
+          <Text style={styles.infoText}>
+            {t("profile.since", { defaultValue: "Since" })}{" "}
+            {sinceDate}
+          </Text>
         </View>
+
         <View style={styles.item}>
-          <Ionicons name="alarm-outline" size={wp(6)} color={COLORS.primaryLight} />
-          <Text style={styles.infoText}>Last seen: {lastSeen}</Text>
+          <Ionicons
+            name="alarm-outline"
+            size={wp(6)}
+            color={COLORS.primaryLight}
+          />
+          <Text style={styles.infoText}>
+            {t("profile.lastSeen", { defaultValue: "Last seen" })}:{" "}
+            {displayedLastSeen}
+          </Text>
         </View>
       </View>
     );
@@ -47,11 +77,13 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     gap: hp(1),
+    flex: 1,
   },
   infoText: {
     fontSize: wp(3.5),
     color: COLORS.textSecondary,
     fontWeight: "400",
+    textAlign: "center",
   },
 });
 

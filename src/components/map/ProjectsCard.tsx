@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ProjectsCardProps {
   projectCount: number;
@@ -23,19 +24,40 @@ export interface ProjectsCardProps {
  */
 const ProjectsCard = memo<ProjectsCardProps>(
   ({ projectCount, onPress, showBelow = false }) => {
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        projectsCard: {
+          left: isRTL ? undefined : wp(4),
+          right: isRTL ? wp(4) : undefined,
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        projectIconContainer: {
+          marginRight: isRTL ? 0 : wp(3),
+          marginLeft: isRTL ? wp(3) : 0,
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <TouchableOpacity
-        style={showBelow ? styles.projectsCardBelow : styles.projectsCard}
+        style={[
+          showBelow ? styles.projectsCardBelow : styles.projectsCard,
+          rtlStyles.projectsCard,
+        ]}
         onPress={onPress}
         activeOpacity={0.8}
       >
-        <View style={styles.projectIconContainer}>
+        <View style={[styles.projectIconContainer, rtlStyles.projectIconContainer]}>
           <Ionicons name="business" size={wp(8)} color="#d97706" />
         </View>
         <View>
-          <Text style={styles.projectTitle}>رصف</Text>
+          <Text style={styles.projectTitle}>{t("listings.projects")}</Text>
           <Text style={styles.projectSubtitle}>
-            {projectCount} projects available
+            {projectCount} {t("listings.projectsAvailable")}
           </Text>
         </View>
       </TouchableOpacity>
@@ -90,7 +112,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fffbeb",
     padding: wp(2.5),
     borderRadius: wp(3),
-    marginRight: wp(3),
   },
   projectTitle: {
     fontWeight: "bold",

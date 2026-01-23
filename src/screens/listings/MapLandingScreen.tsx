@@ -110,19 +110,24 @@ export default function MapLandingScreen(): React.JSX.Element {
     ).length;
   }, []);
 
-  // Get visible properties
+  // Get visible properties (include projects for sale tab)
   const visibleProperties = useMemo(() => {
     const latHalf = region.latitudeDelta / 2;
     const lngHalf = region.longitudeDelta / 2;
 
-    return regularPropertiesOnly.filter(
+    // For sale tab, include projects; for other tabs, exclude projects
+    const propertiesToFilter = activeTab === "sale" 
+      ? filteredProperties 
+      : regularPropertiesOnly;
+
+    return propertiesToFilter.filter(
       (p) =>
         p.lat >= region.latitude - latHalf &&
         p.lat <= region.latitude + latHalf &&
         p.lng >= region.longitude - lngHalf &&
         p.lng <= region.longitude + lngHalf
     );
-  }, [regularPropertiesOnly, region]);
+  }, [regularPropertiesOnly, filteredProperties, region, activeTab]);
 
   const { visibleCount, totalCount } = useMemo(() => {
     return {
@@ -140,10 +145,13 @@ export default function MapLandingScreen(): React.JSX.Element {
     }).start();
   }, [visibleCount, counterFadeAnim]);
 
-  const selectedProperty = useMemo(
-    () => regularPropertiesOnly.find((p) => p.id === selectedId) || null,
-    [regularPropertiesOnly, selectedId]
-  );
+  const selectedProperty = useMemo(() => {
+    // For sale tab, search in filteredProperties (includes projects); otherwise use regularPropertiesOnly
+    const propertiesToSearch = activeTab === "sale" 
+      ? filteredProperties 
+      : regularPropertiesOnly;
+    return propertiesToSearch.find((p) => p.id === selectedId) || null;
+  }, [regularPropertiesOnly, filteredProperties, selectedId, activeTab]);
 
   // Handlers
   const handleTabChange = useCallback((tab: TabType) => {
@@ -201,7 +209,7 @@ export default function MapLandingScreen(): React.JSX.Element {
     if (selectedProperty.listingType === "daily") {
       navigation.navigate("DailyDetails", params);
     } else {
-      navigation.navigate("PropertyDetails", params);
+    navigation.navigate("PropertyDetails", params);
     }
   }, [
     navigation,
@@ -242,8 +250,13 @@ export default function MapLandingScreen(): React.JSX.Element {
   );
 
   const handleShowList = useCallback(() => {
+    // Only include regular properties (exclude projects) for the list view
+    const regularProperties = visibleProperties.filter(
+      (p) => !("isProject" in p && p.isProject)
+    );
+    
     const params: any = {
-      properties: visibleProperties,
+      properties: regularProperties,
       listingType: activeTab,
     };
     navigation.navigate("PropertyList", params);

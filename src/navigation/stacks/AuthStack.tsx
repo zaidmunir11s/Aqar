@@ -1,7 +1,9 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useAuth } from "@clerk/clerk-expo";
 import LoginScreen from "../../screens/Auth/LoginScreen";
 import CreateAccountScreen from "../../screens/Auth/CreateAccountScreen";
+import VerifyPhoneNumberScreen from "../../screens/Auth/VerifyPhoneNumberScreen";
 import ForgotPasswordScreen from "../../screens/Auth/ForgotPasswordScreen";
 import ProfileDetailScreen from "../../screens/profile/ProfileDetailScreen";
 import UpdateProfileScreen from "../../screens/profile/UpdateProfileScreen";
@@ -13,15 +15,24 @@ import PayBrokerCommissionScreen from "../../screens/profile/PayBrokerCommission
 const Stack = createStackNavigator();
 
 export default function AuthStack(): React.JSX.Element {
+  const { isSignedIn, isLoaded } = useAuth();
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={isLoaded && isSignedIn ? "ProfileDetail" : "Login"}
+    >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+      <Stack.Screen name="VerifyPhoneNumber" component={VerifyPhoneNumberScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} />
       <Stack.Screen name="UpdateProfile" component={UpdateProfileScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-      <Stack.Screen name="ChangePhoneNumber" component={ChangePhoneNumberScreen} />
+      <Stack.Screen
+        name="ChangePhoneNumber"
+        component={ChangePhoneNumberScreen}
+      />
       <Stack.Screen name="UserProfileAds" component={UserProfileAdsScreen} />
       <Stack.Screen
         name="PayBrokerCommission"

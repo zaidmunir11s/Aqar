@@ -13,6 +13,7 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  PanResponder,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -21,6 +22,7 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   PROPERTY_DATA,
   DAILY_FILTER_OPTIONS,
@@ -42,6 +44,7 @@ import {
   IconButton,
   UnitRules,
 } from "../../components";
+import ScreenHeader from "../../components/common/ScreenHeader";
 import { useCalendar } from "../../hooks";
 import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
@@ -69,6 +72,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
     listingType: passedListingType,
   } = params;
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
@@ -80,6 +84,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
   const [calendarVisible, setCalendarVisible] = useState<boolean>(false);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-100)).current; // Start off-screen
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Use calendar hook for daily bookings
@@ -91,60 +96,93 @@ export default function DailyDetailScreen(): React.JSX.Element {
     [propertyId]
   );
 
-  // Find current index in visible properties list
+  // Filter visible properties based on selected dates and minimum days requirement
+  const filteredVisiblePropertyIds = useMemo(() => {
+    if (!selectedDates?.startDate || !selectedDates?.endDate) {
+      // If no dates selected, return all visible properties
+      return visiblePropertyIds;
+    }
+
+    const days = calculateDays(selectedDates.startDate, selectedDates.endDate);
+
+    // Filter properties that meet minimum days requirement
+    return visiblePropertyIds.filter((id) => {
+      const prop = PROPERTY_DATA.find((p) => p.id === id);
+      if (!prop || prop.listingType !== "daily") {
+        // For non-daily properties, include them (no minimum days requirement)
+        return true;
+      }
+
+      const dailyProp = prop as DailyProperty;
+      
+      // Check minimum days based on booking type
+      if (dailyProp.bookingType === "monthly") {
+        // Monthly properties require minimum 30 days
+        return days >= 30;
+      } else if (dailyProp.bookingType === "daily") {
+        // Daily properties require minimum 1 day
+        return days >= 1;
+      }
+      
+      // Default: include property
+      return true;
+    });
+  }, [visiblePropertyIds, selectedDates]);
+
+  // Find current index in filtered visible properties list
   const currentPropertyIndex = useMemo(() => {
-    if (!visiblePropertyIds || visiblePropertyIds.length === 0) return -1;
-    return visiblePropertyIds.indexOf(propertyId);
-  }, [visiblePropertyIds, propertyId]);
+    if (!filteredVisiblePropertyIds || filteredVisiblePropertyIds.length === 0) return -1;
+    return filteredVisiblePropertyIds.indexOf(propertyId);
+  }, [filteredVisiblePropertyIds, propertyId]);
 
   const hasNavigation = currentPropertyIndex >= 0;
   const canGoPrev = hasNavigation && currentPropertyIndex > 0;
   const canGoNext =
-    hasNavigation && currentPropertyIndex < visiblePropertyIds.length - 1;
+    hasNavigation && currentPropertyIndex < filteredVisiblePropertyIds.length - 1;
 
   // Navigation handlers
   const handlePrevProperty = useCallback(() => {
     if (canGoPrev) {
-      const prevPropertyId = visiblePropertyIds[currentPropertyIndex - 1];
+      const prevPropertyId = filteredVisiblePropertyIds[currentPropertyIndex - 1];
       // Check if previous property is daily or not
       const prevProperty = PROPERTY_DATA.find((p) => p.id === prevPropertyId);
       const screenName = prevProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
       navigation.replace(screenName, {
         propertyId: prevPropertyId,
-        visiblePropertyIds,
+        visiblePropertyIds: visiblePropertyIds, // Use original list, not filtered
         listingType: passedListingType,
-        selectedDates: passedDates,
+        // Don't pass selectedDates - let user select dates again for next property
       });
     }
   }, [
     canGoPrev,
     currentPropertyIndex,
+    filteredVisiblePropertyIds,
     visiblePropertyIds,
     navigation,
     passedListingType,
-    passedDates,
   ]);
 
   const handleNextProperty = useCallback(() => {
     if (canGoNext) {
-      const nextPropertyId = visiblePropertyIds[currentPropertyIndex + 1];
+      const nextPropertyId = filteredVisiblePropertyIds[currentPropertyIndex + 1];
       // Check if next property is daily or not
       const nextProperty = PROPERTY_DATA.find((p) => p.id === nextPropertyId);
       const screenName = nextProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
       navigation.replace(screenName, {
         propertyId: nextPropertyId,
-        visiblePropertyIds,
+        visiblePropertyIds: visiblePropertyIds, // Use original list, not filtered
         listingType: passedListingType,
-        selectedDates: passedDates,
+        // Don't pass selectedDates - let user select dates again for next property
       });
     }
   }, [
     canGoNext,
     currentPropertyIndex,
+    filteredVisiblePropertyIds,
     visiblePropertyIds,
     navigation,
     passedListingType,
-    passedDates,
   ]);
 
   const handleImageScroll = useCallback(
@@ -211,8 +249,13 @@ export default function DailyDetailScreen(): React.JSX.Element {
   }, []);
 
   const handleReserve = useCallback(() => {
-    console.log("Handle reservation");
-  }, []);
+    if (!property) return;
+    
+    navigation.navigate("Reserve", {
+      propertyId: property.id,
+      selectedDates: selectedDates,
+    });
+  }, [navigation, property, selectedDates]);
 
   const handleCopyId = useCallback(() => {
     console.log("Copy ID:", property?.id);
@@ -223,40 +266,56 @@ export default function DailyDetailScreen(): React.JSX.Element {
       const offsetY = event.nativeEvent.contentOffset.y;
       // Show sticky header when scrolled past image gallery (approximately hp(30))
       const threshold = hp(30) - hp(10); // Show header slightly before image ends
-      setShowStickyHeader(offsetY > threshold);
+      const shouldShow = offsetY > threshold;
+      
+      if (shouldShow !== showStickyHeader) {
+        setShowStickyHeader(shouldShow);
+        // Animate header sliding down/up
+        Animated.timing(headerTranslateY, {
+          toValue: shouldShow ? 0 : -100,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      }
 
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY]
+    [scrollY, showStickyHeader, headerTranslateY]
   );
 
-  const renderFullScreenImage = useCallback(
-    ({ item }: { item: string }) => (
-      <View style={styles.fullScreenImageContainer}>
-        <Image
-          source={{ uri: item }}
-          style={styles.fullScreenImage}
-          resizeMode="contain"
-        />
-      </View>
-    ),
-    []
+  // PanResponder for swipe navigation
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+          // Only respond to horizontal swipes (not vertical scrolling)
+          const { dx, dy } = gestureState;
+          return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
+        },
+        onPanResponderRelease: (evt, gestureState) => {
+          const { dx, vx } = gestureState;
+          const swipeThreshold = 50; // Minimum swipe distance
+          const velocityThreshold = 0.3; // Minimum swipe velocity
+
+          // Swipe right (positive dx) = go to previous property
+          if (dx > swipeThreshold || vx > velocityThreshold) {
+            if (canGoPrev) {
+              handlePrevProperty();
+            }
+          }
+          // Swipe left (negative dx) = go to next property
+          else if (dx < -swipeThreshold || vx < -velocityThreshold) {
+            if (canGoNext) {
+              handleNextProperty();
+            }
+          }
+        },
+      }),
+    [canGoPrev, canGoNext, handlePrevProperty, handleNextProperty]
   );
 
-  const keyExtractorFullscreen = useCallback(
-    (item: string, index: number) => `fullscreen-${index}`,
-    []
-  );
-
-  const getItemLayout = useCallback(
-    (data: any, index: number) => ({
-      length: SCREEN_WIDTH,
-      offset: SCREEN_WIDTH * index,
-      index,
-    }),
-    []
-  );
 
   if (!property) {
     return (
@@ -292,45 +351,53 @@ export default function DailyDetailScreen(): React.JSX.Element {
       );
       return `${(dailyProperty.dailyPrice || 0) * days} SAR`;
     } else {
-      return dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
+      return "Choose date to see price";
     }
   }, [property, selectedDates]);
 
   return (
     <>
-      <View style={styles.container}>
-        {/* Sticky Header - appears on scroll */}
-        {showStickyHeader && (
-          <View style={styles.stickyHeader}>
-            <IconButton onPress={handleBackPress}>
-              <Ionicons name="arrow-back" size={wp(6)} color={COLORS.backButton} />
+      <View style={styles.container} {...panResponder.panHandlers}>
+        {/* Icons - Always visible, absolute positioned */}
+        <View style={styles.headerIcons}>
+          <IconButton onPress={handleBackPress}>
+            <Ionicons name="arrow-back" size={wp(6)} color={COLORS.backButton} />
+          </IconButton>
+          <View style={styles.headerIconsSpacer} />  
+          <View style={styles.headerIconsRight}>
+            <IconButton onPress={toggleLike}>
+              <Ionicons
+                name={liked ? "thumbs-up" : "thumbs-up-outline"}
+                size={wp(5.5)}
+                color={COLORS.backButton}
+              />
             </IconButton>
-            <View style={styles.stickyHeaderSpacer} />  
-            <View style={styles.stickyHeaderRight}>
-              <IconButton onPress={toggleLike}>
-                <Ionicons
-                  name={liked ? "thumbs-up" : "thumbs-up-outline"}
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-              <IconButton onPress={handleShare}>
-                <Ionicons
-                  name="share-social-outline"
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-              <IconButton onPress={toggleFavorite}>
-                <Ionicons
-                  name={favorited ? "heart" : "heart-outline"}
-                  size={wp(5.5)}
-                  color={COLORS.backButton}
-                />
-              </IconButton>
-            </View>
+            <IconButton onPress={handleShare}>
+              <Ionicons
+                name="share-social-outline"
+                size={wp(5.5)}
+                color={COLORS.backButton}
+              />
+            </IconButton>
+            <IconButton onPress={toggleFavorite}>
+              <Ionicons
+                name={favorited ? "heart" : "heart-outline"}
+                size={wp(5.5)}
+                color={COLORS.backButton}
+              />
+            </IconButton>
           </View>
-        )}
+        </View>
+
+        {/* Sticky Header Background - slides in to join icons on scroll */}
+        <Animated.View
+          style={[
+            styles.stickyHeaderBackground,
+            {
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        />
 
         <ScrollView
           ref={scrollViewRef}
@@ -546,30 +613,35 @@ export default function DailyDetailScreen(): React.JSX.Element {
         statusBarTranslucent={true}
       >
         <View style={styles.imageViewerContainer}>
-          <TouchableOpacity
-            style={styles.closeImageViewer}
-            onPress={closeImageViewer}
-          >
-            <Ionicons name="close-circle" size={wp(10)} color="#fff" />
-          </TouchableOpacity>
-
-          <FlatList
-            data={propertyImages}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={currentImageIndex}
-            getItemLayout={getItemLayout}
-            onScroll={handleImageScroll}
-            scrollEventThrottle={16}
-            renderItem={renderFullScreenImage}
-            keyExtractor={keyExtractorFullscreen}
-          />
-
-          <View style={styles.fullScreenCounter}>
-            <Text style={styles.fullScreenCounterText}>
-              {currentImageIndex + 1} / {propertyImages.length}
-            </Text>
+          <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
+            <ScreenHeader
+              title="Listing media"
+              onBackPress={closeImageViewer}
+              backButtonColor={COLORS.backButton}
+            />
+          </View>
+          
+          <View style={styles.imageViewerContent}>
+            <View style={styles.imagesSectionHeader}>
+              <Text style={styles.imagesSectionTitle}>Images</Text>
+              <View style={styles.imagesSectionBorder} />
+            </View>
+            
+            <ScrollView
+              style={styles.imagesScrollView}
+              contentContainerStyle={styles.imagesScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              {propertyImages.map((imageUri, index) => (
+                <View key={`image-${index}`} style={styles.imageItemContainer}>
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.imageItem}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -587,20 +659,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stickyHeader: {
+  headerIcons: {
     position: "absolute",
-    top: 0,
+    top: Platform.OS === "ios" ? hp(3) : hp(2),
     left: 0,
     right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: wp(4),
-    paddingBottom: hp(2),
+    zIndex: 1001,
+  },
+  headerIconsSpacer: {
+    flex: 1,
+  },
+  headerIconsRight: {
+    flexDirection: "row",
+  },
+  stickyHeaderBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: Platform.OS === "ios" ? hp(10) : hp(9),
     backgroundColor: "#fff",
     zIndex: 1000,
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -610,12 +696,6 @@ const styles = StyleSheet.create({
       },
       android: { elevation: 4 },
     }),
-  },
-  stickyHeaderSpacer: {
-    flex: 1,
-  },
-  stickyHeaderRight: {
-    flexDirection: "row",
   },
   content: {
     flex: 1,
@@ -691,39 +771,51 @@ const styles = StyleSheet.create({
   },
   imageViewerContainer: {
     flex: 1,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#ebf1f1",
   },
-  closeImageViewer: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? hp(7) : hp(5),
-    right: wp(4),
-    zIndex: 100,
+  imageViewerHeaderContainer: {
+    backgroundColor: "#fff",
   },
-  fullScreenImageContainer: {
-    width: SCREEN_WIDTH,
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+  imageViewerContent: {
+    flex: 1,
+    backgroundColor: "#ebf1f1",
   },
-  fullScreenImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fullScreenCounter: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? hp(7) : hp(5),
-    alignSelf: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  imagesSectionHeader: {
+    backgroundColor: "#ebf1f1",
     paddingHorizontal: wp(4),
-    paddingVertical: hp(1),
-    borderRadius: wp(5),
+    paddingTop: hp(2),
+    paddingBottom: hp(1.5),
   },
-  fullScreenCounterText: {
-    color: "#fff",
-    fontSize: wp(4),
-    fontWeight: "600",
+  imagesSectionTitle: {
+    fontSize: wp(4.5),
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: hp(1),
+    textAlign: "center",
+  },
+  imagesSectionBorder: {
+    height: 2,
+    backgroundColor: COLORS.primary,
+    width: "100%",
+  },
+  imagesScrollView: {
+    flex: 1,
+  },
+  imagesScrollContent: {
+    paddingHorizontal: wp(4),
+    paddingTop: hp(2),
+    paddingBottom: hp(4),
+  },
+  imageItemContainer: {
+    marginBottom: hp(2),
+    borderRadius: wp(2),
+    overflow: "hidden",
+    backgroundColor: "#fff",
+  },
+  imageItem: {
+    width: "100%",
+    height: hp(40),
+    borderRadius: wp(2),
   },
 });
 

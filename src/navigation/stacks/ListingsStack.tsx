@@ -4,6 +4,7 @@ import MapLandingScreen from "../../screens/listings/MapLandingScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
 import DailyDetailScreen from "../../screens/listings/DailyDetailScreen";
 import ContactHostScreen from "../../screens/listings/ContactHostScreen";
+import ReserveScreen from "../../screens/listings/ReserveScreen";
 import PropertyListScreen from "../../screens/listings/PropertyListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
@@ -31,6 +32,7 @@ export default function ListingsStack(): React.JSX.Element {
       <Stack.Screen name="PropertyDetails" component={PropertyDetailsScreen} />
       <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
       <Stack.Screen name="ContactHost" component={ContactHostScreen} />
+      <Stack.Screen name="Reserve" component={ReserveScreen} />
       <Stack.Screen name="PropertyList" component={PropertyListScreen} />
       <Stack.Screen name="AddListing" component={AddListingScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />

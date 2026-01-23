@@ -33,7 +33,17 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
 
   const handleBackPress = () => {
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // If there's no screen to go back to, navigate to Listings tab
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("Listings");
+      } else {
+        navigation.navigate("Listings");
+      }
+    }
   };
 
   const handleWalletPress = () => {
@@ -62,7 +72,17 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   };
 
   const handleAddPress = () => {
-    console.log("Add pressed");
+    // Navigate to AddListing screen in Listings tab
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate("Listings", {
+        screen: "AddListing",
+      });
+    } else {
+      navigation.navigate("Listings", {
+        screen: "AddListing",
+      });
+    }
   };
 
   const handleMyClientsPress = () => {

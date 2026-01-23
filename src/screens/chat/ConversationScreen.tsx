@@ -9,6 +9,7 @@ import {
   TextInput,
   FlatList,
   ScrollView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -22,6 +23,8 @@ import {
   getOrCreateConversationForProperty,
   addMessageToConversation,
   getUserName,
+  getUserAvatar,
+  isAdminUser,
   MOCK_USERS,
 } from "../../data/chatData";
 import type { ChatMessage } from "../../types/chat";
@@ -108,6 +111,13 @@ export default function ConversationScreen(): React.JSX.Element {
       if (conv && (!conv.userName || conv.userName === "Property Owner")) {
         conv.userName = getUserName(conv.userId) || advertiserName || "Property Owner";
       }
+      // Ensure userAvatar is set
+      if (conv && !conv.userAvatar) {
+        const avatar = getUserAvatar(conv.userId);
+        if (avatar) {
+          conv.userAvatar = avatar;
+        }
+      }
     } else if (propertyId && advertiserId) {
       // Create or find conversation by advertiserId (owner)
       // This ensures same owner = same conversation
@@ -119,6 +129,11 @@ export default function ConversationScreen(): React.JSX.Element {
     }
     return conv;
   }, [conversationId, propertyId, advertiserName, advertiserId]);
+
+  // Check if this is an admin conversation
+  const isAdminChat = useMemo(() => {
+    return conversation ? isAdminUser(conversation.userId) : false;
+  }, [conversation]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState(defaultMessage || "");
@@ -192,9 +207,9 @@ export default function ConversationScreen(): React.JSX.Element {
   }, [inputText, conversation]);
 
   // Render message text with ad number highlighting
-  const renderMessageText = useCallback((text: string | undefined) => {
+  const renderMessageText = useCallback((text: string | undefined, isReceived: boolean = false) => {
     if (!text || typeof text !== 'string') {
-      return <Text style={styles.messageText}></Text>;
+      return <Text style={[styles.messageText, isReceived && styles.receivedMessageText]}></Text>;
     }
 
     // Match any text starting with # (not just numbers)
@@ -226,15 +241,15 @@ export default function ConversationScreen(): React.JSX.Element {
     }
 
     if (parts.length === 0) {
-      return <Text style={styles.messageText}>{text}</Text>;
+      return <Text style={[styles.messageText, isReceived && styles.receivedMessageText]}>{text}</Text>;
     }
 
     return (
-      <Text style={styles.messageText}>
+      <Text style={[styles.messageText, isReceived && styles.receivedMessageText]}>
         {parts.map((part, index) => (
           <Text
             key={index}
-            style={part.isAdNumber ? styles.adNumberText : undefined}
+            style={part.isAdNumber ? (isReceived ? styles.receivedAdNumberText : styles.adNumberText) : undefined}
           >
             {part.text}
           </Text>
@@ -272,8 +287,8 @@ export default function ConversationScreen(): React.JSX.Element {
                 isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft,
               ]}
             >
-              {renderMessageText(item.text)}
-              <Text style={styles.timeText}>
+              {renderMessageText(item.text, !isCurrentUser)}
+              <Text style={[styles.timeText, !isCurrentUser && styles.receivedTimeText]}>
                 {formatTime(item.createdAt)}
               </Text>
             </View>
@@ -302,11 +317,31 @@ export default function ConversationScreen(): React.JSX.Element {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {/* Header */}
-        <ScreenHeader
-          title={conversation?.userName || advertiserName || "Property Owner"}
-          onBackPress={handleBackPress}
-          showRightSide={true}
-          rightComponent={
+        <View style={styles.headerWrapper}>
+          <View style={styles.customHeader}>
+            <View style={styles.headerLeft}>
+              {handleBackPress && (
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={handleBackPress}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="arrow-back" size={wp(7)} color={COLORS.backButton} />
+                </TouchableOpacity>
+              )}
+              {conversation?.userAvatar && (
+                <View style={styles.headerAvatarContainer}>
+                  <Image
+                    source={typeof conversation.userAvatar === "string" ? { uri: conversation.userAvatar } : conversation.userAvatar}
+                    style={styles.headerAvatar}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
+              <Text style={styles.headerTitle}>
+                {conversation?.userName || advertiserName || "Property Owner"}
+              </Text>
+            </View>
             <TouchableOpacity
               style={styles.menuButton}
               onPress={handleMenuPress}
@@ -318,8 +353,8 @@ export default function ConversationScreen(): React.JSX.Element {
                 color={COLORS.backButton}
               />
             </TouchableOpacity>
-          }
-        />
+          </View>
+        </View>
 
         {/* Chat Messages */}
         {messages.length > 0 ? (
@@ -342,38 +377,40 @@ export default function ConversationScreen(): React.JSX.Element {
           </View>
         )}
 
-        {/* Input Bar */}
-        <View style={styles.inputContainer}>
-          <View
-            style={[
-              styles.inputWrapper,
-              isInputFocused && styles.inputWrapperFocused,
-            ]}
-          >
-            <TextInput
-              style={styles.textInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder=""
-              multiline
-              placeholderTextColor="#9ca3af"
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-            />
+        {/* Input Bar - Hidden for admin chat */}
+        {!isAdminChat && (
+          <View style={styles.inputContainer}>
+            <View
+              style={[
+                styles.inputWrapper,
+                isInputFocused && styles.inputWrapperFocused,
+              ]}
+            >
+              <TextInput
+                style={styles.textInput}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder=""
+                multiline
+                placeholderTextColor="#9ca3af"
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={handleSend}
+              disabled={!inputText.trim()}
+            >
+              <Ionicons
+                name="send-sharp"
+                size={wp(6)}
+                color={inputText.trim() ? "#0ab63a" : "#9ca3af"}
+                style={{ transform: [{ rotate: '-180deg' }] }}
+              />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={handleSend}
-            disabled={!inputText.trim()}
-          >
-            <Ionicons
-              name="send-sharp"
-              size={wp(6)}
-              color={inputText.trim() ? "#0ab63a" : "#9ca3af"}
-              style={{ transform: [{ rotate: '-180deg' }] }}
-            />
-          </TouchableOpacity>
-        </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -411,15 +448,70 @@ const styles = StyleSheet.create({
     fontSize: wp(3.5),
     color: "#fff",
   },
+  headerWrapper: {
+    backgroundColor: "#fff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  customHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.5),
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  backButton: {
+    width: wp(12),
+    height: wp(12),
+    justifyContent: "center",
+  },
+  headerAvatarContainer: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
+    overflow: "hidden",
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: wp(2.5),
+  },
+  headerAvatar: {
+    width: "100%",
+    height: "100%",
+  },
+  headerTitle: {
+    fontSize: wp(5),
+    fontWeight: "500",
+    flex: 1,
+  },
   messageContainer: {
     marginVertical: hp(0.5),
     paddingHorizontal: wp(2),
-  },
-  messageRight: {
+    flexDirection: "row",
     alignItems: "flex-end",
   },
+  messageRight: {
+    justifyContent: "flex-end",
+  },
   messageLeft: {
-    alignItems: "flex-start",
+    justifyContent: "flex-start",
   },
   messageBubble: {
     maxWidth: "65%",
@@ -435,19 +527,29 @@ const styles = StyleSheet.create({
   messageBubbleLeft: {
     marginLeft: wp(2),
     marginRight: wp(20),
+    backgroundColor: COLORS.primaryLight,
   },
   messageText: {
     fontSize: wp(3.8),
     color: "#111827",
     lineHeight: hp(2.5),
   },
+  receivedMessageText: {
+    // color: "",
+  },
   adNumberText: {
     color: "#3b82f6", // Light blue color for ad numbers
+  },
+  receivedAdNumberText: {
+    color: "#fff", // White color for ad numbers in received messages
   },
   timeText: {
     fontSize: wp(3),
     color: "#6b7280",
     marginTop: hp(0.3),
+  },
+  receivedTimeText: {
+    color: COLORS.PinColor,
   },
   inputContainer: {
     backgroundColor: "#fff",

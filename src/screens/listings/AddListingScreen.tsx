@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,6 +9,7 @@ import {
 } from "react-native-responsive-screen";
 import { ScreenHeader } from "../../components";
 import { ADD_SCREEN_SERVICES_LISTING, COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -23,6 +24,7 @@ interface ListingOption {
 
 export default function AddListingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
 
   const handleBackPress = () => {
     // Get the parent navigator (Tab Navigator) to determine which tab we're in
@@ -96,10 +98,82 @@ export default function AddListingScreen(): React.JSX.Element {
   const ownerAgentOption = (ADD_SCREEN_SERVICES_LISTING as ListingOption[])[1];
   const requestOptions = (ADD_SCREEN_SERVICES_LISTING as ListingOption[]).slice(3, 5);
 
+  // Map option IDs to translation keys
+  const getOptionTitle = (optionId: string): string => {
+    const titleMap: Record<string, string> = {
+      "broker-listing": t("listings.propertyListingByBroker"),
+      "owner-agent-listing": t("listings.propertyListingByOwnerAgent"),
+      "rental-unit": t("listings.dailyMonthlyRentalUnit"),
+      "marketing-request": t("listings.propertyMarketingRequest"),
+      "search-request": t("listings.propertySearchRequest"),
+    };
+    return titleMap[optionId] || "";
+  };
+
+  const getOptionDescription = (optionId: string): string => {
+    const descriptionMap: Record<string, string> = {
+      "broker-listing": t("listings.brokerListingDescription"),
+      "owner-agent-listing": t("listings.ownerAgentListingDescription"),
+      "rental-unit": t("listings.rentalUnitDescription"),
+      "marketing-request": t("listings.marketingRequestDescription"),
+      "search-request": t("listings.searchRequestDescription"),
+    };
+    return descriptionMap[optionId] || "";
+  };
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      welcomeTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      welcomeSubtitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      sectionLabel: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      mainCardContent: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      mainCardIconWrapper: {
+        marginRight: isRTL ? 0 : wp(4),
+        marginLeft: isRTL ? wp(4) : 0,
+      },
+      mainCardTextContainer: {
+        marginRight: isRTL ? 0 : wp(2),
+        marginLeft: isRTL ? wp(2) : 0,
+      },
+      mainCardTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      mainCardDescription: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      requestCardTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      requestCardDescription: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      requestCardArrow: {
+        right: isRTL ? undefined : wp(4.5),
+        left: isRTL ? wp(4.5) : undefined,
+      },
+      requestsGrid: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      requestCardIconWrapper: {
+        alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Add New Listing"
+        title={t("listings.addNewListing")}
         onBackPress={handleBackPress}
         showRightSide={false}
         onRightPress={handleSavePress}
@@ -120,37 +194,43 @@ export default function AddListingScreen(): React.JSX.Element {
               color={COLORS.primary} 
             />
           </View>
-          <Text style={styles.welcomeTitle}>Create Your Listing</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Choose the type of listing you want to add to get started
+          <Text style={[styles.welcomeTitle, rtlStyles.welcomeTitle]}>
+            {t("listings.createYourListing")}
+          </Text>
+          <Text style={[styles.welcomeSubtitle, rtlStyles.welcomeSubtitle]}>
+            {t("listings.chooseListingType")}
           </Text>
         </View>
 
         {/* Main Service Card */}
         {ownerAgentOption && (
           <View style={styles.mainCardContainer}>
-            <Text style={styles.sectionLabel}>LISTING TYPE</Text>
+            <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+              {t("listings.listingType")}
+            </Text>
             <TouchableOpacity
               style={styles.mainCard}
               onPress={() => handleOptionPress(ownerAgentOption.id)}
               activeOpacity={0.8}
             >
-              <View style={styles.mainCardContent}>
-                <View style={styles.mainCardIconWrapper}>
+              <View style={[styles.mainCardContent, rtlStyles.mainCardContent]}>
+                <View style={[styles.mainCardIconWrapper, rtlStyles.mainCardIconWrapper]}>
                   <MaterialCommunityIcons
                     name={ownerAgentOption.icon as any}
                     size={wp(7)}
                     color={COLORS.white}
                   />
                 </View>
-                <View style={styles.mainCardTextContainer}>
-                  <Text style={styles.mainCardTitle}>{ownerAgentOption.title}</Text>
-                  <Text style={styles.mainCardDescription}>
-                    {ownerAgentOption.description}
+                <View style={[styles.mainCardTextContainer, rtlStyles.mainCardTextContainer]}>
+                  <Text style={[styles.mainCardTitle, rtlStyles.mainCardTitle]}>
+                    {getOptionTitle(ownerAgentOption.id)}
+                  </Text>
+                  <Text style={[styles.mainCardDescription, rtlStyles.mainCardDescription]}>
+                    {getOptionDescription(ownerAgentOption.id)}
                   </Text>
                 </View>
                 <MaterialCommunityIcons
-                  name="chevron-right"
+                  name={isRTL ? "chevron-left" : "chevron-right"}
                   size={wp(6)}
                   color={COLORS.textSecondary}
                 />
@@ -161,8 +241,10 @@ export default function AddListingScreen(): React.JSX.Element {
 
         {/* Requests Section */}
         <View style={styles.requestsSection}>
-          <Text style={styles.sectionLabel}>REQUESTS</Text>
-          <View style={styles.requestsGrid}>
+          <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+            {t("listings.requests")}
+          </Text>
+          <View style={[styles.requestsGrid, rtlStyles.requestsGrid]}>
             {requestOptions.map((option) => (
               <TouchableOpacity
                 key={option.id}
@@ -170,7 +252,7 @@ export default function AddListingScreen(): React.JSX.Element {
                 onPress={() => handleOptionPress(option.id)}
                 activeOpacity={0.8}
               >
-                <View style={styles.requestCardIconWrapper}>
+                <View style={[styles.requestCardIconWrapper, rtlStyles.requestCardIconWrapper]}>
                   <MaterialCommunityIcons
                     name={option.icon as any}
                     size={wp(6)}
@@ -178,14 +260,19 @@ export default function AddListingScreen(): React.JSX.Element {
                   />
                 </View>
                 <View style={styles.requestCardContent}>
-                  <Text style={styles.requestCardTitle}>{option.title}</Text>
-                  <Text style={styles.requestCardDescription} numberOfLines={3}>
-                    {option.description}
+                  <Text style={[styles.requestCardTitle, rtlStyles.requestCardTitle]}>
+                    {getOptionTitle(option.id)}
+                  </Text>
+                  <Text 
+                    style={[styles.requestCardDescription, rtlStyles.requestCardDescription]} 
+                    numberOfLines={3}
+                  >
+                    {getOptionDescription(option.id)}
                   </Text>
                 </View>
-                <View style={styles.requestCardArrow}>
+                <View style={[styles.requestCardArrow, rtlStyles.requestCardArrow]}>
                   <MaterialCommunityIcons
-                    name="arrow-right"
+                    name={isRTL ? "arrow-left" : "arrow-right"}
                     size={wp(4.5)}
                     color={COLORS.primary}
                   />

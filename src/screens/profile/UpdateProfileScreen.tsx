@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Keyboard,
   Animated,
   Alert,
+  TextStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -22,11 +23,13 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { ScreenHeader, TextInput, CancelModal } from "../../components";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function UpdateProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -134,11 +137,19 @@ export default function UpdateProfileScreen(): React.JSX.Element {
     console.log("Delete account");
     // TODO: Implement delete account functionality
   }, []);
+  const rtlStyles = useMemo(
+    () => ({
+      profilePictureSection: { flexDirection: isRTL ? "row-reverse" : "row" },
+      label: { textAlign: isRTL ? "right" : "left", flexDirection: isRTL ? "row-reverse" : "row" },
+      
+    }),
+    [isRTL]
+  );
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Update profile"
+        title={t("profile.updateProfile", { defaultValue: "Update profile" })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
       />
@@ -179,13 +190,13 @@ export default function UpdateProfileScreen(): React.JSX.Element {
               )}
             </TouchableOpacity>
             <Text style={styles.profilePictureText}>
-              Click to add a profile picture
+              {t("profile.clickToAddProfilePicture", { defaultValue: "Click to add a profile picture" })}
             </Text>
           </View>
 
           {/* Name Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.name", { defaultValue: "Name" })}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -197,7 +208,7 @@ export default function UpdateProfileScreen(): React.JSX.Element {
 
           {/* Email Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.email", { defaultValue: "Email" })}</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -210,11 +221,11 @@ export default function UpdateProfileScreen(): React.JSX.Element {
 
           {/* Bio Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Bio</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.bio", { defaultValue: "Bio" })}</Text>
             <TextInput
               value={bio}
               onChangeText={setBio}
-              placeholder="Enter here"
+              placeholder={t("profile.enterHere", { defaultValue: "Enter here" })}
               multiline={true}
               numberOfLines={4}
               showFocusStates={true}
@@ -228,7 +239,7 @@ export default function UpdateProfileScreen(): React.JSX.Element {
             onPress={handleDeleteAccount}
             activeOpacity={0.8}
           >
-            <Text style={styles.deleteButtonText}>Delete Account</Text>
+            <Text style={styles.deleteButtonText}>{t("profile.deleteAccount", { defaultValue: "Delete Account" })}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -247,18 +258,18 @@ export default function UpdateProfileScreen(): React.JSX.Element {
           onPress={handleSave}
           activeOpacity={0.8}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          <Text style={styles.saveButtonText}>{t("profile.save", { defaultValue: "Save" })}</Text>
         </TouchableOpacity>
       </Animated.View>
 
       <CancelModal
         visible={showDeleteModal}
-        title="Delete Account"
-        description="Are you sure you want to delete your account?"
+        title={t("profile.deleteAccount", { defaultValue: "Delete Account" })}
+        description={t("profile.deleteAccountConfirm", { defaultValue: "Are you sure you want to delete your account?" })}
         onBack={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        backText="NO"
-        confirmText="Yes"
+        backText={t("common.no", { defaultValue: "NO" })}
+        confirmText={t("common.yes", { defaultValue: "Yes" })}
         confirmButtonColor={"#c13234"}
       />
     </View>

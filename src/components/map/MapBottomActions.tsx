@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface MapBottomActionsProps {
   onShowListPress: () => void;
@@ -42,24 +43,55 @@ const MapBottomActions = memo<MapBottomActionsProps>(
     counterFadeAnim,
     addButtonColor,
   }) => {
+    const { t, isRTL } = useLocalization();
     const addBtnBorderColor = addButtonColor || COLORS.addBtnBorder;
     const addBtnTextColor = addButtonColor || COLORS.addBtnText;
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        counterBadge: {
+          right: isRTL ? undefined : wp(4),
+          left: isRTL ? wp(4) : undefined,
+        },
+        satelliteButton: {
+          left: isRTL ? undefined : wp(4),
+          right: isRTL ? wp(4) : undefined,
+        },
+        locationButton: {
+          left: isRTL ? undefined : wp(4),
+          right: isRTL ? wp(4) : undefined,
+        },
+        bottomActions: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        showListBtn: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        showListText: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <>
         {/* Counter badge */}
         {totalCount > 0 && (
           <Animated.View
-            style={[styles.counterBadge, { opacity: counterFadeAnim }]}
+            style={[styles.counterBadge, rtlStyles.counterBadge, { opacity: counterFadeAnim }]}
           >
             <Text style={styles.counterText}>
-              {visibleCount} of {totalCount} shown
+              {visibleCount} {t("listings.of")} {totalCount} {t("listings.shown")}
             </Text>
           </Animated.View>
         )}
 
         {/* Satellite mode button */}
         <TouchableOpacity
-          style={styles.satelliteButton}
+          style={[styles.satelliteButton, rtlStyles.satelliteButton]}
           onPress={onToggleSatellite}
         >
           <MaterialIcons
@@ -71,7 +103,7 @@ const MapBottomActions = memo<MapBottomActionsProps>(
 
         {/* Location button */}
         <TouchableOpacity
-          style={styles.locationButton}
+          style={[styles.locationButton, rtlStyles.locationButton]}
           onPress={onLocatePress}
         >
           <FontAwesome6
@@ -82,17 +114,20 @@ const MapBottomActions = memo<MapBottomActionsProps>(
         </TouchableOpacity>
 
         {/* Bottom actions row */}
-        <View style={styles.bottomActions}>
+        <View style={[styles.bottomActions, rtlStyles.bottomActions]}>
           <TouchableOpacity
             style={[
               styles.showListBtn,
+              rtlStyles.showListBtn,
               isMapMoving && styles.showListBtnCompact,
             ]}
             onPress={onShowListPress}
           >
             <Fontisto name="nav-icon-list" size={wp(4)} color="#617381" />
             {!isMapMoving && (
-              <Text style={styles.showListText}>Show List</Text>
+              <Text style={[styles.showListText, rtlStyles.showListText]}>
+                {t("listings.showList")}
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -101,7 +136,9 @@ const MapBottomActions = memo<MapBottomActionsProps>(
             onPress={onAddPress}
           >
             <Text style={[styles.plusIcon, { color: addBtnTextColor }]}>+</Text>
-            <Text style={[styles.addText, { color: addBtnTextColor }]}>Add</Text>
+            <Text style={[styles.addText, { color: addBtnTextColor }]}>
+              {t("listings.add")}
+            </Text>
           </TouchableOpacity>
         </View>
       </>

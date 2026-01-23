@@ -21,6 +21,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 import {
   PriceMarker,
   BottomPropertyCard,
@@ -29,6 +30,7 @@ import {
   ProjectsCard,
   MapBottomActions,
 } from "../../components";
+import ProjectMarker from "../../components/project/ProjectMarker";
 import type { TabType } from "../../components/map/MapTabs";
 import type { Property } from "../../types/property";
 
@@ -38,13 +40,47 @@ interface RouteParams {
   listingType?: "rent" | "sale";
 }
 
+// Helper function to validate coordinates
+function isValidCoordinate(value: number | undefined | null): boolean {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+}
+
+// Helper function to validate longitude
+function isValidLongitude(value: number | undefined | null): boolean {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+}
+
+// Helper function to check if property has valid coordinates
+function hasValidCoordinates(property: Property): boolean {
+  return (
+    isValidCoordinate(property.lat) &&
+    isValidLongitude(property.lng)
+  );
+}
+
 export default function MapLandingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
+  const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef<boolean>(true);
+  const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMarkerPressTimeRef = useRef<number>(0);
 
   // Set initial tab from route params, default to "rent"
   const initialTab = params?.listingType === "sale" ? "sale" : "rent";
@@ -79,9 +115,30 @@ export default function MapLandingScreen(): React.JSX.Element {
     setSelectedId(null);
   }, [activeTab]);
 
+  // Track component mount state and cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (mapMoveTimeoutRef.current) {
+        clearTimeout(mapMoveTimeoutRef.current);
+        mapMoveTimeoutRef.current = null;
+      }
+      if (markerPressTimeoutRef.current) {
+        clearTimeout(markerPressTimeoutRef.current);
+        markerPressTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // Filter properties
   const filteredProperties = useMemo(() => {
     let properties = PROPERTY_DATA.filter((p) => {
+      // First check if coordinates are valid
+      if (!hasValidCoordinates(p)) {
+        return false;
+      }
+      
       if (activeTab === "sale") {
         return p.listingType === "sale";
       }
@@ -112,6 +169,18 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   // Get visible properties (include projects for sale tab)
   const visibleProperties = useMemo(() => {
+    // Validate region values
+    if (
+      !isValidCoordinate(region.latitude) ||
+      !isValidLongitude(region.longitude) ||
+      !isValidCoordinate(region.latitudeDelta) ||
+      !isValidLongitude(region.longitudeDelta) ||
+      region.latitudeDelta <= 0 ||
+      region.longitudeDelta <= 0
+    ) {
+      return [];
+    }
+
     const latHalf = region.latitudeDelta / 2;
     const lngHalf = region.longitudeDelta / 2;
 
@@ -122,6 +191,7 @@ export default function MapLandingScreen(): React.JSX.Element {
 
     return propertiesToFilter.filter(
       (p) =>
+        hasValidCoordinates(p) &&
         p.lat >= region.latitude - latHalf &&
         p.lat <= region.latitude + latHalf &&
         p.lng >= region.longitude - lngHalf &&
@@ -157,8 +227,13 @@ export default function MapLandingScreen(): React.JSX.Element {
   const handleTabChange = useCallback((tab: TabType) => {
     setActiveTab(tab);
     // Reset map to original starting point when switching between tabs (rent/sale/daily)
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(RIYADH_REGION, 800);
+    // Only animate if component is mounted and ref is valid
+    if (isMountedRef.current && mapRef.current && isValidCoordinate(RIYADH_REGION.latitude) && isValidLongitude(RIYADH_REGION.longitude)) {
+      try {
+        mapRef.current.animateToRegion(RIYADH_REGION, 800);
+      } catch (error) {
+        console.warn("Error animating to region:", error);
+      }
     }
   }, []);
 
@@ -168,19 +243,49 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   const handleMarkerPress = useCallback(
     (property: Property) => {
-      if ("isProject" in property && property.isProject) {
-        navigation.navigate("ProjectDetails", {
-          propertyId: property.id,
-        });
+      // Prevent rapid clicks (debounce - minimum 300ms between clicks)
+      const now = Date.now();
+      if (now - lastMarkerPressTimeRef.current < 300) {
+        return;
+      }
+      lastMarkerPressTimeRef.current = now;
+
+      // Clear any pending marker press timeout
+      if (markerPressTimeoutRef.current) {
+        clearTimeout(markerPressTimeoutRef.current);
+        markerPressTimeoutRef.current = null;
+      }
+
+      // Don't handle marker press if component is unmounted
+      if (!isMountedRef.current) {
         return;
       }
 
-      setSelectedId(property.id);
-      setVisitedIds((prev) => {
-        const next = new Set(prev);
-        next.add(property.id);
-        return next;
-      });
+      // Use timeout to ensure map state is stable before navigation/state update
+      markerPressTimeoutRef.current = setTimeout(() => {
+        // Double-check component is still mounted
+        if (!isMountedRef.current) {
+          return;
+        }
+
+        try {
+          if ("isProject" in property && property.isProject) {
+            navigation.navigate("ProjectDetails", {
+              propertyId: property.id,
+            });
+            return;
+          }
+
+          setSelectedId(property.id);
+          setVisitedIds((prev) => {
+            const next = new Set(prev);
+            next.add(property.id);
+            return next;
+          });
+        } catch (error) {
+          console.warn("Error handling marker press:", error);
+        }
+      }, 100);
     },
     [navigation]
   );
@@ -219,16 +324,47 @@ export default function MapLandingScreen(): React.JSX.Element {
   ]);
 
   const handleLocateMe = useCallback(async () => {
-    const result = await getCurrentLocation();
-    if (result.isOutsideSaudi) {
-      setShowLocationError(true);
-      // Hide error after 5 seconds
-      setTimeout(() => {
-        setShowLocationError(false);
-      }, 5000);
-    } else if (result.region) {
-      mapRef.current?.animateToRegion(result.region, 800);
-      setShowLocationError(false);
+    // Check if component is still mounted and map ref is valid
+    if (!isMountedRef.current || !mapRef.current) {
+      return;
+    }
+
+    try {
+      const result = await getCurrentLocation();
+      
+      // Check if still mounted after async operation
+      if (!isMountedRef.current || !mapRef.current) {
+        return;
+      }
+
+      if (result.isOutsideSaudi) {
+        setShowLocationError(true);
+        // Hide error after 5 seconds
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setShowLocationError(false);
+          }
+        }, 5000);
+      } else if (result.region) {
+        // Validate region before animating
+        if (
+          isValidCoordinate(result.region.latitude) &&
+          isValidLongitude(result.region.longitude) &&
+          isValidCoordinate(result.region.latitudeDelta) &&
+          isValidLongitude(result.region.longitudeDelta) &&
+          result.region.latitudeDelta > 0 &&
+          result.region.longitudeDelta > 0
+        ) {
+          try {
+            mapRef.current.animateToRegion(result.region, 800);
+            setShowLocationError(false);
+          } catch (error) {
+            console.warn("Error animating to location:", error);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("Error getting current location:", error);
     }
   }, [getCurrentLocation]);
 
@@ -241,7 +377,18 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   const handleRegionChangeComplete = useCallback(
     (newRegion: typeof RIYADH_REGION) => {
-      setRegion(newRegion);
+      // Validate region before setting state
+      if (
+        isValidCoordinate(newRegion.latitude) &&
+        isValidLongitude(newRegion.longitude) &&
+        isValidCoordinate(newRegion.latitudeDelta) &&
+        isValidLongitude(newRegion.longitudeDelta) &&
+        newRegion.latitudeDelta > 0 &&
+        newRegion.longitudeDelta > 0
+      ) {
+        setRegion(newRegion);
+      }
+      
       mapMoveTimeoutRef.current = setTimeout(() => {
         setIsMapMoving(false);
       }, 500);
@@ -277,20 +424,35 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   const renderMarker = useCallback(
     (p: Property) => {
+      // Double-check coordinates before rendering marker
+      if (!hasValidCoordinates(p)) {
+        return null;
+      }
+
+      const isSelected = selectedId === p.id;
+      const isVisited = visitedIds.has(p.id);
+
+      // Use ProjectMarker for projects, PriceMarker for regular properties
+      const isProject = "isProject" in p && p.isProject;
+
       return (
         <Marker
-          key={p.id}
+          key={`${p.id}-${isSelected ? 'selected' : 'unselected'}-${isVisited ? 'visited' : 'unvisited'}`}
           coordinate={{ latitude: p.lat, longitude: p.lng }}
           anchor={{ x: 0.5, y: 1 }}
           onPress={() => handleMarkerPress(p)}
-          zIndex={selectedId === p.id ? 999 : 1}
+          zIndex={isSelected ? 999 : 1}
         >
-          <PriceMarker
-            property={p}
-            isSelected={selectedId === p.id}
-            isVisited={visitedIds.has(p.id)}
-            listingType={activeTab}
-          />
+          {isProject ? (
+            <ProjectMarker project={p as any} />
+          ) : (
+            <PriceMarker
+              property={p}
+              isSelected={isSelected}
+              isVisited={isVisited}
+              listingType={activeTab}
+            />
+          )}
         </Marker>
       );
     },
@@ -311,7 +473,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}
       >
-        {visibleProperties.map(renderMarker)}
+        {visibleProperties.map(renderMarker).filter(Boolean)}
       </MapView>
 
       <MapTabs activeTab={activeTab} onTabChange={handleTabChange} />
@@ -381,6 +543,9 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.2),
     gap: wp(2),
     zIndex: 1000,
+  },
+  errorMessageContainerRTL: {
+    flexDirection: "row-reverse",
   },
   errorMessageText: {
     flex: 1,

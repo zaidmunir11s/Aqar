@@ -1,10 +1,11 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface RentPeriodTabBarProps {
   selectedPeriod: "Yearly" | "Monthly" | null;
@@ -16,14 +17,51 @@ export interface RentPeriodTabBarProps {
  */
 const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
   ({ selectedPeriod, onSelect }) => {
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    const rtlStyles = useMemo(
+      () => ({
+        label: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        rentPeriodContainer: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        rentPeriodSegment: {
+          borderRightWidth: isRTL ? 0 : 1,
+          borderLeftWidth: isRTL ? 1 : 0,
+          borderRightColor: isRTL ? "transparent" : "#e5e7eb",
+          borderLeftColor: isRTL ? "#e5e7eb" : "transparent",
+        },
+        firstSegment: {
+          borderTopLeftRadius: isRTL ? 0 : wp(1.5),
+          borderBottomLeftRadius: isRTL ? 0 : wp(1.5),
+          borderTopRightRadius: isRTL ? wp(1.5) : 0,
+          borderBottomRightRadius: isRTL ? wp(1.5) : 0,
+        },
+        lastSegment: {
+          borderTopRightRadius: isRTL ? 0 : wp(1.5),
+          borderBottomRightRadius: isRTL ? 0 : wp(1.5),
+          borderTopLeftRadius: isRTL ? wp(1.5) : 0,
+          borderBottomLeftRadius: isRTL ? wp(1.5) : 0,
+          borderRightWidth: isRTL ? 1 : 0,
+          borderLeftWidth: isRTL ? 0 : 0,
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <View style={styles.section}>
-        <Text style={styles.label}>Rent Period</Text>
-        <View style={styles.rentPeriodContainer}>
+        <Text style={[styles.label, rtlStyles.label]}>{t("listings.rentPeriod")}</Text>
+        <View style={[styles.rentPeriodContainer, rtlStyles.rentPeriodContainer]}>
           <TouchableOpacity
             style={[
               styles.rentPeriodSegment,
+              rtlStyles.rentPeriodSegment,
               styles.firstSegment,
+              rtlStyles.firstSegment,
               selectedPeriod === "Yearly" && styles.rentPeriodSegmentActive,
             ]}
             onPress={() => onSelect("Yearly")}
@@ -35,13 +73,15 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
                 selectedPeriod === "Yearly" && styles.rentPeriodTextActive,
               ]}
             >
-              Yearly
+              {t("listings.yearly")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.rentPeriodSegment,
+              rtlStyles.rentPeriodSegment,
               styles.lastSegment,
+              rtlStyles.lastSegment,
               selectedPeriod === "Monthly" && styles.rentPeriodSegmentActive,
             ]}
             onPress={() => onSelect("Monthly")}
@@ -53,7 +93,7 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
                 selectedPeriod === "Monthly" && styles.rentPeriodTextActive,
               ]}
             >
-              Monthly
+              {t("listings.monthly")}
             </Text>
           </TouchableOpacity>
         </View>

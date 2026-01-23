@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,13 +17,16 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   ScreenHeader,
   SocialMediaIcon,
+  LanguageConverter,
 } from "../../components";
 import { COLORS } from "@/constants/colors";
+import { useLocalization } from "@/hooks";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function ServicesScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
 
   const handleSocialMedia = useCallback((platform: string) => {
     console.log("Open", platform);
@@ -41,88 +44,46 @@ export default function ServicesScreen(): React.JSX.Element {
     console.log("Service pressed:", service);
   }, []);
 
-
-  const services = [
+  // Memoize services with translations
+  const services = useMemo(() => [
     {
       id: "1",
-      title: "Customer Service",
-      subtitle: "24/7 Support",
+      title: t("services.customerService"),
+      subtitle: t("services.customerServiceSubtitle"),
       icon: "headset",
       iconLib: "Ionicons" as const,
       accent: "#0e856a",
     },
     {
       id: "2",
-      title: "Commission",
-      subtitle: "Selling & Leasing",
+      title: t("services.commission"),
+      subtitle: t("services.commissionSubtitle"),
       icon: "hand-coin-outline",
       iconLib: "MaterialCommunityIcons" as const,
       accent: "#3b82f6",
     },
-    // {
-    //   id: "3",
-    //   title: "Subscriptions",
-    //   icon: "file-document-outline",
-    //   iconLib: "MaterialCommunityIcons" as const,
-    //   accent: "#6366f1",
-    // },
-    // {
-    //   id: "4",
-    //   title: "Developers Services",
-    //   icon: "rocket-outline",
-    //   iconLib: "Ionicons" as const,
-    //   accent: "#ec4899",
-    // },
     {
       id: "5",
-      title: "Today Ads",
+      title: t("services.todayAds"),
       icon: "megaphone",
       iconLib: "Ionicons" as const,
       accent: "#8b5cf6",
     },
-    // {
-    //   id: "6",
-    //   title: "Lease Contracts",
-    //   icon: "document-text-outline",
-    //   iconLib: "Ionicons" as const,
-    //   accent: "#14b8a6",
-    // },
-    // {
-    //   id: "7",
-    //   title: "Search Requests",
-    //   icon: "search-outline",
-    //   iconLib: "Ionicons" as const,
-    //   accent: "#f59e0b",
-    // },
-    // {
-    //   id: "8",
-    //   title: "Exclusive marketing services",
-    //   icon: "star-outline",
-    //   iconLib: "Ionicons" as const,
-    //   accent: "#ef4444",
-    // },
-    // {
-    //   id: "9",
-    //   title: "Bayt Residential Stats",
-    //   icon: "stats-chart-outline",
-    //   iconLib: "Ionicons" as const,
-    //   accent: "#06b6d4",
-    // },
     {
       id: "10",
-      title: "Bayt Blog",
+      title: t("services.baytBlog"),
       icon: "book",
       iconLib: "Ionicons" as const,
       accent: "#f59e0b",
     },
     {
       id: "11",
-      title: "Legal Documents",
+      title: t("services.legalDocuments"),
       icon: "document-text",
       iconLib: "Ionicons" as const,
       accent: "#10b981",
     },
-  ];
+  ], [t]);
 
   const socialMediaItems: Array<{
     name: string;
@@ -173,11 +134,33 @@ export default function ServicesScreen(): React.JSX.Element {
     return <Ionicons name={iconName as any} size={size} color={color} />;
   };
 
+  // RTL-aware styles
+  const rtlStyles = {
+    gridContainer: {
+      ...styles.gridContainer,
+      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+    },
+    socialSection: {
+      ...styles.socialSection,
+      alignItems: (isRTL ? 'flex-end' : 'flex-start') as 'flex-start' | 'flex-end',
+    },
+    socialTitle: {
+      ...styles.socialTitle,
+      textAlign: (isRTL ? 'right' : 'left') as 'left' | 'right',
+    },
+    socialGrid: {
+      ...styles.socialGrid,
+      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+    },
+  };
+
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Services"
+        title={t("services.title")}
         onBackPress={handleBackPress}
+        showRightSide={true}
+        rightComponent={<LanguageConverter />}
       />
 
       <ScrollView 
@@ -186,7 +169,7 @@ export default function ServicesScreen(): React.JSX.Element {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Services Grid */}
-        <View style={styles.gridContainer}>
+        <View style={rtlStyles.gridContainer}>
           {services.map((service) => (
             <TouchableOpacity
               key={service.id}
@@ -210,9 +193,9 @@ export default function ServicesScreen(): React.JSX.Element {
         </View>
 
         {/* Social Media Section */}
-        <View style={styles.socialSection}>
-          <Text style={styles.socialTitle}>Follow Us</Text>
-          <View style={styles.socialGrid}>
+        <View style={rtlStyles.socialSection}>
+          <Text style={rtlStyles.socialTitle}>{t("services.followUs")}</Text>
+          <View style={rtlStyles.socialGrid}>
             {socialMediaItems.map((item, index) => (
               <TouchableOpacity
                 key={index}
@@ -234,7 +217,9 @@ export default function ServicesScreen(): React.JSX.Element {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.versionText}>Version 3.4.17</Text>
+          <Text style={styles.versionText}>
+            {t("services.version")} 3.4.17
+          </Text>
         </View>
 
         <View style={{ height: hp(3) }} />
@@ -308,6 +293,7 @@ const styles = StyleSheet.create({
   socialSection: {
     marginTop: hp(2),
     paddingHorizontal: wp(4),
+    width: "100%",
   },
   socialTitle: {
     fontSize: wp(4),

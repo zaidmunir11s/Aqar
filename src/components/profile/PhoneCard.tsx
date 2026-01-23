@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PhoneCardProps {
   phoneNumber: string;
@@ -16,9 +17,34 @@ export interface PhoneCardProps {
  * Phone card component with user icon in background container
  */
 const PhoneCard = memo<PhoneCardProps>(({ phoneNumber, onPress }) => {
+  const { t, isRTL } = useLocalization();
+
+  const rtlStyles = useMemo(() => {
+    if (!isRTL) return {};
+
+    return {
+      phoneCard: {
+        flexDirection: "row-reverse" as const,
+      },
+      phoneNumber: {
+        textAlign: "right" as const,
+      },
+      arrowIcon: {
+        marginRight: wp(2),
+        // marginLeft will stay undefined → uses base style or zero
+      },
+      phoneNumberContainer: {
+        alignSelf: "flex-end" as const,
+        paddingHorizontal: wp(4),           // usually same, but you can override if needed
+        paddingVertical: hp(1.4),
+      },
+      // phoneNumberContainer usually doesn't need much change
+    };
+  }, [isRTL]);
+
   return (
     <TouchableOpacity
-      style={styles.phoneCard}
+      style={[styles.phoneCard, rtlStyles.phoneCard]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -29,14 +55,14 @@ const PhoneCard = memo<PhoneCardProps>(({ phoneNumber, onPress }) => {
           resizeMode="contain"
         />
       </View>
-      <View style={styles.phoneNumberContainer}>
-        <Text style={styles.phoneNumber}>{phoneNumber}</Text>
+      <View style={[styles.phoneNumberContainer, rtlStyles.phoneNumberContainer]}>
+        <Text style={[styles.phoneNumber, rtlStyles.phoneNumber]}>{phoneNumber}</Text>
       </View>
       <Ionicons
-        name="chevron-forward"
+        name={isRTL ? "chevron-back" : "chevron-forward"}
         size={wp(5)}
         color={COLORS.textDisabled}
-        style={styles.arrowIcon}
+        style={[styles.arrowIcon, rtlStyles.arrowIcon]}
       />
     </TouchableOpacity>
   );

@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Text } from "react-native";
+import React, { useMemo } from "react";
+import { View, StyleSheet, ScrollView, Text, TextStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,11 +9,13 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { ScreenHeader, SegmentedControl } from "../../components";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function PayBrokerCommissionScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const [selectedIndex, setSelectedIndex] = React.useState<number>(0);
 
   const handleBackPress = () => {
@@ -25,10 +27,18 @@ export default function PayBrokerCommissionScreen(): React.JSX.Element {
     console.log("Segment changed to:", index);
   };
 
+  const rtlStyles = useMemo(
+    () => ({
+      label: { textAlign: isRTL ? "right" : "left" },
+      descriptionText: { textAlign: "center", },
+    }),
+    [isRTL]
+  );
+
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Your Deposit Service "
+        title={t("profile.yourDepositService", { defaultValue: "Your Deposit Service" })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
         backButtonColor={COLORS.primary}
@@ -41,16 +51,13 @@ export default function PayBrokerCommissionScreen(): React.JSX.Element {
         <View style={styles.iconContainer}>
           <Ionicons name="receipt" size={wp(8)} color={COLORS.info} />
         </View>
-        <Text style={styles.descriptionText}>
-          A service that ensures the safe arrival of{"\n"}the commission to the
-          broker by matching{"\n"}all registered official data and passing the
-          {"\n"}
-          national access verification to ensure the rights{"\n"}of all parties.
+        <Text style={[styles.descriptionText, rtlStyles.descriptionText as TextStyle]}>
+          {t("profile.yourDepositServiceDescription", { defaultValue: "A service that ensures the safe arrival of the commission to the broker by matching all registered official data and passing the national access verification to ensure the rights of all parties." })}
         </Text>
         <View style={styles.separator} />
         <View style={styles.segmentedControlContainer}>
           <SegmentedControl
-            options={["buy", "Rent"]}
+            options={[t("profile.buy", { defaultValue: "Buy" }), t("profile.rent", { defaultValue: "Rent" }) as string, t("profile.sell", { defaultValue: "Sell" }) as string, t("profile.daily", { defaultValue: "Daily" }) as string]       }
             selectedIndex={selectedIndex}
             onSelect={handleSegmentChange}
           />

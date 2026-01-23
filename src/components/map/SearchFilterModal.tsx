@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { ToggleSwitch } from "../common";
 import { PROPERTY_DATA } from "../../data/propertyData";
 import { BEDROOM_OPTIONS, LIVING_ROOM_OPTIONS, WC_OPTIONS, VILLA_TYPE_OPTIONS } from "../../constants/orderFormOptions";
 import type { Property } from "../../types/property";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface SearchFilterState {
   fromPrice: string;
@@ -60,18 +61,20 @@ export interface SearchFilterState {
 export interface SearchFilterModalProps {
   visible: boolean;
   onClose: () => void;
-  onSearch: (filters: SearchFilterState, count: number) => void;
+  onSearch: (filters: SearchFilterState | null, count: number, shouldClose?: boolean) => void;
   properties: Property[];
+  initialFilters?: SearchFilterState | null;
 }
 
+// Property types will be translated in the component using useLocalization
 const PROPERTY_TYPES = [
-  { id: "apartment", name: "Apartment", icon: "home-outline", iconLibrary: "Ionicons" },
-  { id: "chalet", name: "Chalet/Lounge", icon: "umbrella-beach", iconLibrary: "MaterialCommunityIcons" },
-  { id: "studio", name: "Studio", icon: "tv-outline", iconLibrary: "Ionicons" },
-  { id: "villa", name: "Villa", icon: "home", iconLibrary: "MaterialCommunityIcons" },
-  { id: "tent", name: "Tent", icon: "tent", iconLibrary: "MaterialCommunityIcons" },
-  { id: "farm", name: "Farm", icon: "barn", iconLibrary: "MaterialCommunityIcons" },
-  { id: "hall", name: "Hall", icon: "storefront-outline", iconLibrary: "MaterialCommunityIcons" },
+  { id: "apartment", nameKey: "apartment", icon: "home-outline", iconLibrary: "Ionicons" },
+  { id: "chalet", nameKey: "chalet", icon: "umbrella-beach", iconLibrary: "MaterialCommunityIcons" },
+  { id: "studio", nameKey: "studio", icon: "tv-outline", iconLibrary: "Ionicons" },
+  { id: "villa", nameKey: "villa", icon: "home", iconLibrary: "MaterialCommunityIcons" },
+  { id: "tent", nameKey: "tent", icon: "tent", iconLibrary: "MaterialCommunityIcons" },
+  { id: "farm", nameKey: "farm", icon: "barn", iconLibrary: "MaterialCommunityIcons" },
+  { id: "hall", nameKey: "hall", icon: "storefront-outline", iconLibrary: "MaterialCommunityIcons" },
 ];
 
 const defaultFilterState: SearchFilterState = {
@@ -110,18 +113,150 @@ export default function SearchFilterModal({
   onClose,
   onSearch,
   properties,
+  initialFilters,
 }: SearchFilterModalProps): React.JSX.Element {
-  const [filters, setFilters] = useState<SearchFilterState>(defaultFilterState);
+  const { t, isRTL } = useLocalization();
+  const [filters, setFilters] = useState<SearchFilterState>(initialFilters || defaultFilterState);
   const [focusedPriceInput, setFocusedPriceInput] = useState<"from" | "to" | null>(null);
   const insets = useSafeAreaInsets();
+  const propertyTypeScrollRef = React.useRef<ScrollView>(null);
 
-  // Reset filters when modal closes
+  // Track initial filters when modal opens to avoid auto-applying on initial load
+  const initialFiltersRef = useRef<SearchFilterState | null>(null);
+  const hasUserInteracted = useRef(false);
+  const previousFiltersRef = useRef<string>("");
+  const onSearchRef = useRef(onSearch);
+  const propertiesRef = useRef(properties);
+
+  // Keep refs updated
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+    propertiesRef.current = properties;
+  }, [onSearch, properties]);
+
+  // Initialize filters from props when modal opens
+  useEffect(() => {
+    if (visible) {
+      const filtersToSet = initialFilters || defaultFilterState;
+      setFilters(filtersToSet);
+      initialFiltersRef.current = JSON.parse(JSON.stringify(filtersToSet)); // Deep copy
+      previousFiltersRef.current = JSON.stringify(filtersToSet);
+      hasUserInteracted.current = false;
+    } else {
+      // Reset when modal closes
+      hasUserInteracted.current = false;
+      initialFiltersRef.current = null;
+      previousFiltersRef.current = "";
+    }
+  }, [visible, initialFilters]);
+
+  // Auto-apply filters when they change (but not on initial load)
+  useEffect(() => {
+    if (!visible || !hasUserInteracted.current) return;
+    
+    // Use string comparison but only if it actually changed
+    const currentFiltersString = JSON.stringify(filters);
+    if (previousFiltersRef.current === currentFiltersString) return;
+    
+    previousFiltersRef.current = currentFiltersString;
+    
+    // Use a timeout to debounce rapid changes
+    const timeoutId = setTimeout(() => {
+      if (!visible) return; // Check if still visible
+      const count = filterProperties(propertiesRef.current, filters).length;
+      // Auto-apply filters immediately without closing modal
+      onSearchRef.current(filters, count, false);
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [filters, visible]);
+
+  // Mark that user has interacted when they change any filter
+  const updateFilter = useCallback((key: keyof SearchFilterState, value: any) => {
+    hasUserInteracted.current = true;
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      header: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      headerTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+      backButton: {
+        // No transform needed, using different icon names
+      },
+      priceInputWrapper: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      priceInputsContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      priceInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      currencyText: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+      propertyTypeScrollContainer: {
+        flexDirection: "row" as const,
+      },
+      propertyTypeButton: {
+        marginRight: wp(2),
+        marginLeft: 0,
+      },
+      propertyTypeText: {
+        textAlign: "center" as const,
+      },
+      instructionText: {
+        textAlign: "center" as const,
+      },
+      propertyTypeContent: {
+        // Container for property type options
+      },
+      footer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      searchButtonText: {
+        textAlign: "center" as const,
+      },
+      resetButtonText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
+  // Reset focused input when modal closes
   useEffect(() => {
     if (!visible) {
-      setFilters(defaultFilterState);
       setFocusedPriceInput(null);
     }
   }, [visible]);
+
+  // Scroll property types to start in RTL
+  useEffect(() => {
+    if (visible && isRTL && propertyTypeScrollRef.current) {
+      // In RTL, scroll to the end (which is the start visually) after a short delay
+      setTimeout(() => {
+        propertyTypeScrollRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    } else if (visible && !isRTL && propertyTypeScrollRef.current) {
+      // In LTR, scroll to the start
+      setTimeout(() => {
+        propertyTypeScrollRef.current?.scrollTo({ x: 0, animated: false });
+      }, 100);
+    }
+  }, [visible, isRTL]);
 
   // Check if any filters are applied
   const hasFilters = useMemo(() => {
@@ -175,6 +310,7 @@ export default function SearchFilterModal({
   }, [properties, filters]);
 
   const handlePropertyTypeSelect = useCallback((typeId: string) => {
+    hasUserInteracted.current = true;
     setFilters((prev) => {
       // If selecting a different property type, reset all filters for that property type
       if (prev.selectedPropertyType !== typeId) {
@@ -190,24 +326,29 @@ export default function SearchFilterModal({
 
   const handleReset = useCallback(() => {
     setFilters(defaultFilterState);
-  }, []);
+    initialFiltersRef.current = JSON.parse(JSON.stringify(defaultFilterState)); // Deep copy
+    hasUserInteracted.current = true; // Mark as interacted so auto-apply works
+    // Immediately apply reset by calling onSearch with null to clear filters
+    // This will update the preserved state so both screens see the reset
+    // Don't close modal on reset
+    onSearch(null, properties.length, false);
+  }, [onSearch, properties.length]);
 
   const handleSearch = useCallback(() => {
-    onSearch(filters, matchingCount);
-    onClose();
-  }, [filters, matchingCount, onSearch, onClose]);
+    // Filters are already applied automatically
+    // When user presses search button, apply filters one more time and close modal
+    const count = filterProperties(properties, filters).length;
+    onSearch(filters, count, true); // Pass true to close modal
+  }, [filters, properties, onSearch]);
 
-  const updateFilter = useCallback((key: keyof SearchFilterState, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  }, []);
 
   const renderPropertyTypeOptions = () => {
     if (!filters.selectedPropertyType) {
       return (
         <View style={styles.instructionContainer}>
           <Ionicons name="filter" size={wp(6)} color="#9ca3af" />
-          <Text style={styles.instructionText}>
-            Please select property type to show search options
+          <Text style={[styles.instructionText, rtlStyles.instructionText]}>
+            {t("listings.searchFilter.selectPropertyType")}
           </Text>
         </View>
       );
@@ -217,22 +358,34 @@ export default function SearchFilterModal({
 
     // Apartment
     if (type === "apartment") {
+      const singlesText = t("listings.searchFilter.singles");
+      const familiesText = t("listings.searchFilter.families");
+      const usageTypeMap: { [key: string]: "Singles" | "Families" } = {
+        [singlesText]: "Singles",
+        [familiesText]: "Families",
+      };
+      const reverseUsageTypeMap: { [key: string]: string } = {
+        "Singles": singlesText,
+        "Families": familiesText,
+      };
+      
       return (
         <View style={styles.propertyTypeContent}>
           <TabBarSection
-            options={["Singles", "Families"]}
-            selectedValue={filters.usageType || null}
+            options={[singlesText, familiesText]}
+            selectedValue={filters.usageType ? reverseUsageTypeMap[filters.usageType] || null : null}
             onSelect={(value) => {
-              if (filters.usageType === value) {
+              const mappedValue = usageTypeMap[value];
+              if (filters.usageType === mappedValue) {
                 updateFilter("usageType", null);
               } else {
-                updateFilter("usageType", value as "Singles" | "Families");
+                updateFilter("usageType", mappedValue);
               }
             }}
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="Bedrooms"
+            label={t("listings.bedrooms")}
             options={BEDROOM_OPTIONS}
             selectedValue={filters.bedrooms || null}
             onSelect={(value) => {
@@ -245,7 +398,7 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="Living rooms"
+            label={t("listings.livingRooms")}
             options={LIVING_ROOM_OPTIONS}
             selectedValue={filters.livingRooms || null}
             onSelect={(value) => {
@@ -258,7 +411,7 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="WC"
+            label={t("listings.searchFilter.wc")}
             options={WC_OPTIONS}
             selectedValue={filters.wc || null}
             onSelect={(value) => {
@@ -271,47 +424,47 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <ToggleRow
-            label="Furnished"
+            label={t("listings.searchFilter.furnished")}
             value={filters.furnished}
             onValueChange={(value) => updateFilter("furnished", value)}
           />
           <ToggleRow
-            label="Car entrance"
+            label={t("listings.searchFilter.carEntrance")}
             value={filters.carEntrance}
             onValueChange={(value) => updateFilter("carEntrance", value)}
           />
           <ToggleRow
-            label="Air Conditioned"
+            label={t("listings.searchFilter.airConditioned")}
             value={filters.airConditioned}
             onValueChange={(value) => updateFilter("airConditioned", value)}
           />
           <ToggleRow
-            label="Private roof"
+            label={t("listings.searchFilter.privateRoof")}
             value={filters.privateRoof}
             onValueChange={(value) => updateFilter("privateRoof", value)}
           />
           <ToggleRow
-            label="Apartment in villa"
+            label={t("listings.searchFilter.apartmentInVilla")}
             value={filters.apartmentInVilla}
             onValueChange={(value) => updateFilter("apartmentInVilla", value)}
           />
           <ToggleRow
-            label="Two entrances"
+            label={t("listings.searchFilter.twoEntrances")}
             value={filters.twoEntrances}
             onValueChange={(value) => updateFilter("twoEntrances", value)}
           />
           <ToggleRow
-            label="Special entrances"
+            label={t("listings.searchFilter.specialEntrances")}
             value={filters.specialEntrances}
             onValueChange={(value) => updateFilter("specialEntrances", value)}
           />
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -324,47 +477,47 @@ export default function SearchFilterModal({
       return (
         <View style={styles.propertyTypeContent}>
           <ToggleRow
-            label="Pool"
+            label={t("listings.searchFilter.pool")}
             value={filters.pool}
             onValueChange={(value) => updateFilter("pool", value)}
           />
           <ToggleRow
-            label="Football pitch"
+            label={t("listings.searchFilter.footballPitch")}
             value={filters.footballPitch}
             onValueChange={(value) => updateFilter("footballPitch", value)}
           />
           <ToggleRow
-            label="Volleyball Court"
+            label={t("listings.searchFilter.volleyballCourt")}
             value={filters.volleyballCourt}
             onValueChange={(value) => updateFilter("volleyballCourt", value)}
           />
           <ToggleRow
-            label="Tent"
+            label={t("listings.searchFilter.tent")}
             value={filters.tent}
             onValueChange={(value) => updateFilter("tent", value)}
           />
           <ToggleRow
-            label="Kitchen"
+            label={t("listings.searchFilter.kitchen")}
             value={filters.kitchen}
             onValueChange={(value) => updateFilter("kitchen", value)}
           />
           <ToggleRow
-            label="Playground"
+            label={t("listings.searchFilter.playground")}
             value={filters.playground}
             onValueChange={(value) => updateFilter("playground", value)}
           />
           <ToggleRow
-            label="Family section"
+            label={t("listings.searchFilter.familySection")}
             value={filters.familySection}
             onValueChange={(value) => updateFilter("familySection", value)}
           />
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -374,22 +527,34 @@ export default function SearchFilterModal({
 
     // Studio
     if (type === "studio") {
+      const singlesText = t("listings.searchFilter.singles");
+      const familiesText = t("listings.searchFilter.families");
+      const usageTypeMap: { [key: string]: "Singles" | "Families" } = {
+        [singlesText]: "Singles",
+        [familiesText]: "Families",
+      };
+      const reverseUsageTypeMap: { [key: string]: string } = {
+        "Singles": singlesText,
+        "Families": familiesText,
+      };
+      
       return (
         <View style={styles.propertyTypeContent}>
           <TabBarSection
-            options={["Singles", "Families"]}
-            selectedValue={filters.usageType || null}
+            options={[singlesText, familiesText]}
+            selectedValue={filters.usageType ? reverseUsageTypeMap[filters.usageType] || null : null}
             onSelect={(value) => {
-              if (filters.usageType === value) {
+              const mappedValue = usageTypeMap[value];
+              if (filters.usageType === mappedValue) {
                 updateFilter("usageType", null);
               } else {
-                updateFilter("usageType", value as "Singles" | "Families");
+                updateFilter("usageType", mappedValue);
               }
             }}
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="Bedrooms"
+            label={t("listings.bedrooms")}
             options={BEDROOM_OPTIONS}
             selectedValue={filters.bedrooms || null}
             onSelect={(value) => {
@@ -402,7 +567,7 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="Living rooms"
+            label={t("listings.livingRooms")}
             options={LIVING_ROOM_OPTIONS}
             selectedValue={filters.livingRooms || null}
             onSelect={(value) => {
@@ -415,7 +580,7 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="WC"
+            label={t("listings.searchFilter.wc")}
             options={WC_OPTIONS}
             selectedValue={filters.wc || null}
             onSelect={(value) => {
@@ -428,47 +593,47 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <ToggleRow
-            label="Furnished"
+            label={t("listings.searchFilter.furnished")}
             value={filters.furnished}
             onValueChange={(value) => updateFilter("furnished", value)}
           />
           <ToggleRow
-            label="Car entrance"
+            label={t("listings.searchFilter.carEntrance")}
             value={filters.carEntrance}
             onValueChange={(value) => updateFilter("carEntrance", value)}
           />
           <ToggleRow
-            label="Air Conditioned"
+            label={t("listings.searchFilter.airConditioned")}
             value={filters.airConditioned}
             onValueChange={(value) => updateFilter("airConditioned", value)}
           />
           <ToggleRow
-            label="Private roof"
+            label={t("listings.searchFilter.privateRoof")}
             value={filters.privateRoof}
             onValueChange={(value) => updateFilter("privateRoof", value)}
           />
           <ToggleRow
-            label="Apartment in villa"
+            label={t("listings.searchFilter.apartmentInVilla")}
             value={filters.apartmentInVilla}
             onValueChange={(value) => updateFilter("apartmentInVilla", value)}
           />
           <ToggleRow
-            label="Two entrances"
+            label={t("listings.searchFilter.twoEntrances")}
             value={filters.twoEntrances}
             onValueChange={(value) => updateFilter("twoEntrances", value)}
           />
           <ToggleRow
-            label="Special entrances"
+            label={t("listings.searchFilter.specialEntrances")}
             value={filters.specialEntrances}
             onValueChange={(value) => updateFilter("specialEntrances", value)}
           />
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -481,7 +646,7 @@ export default function SearchFilterModal({
       return (
         <View style={styles.propertyTypeContent}>
           <TabBarSection
-            label="Bedrooms"
+            label={t("listings.bedrooms")}
             options={BEDROOM_OPTIONS}
             selectedValue={filters.bedrooms || null}
             onSelect={(value) => {
@@ -494,7 +659,7 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="Living rooms"
+            label={t("listings.livingRooms")}
             options={LIVING_ROOM_OPTIONS}
             selectedValue={filters.livingRooms || null}
             onSelect={(value) => {
@@ -507,7 +672,7 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <TabBarSection
-            label="WC"
+            label={t("listings.searchFilter.wc")}
             options={WC_OPTIONS}
             selectedValue={filters.wc || null}
             onSelect={(value) => {
@@ -520,47 +685,47 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <ToggleRow
-            label="Stairs"
+            label={t("listings.searchFilter.stairs")}
             value={filters.stairs}
             onValueChange={(value) => updateFilter("stairs", value)}
           />
           <ToggleRow
-            label="Driver room"
+            label={t("listings.searchFilter.driverRoom")}
             value={filters.driverRoom}
             onValueChange={(value) => updateFilter("driverRoom", value)}
           />
           <ToggleRow
-            label="Maid room"
+            label={t("listings.searchFilter.maidRoom")}
             value={filters.maidRoom}
             onValueChange={(value) => updateFilter("maidRoom", value)}
           />
           <ToggleRow
-            label="Pool"
+            label={t("listings.searchFilter.pool")}
             value={filters.pool}
             onValueChange={(value) => updateFilter("pool", value)}
           />
           <ToggleRow
-            label="Furnished"
+            label={t("listings.searchFilter.furnished")}
             value={filters.furnished}
             onValueChange={(value) => updateFilter("furnished", value)}
           />
           <ToggleRow
-            label="Kitchen"
+            label={t("listings.searchFilter.kitchen")}
             value={filters.kitchen}
             onValueChange={(value) => updateFilter("kitchen", value)}
           />
           <ToggleRow
-            label="Car entrance"
+            label={t("listings.searchFilter.carEntrance")}
             value={filters.carEntrance}
             onValueChange={(value) => updateFilter("carEntrance", value)}
           />
           <ToggleRow
-            label="Basement"
+            label={t("listings.searchFilter.basement")}
             value={filters.basement}
             onValueChange={(value) => updateFilter("basement", value)}
           />
           <TabBarSection
-            label="Villa Type"
+            label={t("listings.searchFilter.villaType")}
             options={VILLA_TYPE_OPTIONS}
             selectedValue={filters.villaType || null}
             onSelect={(value) => {
@@ -573,17 +738,17 @@ export default function SearchFilterModal({
             backgroundColor="#fff"
           />
           <ToggleRow
-            label="Air conditioned"
+            label={t("listings.searchFilter.airConditionedVilla")}
             value={filters.airConditioned}
             onValueChange={(value) => updateFilter("airConditioned", value)}
           />
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -596,17 +761,17 @@ export default function SearchFilterModal({
       return (
         <View style={styles.propertyTypeContent}>
           <ToggleRow
-            label="Family section"
+            label={t("listings.searchFilter.familySection")}
             value={filters.familySection}
             onValueChange={(value) => updateFilter("familySection", value)}
           />
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -619,12 +784,12 @@ export default function SearchFilterModal({
       return (
         <View style={styles.propertyTypeContent}>
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -637,12 +802,12 @@ export default function SearchFilterModal({
       return (
         <View style={styles.propertyTypeContent}>
           <ToggleRow
-            label="Near bus"
+            label={t("listings.searchFilter.nearBus")}
             value={filters.nearBus}
             onValueChange={(value) => updateFilter("nearBus", value)}
           />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.searchFilter.nearMetro")}
             value={filters.nearMetro}
             onValueChange={(value) => updateFilter("nearMetro", value)}
           />
@@ -668,11 +833,11 @@ export default function SearchFilterModal({
         />
         <View style={styles.modalContainer}>
           {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={wp(6)} color={COLORS.arrows} />
+          <View style={[styles.header, rtlStyles.header]}>
+            <TouchableOpacity onPress={onClose} style={[styles.backButton, rtlStyles.backButton]}>
+              <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={wp(6)} color={COLORS.arrows} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Search</Text>
+            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>{t("listings.searchFilter.title")}</Text>
             <View style={styles.headerSpacer} />
           </View>
 
@@ -684,56 +849,67 @@ export default function SearchFilterModal({
           >
             {/* Total Price */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Total Price</Text>
-              <View style={styles.priceInputsContainer}>
+              <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.searchFilter.totalPrice")}</Text>
+              <View style={[styles.priceInputsContainer, rtlStyles.priceInputsContainer]}>
                 <View
                   style={[
                     styles.priceInputWrapper,
+                    rtlStyles.priceInputWrapper,
                     focusedPriceInput === "from" && styles.priceInputWrapperActive,
                   ]}
                 >
                   <TextInput
-                    style={styles.priceInput}
-                    placeholder="From price"
+                    style={[styles.priceInput, rtlStyles.priceInput]}
+                    placeholder={t("listings.searchFilter.fromPrice")}
                     placeholderTextColor="#9ca3af"
                     value={filters.fromPrice}
-                    onChangeText={(value) => updateFilter("fromPrice", value)}
+                    onChangeText={(value) => {
+                      hasUserInteracted.current = true;
+                      updateFilter("fromPrice", value);
+                    }}
                     keyboardType="numeric"
                     onFocus={() => setFocusedPriceInput("from")}
                     onBlur={() => setFocusedPriceInput(null)}
+                    textAlign={isRTL ? "right" : "left"}
                   />
-                  <Text style={styles.currencyText}>SAR</Text>
+                  <Text style={[styles.currencyText, rtlStyles.currencyText]}>{t("listings.sar")}</Text>
                 </View>
                 <View
                   style={[
                     styles.priceInputWrapper,
+                    rtlStyles.priceInputWrapper,
                     focusedPriceInput === "to" && styles.priceInputWrapperActive,
                   ]}
                 >
                   <TextInput
-                    style={styles.priceInput}
-                    placeholder="To price"
+                    style={[styles.priceInput, rtlStyles.priceInput]}
+                    placeholder={t("listings.searchFilter.toPrice")}
                     placeholderTextColor="#9ca3af"
                     value={filters.toPrice}
-                    onChangeText={(value) => updateFilter("toPrice", value)}
+                    onChangeText={(value) => {
+                      hasUserInteracted.current = true;
+                      updateFilter("toPrice", value);
+                    }}
                     keyboardType="numeric"
                     onFocus={() => setFocusedPriceInput("to")}
                     onBlur={() => setFocusedPriceInput(null)}
+                    textAlign={isRTL ? "right" : "left"}
                   />
-                  <Text style={styles.currencyText}>SAR</Text>
+                  <Text style={[styles.currencyText, rtlStyles.currencyText]}>{t("listings.sar")}</Text>
                 </View>
               </View>
             </View>
 
             {/* Property Type */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Property type</Text>
+              <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.searchFilter.propertyType")}</Text>
               <ScrollView
+                ref={propertyTypeScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.propertyTypeScrollContainer}
+                contentContainerStyle={[styles.propertyTypeScrollContainer, rtlStyles.propertyTypeScrollContainer]}
               >
-                {PROPERTY_TYPES.map((type) => {
+                {(isRTL ? [...PROPERTY_TYPES].reverse() : PROPERTY_TYPES).map((type) => {
                   const IconComponent =
                     type.iconLibrary === "MaterialCommunityIcons"
                       ? MaterialCommunityIcons
@@ -743,6 +919,7 @@ export default function SearchFilterModal({
                       key={type.id}
                       style={[
                         styles.propertyTypeButton,
+                        rtlStyles.propertyTypeButton,
                         filters.selectedPropertyType === type.id &&
                           styles.propertyTypeButtonActive,
                       ]}
@@ -757,11 +934,12 @@ export default function SearchFilterModal({
                       <Text
                         style={[
                           styles.propertyTypeText,
+                          rtlStyles.propertyTypeText,
                           filters.selectedPropertyType === type.id &&
                             styles.propertyTypeTextActive,
                         ]}
                       >
-                        {type.name}
+                        {t(`listings.searchFilter.propertyTypes.${type.nameKey}`)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -774,7 +952,7 @@ export default function SearchFilterModal({
           </ScrollView>
 
           {/* Footer */}
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
+          <View style={[styles.footer, rtlStyles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
             {hasFilters ? (
               <>
                 <TouchableOpacity
@@ -782,15 +960,15 @@ export default function SearchFilterModal({
                   onPress={handleReset}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.resetButtonText}>Reset</Text>
+                  <Text style={[styles.resetButtonText, rtlStyles.resetButtonText]}>{t("listings.searchFilter.reset")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.searchButton}
                   onPress={handleSearch}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.searchButtonText}>
-                    Search {matchingCount > 0 ? `${formatCount(matchingCount)} ads` : ""}
+                  <Text style={[styles.searchButtonText, rtlStyles.searchButtonText]}>
+                    {t("listings.searchFilter.search")} {matchingCount > 0 ? `${formatCount(matchingCount)} ${t("listings.searchFilter.ads")}` : ""}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -802,8 +980,8 @@ export default function SearchFilterModal({
                   onPress={handleSearch}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.searchButtonText}>
-                    Search {matchingCount > 0 ? `${formatCount(matchingCount)} ads` : ""}
+                  <Text style={[styles.searchButtonText, rtlStyles.searchButtonText]}>
+                    {t("listings.searchFilter.search")} {matchingCount > 0 ? `${formatCount(matchingCount)} ${t("listings.searchFilter.ads")}` : ""}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -1083,6 +1261,7 @@ const styles = StyleSheet.create({
   propertyTypeScrollContainer: {
     gap: wp(2),
     paddingVertical: hp(0.5),
+    paddingHorizontal: wp(2),
   },
   propertyTypeButton: {
     width: wp(30),

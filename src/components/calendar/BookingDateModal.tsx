@@ -15,8 +15,7 @@ import {
 // import { getTodayISO } from "../../utils";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "../../constants";
-
-const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+import { useLocalization } from "../../hooks/useLocalization";
 
 const PRIMARY = "#304050"; // Black for selected start/end dates
 const RANGE_BG = "#e5e7eb"; // Light grey for range background
@@ -53,7 +52,7 @@ function getMonthDays(year: number, month: number): (number | null)[] {
 }
 
 // Helper function to get 6 months starting from current month (current + next 5)
-const getSixMonths = (): Array<{ year: number; month: number; label: string }> => {
+const getSixMonths = (t: any): Array<{ year: number; month: number; label: string }> => {
   const months: Array<{ year: number; month: number; label: string }> = [];
   const today = new Date();
   const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -65,25 +64,25 @@ const getSixMonths = (): Array<{ year: number; month: number; label: string }> =
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
     
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+    const monthKeys = [
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december",
     ];
     
     months.push({
       year,
       month: monthIndex,
-      label: `${monthNames[monthIndex]} ${year}`,
+      label: `${t(`listings.calendar.months.${monthKeys[monthIndex]}`)} ${year}`,
     });
   }
 
@@ -92,11 +91,23 @@ const getSixMonths = (): Array<{ year: number; month: number; label: string }> =
 
 const BookingDateModal = memo<BookingDateModalProps>(
   ({ visible, onClose, onSearch, selectedDates, onDayPress }) => {
+    const { t, isRTL } = useLocalization();
     const [months, setMonths] = useState<Array<{ year: number; month: number; label: string }>>(
-      getSixMonths()
+      getSixMonths(t)
     );
     const hasInitialized = useRef<boolean>(false);
     const hasSetTomorrow = useRef<boolean>(false);
+
+    // Week days with translations
+    const WEEK_DAYS = useMemo(() => [
+      t("listings.calendar.weekdays.sun"),
+      t("listings.calendar.weekdays.mon"),
+      t("listings.calendar.weekdays.tue"),
+      t("listings.calendar.weekdays.wed"),
+      t("listings.calendar.weekdays.thu"),
+      t("listings.calendar.weekdays.fri"),
+      t("listings.calendar.weekdays.sat"),
+    ], [t]);
 
     // Initialize with today and tomorrow selected when modal first opens
     useEffect(() => {
@@ -173,23 +184,26 @@ const BookingDateModal = memo<BookingDateModalProps>(
       }
     }, [visible, selectedDates.startDate, selectedDates.endDate, onDayPress]);
 
-    // Update months when modal opens or when a new month starts (rolling window)
+    // Update months when modal opens, when a new month starts, or when language changes
     useEffect(() => {
       const updateMonths = () => {
-        const newMonths = getSixMonths();
+        const newMonths = getSixMonths(t);
         setMonths(newMonths);
       };
 
       if (visible) {
-        // Update immediately when modal opens
+        // Update immediately when modal opens or language changes
         updateMonths();
 
         // Check daily if we need to update (when a new month starts)
         const interval = setInterval(updateMonths, 24 * 60 * 60 * 1000); // Check once per day
 
         return () => clearInterval(interval);
+      } else {
+        // Also update when language changes even if modal is closed
+        updateMonths();
       }
-    }, [visible]);
+    }, [visible, t]);
 
     // Get today's date (normalized to start of day)
     const today = useMemo(() => {
@@ -292,7 +306,9 @@ const BookingDateModal = memo<BookingDateModalProps>(
             onPress={onClose}
           />
           <View style={styles.modal}>
-            <Text style={styles.title}>Booking Date</Text>
+            <Text style={[styles.title, isRTL && styles.titleRTL]}>
+              {t("listings.bookingDate")}
+            </Text>
 
             <ScrollView
               style={styles.scrollView}
@@ -305,17 +321,19 @@ const BookingDateModal = memo<BookingDateModalProps>(
 
                 return (
                   <View key={m.label} style={styles.monthContainer}>
-                    <Text style={styles.month}>{m.label}</Text>
+                    <Text style={[styles.month, isRTL && styles.monthRTL]}>
+                      {m.label}
+                    </Text>
 
-                    <View style={styles.weekRow}>
+                    <View style={[styles.weekRow, isRTL && styles.weekRowRTL]}>
                       {WEEK_DAYS.map((d) => (
-                        <Text key={d} style={styles.weekText}>
+                        <Text key={d} style={[styles.weekText, isRTL && styles.weekTextRTL]}>
                           {d}
                         </Text>
                       ))}
                     </View>
 
-                     <View style={styles.daysGrid}>
+                     <View style={[styles.daysGrid, isRTL && styles.daysGridRTL]}>
                        {days.map((day, idx) => {
                          if (day === null) {
                            return <View key={idx} style={styles.dayCell} />;
@@ -342,10 +360,10 @@ const BookingDateModal = memo<BookingDateModalProps>(
                           >
                             {/* CONNECTORS - Visual range connection - only show when there's a range */}
                             {hasRange && (inRange || end) && (
-                              <View style={styles.leftConnector} />
+                              <View style={[styles.leftConnector, isRTL && styles.leftConnectorRTL]} />
                             )}
                             {hasRange && (inRange || start) && (
-                              <View style={styles.rightConnector} />
+                              <View style={[styles.rightConnector, isRTL && styles.rightConnectorRTL]} />
                             )}
 
                             {/* DAY CIRCLE */}
@@ -377,13 +395,13 @@ const BookingDateModal = memo<BookingDateModalProps>(
               })}
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, isRTL && styles.footerRTL]}>
               <TouchableOpacity
                 style={styles.searchBtn}
                 onPress={onSearch}
                 activeOpacity={0.8}
               >
-                <Text style={styles.searchText}>Search</Text>
+                <Text style={styles.searchText}>{t("common.search")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -424,6 +442,9 @@ const styles = StyleSheet.create({
     paddingBottom: hp(1),
     color: "#111827",
   },
+  titleRTL: {
+    textAlign: "right",
+  },
   scrollView: {
     maxHeight: hp(60),
     minHeight: hp(40),
@@ -442,22 +463,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
     color: "#111827",
   },
+  monthRTL: {
+    textAlign: "right",
+  },
   weekRow: {
     flexDirection: "row",
     paddingHorizontal: wp(3),
     marginBottom: hp(1),
   },
+  weekRowRTL: {
+    flexDirection: "row-reverse",
+  },
   weekText: {
     width: "14.28%",
     textAlign: "center",
-    fontSize: wp(3),
+    fontSize: wp(3.5),
     color: "#000000",
-    fontWeight: "400",
+    fontWeight: "500",
+  },
+  weekTextRTL: {
+    textAlign: "center",
   },
   daysGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     paddingHorizontal: wp(4),
+  },
+  daysGridRTL: {
+    flexDirection: "row-reverse",
   },
   dayCell: {
     width: "14.28%",
@@ -474,6 +507,10 @@ const styles = StyleSheet.create({
     backgroundColor: RANGE_BG,
     zIndex: 0,
   },
+  leftConnectorRTL: {
+    left: undefined,
+    right: 0,
+  },
   rightConnector: {
     position: "absolute",
     right: 0,
@@ -481,6 +518,10 @@ const styles = StyleSheet.create({
     height: wp(8.5),
     backgroundColor: RANGE_BG,
     zIndex: 0,
+  },
+  rightConnectorRTL: {
+    right: undefined,
+    left: 0,
   },
   circle: {
     width: wp(8.5),
@@ -521,10 +562,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: BORDER,
     padding: wp(4),
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  footerRTL: {
+    justifyContent: "flex-start",
   },
   searchBtn: {
     width: "50%",
-    alignSelf: "flex-end",
     backgroundColor: COLORS.primary,
     height: hp(6),
     borderRadius: wp(7),

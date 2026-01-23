@@ -1,10 +1,11 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface SegmentedControlProps {
   options: string[];
@@ -17,16 +18,49 @@ export interface SegmentedControlProps {
  */
 const SegmentedControl = memo<SegmentedControlProps>(
   ({ options, selectedIndex, onSelect }) => {
+    const { isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        container: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        segment: {
+          borderRightWidth: isRTL ? 0 : 1,
+          borderLeftWidth: isRTL ? 1 : 0,
+          borderRightColor: isRTL ? "transparent" : "#e5e7eb",
+          borderLeftColor: isRTL ? "#e5e7eb" : "transparent",
+        },
+        firstSegment: {
+          borderTopLeftRadius: isRTL ? 0 : wp(1.5),
+          borderBottomLeftRadius: isRTL ? 0 : wp(1.5),
+          borderTopRightRadius: isRTL ? wp(1.5) : 0,
+          borderBottomRightRadius: isRTL ? wp(1.5) : 0,
+        },
+        lastSegment: {
+          borderTopRightRadius: isRTL ? 0 : wp(1.5),
+          borderBottomRightRadius: isRTL ? 0 : wp(1.5),
+          borderTopLeftRadius: isRTL ? wp(1.5) : 0,
+          borderBottomLeftRadius: isRTL ? wp(1.5) : 0,
+          borderRightWidth: isRTL ? 1 : 0,
+          borderLeftWidth: isRTL ? 0 : 0,
+        },
+      }),
+      [isRTL]
+    );
+
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, rtlStyles.container]}>
         {options.map((option, index) => (
           <TouchableOpacity
             key={index}
             style={[
               styles.segment,
+              rtlStyles.segment,
               index === selectedIndex && styles.segmentActive,
-              index === 0 && styles.firstSegment,
-              index === options.length - 1 && styles.lastSegment,
+              index === 0 && [styles.firstSegment, rtlStyles.firstSegment],
+              index === options.length - 1 && [styles.lastSegment, rtlStyles.lastSegment],
             ]}
             onPress={() => onSelect(index)}
             activeOpacity={0.7}

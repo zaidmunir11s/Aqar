@@ -1,4 +1,4 @@
-import React, { memo, useState, ReactNode } from "react";
+import React, { memo, useState, ReactNode, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface TextInputProps extends Omit<RNTextInputProps, "style"> {
   value: string;
@@ -110,12 +111,40 @@ const TextInput = memo<TextInputProps>(
     secureTextEntry,
     ...restProps
   }) => {
+    const { isRTL, t } = useLocalization();
     const [isFocused, setIsFocused] = useState<boolean>(false);
     const [showPassword, setShowPassword] = useState<boolean>(false);
 
     // Determine if we should show password toggle
     const shouldShowPasswordToggle = isPassword && showPasswordToggle;
     const actualSecureTextEntry = isPassword ? !showPassword : secureTextEntry;
+    
+    // RTL-aware styles - only apply to password inputs (for show/hide button)
+    // Phone number inputs should stay LTR (prefix on left)
+    const rtlStyles = useMemo(
+      () => ({
+        inputWrapper: {
+          // Only reverse for password inputs with toggle
+          flexDirection: (isRTL && shouldShowPasswordToggle ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        input: {
+          // Shift cursor to right for RTL
+          textAlign: (isRTL ? "right" : "left") as "left" | "right" | "center",
+        },
+        suffix: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
+        showHideButton: {
+          marginRight: isRTL ? 0 : 0,
+          marginLeft: isRTL ? 0 : 0,
+        },
+        errorText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL, shouldShowPasswordToggle]
+    );
 
     // Render label icon
     const renderLabelIcon = () => {
@@ -143,10 +172,10 @@ const TextInput = memo<TextInputProps>(
         return (
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
-            style={styles.showHideButton}
+            style={[styles.showHideButton, rtlStyles.showHideButton]}
           >
             <Text style={styles.showHideText}>
-              {showPassword ? "Hide" : "Show"}
+              {showPassword ? t("auth.hide") : t("auth.show")}
             </Text>
           </TouchableOpacity>
         );
@@ -247,6 +276,7 @@ const TextInput = memo<TextInputProps>(
         <View
           style={[
             styles.inputWrapper,
+            rtlStyles.inputWrapper,
             inputWrapperStyle,
             hasError && !isFocused && styles.inputWrapperError,
             isFocused &&
@@ -263,6 +293,7 @@ const TextInput = memo<TextInputProps>(
           <RNTextInput
             style={[
               styles.input,
+              rtlStyles.input,
               multiline && styles.inputMultiline,
               !value && !placeholderFontSize && styles.inputPlaceholder,
               !value && placeholderFontSize
@@ -291,14 +322,14 @@ const TextInput = memo<TextInputProps>(
           />
 
           {/* Suffix */}
-          {suffix && <Text style={[styles.suffix, suffixStyle]}>{suffix}</Text>}
+          {suffix && <Text style={[styles.suffix, rtlStyles.suffix, suffixStyle]}>{suffix}</Text>}
 
           {/* Right Action */}
           {renderRightAction()}
         </View>
 
         {/* Error Message */}
-        {hasError && <Text style={styles.errorText}>{error}</Text>}
+        {hasError && <Text style={[styles.errorText, rtlStyles.errorText]}>{error}</Text>}
       </View>
     );
   }

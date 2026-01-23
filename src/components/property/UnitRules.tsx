@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -8,6 +8,7 @@ import {
 import type { DailyProperty } from "../../types/property";
 import { InfoItem } from "./PropertyInfo";
 import { COLORS } from "@/constants/colors";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface UnitRulesProps {
   property: DailyProperty;
@@ -23,6 +24,46 @@ interface RuleItem {
  * Unit Rules component - displays booking rules based on booking type
  */
 const UnitRules = memo<UnitRulesProps>(({ property }) => {
+  const { t, isRTL } = useLocalization();
+
+  // Helper function to format time with translated AM/PM
+  const formatTime = useCallback((timeString: string): string => {
+    // Parse time string like "04:00 pm" or "12:00 am"
+    const match = timeString.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+    if (!match) return timeString;
+    
+    const [, hours, minutes, period] = match;
+    const periodLower = period.toLowerCase();
+    const amText = t("listings.time.am");
+    const pmText = t("listings.time.pm");
+    
+    return `${hours}:${minutes} ${periodLower === "am" ? amText : pmText}`;
+  }, [t]);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      ruleRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      ruleLeftSection: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      ruleLabel: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        marginLeft: isRTL ? 0 : wp(8),
+        marginRight: isRTL ? wp(8) : 0,
+      },
+      ruleValue: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   // Get rules based on booking type
   const getRules = (): RuleItem[] => {
     const { bookingType } = property;
@@ -33,42 +74,42 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
         return [
           {
             icon: "calendar-outline",
-            label: "Minimum Reservable Days",
-            value: "30 Days",
+            label: t("listings.unitRules.minimumReservableDays"),
+            value: `30 ${t("listings.unitRules.days")}`,
           },
           {
             icon: "time-outline",
-            label: "Arrival Time",
-            value: "04:00 pm",
+            label: t("listings.unitRules.arrivalTime"),
+            value: formatTime("04:00 pm"),
           },
           {
-            label: "Departure Time",
-            value: "01:00 pm",
+            label: t("listings.unitRules.departureTime"),
+            value: formatTime("01:00 pm"),
           },
           {
-            label: "Latest Time to Book",
-            value: "12:00 am",
+            label: t("listings.unitRules.latestTimeToBook"),
+            value: formatTime("12:00 am"),
           },
         ];
       case "daily":
         return [
           {
             icon: "calendar-outline",
-            label: "Minimum Reservable Days",
-            value: "1 Days",
+            label: t("listings.unitRules.minimumReservableDays"),
+            value: `1 ${t("listings.unitRules.days")}`,
           },
           {
             icon: "time-outline",
-            label: "Arrival Time",
-            value: "04:00 pm",
+            label: t("listings.unitRules.arrivalTime"),
+            value: formatTime("04:00 pm"),
           },
           {
-            label: "Departure Time",
-            value: "01:00 pm",
+            label: t("listings.unitRules.departureTime"),
+            value: formatTime("01:00 pm"),
           },
           {
-            label: "Latest Time to Book",
-            value: "12:00 am",
+            label: t("listings.unitRules.latestTimeToBook"),
+            value: formatTime("12:00 am"),
           },
         ];
       default:
@@ -76,21 +117,21 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
         return [
           {
             icon: "calendar-outline",
-            label: "Minimum Reservable Days",
-            value: "7 Days",
+            label: t("listings.unitRules.minimumReservableDays"),
+            value: `7 ${t("listings.unitRules.days")}`,
           },
           {
             icon: "time-outline",
-            label: "Arrival Time",
-            value: "04:00 pm",
+            label: t("listings.unitRules.arrivalTime"),
+            value: formatTime("04:00 pm"),
           },
           {
-            label: "Departure Time",
-            value: "01:00 pm",
+            label: t("listings.unitRules.departureTime"),
+            value: formatTime("01:00 pm"),
           },
           {
-            label: "Latest Time to Book",
-            value: "12:00 am",
+            label: t("listings.unitRules.latestTimeToBook"),
+            value: formatTime("12:00 am"),
           },
         ];
     }
@@ -100,7 +141,7 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Unit Rules</Text>
+      <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.unitRules.title")}</Text>
       <View style={styles.rulesList}>
         {rules.map((rule, index) => {
           const isFirst = index === 0;
@@ -131,6 +172,7 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
               key={rule.label}
               style={[
                 styles.ruleRow,
+                rtlStyles.ruleRow,
                 {
                   backgroundColor: index % 2 === 0 ? "#fff" : "#ebf1f1",
                 },
@@ -138,11 +180,11 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
                 isLast && styles.lastRow,
               ]}
             >
-              <View style={styles.ruleLeftSection}>
-                <Text style={styles.ruleLabel}>{rule.label}</Text>
+              <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{rule.label}</Text>
               </View>
               <View style={styles.ruleValueContainer}>
-                <Text style={styles.ruleValue}>{rule.value}</Text>
+                <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{rule.value}</Text>
               </View>
             </View>
           );

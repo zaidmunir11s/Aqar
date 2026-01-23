@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 import {
   ScreenHeader,
   PhoneCard,
@@ -31,6 +32,7 @@ type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function ProfileDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
 
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
@@ -105,20 +107,33 @@ export default function ProfileDetailScreen(): React.JSX.Element {
     console.log("Log out pressed");
   };
 
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      walletContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      walletText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   const menuItems: MenuItem[] = [
     {
-      title: "My Deals",
-      subtitle: "Verify the deals you have completed",
+      title: t("profile.myDeals"),
+      subtitle: t("profile.verifyDeals"),
       onPress: () => console.log("My Deals pressed"),
     },
     {
-      title: "Requests",
-      subtitle: "Get alerts for offers similar to your wishes",
+      title: t("listings.requests"),
+      subtitle: t("profile.getAlertsForOffers"),
       onPress: () => console.log("Requests pressed"),
     },
     {
-      title: "My Bookings",
-      subtitle: "Booking history for daily/monthly rental units",
+      title: t("profile.myBookings"),
+      subtitle: t("profile.bookingHistory"),
       onPress: () => console.log("My Bookings pressed"),
     },
   ];
@@ -126,17 +141,17 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Profile"
+        title={t("profile.title")}
         onBackPress={handleBackPress}
         fontWeightBold={true}
         rightComponent={
           <TouchableOpacity
-            style={styles.walletContainer}
+            style={[styles.walletContainer, rtlStyles.walletContainer]}
             onPress={handleWalletPress}
             activeOpacity={0.7}
           >
             <Ionicons name="wallet-outline" size={wp(5)} color={COLORS.primary} />
-            <Text style={styles.walletText}>No balance</Text>
+            <Text style={[styles.walletText, rtlStyles.walletText]}>{t("profile.noBalance")}</Text>
           </TouchableOpacity>
         }
         showRightSide={true}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,11 +20,13 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { BackButton, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function CreateAccountScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
@@ -52,29 +54,29 @@ export default function CreateAccountScreen(): React.JSX.Element {
   // Validation functions
   const validatePhoneNumber = (phone: string): string => {
     if (phone.trim().length === 0) {
-      return "Phone number is required";
+      return t("auth.phoneRequired");
     }
     if (!/^\d+$/.test(phone)) {
-      return "Invalid phone number";
+      return t("auth.invalidPhone");
     }
     return "";
   };
 
   const validatePassword = (pwd: string): string => {
     if (pwd.trim().length === 0) {
-      return "Password is required";
+      return t("auth.passwordRequired");
     }
     if (pwd.length < 8) {
-      return "Password must be at least 8 characters";
+      return t("auth.passwordMinLength");
     }
     if (!/[A-Z]/.test(pwd)) {
-      return "Password must contain at least one uppercase letter";
+      return t("auth.passwordUppercase");
     }
     if (!/[a-z]/.test(pwd)) {
-      return "Password must contain at least one lowercase letter";
+      return t("auth.passwordLowercase");
     }
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
-      return "Password must contain at least one special character";
+      return t("auth.passwordSpecialChar");
     }
     return "";
   };
@@ -159,8 +161,8 @@ export default function CreateAccountScreen(): React.JSX.Element {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "We need access to your photos to set a profile picture."
+          t("auth.permissionRequired"),
+          t("auth.photoAccessRequired")
         );
         return;
       }
@@ -179,9 +181,51 @@ export default function CreateAccountScreen(): React.JSX.Element {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
-    }
-  }, []);
+      Alert.alert(t("auth.error"), t("auth.failedToPickImage"));
+      }
+    }, []);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      title: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      label: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      firstNameInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      lastNameInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      phoneInput: {
+        textAlign: "left" as "left", // Always left-aligned so cursor starts from left (after prefix)
+      },
+      passwordInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      legalContainer: {
+        alignItems: (isRTL ? "flex-end" : "center") as "center" | "flex-end",
+      },
+      legalText: {
+        textAlign: (isRTL ? "right" : "center") as "center" | "right",
+      },
+      linksInline: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        justifyContent: (isRTL ? "flex-end" : "center") as "center" | "flex-end",
+      },
+      editIconContainer: {
+        right: isRTL ? undefined : 0,
+        left: isRTL ? 0 : undefined,
+      },
+      backButtonContainer: {
+        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+      },
+    }),
+    [isRTL]
+  );
 
   return (
     <KeyboardAvoidingView
@@ -192,11 +236,13 @@ export default function CreateAccountScreen(): React.JSX.Element {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <BackButton onPress={handleBackPress} />
+        <View style={rtlStyles.backButtonContainer}>
+          <BackButton onPress={handleBackPress} />
+        </View>
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Finishing sign up</Text>
+          <Text style={[styles.title, rtlStyles.title]}>{t("auth.finishingSignUp")}</Text>
         </View>
 
         {/* Profile Picture Section */}
@@ -221,7 +267,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
                   />
                 </View>
               )}
-              <View style={styles.editIconContainer}>
+              <View style={[styles.editIconContainer, rtlStyles.editIconContainer]}>
                 <Ionicons
                   name={profileImage ? "pencil" : "camera"}
                   size={wp(4)}
@@ -234,34 +280,37 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Full Name Section */}
         <View style={styles.nameSection}>
-          <Text style={styles.label}>Full name</Text>
+          <Text style={[styles.label, rtlStyles.label]}>{t("auth.fullName")}</Text>
           <TextInput
             value={firstName}
             onChangeText={setFirstName}
-            placeholder="First name"
+            placeholder={t("auth.firstName")}
             showFocusStates={true}
             containerStyle={styles.nameInputContainer}
             inputWrapperStyle={styles.inputWrapperNoBottomRadius}
+            inputStyle={rtlStyles.firstNameInput}
           />
           <TextInput
             value={lastName}
             onChangeText={setLastName}
-            placeholder="Last name"
+            placeholder={t("auth.lastName")}
             showFocusStates={true}
             hideTopBorder={true}
+            inputStyle={rtlStyles.lastNameInput}
           />
         </View>
 
         {/* Phone Number Section */}
         <View style={styles.section}>
-          <Text style={styles.label}>Phone number</Text>
+          <Text style={[styles.label, rtlStyles.label]}>{t("auth.phoneNumber")}</Text>
           <TextInput
             value={phoneNumber}
             onChangeText={handlePhoneChange}
-            placeholder="Phone number"
+            placeholder={t("auth.phoneNumber")}
             prefix="+966"
             keyboardType="phone-pad"
             showFocusStates={true}
+            inputStyle={rtlStyles.phoneInput}
             error={phoneErrorShown ? phoneError : ""}
             touched={phoneErrorShown}
           />
@@ -269,39 +318,40 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Password Section */}
         <View style={styles.section}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={[styles.label, rtlStyles.label]}>{t("auth.password")}</Text>
           <TextInput
             value={password}
             onChangeText={handlePasswordChange}
             onBlur={() => setPasswordTouched(true)}
-            placeholder="Password"
+            placeholder={t("auth.password")}
             isPassword={true}
             showPasswordToggle={true}
             showFocusStates={true}
+            inputStyle={rtlStyles.passwordInput}
             error={passwordTouched ? passwordError : ""}
             touched={passwordTouched}
           />
         </View>
 
         {/* Legal Text */}
-        <View style={styles.legalContainer}>
-          <Text style={styles.legalText}>
-            By Logging In Or Registering, You Have Agreed To{" "}
+        <View style={[styles.legalContainer, rtlStyles.legalContainer]}>
+          <Text style={[styles.legalText, rtlStyles.legalText]}>
+            {t("auth.agreeToTerms")}{" "}
           </Text>
-          <View style={styles.linksInline}>
+          <View style={[styles.linksInline, rtlStyles.linksInline]}>
             <TouchableOpacity onPress={handleTermsPress} activeOpacity={0.7}>
-              <Text style={styles.legalLink}>The Terms And Conditions</Text>
+              <Text style={styles.legalLink}>{t("auth.termsAndConditions")}</Text>
             </TouchableOpacity>
-            <Text style={styles.legalText}> And </Text>
+            <Text style={[styles.legalText, rtlStyles.legalText]}> {t("auth.and")} </Text>
             <TouchableOpacity onPress={handlePrivacyPress} activeOpacity={0.7}>
-              <Text style={styles.legalLink}>Privacy Policy</Text>
+              <Text style={styles.legalLink}>{t("auth.privacyPolicy")}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Agree & Continue Button */}
         <PrimaryButton
-          text="Agree & continue"
+          text={t("auth.agreeAndContinue")}
           onPress={handleAgreeAndContinue}
           disabled={!isFormValid}
           style={styles.continueButton}

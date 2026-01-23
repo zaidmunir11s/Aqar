@@ -50,6 +50,7 @@ import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -73,6 +74,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
   } = params;
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t, isRTL } = useLocalization();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
@@ -317,10 +319,48 @@ export default function DailyDetailScreen(): React.JSX.Element {
   );
 
 
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      headerIcons: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      headerIconsRight: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      featureRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      description: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      readMore: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      reportAd: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      reportAdText: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+      imagesSectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      center: {
+        alignItems: "center" as const,
+      },
+    }),
+    [isRTL]
+  );
+
   if (!property) {
     return (
-      <View style={styles.center}>
-        <Text>Property not found</Text>
+      <View style={[styles.center, rtlStyles.center]}>
+        <Text>{t("listings.propertyNotFound")}</Text>
       </View>
     );
   }
@@ -330,14 +370,29 @@ export default function DailyDetailScreen(): React.JSX.Element {
       ? property.images
       : [getDefaultImageUrl()];
 
-  // Get type label from filter options
+  // Get type label from filter options with translation
   const getPropertyTypeLabel = useCallback(() => {
     const filterOptions = DAILY_FILTER_OPTIONS;
     const option = filterOptions.find((opt) => opt.type === property.type);
-    return option
-      ? option.label
-      : property.type.charAt(0).toUpperCase() + property.type.slice(1);
-  }, [property]);
+    if (option) {
+      // Map property types to translation keys
+      const typeTranslationMap: { [key: string]: string } = {
+        "apartment": "apartmentForBooking",
+        "villa": "villaForBooking",
+        "studio": "studioForBooking",
+        "chalet": "chaletForBooking",
+        "tent": "tentForBooking",
+        "farm": "farmForBooking",
+        "hall": "hallForBooking",
+      };
+      const translationKey = typeTranslationMap[property.type];
+      if (translationKey) {
+        return t(`listings.propertyTypes.${translationKey}`);
+      }
+      return option.label;
+    }
+    return property.type.charAt(0).toUpperCase() + property.type.slice(1);
+  }, [property, t]);
 
   const typeLabel = getPropertyTypeLabel();
 
@@ -349,9 +404,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
         selectedDates.startDate,
         selectedDates.endDate
       );
-      return `${(dailyProperty.dailyPrice || 0) * days} SAR`;
+      return `${(dailyProperty.dailyPrice || 0) * days} ${t("listings.sar")}`;
     } else {
-      return "Choose date to see price";
+      return t("listings.chooseDateToSeePrice");
     }
   }, [property, selectedDates]);
 
@@ -359,12 +414,12 @@ export default function DailyDetailScreen(): React.JSX.Element {
     <>
       <View style={styles.container} {...panResponder.panHandlers}>
         {/* Icons - Always visible, absolute positioned */}
-        <View style={styles.headerIcons}>
+        <View style={[styles.headerIcons, rtlStyles.headerIcons]}>
           <IconButton onPress={handleBackPress}>
-            <Ionicons name="arrow-back" size={wp(6)} color={COLORS.backButton} />
+            <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={wp(6)} color={COLORS.backButton} />
           </IconButton>
           <View style={styles.headerIconsSpacer} />  
-          <View style={styles.headerIconsRight}>
+          <View style={[styles.headerIconsRight, rtlStyles.headerIconsRight]}>
             <IconButton onPress={toggleLike}>
               <Ionicons
                 name={liked ? "thumbs-up" : "thumbs-up-outline"}
@@ -436,34 +491,34 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Property Information */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Property Information</Text>
+            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.propertyInformation")}</Text>
             <View style={styles.infoList}>
               {[
-                { icon: "resize", label: "Area", value: `${property.area}` },
+                { icon: "resize", label: t("listings.area"), value: `${property.area}` },
                 {
                   icon: "bed",
-                  label: "Bedrooms",
+                  label: t("listings.bedrooms"),
                   value: property.bedrooms.toString(),
                 },
                 {
                   icon: "home",
-                  label: "Living Rooms",
+                  label: t("listings.livingRooms"),
                   value: (property.livingRooms || 1).toString(),
                 },
                 {
                   icon: "water",
-                  label: "Restrooms",
+                  label: t("listings.restrooms"),
                   value: (property.restrooms || 2).toString(),
                 },
                 {
                   icon: "business",
-                  label: "Real estate age",
+                  label: t("listings.realEstateAge"),
                   value:
                     property.estateAge > 0
-                      ? `${property.estateAge} years`
-                      : "New",
+                      ? `${property.estateAge} ${t("listings.years")}`
+                      : t("listings.new"),
                 },
-                { icon: "pricetag", label: "Type", value: "Residential" },
+                { icon: "pricetag", label: t("listings.type"), value: t("listings.residential") },
               ].map((item, index) => (
                 <InfoItem
                   key={item.label}
@@ -479,14 +534,14 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Property Features */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Property Features</Text>
+            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.propertyFeatures")}</Text>
             <View style={styles.featuresList}>
               {[
-                { label: "Water" },
-                { label: "Electricity" },
-                { label: "Private Roof" },
-                { label: "Special Entrance" },
-                { label: "Near Bus" },
+                { label: t("listings.water") },
+                { label: t("listings.electricity") },
+                { label: t("listings.privateRoof") },
+                { label: t("listings.specialEntrance") },
+                { label: t("listings.nearBus") },
               ]
                 .reduce<Array<Array<{ label: string; index: number }>>>(
                   (rows, item, index) => {
@@ -504,6 +559,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
                     key={rowIndex}
                     style={[
                       styles.featureRow,
+                      rtlStyles.featureRow,
                       {
                         backgroundColor:
                           rowIndex % 2 === 0 ? "#fff" : "#ebf1f1",
@@ -526,9 +582,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Extra / Description */}
           <View style={styles.extraSection}>
-            <Text style={styles.sectionTitle}>Extra</Text>
+            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.extra")}</Text>
             <Text
-              style={styles.description}
+              style={[styles.description, rtlStyles.description]}
               numberOfLines={expandedDescription ? undefined : 3}
             >
               {property.description ||
@@ -536,7 +592,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
             </Text>
             {!expandedDescription && (
               <TouchableOpacity onPress={expandDescription}>
-                <Text style={styles.readMore}>Read more</Text>
+                <Text style={[styles.readMore, rtlStyles.readMore]}>{t("listings.readMore")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -561,9 +617,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Report Ad */}
           <View style={styles.reportAdSection}>
-            <TouchableOpacity style={styles.reportAd}>
+            <TouchableOpacity style={[styles.reportAd, rtlStyles.reportAd]}>
               <Ionicons name="flag" size={wp(5)} color="#ef4444" />
-              <Text style={styles.reportAdText}>Report Ad</Text>
+              <Text style={[styles.reportAdText, rtlStyles.reportAdText]}>{t("listings.reportAd")}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.sectionSeparator} />
@@ -615,7 +671,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
         <View style={styles.imageViewerContainer}>
           <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
             <ScreenHeader
-              title="Listing media"
+              title={t("listings.listingMedia")}
               onBackPress={closeImageViewer}
               backButtonColor={COLORS.backButton}
             />
@@ -623,7 +679,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
           
           <View style={styles.imageViewerContent}>
             <View style={styles.imagesSectionHeader}>
-              <Text style={styles.imagesSectionTitle}>Images</Text>
+              <Text style={[styles.imagesSectionTitle, rtlStyles.imagesSectionTitle]}>{t("listings.images")}</Text>
               <View style={styles.imagesSectionBorder} />
             </View>
             

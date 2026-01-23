@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   Ionicons,
@@ -10,6 +10,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PropertyAdvertiserProps {
   onCall: () => void;
@@ -22,13 +23,59 @@ export interface PropertyAdvertiserProps {
  */
 const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
   ({ onCall, onWhatsApp, onChat }) => {
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        sectionTitle: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        advertiserHeader: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        advertiserLogo: {
+          marginRight: isRTL ? 0 : wp(3),
+          marginLeft: isRTL ? wp(3) : 0,
+        },
+        advertiserName: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        ratingRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        ratingText: {
+          marginLeft: isRTL ? 0 : wp(1),
+          marginRight: isRTL ? wp(1) : 0,
+        },
+        contactButtons: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        contactBtnText: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
+        warningBox: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        warningText: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Advertiser information</Text>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+          {t("listings.advertiserInformation")}
+        </Text>
         <View style={styles.advertiserCardWrapper}>
           <View style={styles.advertiserCard}>
-            <View style={styles.advertiserHeader}>
-              <View style={styles.advertiserLogo}>
+            <View style={[styles.advertiserHeader, rtlStyles.advertiserHeader]}>
+              <View style={[styles.advertiserLogo, rtlStyles.advertiserLogo]}>
                 <MaterialCommunityIcons
                   name="office-building"
                   size={wp(8)}
@@ -36,40 +83,50 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.advertiserName}>مؤسسة سلالم العقارية</Text>
-                <View style={styles.ratingRow}>
+                <Text style={[styles.advertiserName, rtlStyles.advertiserName]}>
+                  مؤسسة سلالم العقارية
+                </Text>
+                <View style={[styles.ratingRow, rtlStyles.ratingRow]}>
                   <Ionicons name="star" size={wp(4)} color="#fbbf24" />
-                  <Text style={styles.ratingText}>5 Reviews (8)</Text>
+                  <Text style={[styles.ratingText, rtlStyles.ratingText]}>
+                    5 {t("listings.reviews")} (8)
+                  </Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={wp(6)} color="#9ca3af" />
+              <Ionicons 
+                name={isRTL ? "chevron-back" : "chevron-forward"} 
+                size={wp(6)} 
+                color="#9ca3af" 
+              />
             </View>
 
             {/* Contact Buttons */}
-            <View style={styles.contactButtons}>
+            <View style={[styles.contactButtons, rtlStyles.contactButtons]}>
               <TouchableOpacity
-                style={[styles.contactBtn, styles.callBtn]}
+                style={[styles.contactBtn, styles.callBtn, isRTL && styles.contactBtnRTL]}
                 onPress={onCall}
               >
                 <Ionicons name="call" size={wp(5)} color="#fff" />
-                <Text style={styles.contactBtnText}>Call</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.contactBtn, styles.waBtn]}
-                onPress={onWhatsApp}
-              >
-                <FontAwesome name="whatsapp" size={wp(5)} color="#0ab63a" />
-                <Text style={[styles.contactBtnText, { color: "#0ab63a" }]}>
-                  WA
+                <Text style={[styles.contactBtnText, rtlStyles.contactBtnText]}>
+                  {t("listings.call")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.contactBtn, styles.chatBtn]}
+                style={[styles.contactBtn, styles.waBtn, isRTL && styles.contactBtnRTL]}
+                onPress={onWhatsApp}
+              >
+                <FontAwesome name="whatsapp" size={wp(5)} color="#0ab63a" />
+                <Text style={[styles.contactBtnText, rtlStyles.contactBtnText, { color: "#0ab63a" }]}>
+                  {t("listings.wa")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.contactBtn, styles.chatBtn, isRTL && styles.contactBtnRTL]}
                 onPress={onChat}
               >
                 <MaterialIcons name="chat" size={wp(5)} color="#6a7681" />
-                <Text style={[styles.contactBtnText, { color: "#6a7681" }]}>
-                  Chat
+                <Text style={[styles.contactBtnText, rtlStyles.contactBtnText, { color: "#6a7681" }]}>
+                  {t("listings.chat")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -77,10 +134,10 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
         </View>
 
         {/* Fraud Warning */}
-        <View style={styles.warningBox}>
+        <View style={[styles.warningBox, rtlStyles.warningBox]}>
           <Ionicons name="warning" size={wp(5)} color="#3b82f6" />
-          <Text style={styles.warningText}>
-            Communicating through Aqar's private messages reduces fraud.
+          <Text style={[styles.warningText, rtlStyles.warningText]}>
+            {t("listings.fraudWarning")}
           </Text>
         </View>
       </View>
@@ -155,6 +212,9 @@ const styles = StyleSheet.create({
     borderRadius: wp(2),
     marginHorizontal: wp(1),
   },
+  contactBtnRTL: {
+    flexDirection: "row-reverse",
+  },
   callBtn: {
     backgroundColor: "#0e856a",
   },
@@ -187,7 +247,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: wp(3),
     color: "#777c81",
-    marginLeft: wp(2),
   },
 });
 

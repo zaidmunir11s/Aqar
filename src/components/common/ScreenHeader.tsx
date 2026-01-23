@@ -11,6 +11,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "@/hooks";
 
 export interface ScreenHeaderProps {
   title: string;
@@ -38,6 +39,8 @@ const ScreenHeader = memo<ScreenHeaderProps>(
     fontSize,
     backButtonColor = "#0e856a",
   }) => {
+    const { isRTL } = useLocalization();
+
     const renderRightSide = () => {
       if (!showRightSide) {
         return <View style={{ width: wp(12) }} />;
@@ -50,7 +53,7 @@ const ScreenHeader = memo<ScreenHeaderProps>(
       if (rightIcon && rightText && onRightPress) {
         return (
           <TouchableOpacity
-            style={styles.rightContainer}
+            style={[styles.rightContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
             onPress={onRightPress}
             activeOpacity={0.7}
           >
@@ -65,29 +68,56 @@ const ScreenHeader = memo<ScreenHeaderProps>(
       return <View style={{ width: wp(12) }} />;
     };
 
+    // Determine back arrow icon based on RTL
+    const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? "arrow-forward" : "arrow-back";
+
+    // RTL-aware styles
+    const headerStyle = {
+      ...styles.header,
+      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+    };
+
+    const leftContainerStyle = {
+      ...styles.leftContainer,
+      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+    };
+
+    const titleStyle = {
+      ...styles.title,
+      textAlign: (isRTL ? 'right' : 'left') as 'left' | 'right',
+      marginLeft: onBackPress && !isRTL ? wp(2) : 0,
+      marginRight: onBackPress && isRTL ? wp(2) : 0,
+      flex: 1,
+    };
+
+    const backButtonStyle = {
+      ...styles.backButton,
+      alignItems: 'center' as const,
+    };
+
     return (
-      <View style={styles.header}>
-        <View style={styles.leftContainer}>
+      <View style={headerStyle}>
+        <View style={leftContainerStyle}>
           {onBackPress && (
             <TouchableOpacity
-              style={styles.backButton}
+              style={backButtonStyle}
               onPress={onBackPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={wp(7)} color={backButtonColor} />
+              <Ionicons name={backIconName} size={wp(7)} color={backButtonColor} />
             </TouchableOpacity>
           )}
           <Text
             style={[
-              styles.title,
+              titleStyle,
               fontWeightBold && styles.titleBold,
               fontSize !== undefined ? { fontSize } : null,
             ].filter(Boolean)}
+            numberOfLines={1}
           >
             {title}
           </Text>
         </View>
-
         {renderRightSide()}
       </View>
     );
@@ -127,6 +157,7 @@ const styles = StyleSheet.create({
     width: wp(12),
     height: wp(12),
     justifyContent: "center",
+    alignItems: "center",
   },
   title: {
     fontSize: wp(5),

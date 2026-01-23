@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { formatDateRange, calculateDays } from "../../utils";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { DailyPriceProperty } from "../../hooks/useDailyPrice";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface DailyBookingCardProps {
   property: DailyPriceProperty;
@@ -27,15 +28,44 @@ export interface DailyBookingCardProps {
  */
 const DailyBookingCard = memo<DailyBookingCardProps>(
   ({ property, selectedDates, onChooseDate, onReserve }) => {
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        fixedBottomCard: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        fixedCardText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        dateEditRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        selectedDateText: {
+          marginRight: isRTL ? 0 : wp(2),
+          marginLeft: isRTL ? wp(2) : 0,
+        },
+        priceInCard: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        reserveButton: {
+          marginLeft: isRTL ? 0 : wp(3),
+          marginRight: isRTL ? wp(3) : 0,
+        },
+      }),
+      [isRTL]
+    );
+    
     if (!selectedDates.startDate || !selectedDates.endDate) {
       return (
-        <View style={styles.fixedBottomCard}>
-          <Text style={styles.fixedCardText}>Choose date to see price</Text>
+        <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard]}>
+          <Text style={[styles.fixedCardText, rtlStyles.fixedCardText]}>{t("listings.chooseDateToSeePrice")}</Text>
           <TouchableOpacity
             style={styles.fixedChooseButton}
             onPress={onChooseDate}
           >
-            <Text style={styles.fixedChooseButtonText}>Choose</Text>
+            <Text style={styles.fixedChooseButtonText}>{t("listings.choose")}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -50,31 +80,31 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
     if (isMonthlyProperty) {
       if (days < 30) {
         total = property.monthlyPrice ?? 0;
-        priceText = `Monthly: ${total} SAR`;
+        priceText = `${t("listings.monthly")}: ${total} ${t("listings.sar")}`;
       } else {
         total = Math.round((property.dailyPrice ?? 0) * days);
-        priceText = `${days} days × ${property.dailyPrice} SAR = ${total} SAR`;
+        priceText = `${days} ${t("listings.days")} × ${property.dailyPrice} ${t("listings.sar")} = ${total} ${t("listings.sar")}`;
       }
     } else {
       total = Math.round((property.dailyPrice ?? 0) * days);
-      priceText = `${days} days × ${property.dailyPrice} SAR = ${total} SAR`;
+      priceText = `${days} ${t("listings.days")} × ${property.dailyPrice} ${t("listings.sar")} = ${total} ${t("listings.sar")}`;
     }
 
     return (
-      <View style={styles.fixedBottomCard}>
+      <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard]}>
         <View style={{ flex: 1 }}>
-          <View style={styles.dateEditRow}>
-            <Text style={styles.selectedDateText}>
-              {formatDateRange(selectedDates.startDate, selectedDates.endDate)}
+          <View style={[styles.dateEditRow, rtlStyles.dateEditRow]}>
+            <Text style={[styles.selectedDateText, rtlStyles.selectedDateText]}>
+              {formatDateRange(selectedDates.startDate, selectedDates.endDate, t, isRTL)}
             </Text>
             <TouchableOpacity onPress={onChooseDate}>
-              <Text style={styles.editText}>Edit</Text>
+              <Text style={styles.editText}>{t("common.edit")}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.priceInCard}>{priceText}</Text>
+          <Text style={[styles.priceInCard, rtlStyles.priceInCard]}>{priceText}</Text>
         </View>
-        <TouchableOpacity style={styles.reserveButton} onPress={onReserve}>
-          <Text style={styles.reserveButtonText}>Reserve</Text>
+        <TouchableOpacity style={[styles.reserveButton, rtlStyles.reserveButton]} onPress={onReserve}>
+          <Text style={styles.reserveButtonText}>{t("listings.reserve")}</Text>
         </TouchableOpacity>
       </View>
     );

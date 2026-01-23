@@ -28,6 +28,7 @@ import {
 } from "../../../../components";
 import { navigateToMapScreen } from "../../../../utils";
 import { COLORS } from "../../../../constants";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 type OwnerType = "individual" | "multi-agent" | "company";
@@ -81,6 +82,7 @@ interface FormFields {
 
 export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const [deedOwnerType, setDeedOwnerType] = useState<DeedOwnerType>("electronic");
   const [ownerType, setOwnerType] = useState<OwnerType>("individual");
 
@@ -109,50 +111,56 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const keyboardHeight = useRef(new Animated.Value(0)).current;
 
-  const deedOwnerOptions = ["Electronic/Eye Record", "Other"];
-  const ownerTypeOptions = ["Individual", "Multi/Agent", "Company"];
+  const deedOwnerOptions = useMemo(
+    () => [t("listings.electronicEyeRecord"), t("listings.other")],
+    [t]
+  );
+  const ownerTypeOptions = useMemo(
+    () => [t("listings.individual"), t("listings.multiAgent"), t("listings.company")],
+    [t]
+  );
 
   // Validation functions
   const validators = useMemo(() => ({
     deedNumber: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       const digitsOnly = value.replace(/\D/g, "");
       if (digitsOnly.length === 12 || digitsOnly.length === 16) return "";
-      return "Please enter the deed number (12 digits) or RER property number (16 digits)";
+      return t("listings.deedNumberError");
     },
     ownerId: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       const digitsOnly = value.replace(/\D/g, "");
       if (digitsOnly.length === 10) return "";
-      return "Please enter 10 digits owner ID number";
+      return t("listings.ownerIdError");
     },
     poaAgentId: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       const digitsOnly = value.replace(/\D/g, "");
       if (digitsOnly.length === 10) return "";
-      return "Please enter 10 digits POA agent ID number";
+      return t("listings.poaAgentIdError");
     },
     poaId: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       const digitsOnly = value.replace(/\D/g, "");
       if (digitsOnly.length >= 7 && digitsOnly.length <= 12) return "";
-      return "Please enter 7-12 digits POA ID number";
+      return t("listings.poaIdError");
     },
     unifiedCrNumber: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       const digitsOnly = value.replace(/\D/g, "");
       if (digitsOnly.length === 10) return "";
-      return "Please enter 10 digits owner ID number";
+      return t("listings.ownerIdError");
     },
     phone: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       return "";
     },
     birthdate: (value: string): string => {
-      if (!value.trim()) return "This field is required";
+      if (!value.trim()) return t("listings.thisFieldRequired");
       return "";
     },
-  }), []);
+  }), [t]);
 
   // Update field with syncing logic
   const updateField = useCallback((fieldName: keyof FormFields, value: string, validator?: (val: string) => string) => {
@@ -333,9 +341,9 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const openDatePicker = useCallback((type: "owner" | "agent" | "company") => {
     setActiveCalendarType(type);
     const titles = {
-      owner: "Owner Birthdate",
-      agent: "Agent Birthdate",
-      company: "Agent Birthdate",
+      owner: t("listings.ownerBirthdate"),
+      agent: t("listings.agentBirthdate"),
+      company: t("listings.agentBirthdate"),
     };
     setDatePickerTitle(titles[type]);
     
@@ -346,7 +354,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     };
     setTouched((prev) => ({ ...prev, [fieldNames[type]]: true }));
     setDatePickerVisible(true);
-  }, []);
+  }, [t]);
 
   const handleDateSelect = useCallback((formattedDate: string) => {
     // Update the active calendar type field, which will sync to all tabs
@@ -377,6 +385,48 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     }
   }, [activeCalendarType, updateField, validators]);
 
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      sectionLabel: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      label: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      textInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      phoneInputWrapper: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      countryCode: {
+        marginRight: isRTL ? 0 : wp(2),
+        marginLeft: isRTL ? wp(2) : 0,
+      },
+      phoneInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      dateSelector: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      dateText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      errorText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      contactLink: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      contactLinkText: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+    }),
+    [isRTL]
+  );
+
   // Render phone input with +966 prefix
   const renderPhoneInput = useCallback((
     label: string,
@@ -385,16 +435,17 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   ) => {
     return (
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
         <View style={[
           styles.phoneInputWrapper,
+          rtlStyles.phoneInputWrapper,
           focusedField === fieldName && styles.textInputFocused,
           focusedField !== fieldName && touched[fieldName] && errors[fieldName] && styles.textInputError,
         ]}>
-          <Text style={styles.countryCode}>+966</Text>
+          <Text style={[styles.countryCode, rtlStyles.countryCode]}>+966</Text>
           <TextInput
-            style={styles.phoneInput}
-            placeholder="Enter phone number"
+            style={[styles.phoneInput, rtlStyles.phoneInput]}
+            placeholder={t("listings.enterPhoneNumber")}
             value={value}
             onChangeText={(val) => {
               updateField(fieldName, val, validators.phone);
@@ -406,11 +457,11 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
           />
         </View>
         {touched[fieldName] && errors[fieldName] && (
-          <Text style={styles.errorText}>{errors[fieldName]}</Text>
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{errors[fieldName]}</Text>
         )}
       </View>
     );
-  }, [focusedField, touched, errors, updateField, validators]);
+  }, [focusedField, touched, errors, updateField, validators, t, rtlStyles]);
 
   // Render text input
   const renderTextInput = useCallback((
@@ -424,10 +475,11 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     const errorKeyToUse = errorKey || fieldName;
     return (
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
         <TextInput
           style={[
             styles.textInput,
+            rtlStyles.textInput,
             focusedField === fieldName && styles.textInputFocused,
             focusedField !== fieldName && touched[errorKeyToUse] && errors[errorKeyToUse] && styles.textInputError,
           ]}
@@ -441,11 +493,11 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
           onBlur={() => setFocusedField(null)}
         />
         {touched[errorKeyToUse] && errors[errorKeyToUse] && (
-          <Text style={styles.errorText}>{errors[errorKeyToUse]}</Text>
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{errors[errorKeyToUse]}</Text>
         )}
       </View>
     );
-  }, [focusedField, touched, errors, updateField]);
+  }, [focusedField, touched, errors, updateField, rtlStyles]);
 
   // Render date selector
   const renderDateSelector = useCallback((
@@ -456,61 +508,66 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   ) => {
     return (
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
         <TouchableOpacity
           style={[
             styles.dateSelector,
+            rtlStyles.dateSelector,
             touched[fieldName] && errors[fieldName] && styles.dateSelectorError,
           ]}
           onPress={() => openDatePicker(type)}
         >
-          <Text style={[styles.dateText, !value && styles.placeholderText]}>
-            {value || "Select date"}
+          <Text style={[styles.dateText, rtlStyles.dateText, !value && styles.placeholderText]}>
+            {value || t("listings.selectDate")}
           </Text>
-          <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
+          <Ionicons 
+            name={isRTL ? "chevron-up" : "chevron-down"} 
+            size={wp(5)} 
+            color={COLORS.primary} 
+          />
         </TouchableOpacity>
         {touched[fieldName] && errors[fieldName] && (
-          <Text style={styles.errorText}>{errors[fieldName]}</Text>
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{errors[fieldName]}</Text>
         )}
       </View>
     );
-  }, [touched, errors, openDatePicker]);
+  }, [touched, errors, openDatePicker, t, isRTL, rtlStyles]);
 
   // Render form fields based on owner type
   const renderFormFields = useMemo(() => {
     if (ownerType === "individual") {
       return (
         <>
-          {renderTextInput("Deed number", fields.deedNumber, "deedNumber", "Deed number", validators.deedNumber)}
-          {renderTextInput("Owner ID", fields.ownerId, "ownerId", "Enter here", validators.ownerId)}
-          {renderDateSelector("Owner Birthdate", fields.ownerBirthdate, "ownerBirthdate", "owner")}
-          {renderPhoneInput("Owner phone number", fields.ownerPhone, "ownerPhone")}
+          {renderTextInput(t("listings.deedNumber"), fields.deedNumber, "deedNumber", t("listings.deedNumber"), validators.deedNumber)}
+          {renderTextInput(t("listings.ownerId"), fields.ownerId, "ownerId", t("listings.enterHere"), validators.ownerId)}
+          {renderDateSelector(t("listings.ownerBirthdate"), fields.ownerBirthdate, "ownerBirthdate", "owner")}
+          {renderPhoneInput(t("listings.ownerPhoneNumber"), fields.ownerPhone, "ownerPhone")}
         </>
       );
     } else if (ownerType === "multi-agent") {
       return (
         <>
-          {renderTextInput("Deed number", fields.deedNumber, "deedNumber", "Deed number", validators.deedNumber, "deedNumber_ma")}
-          {renderTextInput("Owner ID number", fields.ownerIdNumber, "ownerIdNumber", "Enter here", validators.ownerId)}
-          {renderTextInput("POA Agent ID", fields.poaAgentId, "poaAgentId", "Enter here", validators.poaAgentId)}
-          {renderTextInput("POA ID", fields.poaId, "poaId", "Enter here", validators.poaId)}
-          {renderDateSelector("Agent Birthdate", fields.agentBirthdate, "agentBirthdate", "agent")}
-          {renderPhoneInput("Agent Phone Number", fields.agentPhone, "agentPhone")}
+          {renderTextInput(t("listings.deedNumber"), fields.deedNumber, "deedNumber", t("listings.deedNumber"), validators.deedNumber, "deedNumber_ma")}
+          {renderTextInput(t("listings.ownerIdNumber"), fields.ownerIdNumber, "ownerIdNumber", t("listings.enterHere"), validators.ownerId)}
+          {renderTextInput(t("listings.poaAgentId"), fields.poaAgentId, "poaAgentId", t("listings.enterHere"), validators.poaAgentId)}
+          {renderTextInput(t("listings.poaId"), fields.poaId, "poaId", t("listings.enterHere"), validators.poaId)}
+          {renderDateSelector(t("listings.agentBirthdate"), fields.agentBirthdate, "agentBirthdate", "agent")}
+          {renderPhoneInput(t("listings.agentPhoneNumber"), fields.agentPhone, "agentPhone")}
         </>
       );
     } else {
       return (
         <>
-          {renderTextInput("Deed number", fields.deedNumber, "deedNumber", "Deed number", validators.deedNumber, "companyDeedNumber")}
-          {renderTextInput("Unified CR number", fields.unifiedCrNumber, "unifiedCrNumber", "Enter here", validators.unifiedCrNumber)}
-          {renderTextInput("POA Agent ID", fields.poaAgentId, "poaAgentId", "Enter here", validators.poaAgentId, "companyPoaAgentId")}
-          {renderTextInput("POA ID", fields.poaId, "poaId", "Enter here", validators.poaId, "companyPoaId")}
-          {renderDateSelector("Agent Birthdate", fields.companyAgentBirthdate, "companyAgentBirthdate", "company")}
-          {renderPhoneInput("Agent Phone Number", fields.companyAgentPhone, "companyAgentPhone")}
+          {renderTextInput(t("listings.deedNumber"), fields.deedNumber, "deedNumber", t("listings.deedNumber"), validators.deedNumber, "companyDeedNumber")}
+          {renderTextInput(t("listings.unifiedCrNumber"), fields.unifiedCrNumber, "unifiedCrNumber", t("listings.enterHere"), validators.unifiedCrNumber)}
+          {renderTextInput(t("listings.poaAgentId"), fields.poaAgentId, "poaAgentId", t("listings.enterHere"), validators.poaAgentId, "companyPoaAgentId")}
+          {renderTextInput(t("listings.poaId"), fields.poaId, "poaId", t("listings.enterHere"), validators.poaId, "companyPoaId")}
+          {renderDateSelector(t("listings.agentBirthdate"), fields.companyAgentBirthdate, "companyAgentBirthdate", "company")}
+          {renderPhoneInput(t("listings.agentPhoneNumber"), fields.companyAgentPhone, "companyAgentPhone")}
         </>
       );
     }
-  }, [ownerType, fields, renderTextInput, renderDateSelector, renderPhoneInput, validators]);
+  }, [ownerType, fields, renderTextInput, renderDateSelector, renderPhoneInput, validators, t]);
 
   return (
     <View style={styles.container}>
@@ -522,7 +579,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
           <View style={styles.mainContainer}>
           <ScreenHeader
-            title="Add Listing"
+            title={t("listings.addListing")}
             onBackPress={handleBackPress}
             showRightSide={true}
             rightComponent={
@@ -543,8 +600,8 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.sectionLabel}>
-              Deed Owner Type (Property Ownership Document)
+            <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+              {t("listings.deedOwnerType")}
             </Text>
             <View style={styles.segmentedControlContainer}>
               <SegmentedControl
@@ -554,7 +611,9 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
               />
             </View>
 
-            <Text style={styles.sectionLabel}>Owner Type</Text>
+            <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+              {t("listings.ownerType")}
+            </Text>
             <View style={styles.segmentedControlContainer}>
               <SegmentedControl
                 options={ownerTypeOptions}
@@ -567,9 +626,11 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
 
             {renderFormFields}
 
-            <TouchableOpacity style={styles.contactLink}>
+            <TouchableOpacity style={[styles.contactLink, rtlStyles.contactLink]}>
               <Ionicons name="chatbubble-outline" size={wp(5)} color="#3b82f6" />
-              <Text style={styles.contactLinkText}>Have a question? Contact us</Text>
+              <Text style={[styles.contactLinkText, rtlStyles.contactLinkText]}>
+                {t("listings.haveQuestionContactUs")}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
           </View>
@@ -589,8 +650,8 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
             totalSteps={2}
             onBackPress={handleFooterBackPress}
             onNextPress={handleNextPress}
-            backText="Complete Later"
-            nextText="Next"
+            backText={t("listings.completeLater")}
+            nextText={t("listings.next")}
             nextDisabled={false}
           />
       </Animated.View>

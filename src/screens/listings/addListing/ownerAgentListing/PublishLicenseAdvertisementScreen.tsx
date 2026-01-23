@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -23,18 +23,61 @@ import {
 } from "../../../../components";
 import { navigateToMapScreen } from "../../../../utils";
 import { COLORS } from "../../../../constants";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const { t, isRTL } = useLocalization();
 
-  const steps = [
-    "Pay the service fee.",
-    "Add real estate deed and ownership information.",
-    "Approval of the real estate owner and agent on the Real Estate General Authority platform.",
-  ];
+  const steps = useMemo(
+    () => [
+      t("listings.step1PayFee"),
+      t("listings.step2AddDeed"),
+      t("listings.step3Approval"),
+    ],
+    [t]
+  );
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      heading: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      stepsTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      stepItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      bulletPoint: {
+        marginRight: isRTL ? 0 : wp(2),
+        marginLeft: isRTL ? wp(2) : 0,
+      },
+      stepText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      headerRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      headerText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      dataRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      dataText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      footerNote: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -68,7 +111,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <ScreenHeader
-        title="Publish & License Advertisement"
+        title={t("listings.publishLicenseAdvertisement")}
         onBackPress={handleBackPress}
         showRightSide={true}
         rightComponent={
@@ -101,17 +144,19 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
           </View>
 
           {/* Heading */}
-          <Text style={styles.heading}>
-            Bayt issues advertisement licenses for owners and agents
+          <Text style={[styles.heading, rtlStyles.heading]}>
+            {t("listings.baytIssuesLicenses")}
           </Text>
 
           {/* Steps Section */}
           <View style={styles.stepsContainer}>
-            <Text style={styles.stepsTitle}>Steps:</Text>
+            <Text style={[styles.stepsTitle, rtlStyles.stepsTitle]}>
+              {t("listings.steps")}
+            </Text>
             {steps.map((step, index) => (
-              <View key={index} style={styles.stepItem}>
-                <View style={styles.bulletPoint} />
-                <Text style={styles.stepText}>{step}</Text>
+              <View key={index} style={[styles.stepItem, rtlStyles.stepItem]}>
+                <View style={[styles.bulletPoint, rtlStyles.bulletPoint]} />
+                <Text style={[styles.stepText, rtlStyles.stepText]}>{step}</Text>
               </View>
             ))}
           </View>
@@ -119,24 +164,42 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
           {/* Table Section */}
           <View style={styles.tableContainer}>
             {/* Header Row */}
-            <View style={styles.headerRow}>
-              <Text style={styles.headerText}>Listing Type</Text>
-              <Text style={styles.headerText}>Price</Text>
-              <Text style={styles.headerText}>Commission</Text>
+            <View style={[styles.headerRow, rtlStyles.headerRow]}>
+              <Text style={[styles.headerText, rtlStyles.headerText]}>
+                {t("listings.listingType")}
+              </Text>
+              <Text style={[styles.headerText, rtlStyles.headerText]}>
+                {t("listings.price")}
+              </Text>
+              <Text style={[styles.headerText, rtlStyles.headerText]}>
+                {t("listings.commission")}
+              </Text>
             </View>
 
             {/* For Rent Row - with different background */}
-            <View style={[styles.dataRow, styles.rentRow]}>
-              <Text style={styles.dataText}>For Rent</Text>
-              <Text style={styles.dataText}>After details</Text>
-              <Text style={styles.dataText}>None</Text>
+            <View style={[styles.dataRow, styles.rentRow, rtlStyles.dataRow]}>
+              <Text style={[styles.dataText, rtlStyles.dataText]}>
+                {t("listings.forRent")}
+              </Text>
+              <Text style={[styles.dataText, rtlStyles.dataText]}>
+                {t("listings.afterDetails")}
+              </Text>
+              <Text style={[styles.dataText, rtlStyles.dataText]}>
+                {t("listings.none")}
+              </Text>
             </View>
 
             {/* For Sale Row */}
-            <View style={styles.dataRow}>
-              <Text style={styles.dataText}>For Sale</Text>
-              <Text style={styles.dataText}>After details</Text>
-              <Text style={styles.dataText}>None</Text>
+            <View style={[styles.dataRow, rtlStyles.dataRow]}>
+              <Text style={[styles.dataText, rtlStyles.dataText]}>
+                {t("listings.forSale")}
+              </Text>
+              <Text style={[styles.dataText, rtlStyles.dataText]}>
+                {t("listings.afterDetails")}
+              </Text>
+              <Text style={[styles.dataText, rtlStyles.dataText]}>
+                {t("listings.none")}
+              </Text>
             </View>
           </View>
 
@@ -150,7 +213,8 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
         totalSteps={2}
         onBackPress={handleFooterBackPress}
         onNextPress={handleNextPress}
-        nextText="Continue"
+        backText={t("common.back")}
+        nextText={t("auth.continue")}
         nextDisabled={false}
       />
 

@@ -20,13 +20,14 @@ import { COLORS } from "@/constants";
 import { SearchRequestData } from "@/context/searchRequest-context";
 import { findMatchingProperties } from "@/utils/propertyMatching";
 import { getMatchedCriteria } from "@/utils/criteriaMatching";
-import { getTypeLabelFromType, formatPrice } from "../../../../utils";
+import { getTypeLabelFromType, formatPrice, getTranslatedPropertyTypeLabel } from "../../../../utils";
 import {
   RENT_FILTER_OPTIONS,
   SALE_FILTER_OPTIONS,
   DAILY_FILTER_OPTIONS,
 } from "../../../../data/propertyData";
 import type { Property } from "../../../../types/property";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -39,6 +40,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
   const route = useRoute();
   const params = (route.params || {}) as RouteParams;
   const request = params.request;
+  const { t, isRTL } = useLocalization();
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const matchedProperties = useMemo(() => {
@@ -111,29 +113,31 @@ export default function MatchedListingsScreen(): React.JSX.Element {
   }, [matchedProperties, navigation]);
 
   const renderPropertyCard = useCallback((property: Property) => {
-    const typeLabel = getTypeLabel(property.type, property.listingType) || "Property";
+    // Use translated property type label
+    const title = getTranslatedPropertyTypeLabel(
+      property.type,
+      property.listingType as "rent" | "sale" | "daily",
+      t
+    ) || t("listings.property");
+    
     let priceLine = "";
-    let title = "";
 
     if (property.listingType === "daily") {
       const dailyProperty = property as any;
-      title = `${typeLabel} for daily rent`;
       const dailyPrice = dailyProperty.dailyPrice || 0;
-      priceLine = `${formatPrice(dailyPrice.toString())} SAR / Day`;
+      priceLine = `${formatPrice(dailyPrice.toString())} ${t("listings.sar")} / ${t("common.day")}`;
     } else if (property.listingType === "rent") {
-      title = `${typeLabel} for rent`;
       const rentProperty = property as any;
       const formattedPrice = rentProperty.price
         ? formatPrice(rentProperty.price)
         : "0";
-      priceLine = `${formattedPrice} SAR / Yearly`;
+      priceLine = `${formattedPrice} ${t("listings.sar")} / ${t("listings.yearly")}`;
     } else {
-      title = `${typeLabel} for sale`;
       const saleProperty = property as any;
       const formattedPrice = saleProperty.price
         ? formatPrice(saleProperty.price)
         : "0";
-      priceLine = `${formattedPrice} SAR`;
+      priceLine = `${formattedPrice} ${t("listings.sar")}`;
     }
 
     // Calculate matched criteria
@@ -150,20 +154,46 @@ export default function MatchedListingsScreen(): React.JSX.Element {
         matchedCriteria={matchedCriteria}
       />
     );
-  }, [getTypeLabel, handlePropertyPress, request]);
+  }, [t, handlePropertyPress, request]);
 
   const keyExtractor = useCallback((item: Property) => item.id.toString(), []);
 
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      header: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      headerTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      filterTabsWrapper: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      filterText: {
+        textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
+      },
+      emptyText: {
+        textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   const customHeader = (
-    <View style={styles.header}>
+    <View style={[styles.header, rtlStyles.header]}>
       <TouchableOpacity
         onPress={handleBackPress}
-        style={styles.backButton}
+        style={[styles.backButton, isRTL && styles.backButtonRTL]}
         activeOpacity={0.7}
       >
-        <Ionicons name="arrow-back" size={wp(6.5)} color={COLORS.backButton} />
+        <Ionicons 
+          name={isRTL ? "arrow-forward" : "arrow-back"} 
+          size={wp(6.5)} 
+          color={COLORS.backButton} 
+        />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Matched Listings</Text>
+      <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>{t("listings.matchedListings")}</Text>
       <View style={styles.headerRight} />
     </View>
   );
@@ -174,7 +204,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
 
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
-        <View style={styles.filterTabsWrapper}>
+        <View style={[styles.filterTabsWrapper, rtlStyles.filterTabsWrapper]}>
           <TouchableOpacity
             style={[
               styles.filterTab,
@@ -187,9 +217,10 @@ export default function MatchedListingsScreen(): React.JSX.Element {
               style={[
                 styles.filterText,
                 selectedFilter === "latest" && styles.filterTextActive,
+                rtlStyles.filterText,
               ]}
             >
-              Latest
+              {t("listings.latest")}
             </Text>
           </TouchableOpacity>
 
@@ -207,9 +238,10 @@ export default function MatchedListingsScreen(): React.JSX.Element {
               style={[
                 styles.filterText,
                 selectedFilter === "price" && styles.filterTextActive,
+                rtlStyles.filterText,
               ]}
             >
-              Price
+              {t("listings.price")}
             </Text>
           </TouchableOpacity>
 
@@ -227,9 +259,10 @@ export default function MatchedListingsScreen(): React.JSX.Element {
               style={[
                 styles.filterText,
                 selectedFilter === "nearest" && styles.filterTextActive,
+                rtlStyles.filterText,
               ]}
             >
-              Nearest
+              {t("listings.nearest")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -243,7 +276,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No matching properties found</Text>
+            <Text style={[styles.emptyText, rtlStyles.emptyText]}>{t("listings.noMatchingProperties")}</Text>
           </View>
         }
       />
@@ -282,6 +315,9 @@ const styles = StyleSheet.create({
     height: wp(12),
     justifyContent: "center",
     alignItems: "flex-start",
+  },
+  backButtonRTL: {
+    alignItems: "flex-end",
   },
   headerTitle: {
     fontSize: wp(5),

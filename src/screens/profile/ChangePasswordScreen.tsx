@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Animated,
+  TextStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,11 +19,13 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { ScreenHeader, TextInput } from "../../components";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function ChangePasswordScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -31,6 +34,13 @@ export default function ChangePasswordScreen(): React.JSX.Element {
   const [newPasswordTouched, setNewPasswordTouched] = useState<boolean>(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState<boolean>(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
+
+  const rtlStyles = useMemo(
+    () => ({
+      label: { textAlign: isRTL ? "right" : "left" },
+    }),
+    [isRTL]
+  );
 
   // Validation functions
   const validatePassword = (pwd: string): string => {
@@ -121,7 +131,7 @@ export default function ChangePasswordScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Change Password"
+        title={t("profile.changePassword", { defaultValue: "Change Password" })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
       />
@@ -141,12 +151,12 @@ export default function ChangePasswordScreen(): React.JSX.Element {
         >
           {/* Old Password Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Old password</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.oldPassword", { defaultValue: "Old password" })}</Text>
             <TextInput
               value={oldPassword}
               onChangeText={setOldPassword}
               onBlur={() => setOldPasswordTouched(true)}
-              placeholder="Enter old password"
+              placeholder={t("profile.enterOldPassword", { defaultValue: "Enter old password" })}
               isPassword={true}
               showFocusStates={true}
               containerStyle={styles.inputContainer}
@@ -157,12 +167,12 @@ export default function ChangePasswordScreen(): React.JSX.Element {
 
           {/* New Password Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>New password</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.newPassword", { defaultValue: "New password" })}</Text>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
               onBlur={() => setNewPasswordTouched(true)}
-              placeholder="Enter new password"
+              placeholder={t("profile.enterNewPassword", { defaultValue: "Enter new password" })}
               isPassword={true}
               showFocusStates={true}
               containerStyle={styles.inputContainer}
@@ -173,12 +183,12 @@ export default function ChangePasswordScreen(): React.JSX.Element {
 
           {/* Confirm Password Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Confirm password</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.confirmPassword", { defaultValue: "Confirm password" })}</Text>
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               onBlur={() => setConfirmPasswordTouched(true)}
-              placeholder="Confirm new password"
+              placeholder={t("profile.confirmNewPassword", { defaultValue: "Confirm new password" })}
               isPassword={true}
               showFocusStates={true}
               containerStyle={styles.inputContainer}
@@ -210,7 +220,7 @@ export default function ChangePasswordScreen(): React.JSX.Element {
           <Text style={[
             styles.saveButtonText,
             !isFormValid && styles.saveButtonTextDisabled
-          ]}>Save</Text>
+          ]}>{t("profile.save", { defaultValue: "Save" })}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>

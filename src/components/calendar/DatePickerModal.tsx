@@ -1,4 +1,4 @@
-import React, { memo, useState, useRef, useEffect, useCallback } from "react";
+import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface DatePickerModalProps {
   visible: boolean;
@@ -25,21 +26,117 @@ export interface DatePickerModalProps {
   initialDate?: Date;
 }
 
-// Constants for picker dimensions
+// Constants
 const ITEM_HEIGHT = hp(5);
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const SPACER_HEIGHT = ITEM_HEIGHT * 2;
+const SNAP_DELAY = 150;
+
+// Month names will be translated dynamically
+const MONTH_KEYS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
 
 /**
- * Date picker modal with smooth, controlled scrolling for month and year selection
+ * Professional Date Picker Modal with smooth scrolling
+ * Best practices: memoization, optimized scroll handling, clean architecture
  */
 const DatePickerModal = memo<DatePickerModalProps>(
   ({ visible, onClose, onDateSelect, title, initialDate }) => {
-    const currentDate = initialDate || new Date();
+    const { t, isRTL } = useLocalization();
+    const currentDate = useMemo(() => initialDate || new Date(), [initialDate]);
+    
+    // Get translated month names
+    const months = useMemo(
+      () => MONTH_KEYS.map((key) => t(`listings.calendar.months.${key}`)),
+      [t]
+    );
+    
+    // State
     const [selectedMonth, setSelectedMonth] = useState(() => currentDate.getMonth());
     const [selectedYear, setSelectedYear] = useState(() => currentDate.getFullYear());
     const [selectedDay, setSelectedDay] = useState(() => currentDate.getDate());
+
+    // Refs
+    const dayScrollRef = useRef<ScrollView | null>(null);
+    const monthScrollRef = useRef<ScrollView | null>(null);
+    const yearScrollRef = useRef<ScrollView | null>(null);
+    
+    const dayScrollTimeoutRef = useRef<number | null>(null);
+    const monthScrollTimeoutRef = useRef<number | null>(null);
+    const yearScrollTimeoutRef = useRef<number | null>(null);
+
+    // Generate years: 1900 to current year (ascending order)
+    const years = useMemo(() => {
+      const currentYear = new Date().getFullYear();
+      const startYear = 1900;
+      return Array.from(
+        { length: currentYear - startYear + 1 },
+        (_, i) => startYear + i
+      );
+    }, []);
+
+    // Calculate days in selected month
+    const daysInMonth = useMemo(
+      () => new Date(selectedYear, selectedMonth + 1, 0).getDate(),
+      [selectedYear, selectedMonth]
+    );
+
+    // Generate days array
+    const days = useMemo(
+      () => Array.from({ length: daysInMonth }, (_, i) => i + 1),
+      [daysInMonth]
+    );
+
+    // Update selected day when month/year changes
+    useEffect(() => {
+      if (selectedDay > daysInMonth) {
+        setSelectedDay(daysInMonth);
+      }
+    }, [selectedDay, daysInMonth]);
+
+    // Initialize scroll positions when modal opens
+    useEffect(() => {
+      if (!visible) return;
+
+      // Small delay to ensure modal is fully rendered
+      const timer = setTimeout(() => {
+        // Scroll to selected day
+        dayScrollRef.current?.scrollTo({
+          y: (selectedDay - 1) * ITEM_HEIGHT,
+          animated: false,
+        });
+
+        // Scroll to selected month
+        monthScrollRef.current?.scrollTo({
+          y: selectedMonth * ITEM_HEIGHT,
+          animated: false,
+        });
+
+        // Scroll to selected year
+        const yearIndex = years.indexOf(selectedYear);
+        if (yearIndex >= 0) {
+          yearScrollRef.current?.scrollTo({
+            y: yearIndex * ITEM_HEIGHT,
+            animated: false,
+          });
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }, [visible, selectedDay, selectedMonth, selectedYear, years]);
 
     // Update state when initialDate changes
     useEffect(() => {
@@ -50,292 +147,119 @@ const DatePickerModal = memo<DatePickerModalProps>(
       }
     }, [initialDate]);
 
-    const monthScrollRef = useRef<ScrollView | null>(null);
-    const yearScrollRef = useRef<ScrollView | null>(null);
-    const dayScrollRef = useRef<ScrollView | null>(null);
-
-    // Track if user is actively scrolling
-    const monthIsScrollingRef = useRef(false);
-    const yearIsScrollingRef = useRef(false);
-    const dayIsScrollingRef = useRef(false);
-
-    // Track scroll timeouts for debouncing
-    const monthScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const yearScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const dayScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-
-    // Generate years array - 100 years range centered around current year
-    const currentYear = currentDate.getFullYear();
-    const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i);
-    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-    // Update selected day if it exceeds days in month when month/year changes
+    // Cleanup timeouts on unmount
     useEffect(() => {
-      if (selectedDay > daysInMonth) {
-        const newDay = daysInMonth;
-        setSelectedDay(newDay);
-        setTimeout(() => {
-          if (!dayIsScrollingRef.current) {
-            dayScrollRef.current?.scrollTo({
-              y: (newDay - 1) * ITEM_HEIGHT,
-              animated: true,
-            });
+      return () => {
+        [dayScrollTimeoutRef, monthScrollTimeoutRef, yearScrollTimeoutRef].forEach(
+          (ref) => {
+            if (ref.current) clearTimeout(ref.current);
           }
-        }, 100);
-      }
-    }, [selectedMonth, selectedYear, daysInMonth, selectedDay]);
+        );
+      };
+    }, []);
 
-    // Initialize scroll positions when modal opens
-    useEffect(() => {
-      if (visible) {
-        const scrollTimeout = setTimeout(() => {
-          // Scroll to selected month
-          monthScrollRef.current?.scrollTo({
-            y: selectedMonth * ITEM_HEIGHT,
-            animated: false,
-          });
-
-          // Scroll to selected year
-          const yearIndex = years.findIndex((y) => y === selectedYear);
-          if (yearIndex >= 0) {
-            yearScrollRef.current?.scrollTo({
-              y: yearIndex * ITEM_HEIGHT,
-              animated: false,
-            });
-          }
-
-          // Scroll to selected day
-          dayScrollRef.current?.scrollTo({
-            y: (selectedDay - 1) * ITEM_HEIGHT,
-            animated: false,
-          });
-        }, 100);
-        return () => clearTimeout(scrollTimeout);
-      }
-    }, [visible, selectedMonth, selectedYear, selectedDay, years]);
-
-    const handleOk = () => {
-      const date = new Date(selectedYear, selectedMonth, selectedDay);
-      const formattedDate = `${String(selectedDay).padStart(2, "0")} / ${String(selectedMonth + 1).padStart(2, "0")} / ${selectedYear}`;
-      onDateSelect(formattedDate);
-      onClose();
-    };
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        pickerHeader: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        pickerHeaderText: {
+          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+        },
+        pickerContent: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        pickerItemText: {
+          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+        },
+      }),
+      [isRTL]
+    );
 
     /**
-     * Smooth snap-to-item function that prevents fast scrolling
+     * Snap scroll to nearest item
      */
-    const snapToItem = useCallback((
+    const snapToNearestItem = useCallback((
       scrollRef: React.RefObject<ScrollView | null>,
       y: number,
       itemCount: number,
-      onSelect: (index: number) => void,
-      isScrollingRef: React.MutableRefObject<boolean>,
-      timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-      isYearColumn: boolean = false
+      onSelect: (index: number) => void
     ) => {
-      // Calculate the nearest item index
       const index = Math.round(y / ITEM_HEIGHT);
       const clampedIndex = Math.max(0, Math.min(index, itemCount - 1));
       const targetY = clampedIndex * ITEM_HEIGHT;
 
-      // Clear any pending timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      // Update selection
       onSelect(clampedIndex);
 
-      // For year column, use faster animation and immediate snap
-      if (isYearColumn) {
-        isScrollingRef.current = true;
-        // Immediate snap with shorter animation
-        scrollRef.current?.scrollTo({
-          y: targetY,
-          animated: true,
-        });
-
-        // Reset scrolling flag quickly
-        timeoutRef.current = setTimeout(() => {
-          isScrollingRef.current = false;
-          // Ensure we're exactly on the item
-          scrollRef.current?.scrollTo({
-            y: targetY,
-            animated: false,
-          });
-        }, 200);
-      } else {
-        // Snap to position with smooth animation for other columns
-        isScrollingRef.current = true;
-        scrollRef.current?.scrollTo({
-          y: targetY,
-          animated: true,
-        });
-
-        // Reset scrolling flag after animation completes
-        timeoutRef.current = setTimeout(() => {
-          isScrollingRef.current = false;
-          // Ensure we're exactly on the item
-          scrollRef.current?.scrollTo({
-            y: targetY,
-            animated: false,
-          });
-        }, 300);
-      }
+      scrollRef.current?.scrollTo({
+        y: targetY,
+        animated: true,
+      });
     }, []);
 
     /**
-     * Handle scroll events with controlled snapping
+     * Handle scroll end with debounced snap
      */
-    const handleScroll = useCallback((
+    const handleScrollEnd = useCallback((
       event: NativeSyntheticEvent<NativeScrollEvent>,
+      scrollRef: React.RefObject<ScrollView | null>,
       itemCount: number,
       onSelect: (index: number) => void,
-      scrollRef: React.RefObject<ScrollView | null>,
-      isScrollingRef: React.MutableRefObject<boolean>,
-      timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-      isYearColumn: boolean = false
+      timeoutRef: { current: number | null }
     ) => {
-      // For year column, we don't need to do anything during scroll
-      // We'll handle snapping only on scroll end
-      if (isYearColumn) {
-        return;
-      }
-
       const y = event.nativeEvent.contentOffset.y;
-      
+
       // Clear existing timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
 
-      // For other columns, debounce the snap operation
+      // Debounce snap to prevent janky behavior
       timeoutRef.current = setTimeout(() => {
-        if (!isScrollingRef.current) {
-          snapToItem(scrollRef, y, itemCount, onSelect, isScrollingRef, timeoutRef);
-        }
-      }, 100);
-    }, [snapToItem]);
+        snapToNearestItem(scrollRef, y, itemCount, onSelect);
+      }, SNAP_DELAY);
+    }, [snapToNearestItem]);
 
     /**
-     * Handle scroll end (when user releases)
+     * Render picker column
      */
-    const handleScrollEnd = useCallback((
-      event: NativeSyntheticEvent<NativeScrollEvent>,
-      itemCount: number,
+    const renderPickerColumn = useCallback((
+      items: (string | number)[],
+      selectedIndex: number,
       onSelect: (index: number) => void,
       scrollRef: React.RefObject<ScrollView | null>,
-      isScrollingRef: React.MutableRefObject<boolean>,
-      timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-      isYearColumn: boolean = false
+      timeoutRef: { current: number | null }
     ) => {
-      const y = event.nativeEvent.contentOffset.y;
-      snapToItem(scrollRef, y, itemCount, onSelect, isScrollingRef, timeoutRef, isYearColumn);
-    }, [snapToItem]);
-
-    /**
-     * Render a picker column with controlled scrolling
-     */
-    const renderPickerColumn = (
-      items: (string | number)[],
-      selectedValue: number,
-      onSelect: (value: number) => void,
-      scrollRef: React.RefObject<ScrollView | null>,
-      isScrollingRef: React.MutableRefObject<boolean>,
-      timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-      getLabel: (item: string | number) => string = (item) => String(item),
-      isYearColumn: boolean = false
-    ) => {
-      // Use much higher decelerationRate for years (closer to 1.0 = less momentum)
-      // 0.998 means almost no momentum, making it very controlled and precise
-      // This allows one-by-one dragging without fast jumping
-      const decelerationRate = isYearColumn ? 0.998 : (Platform.OS === "ios" ? 0.92 : 0.95);
-
       return (
         <View style={styles.pickerColumn}>
           <ScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
-            decelerationRate={decelerationRate}
+            decelerationRate={Platform.OS === "ios" ? 0.92 : 0.95}
             scrollEventThrottle={16}
-            pagingEnabled={false}
             bounces={false}
-            onScrollBeginDrag={() => {
-              isScrollingRef.current = true;
-            }}
-            onScroll={(e) => {
-              handleScroll(e, items.length, onSelect, scrollRef, isScrollingRef, timeoutRef, isYearColumn);
-            }}
-            onScrollEndDrag={(e) => {
-              handleScrollEnd(e, items.length, onSelect, scrollRef, isScrollingRef, timeoutRef, isYearColumn);
-            }}
-            onMomentumScrollEnd={(e) => {
-              handleScrollEnd(e, items.length, onSelect, scrollRef, isScrollingRef, timeoutRef, isYearColumn);
-            }}
-            // Aggressively stop momentum for year column
-            onMomentumScrollBegin={(e) => {
-              isScrollingRef.current = true;
-              if (isYearColumn) {
-                // For years, immediately stop momentum scrolling by snapping to nearest item
-                const currentY = e.nativeEvent.contentOffset.y;
-                const index = Math.round(currentY / ITEM_HEIGHT);
-                const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-                const targetY = clampedIndex * ITEM_HEIGHT;
-                
-                // Clear any pending timeouts
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                }
-                
-                // Immediately snap to prevent any momentum
-                scrollRef.current?.scrollTo({
-                  y: targetY,
-                  animated: true,
-                });
-                
-                // Update selection
-                onSelect(clampedIndex);
-                
-                // Reset flag after snap
-                timeoutRef.current = setTimeout(() => {
-                  isScrollingRef.current = false;
-                  scrollRef.current?.scrollTo({
-                    y: targetY,
-                    animated: false,
-                  });
-                }, 200);
-              }
-            }}
+            onScrollEndDrag={(e) =>
+              handleScrollEnd(e, scrollRef, items.length, onSelect, timeoutRef)
+            }
+            onMomentumScrollEnd={(e) =>
+              handleScrollEnd(e, scrollRef, items.length, onSelect, timeoutRef)
+            }
           >
             <View style={{ height: SPACER_HEIGHT }} />
             {items.map((item, index) => {
-              const isSelected = index === selectedValue;
+              const isSelected = index === selectedIndex;
               return (
                 <View key={index} style={[styles.pickerItem, { height: ITEM_HEIGHT }]}>
                   <Text
                     style={[
                       styles.pickerItemText,
                       isSelected && styles.pickerItemTextSelected,
+                      rtlStyles.pickerItemText,
                     ]}
                   >
-                    {getLabel(item)}
+                    {String(item)}
                   </Text>
                 </View>
               );
@@ -344,7 +268,19 @@ const DatePickerModal = memo<DatePickerModalProps>(
           </ScrollView>
         </View>
       );
-    };
+    }, [handleScrollEnd, rtlStyles]);
+
+    const handleOk = useCallback(() => {
+      // Format date based on RTL: DD / MM / YYYY for both, but order columns differently
+      const formattedDate = `${String(selectedDay).padStart(2, "0")} / ${String(selectedMonth + 1).padStart(2, "0")} / ${selectedYear}`;
+      onDateSelect(formattedDate);
+      onClose();
+    }, [selectedDay, selectedMonth, selectedYear, onDateSelect, onClose]);
+
+    const yearIndex = useMemo(
+      () => years.indexOf(selectedYear),
+      [years, selectedYear]
+    );
 
     return (
       <Modal
@@ -360,46 +296,45 @@ const DatePickerModal = memo<DatePickerModalProps>(
             onPress={onClose}
           />
           <View style={styles.pickerContainer}>
-            <View style={styles.pickerHeader}>
+            <View style={[styles.pickerHeader, rtlStyles.pickerHeader]}>
               <TouchableOpacity onPress={onClose} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={wp(6)} color={COLORS.primary} />
+                <Ionicons 
+                  name={isRTL ? "arrow-forward" : "arrow-back"} 
+                  size={wp(6)} 
+                  color={COLORS.primary} 
+                />
               </TouchableOpacity>
-              <Text style={styles.pickerHeaderText}>{title}</Text>
+              <Text style={[styles.pickerHeaderText, rtlStyles.pickerHeaderText]}>
+                {title}
+              </Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
-                <Text style={styles.okButtonText}>Confirm</Text>
+                <Text style={styles.okButtonText}>
+                  {t("common.confirm")}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.pickerContent}>
+            <View style={[styles.pickerContent, rtlStyles.pickerContent]}>
               {renderPickerColumn(
                 days,
                 Math.min(selectedDay - 1, days.length - 1),
                 (index) => setSelectedDay(index + 1),
                 dayScrollRef,
-                dayIsScrollingRef,
-                dayScrollTimeoutRef,
-                undefined,
-                false
+                dayScrollTimeoutRef
               )}
               {renderPickerColumn(
                 months,
                 selectedMonth,
                 setSelectedMonth,
                 monthScrollRef,
-                monthIsScrollingRef,
-                monthScrollTimeoutRef,
-                undefined,
-                false
+                monthScrollTimeoutRef
               )}
               {renderPickerColumn(
                 years,
-                years.findIndex((y) => y === selectedYear),
+                yearIndex >= 0 ? yearIndex : 0,
                 (index) => setSelectedYear(years[index]),
                 yearScrollRef,
-                yearIsScrollingRef,
-                yearScrollTimeoutRef,
-                undefined,
-                true // Mark as year column for special handling
+                yearScrollTimeoutRef
               )}
             </View>
           </View>
@@ -449,6 +384,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#111827",
     marginHorizontal: wp(2),
+    textAlign: "center",
   },
   okButton: {
     backgroundColor: COLORS.okButton,

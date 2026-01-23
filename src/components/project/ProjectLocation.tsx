@@ -1,10 +1,11 @@
-import React, { memo } from "react";
+import React, { memo, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Platform,
+  AppState,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -13,37 +14,128 @@ import {
 } from "react-native-responsive-screen";
 import MapView, { Marker, Circle } from "react-native-maps";
 import type { ProjectProperty } from "../../types/property";
-import { COLORS } from "../../constants";
+import { COLORS, RIYADH_REGION } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 export interface ProjectLocationProps {
   project: ProjectProperty;
 }
+
+// Helper functions to validate coordinates
+const isValidCoordinate = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+};
+
+const isValidLongitude = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+};
 
 /**
  * Project location map component
  */
 const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
+  const { t, isRTL } = useLocalization();
+  const mapRef = useRef<MapView>(null);
+  const appState = useRef(AppState.currentState);
+  
+  // Validate coordinates and use fallback if invalid
+  const isValidLat = isValidCoordinate(project.lat);
+  const isValidLng = isValidLongitude(project.lng);
+  const hasValidCoords = isValidLat && isValidLng;
+
+  // Use fallback coordinates (Riyadh center) if project coordinates are invalid
+  const latitude = hasValidCoords ? project.lat : RIYADH_REGION.latitude;
+  const longitude = hasValidCoords ? project.lng : RIYADH_REGION.longitude;
+
+  // Handle app state changes to prevent MapView crashes on Android
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      getLocationButton: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      getLocationText: {
+        marginLeft: isRTL ? 0 : wp(2),
+        marginRight: isRTL ? wp(2) : 0,
+      },
+      errorText: {
+        textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+      },
+    }),
+    [isRTL]
+  );
+
+  // Don't render map if coordinates are completely invalid
+  if (!hasValidCoords) {
+    return (
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+          {t("projects.nearbyLandmarks")}
+        </Text>
+        <View style={styles.mapContainer}>
+          <View style={styles.errorContainer}>
+            <Text style={[styles.errorText, rtlStyles.errorText]}>
+              {t("listings.locationDataUnavailable")}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Nearby Landmarks</Text>
+      <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+        {t("projects.nearbyLandmarks")}
+      </Text>
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           style={styles.map}
           initialRegion={{
-            latitude: project.lat,
-            longitude: project.lng,
+            latitude,
+            longitude,
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
           }}
           provider={Platform.OS === "android" ? "google" : undefined}
           scrollEnabled={false}
           zoomEnabled={false}
+          liteMode={Platform.OS === "android"}
+          onMapReady={() => {
+            // Map is ready - safe to use
+          }}
         >
           <Marker
-            coordinate={{ latitude: project.lat, longitude: project.lng }}
+            coordinate={{ latitude, longitude }}
             pinColor={COLORS.PinColor}  
           />
           <Circle
-            center={{ latitude: project.lat, longitude: project.lng }}
+            center={{ latitude, longitude }}
             radius={1000}
             strokeColor="#0b7f33"
             fillColor="rgba(16, 185, 129, 0.2)"
@@ -109,7 +201,16 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: wp(4),
     fontWeight: "600",
-    marginLeft: wp(2),
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+  },
+  errorText: {
+    fontSize: wp(3.5),
+    color: "#6b7280",
   },
 });
 

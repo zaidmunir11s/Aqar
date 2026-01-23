@@ -1,15 +1,31 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export default function ProfileScreen(): React.JSX.Element {
+  const { t, isRTL } = useLocalization();
+
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      title: {
+        textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
+      },
+      subtitle: {
+        textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Profile Screen</Text>
-      <Text style={styles.subtitle}>Coming Soon</Text>
+      <Text style={[styles.title, rtlStyles.title]}>{t("navigation.profile")}</Text>
+      <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("common.comingSoon")}</Text>
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef } from "react";
+import React, { memo, useCallback, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from "react-native-responsive-screen";
 import { DetailRow } from "./PropertyInfo";
 import type { Property } from "../../types/property";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export type TabType = "main" | "additional" | "location";
 
@@ -27,27 +28,28 @@ export interface PropertyTabsProps {
  */
 const PropertyTabs = memo<PropertyTabsProps>(
   ({ activeTab, onTabChange, property, onCopyId }) => {
+    const { t, isRTL } = useLocalization();
     const tabScrollViewRef = useRef<ScrollView>(null);
 
-    const tabs = [
-      { id: "main" as TabType, label: "Listing Main details" },
-      { id: "additional" as TabType, label: "Additional Information" },
-      { id: "location" as TabType, label: "Location Details" },
-    ];
+    const tabs = useMemo(() => [
+      { id: "main" as TabType, label: t("listings.listingMainDetails") },
+      { id: "additional" as TabType, label: t("listings.additionalInformation") },
+      { id: "location" as TabType, label: t("listings.locationDetails") },
+    ], [t]);
 
     const renderMainTabContent = useCallback(() => {
       const mainDetails = [
         {
-          label: "Listing ID",
+          label: t("listings.listingId"),
           value: property.id.toString(),
           showCopy: true,
         },
-        { label: "Created At", value: "2025/12/01" },
-        { label: "License Number", value: "7200780161" },
-        { label: "Last updated", value: "2 hours ago" },
-        { label: "License Expiration Date", value: "01/12/2026" },
-        { label: "Source", value: "الهيئة العامة للعقار" },
-        { label: "Deed Area", value: `${property.area} m²` },
+        { label: t("listings.createdAt"), value: "2025/12/01" },
+        { label: t("listings.licenseNumber"), value: "7200780161" },
+        { label: t("listings.lastUpdated"), value: "2 hours ago" },
+        { label: t("listings.licenseExpirationDate"), value: "01/12/2026" },
+        { label: t("listings.source"), value: "الهيئة العامة للعقار" },
+        { label: t("listings.deedArea"), value: `${property.area} ${t("listings.m2")}` },
       ];
 
       return (
@@ -65,16 +67,16 @@ const PropertyTabs = memo<PropertyTabsProps>(
           ))}
         </View>
       );
-    }, [property, onCopyId]);
+    }, [property, onCopyId, t]);
 
     const renderAdditionalTabContent = useCallback(() => {
       const additionalDetails = [
-        { label: "Obligations", value: "لا يوجد" },
+        { label: t("listings.obligations"), value: "لا يوجد" },
         {
-          label: "Employee name",
+          label: t("listings.employeeName"),
           value: "محمد خالد بن عبد العزيز الجبير",
         },
-        { label: "Employee phone", value: "505419444" },
+        { label: t("listings.employeePhone"), value: "505419444" },
       ];
 
       return (
@@ -90,19 +92,19 @@ const PropertyTabs = memo<PropertyTabsProps>(
           ))}
         </View>
       );
-    }, []);
+    }, [t]);
 
     const renderLocationTabContent = useCallback(() => {
       const locationDetails = [
-        { label: "Region/Region Number", value: "منطقة الرياض" },
-        { label: "City/City Number", value: "الرياض" },
-        { label: "District/District Number", value: "أم الحمام الشرقي" },
+        { label: t("listings.regionRegionNumber"), value: "منطقة الرياض" },
+        { label: t("listings.cityCityNumber"), value: "الرياض" },
+        { label: t("listings.districtDistrictNumber"), value: "أم الحمام الشرقي" },
         {
-          label: "Street/Building Number",
+          label: t("listings.streetBuildingNumber"),
           value: "ابراهيم المروزي / 6234",
         },
-        { label: "Postal Code", value: "12321" },
-        { label: "Additional Number", value: "5860" },
+        { label: t("listings.postalCode"), value: "12321" },
+        { label: t("listings.additionalNumber"), value: "5860" },
       ];
 
       return (
@@ -118,7 +120,7 @@ const PropertyTabs = memo<PropertyTabsProps>(
           ))}
         </View>
       );
-    }, []);
+    }, [t]);
 
     return (
       <>
@@ -127,7 +129,10 @@ const PropertyTabs = memo<PropertyTabsProps>(
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.tabsContainer}
-          contentContainerStyle={styles.tabsContentContainer}
+          contentContainerStyle={[
+            styles.tabsContentContainer,
+            isRTL && styles.tabsContentContainerRTL,
+          ]}
         >
           {tabs.map((tab) => (
             <TouchableOpacity
@@ -195,6 +200,9 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     backgroundColor: "#ebf1f1",
+  },
+  tabsContentContainerRTL: {
+    flexDirection: "row-reverse",
   },
 });
 

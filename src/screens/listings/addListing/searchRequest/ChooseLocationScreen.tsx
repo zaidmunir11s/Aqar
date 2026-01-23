@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 } from "react-native-responsive-screen";
 import { ScreenHeader, ListingFooter, ToggleSwitch } from "../../../../components";
 import { COLORS, RIYADH_REGION } from "@/constants";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -21,11 +22,33 @@ interface RouteParams {
   orderFormData?: any;
 }
 
+// Helper functions to validate coordinates
+const isValidCoordinate = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -90 &&
+    value <= 90
+  );
+};
+
+const isValidLongitude = (value: number | undefined | null): boolean => {
+  return (
+    typeof value === "number" &&
+    !isNaN(value) &&
+    isFinite(value) &&
+    value >= -180 &&
+    value <= 180
+  );
+};
+
 export default function ChooseLocationScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = (route.params || {}) as RouteParams;
   const mapRef = useRef<MapView>(null);
+  const { t, isRTL } = useLocalization();
 
   // Selected location - tracks the center coordinate of the map
   const [selectedLocation, setSelectedLocation] = useState({
@@ -50,23 +73,51 @@ export default function ChooseLocationScreen(): React.JSX.Element {
     });
   };
 
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      toggleRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      toggleLabel: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+    }),
+    [isRTL]
+  );
+
   // Handle map region change (when user pans/zooms)
   // The marker is fixed at center visually, but we track the center coordinate
   // This ensures we always know the exact location the user is pointing at
   const handleRegionChangeComplete = (newRegion: typeof RIYADH_REGION) => {
-    // Update selected location to match the center of the map
-    // This is the location that will be used for property search
-    setSelectedLocation({
-      latitude: newRegion.latitude,
-      longitude: newRegion.longitude,
-    });
+    // Validate region before setting state
+    if (
+      isValidCoordinate(newRegion.latitude) &&
+      isValidLongitude(newRegion.longitude) &&
+      isValidCoordinate(newRegion.latitudeDelta) &&
+      isValidLongitude(newRegion.longitudeDelta) &&
+      newRegion.latitudeDelta > 0 &&
+      newRegion.longitudeDelta > 0
+    ) {
+      // Update selected location to match the center of the map
+      // This is the location that will be used for property search
+      setSelectedLocation({
+        latitude: newRegion.latitude,
+        longitude: newRegion.longitude,
+      });
+    }
   };
 
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <ScreenHeader
-        title="New Order"
+        title={t("listings.newOrder")}
         onBackPress={handleBackPress}
         fontWeightBold
         fontSize={wp(4.5)}
@@ -74,7 +125,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
 
       <View style={styles.content}>
         {/* Choose Location Title */}
-        <Text style={styles.sectionTitle}>Choose location</Text>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.chooseLocation")}</Text>
 
         {/* Interactive Map */}
         <View style={styles.mapContainer}>
@@ -105,17 +156,17 @@ export default function ChooseLocationScreen(): React.JSX.Element {
 
         {/* Toggle Options */}
         <View style={styles.togglesContainer}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>only ads with photo</Text>
+          <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
+            <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>{t("listings.onlyAdsWithPhoto")}</Text>
             <ToggleSwitch
               value={onlyAdsWithPhoto}
               onValueChange={setOnlyAdsWithPhoto}
             />
           </View>
 
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>
-              I would like the assist from Aqar application partners in the field research
+          <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
+            <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>
+              {t("listings.assistFromPartners")}
             </Text>
             <ToggleSwitch
               value={assistFromPartners}
@@ -133,6 +184,8 @@ export default function ChooseLocationScreen(): React.JSX.Element {
         onNextPress={handleNextPress}
         showBack={true}
         showNext={true}
+        backText={t("common.back")}
+        nextText={t("common.next")}
       />
     </View>
   );

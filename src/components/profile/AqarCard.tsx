@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface AqarCardProps {
   onPress?: () => void;
@@ -15,8 +16,26 @@ export interface AqarCardProps {
  * Aqar+ card component with icon, title, subtitle and chevron
  */
 const AqarCard = memo<AqarCardProps>(({ onPress }) => {
+  const { isRTL, t } = useLocalization();
+  const rtlStyles = useMemo(() => {
+    if (!isRTL) return {};
+    return {
+      card: {
+        flexDirection: "row-reverse" as const,
+      },
+      title: {
+        textAlign: "right" as const,
+      },
+      subtitle: {
+        textAlign: "right" as const,
+      },
+      chevron: {
+        marginRight: wp(2),
+      },
+    };
+  }, [isRTL]);
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.card, rtlStyles.card]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.iconContainer}>
         <Ionicons name="map" size={wp(8)} color="#fbbf24" />
         <Ionicons
@@ -30,14 +49,14 @@ const AqarCard = memo<AqarCardProps>(({ onPress }) => {
         </View>
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>Aqar+</Text>
-        <Text style={styles.subtitle}>Explore Aqar+ features</Text>
+        <Text style={[styles.title, rtlStyles.title]}>{t("common.bayt", { defaultValue: "Bayt" })}</Text>
+        <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("common.exploreBaytFeatures", { defaultValue: "Explore Bayt Features" })}</Text>
       </View>
       <Ionicons
-        name="chevron-forward"
+        name={isRTL ? "chevron-back" : "chevron-forward"}
         size={wp(5)}
         color={COLORS.textDisabled}
-        style={styles.chevron}
+        style={[styles.chevron, rtlStyles.chevron]}
       />
     </TouchableOpacity>
   );

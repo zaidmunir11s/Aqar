@@ -1,11 +1,12 @@
-import React, { memo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { memo, useMemo } from "react";
+  import { View, Text, StyleSheet, TouchableOpacity, FlexAlignType, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface MenuItemCardProps {
   title: string;
@@ -14,34 +15,42 @@ export interface MenuItemCardProps {
   showNewBadge?: boolean;
 }
 
-/**
- * Menu item card component with title, subtitle, optional badge and chevron
- */
 const MenuItemCard = memo<MenuItemCardProps>(
   ({ title, subtitle, onPress, showNewBadge = false }) => {
+    const { isRTL } = useLocalization();
+
+    const rtlStyles = useMemo(() => ({
+      content: { flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse" },
+      textContainer: {
+        marginRight: (isRTL ? 0 : wp(2)) as number,
+        marginLeft: (isRTL ? wp(2) : 0) as number,
+      },
+      titleRow: { flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse", alignItems: "center" as FlexAlignType, gap: wp(2) },
+      chevron: { marginLeft: (isRTL ? 0 : wp(2)) as number, marginRight: (isRTL ? wp(2) : 0) as number } as ViewStyle,
+      titleText: { textAlign: (isRTL ? "right" : "left") as "left" | "right" },
+      subtitleText: { textAlign: (isRTL ? "right" : "left") as "left" | "right" },
+    }), [isRTL]
+  );
+
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        <View style={styles.content}>
-          <View style={styles.textContainer}>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>{title}</Text>
+      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+        <View style={[styles.content, rtlStyles.content]}>
+          <View style={[styles.textContainer, rtlStyles.textContainer]}>
+            <View style={[styles.titleRow, rtlStyles.titleRow]}>
+              <Text style={[styles.title, rtlStyles.titleText]}>{title}</Text>
               {showNewBadge && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>New</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.subtitle}>{subtitle}</Text>
+            <Text style={[styles.subtitle, rtlStyles.subtitleText]}>{subtitle}</Text>
           </View>
           <Ionicons
-            name="chevron-forward"
+            name={isRTL ? "chevron-back" : "chevron-forward"}
             size={wp(5)}
             color={COLORS.textDisabled}
-            style={styles.chevron}
+            style={[styles.chevron, rtlStyles.chevron]}
           />
         </View>
       </TouchableOpacity>
@@ -58,7 +67,6 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.bgGray,
   },
   content: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: wp(4),
@@ -66,13 +74,9 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
-    marginRight: wp(2),
   },
   titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: hp(0.5),
-    gap: wp(2),
   },
   title: {
     fontSize: wp(4),
@@ -96,9 +100,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.primary,
   },
-  chevron: {
-    marginLeft: wp(2),
-  },
+  chevron: {},
 });
 
 export default MenuItemCard;

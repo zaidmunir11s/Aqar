@@ -222,21 +222,15 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
 
         {/* See All Photos Button */}
         {validImages.length > 0 && (
-        <TouchableOpacity
-          style={styles.seeAllPhotosBtn}
-          onPress={onImageViewerOpen}
-        >
-          <Ionicons name="images" size={wp(4.5)} color="#fff" />
-          <Text style={styles.seeAllPhotosText}>
-              {validImages.length} See all photos...
-          style={[styles.seeAllPhotosBtn, isRTL && styles.seeAllPhotosBtnRTL]}
-          onPress={onImageViewerOpen}
-        >
-          <Ionicons name="images" size={wp(4.5)} color="#fff" />
-          <Text style={[styles.seeAllPhotosText, isRTL && styles.seeAllPhotosTextRTL]}>
+          <TouchableOpacity
+            style={[styles.seeAllPhotosBtn, isRTL && styles.seeAllPhotosBtnRTL]}
+            onPress={onImageViewerOpen}
+          >
+            <Ionicons name="images" size={wp(4.5)} color="#fff" />
+            <Text style={[styles.seeAllPhotosText, isRTL && styles.seeAllPhotosTextRTL]}>
               {validImages.length} {t("listings.seeAllPhotos")}
-          </Text>
-        </TouchableOpacity>
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     );

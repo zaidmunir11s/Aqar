@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
   TouchableOpacity,
   Text,
@@ -14,6 +14,7 @@ import {
 } from "react-native-responsive-screen";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PrimaryButtonProps {
   onPress: () => void;
@@ -29,6 +30,18 @@ export interface PrimaryButtonProps {
  */
 const PrimaryButton = memo<PrimaryButtonProps>(
   ({ onPress, text, disabled = false, style, textStyle, showArrow = false }) => {
+    const { isRTL } = useLocalization();
+    
+    const rtlStyles = useMemo(
+      () => ({
+        arrowContainer: {
+          right: isRTL ? undefined : wp(1),
+          left: isRTL ? wp(1) : undefined,
+        },
+      }),
+      [isRTL]
+    );
+    
     return (
       <TouchableOpacity
         style={[styles.button, disabled && styles.buttonDisabled, style]}
@@ -42,9 +55,9 @@ const PrimaryButton = memo<PrimaryButtonProps>(
           textStyle
         ]}>{text}</Text>
         {showArrow && (
-          <View style={styles.arrowContainer}>
+          <View style={[styles.arrowContainer, rtlStyles.arrowContainer]}>
             <Ionicons 
-              name="arrow-forward" 
+              name={isRTL ? "arrow-back" : "arrow-forward"} 
               size={wp(5)} 
               color={disabled ? "#9ca3af" : COLORS.primary} 
             />

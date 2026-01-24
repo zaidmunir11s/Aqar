@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -6,6 +6,7 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { TextInput } from "../input";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PriceInputSectionProps {
   label: string;
@@ -27,17 +28,36 @@ const PriceInputSection = memo<PriceInputSectionProps>(
     toValue,
     onFromChange,
     onToChange,
-    fromPlaceholder = "From price",
-    toPlaceholder = "To price",
+    fromPlaceholder,
+    toPlaceholder,
   }) => {
+    const { t, isRTL } = useLocalization();
+    
+    // Use translated defaults if placeholders not provided
+    const defaultFromPlaceholder = fromPlaceholder || t("listings.fromPrice");
+    const defaultToPlaceholder = toPlaceholder || t("listings.toPrice");
+
+    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    const rtlStyles = useMemo(
+      () => ({
+        label: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        priceRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <View style={styles.section}>
-        <Text style={styles.label}>{label}</Text>
-        <View style={styles.priceRow}>
+        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
+        <View style={[styles.priceRow, rtlStyles.priceRow]}>
           <TextInput
             value={fromValue}
             onChangeText={onFromChange}
-            placeholder={fromPlaceholder}
+            placeholder={defaultFromPlaceholder}
             keyboardType="numeric"
             containerStyle={styles.priceInputContainer}
             inputWrapperStyle={styles.priceInput}
@@ -47,7 +67,7 @@ const PriceInputSection = memo<PriceInputSectionProps>(
           <TextInput
             value={toValue}
             onChangeText={onToChange}
-            placeholder={toPlaceholder}
+            placeholder={defaultToPlaceholder}
             keyboardType="numeric"
             containerStyle={styles.priceInputContainer}
             inputWrapperStyle={styles.priceInput}

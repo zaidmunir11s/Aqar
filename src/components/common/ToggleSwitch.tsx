@@ -5,6 +5,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ToggleSwitchProps {
   value: boolean;
@@ -29,6 +30,7 @@ const ToggleSwitch = memo<ToggleSwitchProps>(({
   trackHeight = hp(1.6),
   thumbSize = wp(6.5),
 }) => {
+  const { isRTL } = useLocalization();
   const animatedValue = React.useRef(new Animated.Value(value ? 1 : 0)).current;
 
   React.useEffect(() => {
@@ -45,10 +47,12 @@ const ToggleSwitch = memo<ToggleSwitchProps>(({
     outputRange: [trackOffColor, trackOnColor],
   });
 
-  // Dynamic thumb translation
+  // Dynamic thumb translation - reverse direction in RTL
   const thumbTranslateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [trackWidth - thumbSize, 0], // moves from right to left
+    outputRange: isRTL 
+      ? [0, trackWidth - thumbSize] // RTL: moves from left to right
+      : [trackWidth - thumbSize, 0], // LTR: moves from right to left
   });
 
   // Thumb color animation

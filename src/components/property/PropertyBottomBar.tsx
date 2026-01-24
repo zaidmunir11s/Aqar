@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PropertyBottomBarProps {
   canGoPrev: boolean;
@@ -33,11 +34,30 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
     isDailyListing = false,
   }) => {
     const insets = useSafeAreaInsets();
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        bottomBar: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        chatBtnWithText: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        chatButtonText: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
+      }),
+      [isRTL]
+    );
 
     return (
       <View
         style={[
           styles.bottomBar,
+          rtlStyles.bottomBar,
           // { paddingBottom: Math.max(insets.bottom, hp(1.5)) },
         ]}
       >
@@ -50,7 +70,7 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
           disabled={!canGoPrev}
         >
           <Ionicons
-            name="chevron-back"
+            name={isRTL ? "chevron-forward" : "chevron-back"}
             size={wp(6)}
             color={!canGoPrev ? "#a6abb4" : "#374151"}
           />
@@ -75,12 +95,12 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
         )}
 
         <TouchableOpacity
-          style={[styles.bottomBarBtn, styles.chatBtnBottom, isDailyListing && styles.chatBtnWithText]}
+          style={[styles.bottomBarBtn, styles.chatBtnBottom, isDailyListing && [styles.chatBtnWithText, rtlStyles.chatBtnWithText]]}
           onPress={onChat}
         >
           <MaterialIcons name="chat" size={wp(5.5)} color="#3b82f6" />
           {isDailyListing && (
-            <Text style={styles.chatButtonText}>Contact Advertiser</Text>
+            <Text style={[styles.chatButtonText, rtlStyles.chatButtonText]}>{t("listings.contactAdvertiser")}</Text>
           )}
         </TouchableOpacity>
 
@@ -93,7 +113,7 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
           disabled={!canGoNext}
         >
           <Ionicons
-            name="chevron-forward"
+            name={isRTL ? "chevron-back" : "chevron-forward"}
             size={wp(6)}
             color={!canGoNext ? "#a6abb4" : "#374151"}
           />
@@ -148,7 +168,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   chatBtnWithText: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: wp(3),
@@ -159,7 +178,6 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     color: "#3b82f6",
     fontWeight: "600",
-    marginLeft: wp(2),
   },
 });
 

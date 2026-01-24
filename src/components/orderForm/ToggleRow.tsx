@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -6,6 +6,7 @@ import {
 } from "react-native-responsive-screen";
 import { ToggleSwitch } from "../common";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ToggleRowProps {
   label: string;
@@ -17,9 +18,24 @@ export interface ToggleRowProps {
  * Reusable toggle row component
  */
 const ToggleRow = memo<ToggleRowProps>(({ label, value, onValueChange }) => {
+  const { isRTL } = useLocalization();
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      toggleRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      toggleLabel: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
-    <View style={styles.toggleRow}>
-      <Text style={styles.toggleLabel}>{label}</Text>
+    <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
+      <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>{label}</Text>
       <ToggleSwitch value={value} onValueChange={onValueChange} />
     </View>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -35,8 +35,42 @@ import {
   TabType,
   CategoryItem,
 } from "@/constants/categories";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
+
+/**
+ * Map category ID to translation key
+ */
+function getCategoryTranslationKey(categoryId: string): string {
+  const categoryMap: Record<string, string> = {
+    // For Sale
+    "sale-1": "listings.propertyTypes.villaForSale",
+    "sale-2": "listings.propertyTypes.landForSale",
+    "sale-3": "listings.propertyTypes.apartmentForSale",
+    "sale-4": "listings.propertyTypes.buildingForSale",
+    "sale-5": "listings.propertyTypes.smallHouseForSale",
+    "sale-6": "listings.propertyTypes.loungeForSale",
+    "sale-7": "listings.propertyTypes.farmForSale",
+    "sale-8": "listings.propertyTypes.storeForSale",
+    "sale-9": "listings.propertyTypes.floorForSale",
+    // For Rent
+    "rent-1": "listings.propertyTypes.apartmentForRent",
+    "rent-2": "listings.propertyTypes.villaForRent",
+    "rent-3": "listings.propertyTypes.bigFlatForRent",
+    "rent-4": "listings.propertyTypes.loungeForRent",
+    "rent-5": "listings.propertyTypes.smallHouseForRent",
+    "rent-6": "listings.propertyTypes.storeForRent",
+    "rent-7": "listings.propertyTypes.buildingForRent",
+    "rent-8": "listings.propertyTypes.landForRent",
+    "rent-9": "listings.propertyTypes.roomForRent",
+    "rent-10": "listings.propertyTypes.officeForRent",
+    "rent-11": "listings.propertyTypes.tentForRent",
+    "rent-12": "listings.propertyTypes.warehouseForRent",
+    "rent-13": "listings.propertyTypes.chaletForRent",
+  };
+  return categoryMap[categoryId] || "";
+}
 
 /* ---------------------------------- */
 /* CATEGORY MAP (SCALABLE & CLEAN)     */
@@ -49,12 +83,38 @@ const CATEGORY_MAP: Record<TabType, CategoryItem[]> = {
 
 export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const categories = CATEGORY_MAP[selectedTab];
+
+  // Translate tab options
+  const translatedTabs = useMemo(
+    () =>
+      CATEGORY_TABS.map((tab) => {
+        if (tab === "ALL") return t("listings.all");
+        if (tab === "For Sale") return t("listings.forSale");
+        if (tab === "For Rent") return t("listings.forRent");
+        return tab;
+      }),
+    [t]
+  );
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      categoryItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      categoryText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
 
   /* ------------------ */
   /* Navigation Handlers */
@@ -103,7 +163,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
         <View style={{ flex: 1 }}>
           {/* HEADER */}
           <ScreenHeader
-            title="Choose Category"
+            title={t("listings.chooseCategory")}
             onBackPress={handleBackPress}
             showRightSide
             rightComponent={
@@ -131,7 +191,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
 
             <View style={styles.tabBarContainer}>
               <SegmentedControl
-                options={CATEGORY_TABS}
+                options={translatedTabs}
                 selectedIndex={getSelectedTabIndex()}
                 onSelect={handleTabPress}
               />
@@ -147,6 +207,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
                     key={category.id}
                     style={[
                       styles.categoryItem,
+                      rtlStyles.categoryItem,
                       index % 2 === 0
                         ? styles.categoryItemWhite
                         : styles.categoryItemAlt,
@@ -160,14 +221,17 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
                     <Text
                       style={[
                         styles.categoryText,
+                        rtlStyles.categoryText,
                         selected && styles.categoryTextSelected,
                       ]}
                     >
-                      {category.text}
+                      {getCategoryTranslationKey(category.id)
+                        ? t(getCategoryTranslationKey(category.id))
+                        : category.text}
                     </Text>
 
                     <Ionicons
-                      name="chevron-forward"
+                      name={isRTL ? "chevron-back" : "chevron-forward"}
                       size={wp(5)}
                       color={selected ? "#fff" : COLORS.primary}
                     />
@@ -185,6 +249,8 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
         onBackPress={handleFooterBackPress}
         onNextPress={handleNextPress}
         nextDisabled={!selectedCategory}
+        backText={t("common.back")}
+        nextText={t("common.next")}
       />
 
       <CancelModal

@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -6,6 +6,7 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { PAYMENT_CHIPS } from "../../constants/orderFormOptions";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PaymentChipsProps {
   selectedPayment: string | null;
@@ -16,32 +17,68 @@ export interface PaymentChipsProps {
  * Payment chips component (horizontally scrollable)
  */
 const PaymentChips = memo<PaymentChipsProps>(({ selectedPayment, onSelect }) => {
+  const { t, isRTL } = useLocalization();
+
+  // Translate payment options and create mapping
+  const translatedPaymentOptions = useMemo(() => {
+    return PAYMENT_CHIPS.map((payment) => {
+      if (payment === "1 Payment") return t("listings.onePayment");
+      if (payment === "2 Payment") return t("listings.twoPayment");
+      if (payment === "4 Payment") return t("listings.fourPayment");
+      if (payment === "Monthly") return t("listings.monthly");
+      return payment;
+    });
+  }, [t]);
+
+  // Create reverse mapping (translated -> original)
+  const paymentReverseMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    PAYMENT_CHIPS.forEach((original, index) => {
+      map[translatedPaymentOptions[index]] = original;
+    });
+    return map;
+  }, [translatedPaymentOptions]);
+
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      chipsContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.chipsContainer}
+      contentContainerStyle={[styles.chipsContainer, rtlStyles.chipsContainer]}
     >
-      {PAYMENT_CHIPS.map((payment) => (
-        <TouchableOpacity
-          key={payment}
-          style={[
-            styles.chip,
-            selectedPayment === payment && styles.chipActive,
-          ]}
-          onPress={() => onSelect(payment)}
-          activeOpacity={0.7}
-        >
-          <Text
+      {translatedPaymentOptions.map((translatedPayment, index) => {
+        const originalPayment = PAYMENT_CHIPS[index];
+        const isSelected = selectedPayment === originalPayment;
+        return (
+          <TouchableOpacity
+            key={originalPayment}
             style={[
-              styles.chipText,
-              selectedPayment === payment && styles.chipTextActive,
+              styles.chip,
+              isSelected && styles.chipActive,
             ]}
+            onPress={() => onSelect(originalPayment)}
+            activeOpacity={0.7}
           >
-            {payment}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                styles.chipText,
+                isSelected && styles.chipTextActive,
+              ]}
+            >
+              {translatedPayment}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </ScrollView>
   );
 });

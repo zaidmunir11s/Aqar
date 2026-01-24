@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface SectionHeaderProps {
   title: string;
@@ -16,10 +17,22 @@ export interface SectionHeaderProps {
  * Reusable section header component with icon and title
  */
 const SectionHeader = memo<SectionHeaderProps>(({ title, iconName }) => {
+  const { isRTL } = useLocalization();
+  const rtlStyles = useMemo(() => {
+    if (!isRTL) return {};
+    return {
+      header: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      headerText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    };
+  }, [isRTL]);
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, rtlStyles.header]}>
       <Ionicons name={iconName} size={wp(5)} color={COLORS.textSecondary} />
-      <Text style={styles.headerText}>{title}</Text>
+      <Text style={[styles.headerText, rtlStyles.headerText]}>{title}</Text>
     </View>
   );
 });

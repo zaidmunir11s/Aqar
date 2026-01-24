@@ -17,9 +17,6 @@ export interface MenuListProps {
   items: MenuItem[];
 }
 
-/**
- * Menu list component that displays multiple menu items in a card container
- */
 const MenuList = memo<MenuListProps>(({ items }) => {
   return (
     <View style={styles.container}>
@@ -49,9 +46,3 @@ const styles = StyleSheet.create({
 });
 
 export default MenuList;
-
-
-
-
-
-

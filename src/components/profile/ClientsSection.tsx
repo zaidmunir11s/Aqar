@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -7,6 +7,7 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import SectionHeader from "./SectionHeader";
+import { useLocalization } from "@/hooks/useLocalization";
 
 export interface ClientsSectionProps {
   onMyClientsPress?: () => void;
@@ -16,20 +17,36 @@ export interface ClientsSectionProps {
  * Clients section component with header and My Clients menu item
  */
 const ClientsSection = memo<ClientsSectionProps>(({ onMyClientsPress }) => {
+  const { isRTL, t } = useLocalization();
+  const rtlStyles = useMemo(() => {
+    if (!isRTL) return {};
+    return {
+      card: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      cardText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      chevron: {
+        marginLeft: (isRTL ? 0 : wp(2)) as number,
+        marginRight: (isRTL ? wp(2) : 0) as number,
+      },
+    };
+  }, [isRTL]);
   return (
     <View style={styles.container}>
-      <SectionHeader title="Clients" iconName="people" />
+      <SectionHeader title={t("common.clients", { defaultValue: "Clients" })} iconName="people" />
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, rtlStyles.card]}
         onPress={onMyClientsPress}
         activeOpacity={0.7}
       >
-        <Text style={styles.cardText}>My Clients</Text>
+        <Text style={[styles.cardText, rtlStyles.cardText]}>{t("common.myClients", { defaultValue: "My Clients" })}</Text>
         <Ionicons
-          name="chevron-forward"
+          name={isRTL ? "chevron-back" : "chevron-forward"}
           size={wp(5)}
           color={COLORS.textDisabled}
-          style={styles.chevron}
+          style={[styles.chevron, rtlStyles.chevron]}
         />
       </TouchableOpacity>
     </View>

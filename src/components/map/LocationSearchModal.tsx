@@ -15,6 +15,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS, CITY_REGIONS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 // Get all cities from CITY_REGIONS (in original order)
 const SAUDI_CITIES = Object.keys(CITY_REGIONS);
@@ -32,8 +33,143 @@ export default function LocationSearchModal({
   onSelect,
   searchQuery = "",
 }: LocationSearchModalProps): React.JSX.Element {
+  const { t, isRTL } = useLocalization();
   const [searchText, setSearchText] = useState<string>(searchQuery);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+
+  // Helper function to translate city name
+  const translateCityName = useCallback((cityName: string): string => {
+    if (!cityName) return cityName;
+    
+    // Normalize city name for key matching
+    const normalized = cityName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/`/g, "")
+      .replace(/'/g, "")
+      .replace(/al\s+/gi, "al");
+    
+    // Map of city names to their translation keys
+    const cityKeyMap: { [key: string]: string } = {
+      // Major cities
+      "riyadh": "riyadh",
+      "jeddah": "jeddah",
+      "dammam": "dammam",
+      "alkhobar": "khobar",
+      "medina": "medina",
+      "macca": "mecca",
+      "buraydah": "buraidah",
+      "taif": "taif",
+      "jazan": "jazan",
+      "abha": "abha",
+      "khamismushait": "khamisMushait",
+      "hail": "hail",
+      "najran": "najran",
+      "yanbu": "yanbu",
+      "aljubail": "alJubail",
+      "tabuk": "tabuk",
+      "qatif": "qatif",
+      "alkharj": "kharj",
+      "hafralbatin": "hafrAlBatin",
+      "riyadhalkhabra": "riyadhAlKhabra",
+      // Additional cities
+      "alhofuf": "alHofuf",
+      "unayzah": "unayzah",
+      "albukayriyah": "albukayriyah",
+      "addiriyah": "addiriyah",
+      "dhahran": "dhahran",
+      "almajmaah": "almajmaah",
+      "ahadrufaidah": "ahadrufaidah",
+      "thadiq": "thadiq",
+      "alquwaiiyah": "alquwaiiyah",
+      "abuarish": "abuArish",
+      "albahah": "albahah",
+      "shaqra": "shaqra",
+      "thuwal": "thuwal",
+      "azzulfi": "azzulfi",
+      "arrass": "arrass",
+      "albadayea": "albadayea",
+      "buqayq": "buqayq",
+      "alduwadimi": "alduwadimi",
+      "nairyah": "nairyah",
+      "safwa": "safwa",
+      "muhayil": "muhayil",
+      "kingabdullaheconomiccity": "kingabdullaheconomiccity",
+      "rabigh": "rabigh",
+      "alhenakiyah": "alhenakiyah",
+      "almajaridah": "almajaridah",
+      "sabya": "sabya",
+      "annabhaniyah": "annabhaniyah",
+      "alqunfudhah": "alqunfudhah",
+      "baish": "baish",
+      "alhayathem": "alhayathem",
+      "alshinana": "alshinana",
+      "baqaa": "baqaa",
+      "alghazalah": "alghazalah",
+      "bisha": "bisha",
+      "howtatbanitamin": "howtatbanitamin",
+      "rumah": "rumah",
+      "saihat": "saihat",
+      "khafji": "khafji",
+      "arar": "arar",
+      "ahadalmasrihah": "ahad almasrihah",
+      "alghat": "alghat",
+      "almithnab": "al mithnab",
+      "alqatif": "qatif",
+      "aljumum": "aljumum",
+      "samtah": "samtah",
+      "addilam": "addilam",
+      "afif": "afif",
+      "ashshimasiyah": "ashshimasiyah",
+      "dumahaljandal": "dumah aljandal",
+      "rastanura": "rastanura",
+      "sakaka": "sakaka",
+      "turbah": "turbah",
+      "assulayyil": "assulayyil",
+      "allith": "allith",
+      "billasmar": "billasmar",
+      "tayma": "tayma",
+      "mahdadhahab": "mahd adhdhahab",
+      "aluyun": "aluyun",
+      "alkamil": "alkamil",
+      "tarout": "tarout",
+      "rafha": "rafha",
+      "sharorah": "sharorah",
+      "alula": "alula",
+      "turaif": "turaif",
+      "duba": "duba",
+      "alhariq": "alhariq",
+      "alkhurma": "alkhurma",
+      "tathleeth": "tathleeth",
+      "ranyah": "ranyah",
+      "alqurayyat": "alqurayyat",
+      "anak": "anak",
+      "alwajh": "alwajh",
+      "umluj": "umluj",
+      "alwadiah": "alwadiah",
+      "khaybar": "khaybar",
+      "badr": "badr",
+    };
+    
+    const translationKey = cityKeyMap[normalized];
+    if (translationKey) {
+      const translated = t(`listings.cities.${translationKey}`);
+      // If translation exists and is different from the key, use it
+      if (translated && translated !== `listings.cities.${translationKey}`) {
+        return translated;
+      }
+    }
+    
+    // Fallback: try direct lookup with normalized name
+    const directKey = `listings.cities.${normalized}`;
+    const directTranslation = t(directKey);
+    if (directTranslation && directTranslation !== directKey) {
+      return directTranslation;
+    }
+    
+    return cityName;
+  }, [t]);
 
   // Sync search query when modal opens
   useEffect(() => {
@@ -62,17 +198,19 @@ export default function LocationSearchModal({
   }, [onClose]);
 
   // Memoized city item component for better performance
-  const CityItem = memo<{ city: string; index: number; total: number; onSelect: (city: string) => void }>(
-    ({ city, index, total, onSelect }) => (
+  const CityItem = memo<{ city: string; index: number; total: number; onSelect: (city: string) => void; translateCity: (city: string) => string; isRTL: boolean }>(
+    ({ city, index, total, onSelect, translateCity, isRTL }) => (
       <View>
         <TouchableOpacity
-          style={styles.cityItem}
+          style={[styles.cityItem, isRTL && styles.cityItemRTL]}
           onPress={() => onSelect(city)}
           activeOpacity={0.7}
         >
-          <Text style={styles.cityText}>{city}</Text>
+          <Text style={[styles.cityText, isRTL && styles.cityTextRTL]}>
+            {translateCity(city)}
+          </Text>
         </TouchableOpacity>
-        {index < total - 1 && <View style={styles.divider} />}
+        {index < total - 1 && <View style={[styles.divider, isRTL && styles.dividerRTL]} />}
       </View>
     )
   );
@@ -80,9 +218,16 @@ export default function LocationSearchModal({
 
   const renderItem = useCallback(
     ({ item, index }: { item: string; index: number }) => (
-      <CityItem city={item} index={index} total={filteredCities.length} onSelect={handleSelect} />
+      <CityItem 
+        city={item} 
+        index={index} 
+        total={filteredCities.length} 
+        onSelect={handleSelect}
+        translateCity={translateCityName}
+        isRTL={isRTL}
+      />
     ),
-    [filteredCities.length, handleSelect]
+    [filteredCities.length, handleSelect, translateCityName, isRTL]
   );
 
   const keyExtractor = useCallback((item: string) => item, []);
@@ -111,21 +256,26 @@ export default function LocationSearchModal({
         />
         <View style={styles.modalContainer}>
           {/* Search Input */}
-          <View style={[styles.searchContainer, isFocused && styles.searchContainerFocused]}>
+          <View style={[
+            styles.searchContainer, 
+            isFocused && styles.searchContainerFocused,
+            isRTL && styles.searchContainerRTL
+          ]}>
             <TextInput
-              style={styles.searchInput}
-              placeholder="Search for a city..."
+              style={[styles.searchInput, isRTL && styles.searchInputRTL]}
+              placeholder={t("listings.searchForCity")}
               placeholderTextColor="#9ca3af"
               value={searchText}
               onChangeText={setSearchText}
               autoFocus={false}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
+              textAlign={isRTL ? "right" : "left"}
             />
             {searchText.length > 0 && (
               <TouchableOpacity
                 onPress={() => setSearchText("")}
-                style={styles.clearButton}
+                style={[styles.clearButton, isRTL && styles.clearButtonRTL]}
               >
                 <Ionicons name="close" size={wp(5)} color="#6b7280" />
               </TouchableOpacity>
@@ -136,7 +286,7 @@ export default function LocationSearchModal({
                   handleSelect(searchText.trim());
                 }
               }}
-              style={styles.searchIconButton}
+              style={[styles.searchIconButton, isRTL && styles.searchIconButtonRTL]}
             >
               <Ionicons name="search" size={wp(5)} color={COLORS.primary} />
             </TouchableOpacity>
@@ -150,7 +300,9 @@ export default function LocationSearchModal({
             getItemLayout={getItemLayout}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No cities found</Text>
+                <Text style={[styles.emptyText, isRTL && styles.emptyTextRTL]}>
+                  {t("listings.noCitiesFound")}
+                </Text>
               </View>
             }
             contentContainerStyle={styles.listContent}
@@ -201,6 +353,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  searchContainerRTL: {
+    flexDirection: "row-reverse",
+  },
   searchContainerFocused: {
     backgroundColor: COLORS.activeChipBackground,
     borderColor: COLORS.activeChipBorder,
@@ -212,12 +367,23 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingRight: wp(2),
   },
+  searchInputRTL: {
+    paddingRight: 0,
+    paddingLeft: wp(2),
+  },
   clearButton: {
     padding: wp(1),
     marginRight: wp(1),
   },
+  clearButtonRTL: {
+    marginRight: 0,
+    marginLeft: wp(1),
+  },
   searchIconButton: {
     padding: wp(1),
+  },
+  searchIconButtonRTL: {
+    // Icon position handled by flexDirection: row-reverse
   },
   listContent: {
     paddingHorizontal: wp(4),
@@ -227,14 +393,24 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.5),
     paddingHorizontal: wp(4),
   },
+  cityItemRTL: {
+    // RTL styles handled by text alignment
+  },
   cityText: {
     fontSize: wp(4),
     color: "#374151",
+  },
+  cityTextRTL: {
+    textAlign: "right",
   },
   divider: {
     height: 1,
     backgroundColor: "#e5e7eb",
     marginLeft: wp(4),
+  },
+  dividerRTL: {
+    marginLeft: 0,
+    marginRight: wp(4),
   },
   emptyContainer: {
     paddingVertical: hp(4),
@@ -243,6 +419,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: wp(4),
     color: "#9ca3af",
+  },
+  emptyTextRTL: {
+    textAlign: "right",
   },
 });
 

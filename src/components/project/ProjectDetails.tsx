@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import type { ProjectDetails as ProjectDetailsType } from "../../types/property";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ProjectDetailsProps {
   projectDetails: ProjectDetailsType;
@@ -17,12 +18,39 @@ export interface ProjectDetailsProps {
  */
 const ProjectDetails = memo<ProjectDetailsProps>(
   ({ projectDetails, isFirstSection = false }) => {
+    const { t, isRTL } = useLocalization();
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        sectionTitle: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        detailItem: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        detailIconContainer: {
+          marginRight: isRTL ? 0 : wp(3),
+          marginLeft: isRTL ? wp(3) : 0,
+        },
+        detailLabel: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        detailValue: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
+
     return (
       <View style={[styles.section, isFirstSection && styles.firstSection]}>
-        <Text style={styles.sectionTitle}>Details of available units</Text>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+          {t("projects.detailsOfAvailableUnits")}
+        </Text>
 
-        <View style={styles.detailItem}>
-          <View style={styles.detailIconContainer}>
+        <View style={[styles.detailItem, rtlStyles.detailItem]}>
+          <View style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}>
             <MaterialCommunityIcons
               name="office-building"
               size={wp(6)}
@@ -30,15 +58,17 @@ const ProjectDetails = memo<ProjectDetailsProps>(
             />
           </View>
           <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>Unit number</Text>
-            <Text style={styles.detailValue}>
-              {projectDetails.unitCount} Unit
+            <Text style={[styles.detailLabel, rtlStyles.detailLabel]}>
+              {t("projects.unitNumber")}
+            </Text>
+            <Text style={[styles.detailValue, rtlStyles.detailValue]}>
+              {projectDetails.unitCount} {t("projects.unit")}
             </Text>
           </View>
         </View>
 
-        <View style={styles.detailItem}>
-          <View style={styles.detailIconContainer}>
+        <View style={[styles.detailItem, rtlStyles.detailItem]}>
+          <View style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}>
             <MaterialCommunityIcons
               name="floor-plan"
               size={wp(6)}
@@ -46,15 +76,17 @@ const ProjectDetails = memo<ProjectDetailsProps>(
             />
           </View>
           <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>Areas</Text>
-            <Text style={styles.detailValue}>
-              From {projectDetails.minArea} m2 to {projectDetails.maxArea} m2
+            <Text style={[styles.detailLabel, rtlStyles.detailLabel]}>
+              {t("projects.areas")}
+            </Text>
+            <Text style={[styles.detailValue, rtlStyles.detailValue]}>
+              {t("projects.from")} {projectDetails.minArea} {t("listings.m2")} {t("projects.to")} {projectDetails.maxArea} {t("listings.m2")}
             </Text>
           </View>
         </View>
 
-        <View style={styles.detailItem}>
-          <View style={styles.detailIconContainer}>
+        <View style={[styles.detailItem, rtlStyles.detailItem]}>
+          <View style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}>
             <MaterialCommunityIcons
               name="cash-multiple"
               size={wp(6)}
@@ -62,10 +94,12 @@ const ProjectDetails = memo<ProjectDetailsProps>(
             />
           </View>
           <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>prices</Text>
-            <Text style={styles.detailValue}>
-              From {projectDetails.minPrice.toLocaleString()} SAR to{" "}
-              {projectDetails.maxPrice.toLocaleString()} SAR
+            <Text style={[styles.detailLabel, rtlStyles.detailLabel]}>
+              {t("projects.prices")}
+            </Text>
+            <Text style={[styles.detailValue, rtlStyles.detailValue]}>
+              {t("projects.from")} {projectDetails.minPrice.toLocaleString()} {t("listings.sar")} {t("projects.to")}{" "}
+              {projectDetails.maxPrice.toLocaleString()} {t("listings.sar")}
             </Text>
           </View>
         </View>
@@ -90,7 +124,6 @@ const styles = StyleSheet.create({
     marginBottom: hp(2),
   },
   detailItem: {
-    flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: hp(2.5),
   },
@@ -100,7 +133,6 @@ const styles = StyleSheet.create({
     borderRadius: wp(2),
     alignItems: "center",
     justifyContent: "center",
-    marginRight: wp(3),
   },
   detailContent: {
     flex: 1,

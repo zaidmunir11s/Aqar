@@ -22,6 +22,8 @@ import { ScreenHeader } from "../../components";
 import type { DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "@/constants";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -36,6 +38,7 @@ export default function ReserveScreen(): React.JSX.Element {
   const { propertyId, selectedDates } = params;
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t, isRTL } = useLocalization();
 
   const [isTermsAccepted, setIsTermsAccepted] = useState<boolean>(true); // Default checked
 
@@ -56,32 +59,133 @@ export default function ReserveScreen(): React.JSX.Element {
     console.log("Continue pressed");
   }, [isTermsAccepted]);
 
-  // Format dates for display
+  // Function to get translated property type label
+  const getPropertyTypeLabel = useCallback(() => {
+    if (!property) return "";
+    
+    const type = property.type?.toLowerCase() || "";
+    
+    // Map property types to translation keys
+    const typeMap: Record<string, string> = {
+      "apartment": "apartmentForBooking",
+      "villa": "villaForBooking",
+      "studio": "studioForBooking",
+      "chalet": "chaletForBooking",
+      "lounge": "chaletForBooking",
+      "tent": "tentForBooking",
+      "farm": "farmForBooking",
+      "hall": "hallForBooking",
+    };
+    
+    const translationKey = typeMap[type];
+    if (translationKey) {
+      return t(`listings.propertyTypes.${translationKey}`);
+    }
+    
+    // Fallback: try direct translation
+    const directKey = `listings.propertyTypes.${type}`;
+    const translated = t(directKey, { defaultValue: "" });
+    if (translated && translated !== directKey) {
+      return translated;
+    }
+    
+    // Final fallback: use the label from DAILY_FILTER_OPTIONS or property type
+    return DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)?.label || property.type;
+  }, [property, t]);
+
+  // Format dates for display (keep numbers as Western numerals, not Arabic-Indic)
   const formattedCheckIn = useMemo(() => {
-    if (!selectedDates?.startDate) return "Not selected";
+    if (!selectedDates?.startDate) return t("listings.notSelected");
     const date = new Date(selectedDates.startDate);
-    return date.toLocaleDateString("en-US", { 
+    const formatted = date.toLocaleDateString(isRTL ? "ar-SA" : "en-US", { 
       month: "short", 
       day: "numeric", 
       year: "numeric" 
     });
-  }, [selectedDates?.startDate]);
+    // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9) if needed
+    const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
+    return formatted.replace(/[٠-٩]/g, (d) => arabicIndic.indexOf(d).toString());
+  }, [selectedDates?.startDate, t, isRTL]);
 
   const formattedCheckOut = useMemo(() => {
-    if (!selectedDates?.endDate) return "Not selected";
+    if (!selectedDates?.endDate) return t("listings.notSelected");
     const date = new Date(selectedDates.endDate);
-    return date.toLocaleDateString("en-US", { 
+    const formatted = date.toLocaleDateString(isRTL ? "ar-SA" : "en-US", { 
       month: "short", 
       day: "numeric", 
       year: "numeric" 
     });
-  }, [selectedDates?.endDate]);
+    // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9) if needed
+    const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
+    return formatted.replace(/[٠-٩]/g, (d) => arabicIndic.indexOf(d).toString());
+  }, [selectedDates?.endDate, t, isRTL]);
 
   // Calculate nights
   const nights = useMemo(() => {
     if (!selectedDates?.startDate || !selectedDates?.endDate) return 0;
     return calculateDays(selectedDates.startDate, selectedDates.endDate);
   }, [selectedDates]);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      bookingTypeText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      contentRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      bottomCardImage: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      bottomTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      bottomMetaRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      bottomMetaItem: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        marginRight: isRTL ? 0 : wp(4),
+        marginLeft: isRTL ? wp(4) : 0,
+      },
+      bottomMetaText: {
+        marginLeft: isRTL ? 0 : wp(1),
+        marginRight: isRTL ? wp(1) : 0,
+      },
+      bottomAddress: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      ruleRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      ruleLeftSection: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      ruleLabel: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      ruleValue: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      checkboxContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      checkbox: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      checkboxText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      center: {
+        alignItems: "center" as const,
+        justifyContent: "center" as const,
+      },
+    }),
+    [isRTL]
+  );
 
   // Calculate total price based on selected dates
   const totalPrice = useMemo(() => {
@@ -106,9 +210,9 @@ export default function ReserveScreen(): React.JSX.Element {
   if (!property) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Reservation Summary" onBackPress={handleBackPress} />
-        <View style={styles.center}>
-          <Text>Property not found</Text>
+        <ScreenHeader title={t("listings.reservationSummary")} onBackPress={handleBackPress} />
+        <View style={[styles.center, rtlStyles.center]}>
+          <Text style={rtlStyles.ruleLabel}>{t("listings.propertyNotFound")}</Text>
         </View>
       </View>
     );
@@ -116,7 +220,7 @@ export default function ReserveScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Reservation Summary" onBackPress={handleBackPress} />
+      <ScreenHeader title={t("listings.reservationSummary")} onBackPress={handleBackPress} />
       
       <ScrollView
         style={styles.scrollView}
@@ -128,17 +232,17 @@ export default function ReserveScreen(): React.JSX.Element {
           <View style={styles.bookingCard}>
             {/* Booking Type on top */}
             <View style={styles.priceContainer}>
-              <Text style={[styles.bottomPrice, styles.bookingTypeText]}>
+              <Text style={[styles.bottomPrice, styles.bookingTypeText, rtlStyles.bookingTypeText]}>
                 {property.bookingType === "daily"
-                  ? "Daily"
+                  ? t("listings.daily")
                   : property.bookingType === "monthly"
-                    ? "Monthly"
-                    : "Weekly"}
+                    ? t("listings.monthly")
+                    : t("listings.weekly")}
               </Text>
             </View>
 
             {/* Image and details row */}
-            <View style={styles.contentRow}>
+            <View style={[styles.contentRow, rtlStyles.contentRow]}>
               <Image
                 source={{
                   uri:
@@ -146,41 +250,40 @@ export default function ReserveScreen(): React.JSX.Element {
                       ? property.images[0]
                       : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
                 }}
-                style={styles.bottomCardImage}
+                style={[styles.bottomCardImage, rtlStyles.bottomCardImage]}
                 resizeMode="cover"
               />
 
               <View style={styles.bottomCardContent}>
-                <Text style={styles.bottomTitle}>
-                  {DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)
-                    ?.label || property.type}
+                <Text style={[styles.bottomTitle, rtlStyles.bottomTitle]}>
+                  {getPropertyTypeLabel()}
                 </Text>
 
-                <View style={styles.bottomMetaRow}>
-                  <View style={styles.bottomMetaItem}>
+                <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
+                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                     <MaterialCommunityIcons
                       name="arrow-expand-horizontal"
                       size={wp(4)}
                       color="#9ca3af"
                     />
-                    <Text style={styles.bottomMetaText}>{property.area} m2</Text>
+                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>{property.area} {t("listings.m2")}</Text>
                   </View>
-                  <View style={styles.bottomMetaItem}>
+                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                     <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                    <Text style={styles.bottomMetaText}>
+                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
                       {property.bedrooms}
                     </Text>
                   </View>
-                  <View style={styles.bottomMetaItem}>
+                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                     <Ionicons name="person" size={wp(4)} color="#9ca3af" />
-                    <Text style={styles.bottomMetaText}>
-                      {property.usage === "family" ? "Family" : "Single"}
+                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
+                      {property.usage === "family" ? t("listings.family") : t("listings.single")}
                     </Text>
                   </View>
                 </View>
 
-                <Text numberOfLines={1} style={styles.bottomAddress}>
-                  {property.address}
+                <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.bottomAddress]}>
+                  {translateAddress(property.address, t)}
                 </Text>
               </View>
             </View>
@@ -191,65 +294,69 @@ export default function ReserveScreen(): React.JSX.Element {
         <View style={styles.reservationSection}>
           <View style={styles.rulesList}>
             <View style={styles.firstRow}>
-              <View style={[styles.ruleRow, { backgroundColor: "#fff" }]}>
-                <View style={styles.ruleLeftSection}>
-                  <Text style={styles.ruleLabel}>Check-in Date</Text>
+              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#fff" }]}>
+                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.checkInDate")}</Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={styles.ruleValue}>{formattedCheckIn}</Text>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{formattedCheckIn}</Text>
                 </View>
               </View>
             </View>
             <View>
-              <View style={[styles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
-                <View style={styles.ruleLeftSection}>
-                  <Text style={styles.ruleLabel}>Check-out Date</Text>
+              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
+                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.checkOutDate")}</Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={styles.ruleValue}>{formattedCheckOut}</Text>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{formattedCheckOut}</Text>
                 </View>
               </View>
             </View>
             <View>
-              <View style={[styles.ruleRow, { backgroundColor: "#fff" }]}>
-                <View style={styles.ruleLeftSection}>
-                  <Text style={styles.ruleLabel}>Night(s)</Text>
+              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#fff" }]}>
+                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.nights")}</Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={styles.ruleValue}>
-                    {nights > 0 ? `${nights} Night${nights > 1 ? "s" : ""}` : "0 Nights"}
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
+                    {nights > 0 
+                      ? nights === 1 
+                        ? `1 ${t("listings.night")}`
+                        : `${nights} ${t("listings.nights")}`
+                      : `0 ${t("listings.nights")}`}
                   </Text>
                 </View>
               </View>
             </View>
             <View>
-              <View style={[styles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
-                <View style={styles.ruleLeftSection}>
-                  <Text style={styles.ruleLabel}>Cancelation possibility</Text>
+              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
+                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.cancellationPossibility")}</Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={styles.ruleValue}>Nonrefundable</Text>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{t("listings.nonrefundable")}</Text>
                 </View>
               </View>
             </View>
             <View>
-              <View style={[styles.ruleRow, { backgroundColor: "#fff" }]}>
-                <View style={styles.ruleLeftSection}>
-                  <Text style={styles.ruleLabel}>Insurance Amount</Text>
+              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#fff" }]}>
+                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.insuranceAmount")}</Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={styles.ruleValue}>0 Riyals</Text>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>0 {t("listings.riyals")}</Text>
                 </View>
               </View>
             </View>
             <View style={styles.lastRow}>
-              <View style={[styles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
-                <View style={styles.ruleLeftSection}>
-                  <Text style={styles.ruleLabel}>Total price</Text>
+              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
+                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.totalPrice")}</Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={[styles.ruleValue, styles.totalPriceValue]}>
-                    {totalPrice > 0 ? `${totalPrice} SAR` : "0 SAR"}
+                  <Text style={[styles.ruleValue, styles.totalPriceValue, rtlStyles.ruleValue]}>
+                    {totalPrice > 0 ? `${totalPrice} ${t("listings.sar")}` : `0 ${t("listings.sar")}`}
                   </Text>
                 </View>
               </View>
@@ -258,11 +365,12 @@ export default function ReserveScreen(): React.JSX.Element {
         </View>
 
         {/* Terms and Conditions Checkbox */}
-        <View style={styles.checkboxContainer}>
+        <View style={[styles.checkboxContainer, rtlStyles.checkboxContainer]}>
           <TouchableOpacity
             style={[
               styles.checkbox,
               isTermsAccepted && styles.checkboxChecked,
+              rtlStyles.checkbox,
             ]}
             onPress={() => setIsTermsAccepted(!isTermsAccepted)}
             activeOpacity={0.7}
@@ -271,8 +379,8 @@ export default function ReserveScreen(): React.JSX.Element {
               <Ionicons name="checkmark" size={wp(4.5)} color="#fff" />
             )}
           </TouchableOpacity>
-          <Text style={styles.checkboxText}>
-            I accept the terms and conditions for the instant rental service.
+          <Text style={[styles.checkboxText, rtlStyles.checkboxText]}>
+            {t("listings.acceptTermsAndConditions")}
           </Text>
         </View>
       </ScrollView>
@@ -294,7 +402,7 @@ export default function ReserveScreen(): React.JSX.Element {
               !isTermsAccepted && styles.continueButtonTextDisabled,
             ]}
           >
-            Continue
+            {t("common.next")}
           </Text>
         </TouchableOpacity>
       </View>

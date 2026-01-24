@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -17,12 +17,14 @@ import { ScreenHeader } from "../../../../components";
 import { COLORS } from "@/constants";
 import { useSearchRequest } from "@/context/searchRequest-context";
 import SearchRequestCard from "../../../../components/searchRequest/SearchRequestCard";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function SearchRequestScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { requests, loadRequests, deleteRequest } = useSearchRequest();
+  const { t, isRTL } = useLocalization();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -48,11 +50,24 @@ export default function SearchRequestScreen(): React.JSX.Element {
     }
   };
 
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      newOrderText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      emptyText: {
+        textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <ScreenHeader
-        title="Requests"
+        title={t("listings.requests")}
         onBackPress={handleBackPress}
         showRightSide
         rightComponent={
@@ -61,7 +76,9 @@ export default function SearchRequestScreen(): React.JSX.Element {
             activeOpacity={0.7}
             style={styles.newOrderButton}
           >
-            <Text style={styles.newOrderText}>+ New Order</Text>
+            <Text style={[styles.newOrderText, rtlStyles.newOrderText]}>
+              + {t("listings.newOrder")}
+            </Text>
           </TouchableOpacity>
         }
         fontWeightBold
@@ -71,7 +88,9 @@ export default function SearchRequestScreen(): React.JSX.Element {
       {/* CONTENT */}
       {requests.length === 0 ? (
         <View style={styles.content}>
-          <Text style={styles.emptyText}>No previous orders subscriptions</Text>
+          <Text style={[styles.emptyText, rtlStyles.emptyText]}>
+            {t("listings.noPreviousOrders")}
+          </Text>
         </View>
       ) : (
         <ScrollView

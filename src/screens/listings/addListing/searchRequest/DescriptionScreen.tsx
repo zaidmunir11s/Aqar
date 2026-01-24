@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
 import { ScreenHeader, ListingFooter, TextInput } from "../../../../components";
 import { COLORS } from "@/constants";
 import { useSearchRequest } from "@/context/searchRequest-context";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -32,13 +33,31 @@ export default function DescriptionScreen(): React.JSX.Element {
   const route = useRoute();
   const params = (route.params || {}) as RouteParams;
   const { addRequest } = useSearchRequest();
+  const { t, isRTL } = useLocalization();
   
   const [description, setDescription] = useState("");
   const [showCategoryError, setShowCategoryError] = useState(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
+  const footerHeightValue = useRef(new Animated.Value(hp(12))).current; // Approximate footer height
 
   // Check if category is selected
   const isCategorySelected = !!params.orderFormData?.category;
+
+  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const rtlStyles = useMemo(
+    () => ({
+      sectionTitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      errorContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      errorText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -107,7 +126,7 @@ export default function DescriptionScreen(): React.JSX.Element {
     <View style={styles.container}>
       {/* HEADER */}
       <ScreenHeader
-        title="New Order"
+        title={t("listings.newOrder")}
         onBackPress={handleBackPress}
         fontWeightBold
         fontSize={wp(4.5)}
@@ -115,13 +134,13 @@ export default function DescriptionScreen(): React.JSX.Element {
 
       <View style={styles.content}>
         {/* Description Title */}
-        <Text style={styles.sectionTitle}>Description</Text>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.description")}</Text>
 
         {/* Text Input Field */}
           <TextInput
           value={description}
           onChangeText={setDescription}
-            placeholder="Please enter any additional details about the desired property"
+            placeholder={t("listings.descriptionPlaceholder")}
             multiline
             numberOfLines={10}
           containerStyle={styles.inputContainerStyle}
@@ -134,10 +153,18 @@ export default function DescriptionScreen(): React.JSX.Element {
 
       {/* Category Error Message - Positioned above footer */}
       {showCategoryError && (
-        <View style={styles.errorContainer}>
+        <Animated.View
+          style={[
+            styles.errorContainer,
+            rtlStyles.errorContainer,
+            {
+              bottom: Animated.add(keyboardHeight, footerHeightValue), // Position above footer
+            },
+          ]}
+        >
           <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
-          <Text style={styles.errorText}>Invalid Category</Text>
-        </View>
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{t("listings.invalidCategory")}</Text>
+        </Animated.View>
       )}
 
       {/* Footer */}
@@ -154,8 +181,8 @@ export default function DescriptionScreen(): React.JSX.Element {
           totalSteps={3}
           onBackPress={handleBackPress}
           onNextPress={handleSubmitPress}
-          backText="Back"
-          nextText="Submit"
+          backText={t("common.back")}
+          nextText={t("common.submit")}
           showBack={true}
           showNext={true}
         />
@@ -200,10 +227,11 @@ const styles = StyleSheet.create({
     minHeight: hp(40),
   },
   errorContainer: {
+    position: "absolute",
+    left: wp(5),
+    right: wp(5),
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: hp(1.5),
-    marginHorizontal: wp(5),
     paddingHorizontal: wp(4),
     paddingVertical: hp(1),
     backgroundColor: COLORS.bgRed,
@@ -211,6 +239,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.error,
     borderRadius: wp(2),
     gap: wp(2),
+    zIndex: 10,
   },
   errorText: {
     fontSize: wp(3.8),

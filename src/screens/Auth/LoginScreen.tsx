@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ViewStyle,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import {
@@ -21,11 +22,13 @@ import { useSSO, useAuth } from "@clerk/clerk-expo";
 import * as Linking from "expo-linking";
 import { PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
   const { isSignedIn, isLoaded } = useAuth();
   const { startSSOFlow } = useSSO();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
@@ -46,47 +49,75 @@ export default function LoginScreen(): React.JSX.Element {
     }
   }, [isLoaded, isSignedIn, navigation]);
 
-  const validatePhoneNumber = (phone: string): string => {
+  const validatePhoneNumber = useCallback((phone: string): string => {
     if (phone.trim().length === 0) {
-      return "Phone number is required";
+      return t("auth.phoneRequired");
     }
     if (!/^\d+$/.test(phone)) {
-      return "Invalid phone number";
+      return t("auth.invalidPhone");
     }
     return "";
-  };
+  }, [t]);
 
-  const validatePassword = (pwd: string): string => {
+  const validatePassword = useCallback((pwd: string): string => {
     if (pwd.trim().length === 0) {
-      return "Password is required";
+      return t("auth.passwordRequired");
     }
     if (pwd.length < 8) {
-      return "Invalid password";
+      return t("auth.invalidPassword");
     }
     if (!/[A-Z]/.test(pwd)) {
-      return "Invalid password";
+      return t("auth.invalidPassword");
     }
     if (!/[a-z]/.test(pwd)) {
-      return "Invalid password";
+      return t("auth.invalidPassword");
     }
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
-      return "Invalid password";
+      return t("auth.invalidPassword");
     }
     return "";
-  };
+  }, [t]);
 
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
   const [passwordErrorShown, setPasswordErrorShown] = useState<boolean>(false);
   const [storedPhoneError, setStoredPhoneError] = useState<string>("");
   const [storedPasswordError, setStoredPasswordError] = useState<string>("");
+  const passwordErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Validate and get translated error messages
   const phoneError = validatePhoneNumber(phoneNumber);
   const passwordError = validatePassword(password);
 
-  const displayPhoneError = phoneErrorShown ? storedPhoneError : "";
-  const displayPasswordError = passwordErrorShown ? storedPasswordError : "";
+  // Use current validation errors (translated) when shown, otherwise empty
+  // This ensures errors are always in the current language
+  const displayPhoneError = phoneErrorShown ? phoneError : "";
+  const displayPasswordError = passwordErrorShown ? passwordError : "";
   const isFormValid =
     phoneNumber.trim().length > 0 && password.trim().length > 0;
+
+  // Auto-hide password error after 2 seconds
+  useEffect(() => {
+    if (passwordErrorShown) {
+      // Clear any existing timeout
+      if (passwordErrorTimeoutRef.current) {
+        clearTimeout(passwordErrorTimeoutRef.current);
+      }
+      
+      // Set new timeout to hide error after 2 seconds
+      passwordErrorTimeoutRef.current = setTimeout(() => {
+        setPasswordErrorShown(false);
+        setStoredPasswordError("");
+      }, 2000);
+    }
+
+    // Cleanup timeout on unmount or when error changes
+    return () => {
+      if (passwordErrorTimeoutRef.current) {
+        clearTimeout(passwordErrorTimeoutRef.current);
+        passwordErrorTimeoutRef.current = null;
+      }
+    };
+  }, [passwordErrorShown]);
 
   const handlePhoneChange = useCallback((text: string) => {
     const filteredText = text.replace(/[^0-9]/g, "");
@@ -197,8 +228,8 @@ export default function LoginScreen(): React.JSX.Element {
       }
 
       Alert.alert(
-        "Login Error",
-        err?.errors?.[0]?.message || "Failed to sign in with Google"
+        t("auth.loginError"),
+        err?.errors?.[0]?.message || t("auth.failedToSignInWithGoogle")
       );
     } finally {
       setIsLoadingGoogle(false);
@@ -210,8 +241,8 @@ export default function LoginScreen(): React.JSX.Element {
     // TODO: Implement Apple login
   }, []);
 
-  const GoogleLogo = () => (
-    <View style={styles.googleLogoContainer}>
+  const GoogleLogo = ({ containerStyle }: { containerStyle?: ViewStyle }) => (
+    <View style={[styles.googleLogoContainer, containerStyle]}>
       <Svg width={wp(6)} height={wp(6)} viewBox="0 0 24 24">
         <Path
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -233,6 +264,52 @@ export default function LoginScreen(): React.JSX.Element {
     </View>
   );
 
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      closeButton: {
+        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+      },
+      title: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      subtitle: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      dividerContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      socialButton: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      socialIcon: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      googleLogoContainer: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      socialButtonText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      createAccountContainer: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      passwordInput: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      phoneInput: {
+        textAlign: "left" as "left", // Always left-aligned so cursor starts from left (after prefix)
+      },
+      forgotPasswordContainer: {
+        alignItems: (isRTL ? "flex-start" : "flex-end") as "flex-start" | "flex-end",
+      },
+    }),
+    [isRTL]
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -245,7 +322,7 @@ export default function LoginScreen(): React.JSX.Element {
         {/* Close Button */}
         <TouchableOpacity
           onPress={handleBackPress}
-          style={styles.closeButton}
+          style={[styles.closeButton, rtlStyles.closeButton]}
           activeOpacity={0.7}
         >
           <Ionicons name="close" size={wp(6)} color="#000" />
@@ -253,20 +330,21 @@ export default function LoginScreen(): React.JSX.Element {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Log in to Bayt</Text>
-          <Text style={styles.subtitle}>Verify to continue</Text>
+          <Text style={[styles.title, rtlStyles.title]}>{t("auth.loginToBayt")}</Text>
+          <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("auth.verifyToContinue")}</Text>
         </View>
 
         {/* Phone Number Input */}
         <TextInput
           value={phoneNumber}
           onChangeText={handlePhoneChange}
-          placeholder="Phone number"
+          placeholder={t("auth.phoneNumber")}
           prefix="+966"
           keyboardType="phone-pad"
           showFocusStates={true}
           containerStyle={styles.inputContainerNoMargin}
           inputWrapperStyle={styles.inputWrapperNoBottomRadius}
+          inputStyle={rtlStyles.phoneInput}
           error={displayPhoneError}
           touched={phoneErrorShown}
         />
@@ -275,7 +353,7 @@ export default function LoginScreen(): React.JSX.Element {
         <TextInput
           value={password}
           onChangeText={handlePasswordChange}
-          placeholder="Password"
+          placeholder={t("auth.password")}
           isPassword={true}
           showPasswordToggle={true}
           showFocusStates={true}
@@ -283,16 +361,19 @@ export default function LoginScreen(): React.JSX.Element {
           hideTopBorder={true}
           error={displayPasswordError}
           touched={passwordErrorShown}
-          rightAction={{
-            type: "text",
-            content: "Forgot your password?",
-            onPress: handleForgotPassword,
-          }}
+          inputStyle={rtlStyles.passwordInput}
         />
+
+        {/* Forgot Password Link */}
+        <View style={[styles.forgotPasswordContainer, rtlStyles.forgotPasswordContainer]}>
+          <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
+            <Text style={styles.forgotPasswordText}>{t("auth.forgotYourPassword")}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Login Button */}
         <PrimaryButton
-          text="Continue"
+          text={t("auth.continue")}
           onPress={handleLogin}
           disabled={!isFormValid}
           style={styles.loginButton}
@@ -300,9 +381,9 @@ export default function LoginScreen(): React.JSX.Element {
         />
 
         {/* Divider */}
-        <View style={styles.dividerContainer}>
+        <View style={[styles.dividerContainer, rtlStyles.dividerContainer]}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
+          <Text style={styles.dividerText}>{t("auth.or")}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -310,20 +391,21 @@ export default function LoginScreen(): React.JSX.Element {
         <TouchableOpacity
           style={[
             styles.socialButton,
+            rtlStyles.socialButton,
             isLoadingGoogle && styles.socialButtonDisabled,
           ]}
           onPress={handleGoogleLogin}
           activeOpacity={0.7}
           disabled={isLoadingGoogle}
         >
-          <GoogleLogo />
-          <Text style={styles.socialButtonText}>
-            {isLoadingGoogle ? "Signing in..." : "Continue with Google"}
+          <GoogleLogo containerStyle={rtlStyles.googleLogoContainer} />
+          <Text style={[styles.socialButtonText, rtlStyles.socialButtonText]}>
+            {isLoadingGoogle ? t("auth.signingIn") : t("auth.continueWithGoogle")}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.socialButton}
+          style={[styles.socialButton, rtlStyles.socialButton]}
           onPress={handleAppleLogin}
           activeOpacity={0.7}
         >
@@ -331,16 +413,18 @@ export default function LoginScreen(): React.JSX.Element {
             name="logo-apple"
             size={wp(6)}
             color="#000"
-            style={styles.socialIcon}
+            style={[styles.socialIcon, rtlStyles.socialIcon]}
           />
-          <Text style={styles.socialButtonText}>Continue with Apple</Text>
+          <Text style={[styles.socialButtonText, rtlStyles.socialButtonText]}>
+            {t("auth.continueWithApple")}
+          </Text>
         </TouchableOpacity>
 
         {/* Create Account Link */}
-        <View style={styles.createAccountContainer}>
-          <Text style={styles.createAccountText}>Don't have an account? </Text>
+        <View style={[styles.createAccountContainer, rtlStyles.createAccountContainer]}>
+          <Text style={styles.createAccountText}>{t("auth.dontHaveAccount")} </Text>
           <TouchableOpacity onPress={handleCreateAccount} activeOpacity={0.7}>
-            <Text style={styles.createAccountLink}>Create Account</Text>
+            <Text style={styles.createAccountLink}>{t("auth.createAccount")}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -389,6 +473,16 @@ const styles = StyleSheet.create({
   inputWrapperNoBottomRadius: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
+  },
+  forgotPasswordContainer: {
+    marginTop: hp(1.5),
+    marginBottom: hp(1),
+  },
+  forgotPasswordText: {
+    fontSize: wp(3.8),
+    color: COLORS.primary,
+    fontWeight: "500",
+    textDecorationLine: "underline",
   },
   loginButton: {
     marginTop: hp(3),

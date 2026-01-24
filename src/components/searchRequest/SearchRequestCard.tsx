@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { COLORS } from "../../constants";
 import { SearchRequestData } from "@/context/searchRequest-context";
 import { findMatchingProperties } from "@/utils/propertyMatching";
 import { DeleteConfirmationModal } from "../common";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface SearchRequestCardProps {
   request: SearchRequestData;
@@ -24,9 +25,61 @@ export interface SearchRequestCardProps {
 
 const SearchRequestCard = memo<SearchRequestCardProps>(
   ({ request, onDelete, onPress }) => {
+    const { t, isRTL } = useLocalization();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const matchedProperties = useMemo(() => findMatchingProperties(request), [request]);
     const matchCount = matchedProperties.length;
+
+    // Helper function to translate street direction
+    const translateStreetDirection = useCallback((direction: string): string => {
+      if (!direction) return "";
+      if (direction === "North") return t("listings.address.north");
+      if (direction === "East") return t("listings.address.east");
+      if (direction === "West") return t("listings.address.west");
+      if (direction === "South") return t("listings.address.south");
+      if (direction === "Northeast") return t("listings.northeast");
+      if (direction === "Southeast") return t("listings.southeast");
+      if (direction === "Southwest") return t("listings.southwest");
+      if (direction === "Northwest") return t("listings.northwest");
+      if (direction === "3 Streets") return t("listings.threeStreets");
+      if (direction === "4 Streets") return t("listings.fourStreets");
+      return direction;
+    }, [t]);
+
+    // Helper function to translate villa type
+    const translateVillaType = useCallback((type: string): string => {
+      if (!type) return "";
+      if (type === "Standalone") return t("listings.standalone");
+      if (type === "Duplex") return t("listings.duplex");
+      if (type === "Townhouse") return t("listings.townhouse");
+      return type;
+    }, [t]);
+
+    // Helper function to translate rent period
+    const translateRentPeriod = useCallback((period: string): string => {
+      if (!period) return "";
+      if (period === "Yearly") return t("listings.yearly");
+      if (period === "Monthly") return t("listings.monthly");
+      return period;
+    }, [t]);
+
+    // Helper function to translate street width (handles "More than X" format)
+    const translateStreetWidth = useCallback((width: string): string => {
+      if (!width) return "";
+      if (width.startsWith("More than")) {
+        const widthValue = width.match(/\d+/)?.[0] || "";
+        return t("listings.moreThan", { width: widthValue });
+      }
+      return width;
+    }, [t]);
+
+    // Helper function to translate "All" option
+    const translateAll = useCallback((value: string): string => {
+      if (value === "ALL" || value === "All") {
+        return t("listings.all");
+      }
+      return value;
+    }, [t]);
 
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
@@ -63,7 +116,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
                    orderData.landPriceTo || orderData.roomPriceTo || 
                    orderData.officePriceTo || orderData.tentPriceTo || 
                    orderData.warehousePriceTo || orderData.chaletPriceTo || "∞";
-        return `${from} - ${to} Riyals`;
+        return `${from} - ${to} ${t("listings.riyals")}`;
       }
       return null;
     };
@@ -74,14 +127,22 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       iconLibrary?: "Ionicons" | "MaterialCommunityIcons" | "FontAwesome";
     }
 
-    const getChips = (): ChipData[] => {
+    const getChips = useMemo((): ChipData[] => {
       const orderData = request.orderFormData || {};
       const chips: ChipData[] = [];
 
       // Age
       if (orderData.age && orderData.age !== "ALL") {
+        // Extract years from "Less than X years" or "Less than X year" format
+        let years = orderData.age;
+        if (orderData.age.startsWith("Less than")) {
+          const yearMatch = orderData.age.match(/\d+/)?.[0];
+          if (yearMatch) {
+            years = yearMatch;
+          }
+        }
         chips.push({
-          label: `Less than ${orderData.age} years`,
+          label: t("listings.lessThanYears", { years }),
           icon: "business-outline",
           iconLibrary: "Ionicons",
         });
@@ -101,7 +162,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       // WC
       if (orderData.selectedWc) {
         chips.push({
-          label: orderData.selectedWc === "ALL" ? "All" : orderData.selectedWc,
+          label: translateAll(orderData.selectedWc),
           icon: "water-outline",
           iconLibrary: "Ionicons",
         });
@@ -110,7 +171,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       // Living Rooms
       if (orderData.selectedLivingRoom) {
         chips.push({
-          label: orderData.selectedLivingRoom === "ALL" ? "All" : orderData.selectedLivingRoom,
+          label: translateAll(orderData.selectedLivingRoom),
           icon: "sofa",
           iconLibrary: "MaterialCommunityIcons",
         });
@@ -119,7 +180,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       // Bedrooms
       if (orderData.selectedBedroom) {
         chips.push({
-          label: orderData.selectedBedroom === "ALL" ? "All" : orderData.selectedBedroom,
+          label: translateAll(orderData.selectedBedroom),
           icon: "bed-outline",
           iconLibrary: "Ionicons",
         });
@@ -134,7 +195,8 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
                          orderData.smallHouseStreetDirection || orderData.buildingStreetDirection ||
                          orderData.villaRentStreetDirection || orderData.smallHouseRentStreetDirection ||
                          orderData.buildingRentStreetDirection || orderData.landRentStreetDirection;
-        chips.push({ label: `Street direction ${direction}` });
+        const translatedDirection = translateStreetDirection(direction);
+        chips.push({ label: t("listings.streetDirectionLabel", { direction: translatedDirection }) });
       }
 
       // Street width
@@ -150,40 +212,42 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
                      orderData.smallHouseRentStreetWidth || orderData.storeRentStreetWidth ||
                      orderData.buildingRentStreetWidth || orderData.landRentStreetWidth ||
                      orderData.officeRentStreetWidth || orderData.warehouseRentStreetWidth;
-        chips.push({ label: `Street width ${width}` });
+        const translatedWidth = translateStreetWidth(width);
+        chips.push({ label: t("listings.streetWidthLabel", { width: translatedWidth }) });
       }
 
       // Villa Type
       if (orderData.selectedVillaType) {
-        chips.push({ label: `Villa Type ${orderData.selectedVillaType || "undefined"}` });
+        const translatedVillaType = translateVillaType(orderData.selectedVillaType);
+        chips.push({ label: t("listings.villaTypeLabel", { type: translatedVillaType }) });
       }
 
       // Features (individual chips)
-      if (orderData.stairs) chips.push({ label: "Stairs" });
+      if (orderData.stairs) chips.push({ label: t("listings.stairs") });
       if (orderData.pool || orderData.loungeRentPool || orderData.chaletRentPool) {
-        chips.push({ label: "Pool" });
+        chips.push({ label: t("listings.pool") });
       }
       if (orderData.kitchen || orderData.loungeRentKitchen || orderData.smallHouseRentKitchen ||
           orderData.roomRentKitchen || orderData.chaletRentKitchen) {
-        chips.push({ label: "Kitchen" });
+        chips.push({ label: t("listings.kitchen") });
       }
       if (orderData.furnished || orderData.villaFurnished || orderData.smallHouseFurnished ||
           orderData.smallHouseRentFurnished || orderData.officeRentFurnished) {
-        chips.push({ label: "Furnished" });
+        chips.push({ label: t("listings.furnished") });
       }
       if (orderData.maidRoom || orderData.villaRentMaidRoom) {
-        chips.push({ label: "Maid room" });
+        chips.push({ label: t("listings.maidRoom") });
       }
       if (orderData.basement || orderData.villaRentBasement) {
-        chips.push({ label: "Basement" });
+        chips.push({ label: t("listings.basement") });
       }
       if (orderData.driverRoom || orderData.villaRentDriverRoom) {
-        chips.push({ label: "Driver room" });
+        chips.push({ label: t("listings.driverRoom") });
       }
       if (orderData.airConditioned || orderData.villaRentAirConditioned ||
           orderData.bigFlatAirConditioned || orderData.apartmentSaleAirConditioned) {
         chips.push({
-          label: "Air conditioned",
+          label: t("listings.airConditioned"),
           icon: "snow-outline",
           iconLibrary: "Ionicons",
         });
@@ -191,18 +255,55 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
 
       // Rent Period
       if (orderData.rentPeriod && orderData.rentPeriod !== "ALL") {
+        const translatedPeriod = translateRentPeriod(orderData.rentPeriod);
         chips.push({
-          label: `Rent Period ${orderData.rentPeriod}`,
+          label: t("listings.rentPeriodLabel", { period: translatedPeriod }),
           icon: "calendar-outline",
           iconLibrary: "Ionicons",
         });
       }
 
       return chips;
-    };
+    }, [request.orderFormData, t, translateStreetDirection, translateVillaType, translateRentPeriod, translateStreetWidth, translateAll]);
 
     const priceRange = getPriceRange();
-    const chips = getChips();
+    const chips = getChips;
+
+    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    const rtlStyles = useMemo(
+      () => ({
+        topRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        description: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          marginRight: isRTL ? 0 : wp(2),
+          marginLeft: isRTL ? wp(2) : 0,
+        },
+        chipsContainer: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        chip: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        matchedSection: {
+          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        },
+        matchedLabel: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        matchedValue: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        matchedChip: {
+          alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        },
+        priceRange: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
 
     const renderIcon = (chip: ChipData) => {
       if (!chip.icon) return null;
@@ -240,9 +341,9 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
     return (
       <View style={styles.card}>
         {/* Top Row: Description and Delete Button */}
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, rtlStyles.topRow]}>
           {request.description ? (
-            <Text style={styles.description} numberOfLines={2}>
+            <Text style={[styles.description, rtlStyles.description]} numberOfLines={2}>
               {request.description}
             </Text>
           ) : (
@@ -263,14 +364,14 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
 
         {/* Price Range - Only show if available */}
         {priceRange && (
-          <Text style={styles.priceRange}>{priceRange}</Text>
+          <Text style={[styles.priceRange, rtlStyles.priceRange]}>{priceRange}</Text>
         )}
 
         {/* Chips */}
         {chips.length > 0 && (
-          <View style={styles.chipsContainer}>
+          <View style={[styles.chipsContainer, rtlStyles.chipsContainer]}>
             {chips.map((chip, index) => (
-              <View key={index} style={styles.chip}>
+              <View key={index} style={[styles.chip, rtlStyles.chip]}>
                 {renderIcon(chip)}
                 <Text style={styles.chipText}>{chip.label}</Text>
               </View>
@@ -279,19 +380,19 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         )}
 
         {/* Matched Listings */}
-        <View style={styles.matchedSection}>
-          <Text style={styles.matchedLabel}>Matched Listings</Text>
+        <View style={[styles.matchedSection, rtlStyles.matchedSection]}>
+          <Text style={[styles.matchedLabel, rtlStyles.matchedLabel]}>{t("listings.matchedListings")}</Text>
           {matchCount > 0 ? (
             <TouchableOpacity
-              style={styles.matchedChip}
+              style={[styles.matchedChip, rtlStyles.matchedChip]}
               onPress={() => onPress && onPress(request, matchCount)}
               activeOpacity={0.5}
             >
               <Ionicons name="list-outline" size={wp(5.5)} color={"#fff000"} />
-              <Text style={styles.matchedChipText}>ALL({matchCount})</Text>
+              <Text style={styles.matchedChipText}>{t("listings.all")}({matchCount})</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.matchedValue}>Not available</Text>
+            <Text style={[styles.matchedValue, rtlStyles.matchedValue]}>{t("listings.notAvailable")}</Text>
           )}
         </View>
 

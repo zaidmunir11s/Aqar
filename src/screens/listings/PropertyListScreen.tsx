@@ -52,6 +52,7 @@ import { COLORS, CITY_REGIONS } from "../../constants";
 import { useCalendar, useBookingModal } from "../../hooks";
 import type { Property, ProjectProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -67,7 +68,7 @@ interface RouteParams {
 // Module-level variables to preserve filter state across navigation resets
 let preservedFilter: string | null = null;
 let preservedDates: CalendarDates = { startDate: null, endDate: null };
-let preservedCity: string = "City";
+let preservedCity: string = "";
 let preservedSearchFilters: SearchFilterState | null = null;
 
 // Export getter and setter functions to access preserved filters from other modules
@@ -94,6 +95,7 @@ export default function PropertyListScreen(): React.JSX.Element {
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
   const navigation = useNavigation<NavigationProp>();
+  const { t, isRTL } = useLocalization();
 
   const listingType = params?.listingType || "daily";
   const properties = useMemo(() => {
@@ -151,7 +153,7 @@ export default function PropertyListScreen(): React.JSX.Element {
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
   const [selectedCity, setSelectedCity] = useState<string>(
-    params?.selectedCity || preservedCity || "City"
+    params?.selectedCity || preservedCity || t("listings.city")
   );
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
@@ -173,11 +175,11 @@ export default function PropertyListScreen(): React.JSX.Element {
     } else if (
       !params?.selectedCity &&
       preservedCity &&
-      preservedCity !== "City"
+      preservedCity !== t("listings.city")
     ) {
       setSelectedCity(preservedCity);
     }
-  }, [params?.selectedCity]);
+  }, [params?.selectedCity, t]);
 
   useEffect(() => {
     if (params?.searchFilters) {
@@ -189,10 +191,10 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, [params?.searchFilters]);
 
   useEffect(() => {
-    if (selectedCity && selectedCity !== "City") {
+    if (selectedCity && selectedCity !== t("listings.city")) {
       preservedCity = selectedCity;
     }
-  }, [selectedCity]);
+  }, [selectedCity, t]);
 
   const initialDates = selectedDatesFromParams ||
     preservedDates || { startDate: null, endDate: null };
@@ -255,11 +257,13 @@ export default function PropertyListScreen(): React.JSX.Element {
     ) {
       return formatDateRange(
         effectiveSelectedDates.startDate,
-        effectiveSelectedDates.endDate
+        effectiveSelectedDates.endDate,
+        t,
+        isRTL
       );
     }
-    return "Choose Reservation";
-  }, [listingType, effectiveSelectedDates]);
+    return t("listings.chooseReservation");
+  }, [listingType, effectiveSelectedDates, t]);
 
   const calculateDailyPrice = useCallback(
     (property: Property) => {
@@ -280,6 +284,27 @@ export default function PropertyListScreen(): React.JSX.Element {
     [effectiveSelectedDates]
   );
 
+  // Helper function to translate property type
+  const getTranslatedTypeLabel = useCallback(
+    (type: string, filterOptions: any[]) => {
+      const opt = filterOptions.find((o) => o.type === type);
+      if (!opt) return type;
+      
+      // Try to find translation in propertyTypes
+      const translationKey = `listings.propertyTypes.${type}`;
+      const translated = t(translationKey);
+      
+      // If translation exists and is different from the key, use it
+      if (translated && translated !== translationKey) {
+        return translated;
+      }
+      
+      // Fallback to filter option label
+      return opt.label;
+    },
+    [t]
+  );
+
   const getTypeLabel = useCallback(
     (type: string) => {
       let filterOptions;
@@ -287,9 +312,9 @@ export default function PropertyListScreen(): React.JSX.Element {
       else if (listingType === "sale") filterOptions = SALE_FILTER_OPTIONS;
       else filterOptions = DAILY_FILTER_OPTIONS;
 
-      return getTypeLabelFromType(type, filterOptions);
+      return getTranslatedTypeLabel(type, filterOptions);
     },
-    [listingType]
+    [listingType, getTranslatedTypeLabel]
   );
 
   const handlePropertyPress = useCallback(
@@ -328,7 +353,7 @@ export default function PropertyListScreen(): React.JSX.Element {
         shouldZoomOut: true,
         selectedDates: effectiveSelectedDates,
         selectedFilter: selectedFilter,
-        selectedCity: selectedCity !== "City" ? selectedCity : undefined,
+        selectedCity: selectedCity !== t("listings.city") ? selectedCity : undefined,
         searchFilters: searchFilters,
       });
     } else if (listingType === "projects") {
@@ -345,6 +370,8 @@ export default function PropertyListScreen(): React.JSX.Element {
     effectiveSelectedDates,
     selectedFilter,
     selectedCity,
+    searchFilters,
+    t,
   ]);
 
   const handleFilterPress = useCallback(
@@ -399,13 +426,62 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, []);
 
   const handleSearchFilters = useCallback(
-    (filters: SearchFilterState, count: number) => {
+    (filters: SearchFilterState | null, count: number, shouldClose?: boolean) => {
       preservedSearchFilters = filters;
       setSearchFilters(filters);
-      setFilterModalVisible(false);
+      // Only close modal if explicitly requested (when user presses search button)
+      if (shouldClose) {
+        setFilterModalVisible(false);
+      }
     },
     []
   );
+
+  // Count active filters - price range counts as 1, property type counts as 1, all sub-options count separately
+  const activeFilterCount = useMemo(() => {
+    if (!searchFilters || listingType !== "daily") return 0;
+    let count = 0;
+    
+    // Price range counts as 1 filter (if either from or to is set)
+    if (searchFilters.fromPrice !== "" || searchFilters.toPrice !== "") {
+      count++;
+    }
+    
+    // Property type counts as 1 filter
+    if (searchFilters.selectedPropertyType !== null) {
+      count++;
+      
+      // Only count sub-options if property type is selected
+      // Usage type
+      if (searchFilters.usageType !== null) count++;
+      
+      // Bedrooms
+      if (searchFilters.bedrooms !== "" && searchFilters.bedrooms !== "All") count++;
+      
+      // Living rooms
+      if (searchFilters.livingRooms !== "" && searchFilters.livingRooms !== "All") count++;
+      
+      // WC
+      if (searchFilters.wc !== "" && searchFilters.wc !== "All") count++;
+      
+      // Villa type
+      if (searchFilters.villaType !== null) count++;
+      
+      // Count boolean filters
+      const booleanFilters = [
+        "furnished", "carEntrance", "airConditioned", "privateRoof",
+        "apartmentInVilla", "twoEntrances", "specialEntrances", "nearBus",
+        "nearMetro", "pool", "footballPitch", "volleyballCourt", "tent",
+        "kitchen", "playground", "familySection", "stairs", "driverRoom",
+        "maidRoom", "basement"
+      ];
+      booleanFilters.forEach(key => {
+        if (searchFilters[key as keyof SearchFilterState] === true) count++;
+      });
+    }
+    
+    return count;
+  }, [searchFilters, listingType]);
 
   useEffect(() => {
     if (searchFilters) {
@@ -448,7 +524,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
     let filtered = [...properties];
 
-    if (selectedCity && selectedCity !== "City") {
+    if (selectedCity && selectedCity !== t("listings.city")) {
       filtered = filtered.filter((p) => {
         const city = (p as any).city;
         return city && city.toLowerCase() === selectedCity.toLowerCase();
@@ -567,40 +643,43 @@ export default function PropertyListScreen(): React.JSX.Element {
       getTypeLabel,
       calculateDailyPrice,
     }) => {
-      const typeLabel = getTypeLabel(item.type) || "Property";
+      const { t } = useLocalization();
+      const typeLabel = getTypeLabel(item.type) || t("listings.property");
 
       const { title, priceLine } = useMemo(() => {
         let priceLine = "";
         let title = "";
 
         if (listingType === "daily") {
-          title = typeLabel || "Property";
+          title = typeLabel || t("listings.property");
           const calculatedPrice = calculateDailyPrice(item);
           if (calculatedPrice) {
-            priceLine = `${calculatedPrice} SAR`;
+            priceLine = `${calculatedPrice} ${t("listings.sar")}`;
           } else {
             const dailyProperty = item as any;
             priceLine =
-              dailyProperty.bookingType === "daily" ? "Daily" : "Monthly";
+              dailyProperty.bookingType === "daily" 
+                ? t("listings.daily") 
+                : t("listings.monthly");
           }
         } else if (listingType === "rent") {
-          title = `${typeLabel} for rent`;
+          title = `${typeLabel} ${t("listings.forRent")}`;
           const rentProperty = item as any;
           const formattedPrice = rentProperty.price
             ? formatPrice(rentProperty.price)
             : "0";
-          priceLine = `${formattedPrice} SAR / Yearly`;
+          priceLine = `${formattedPrice} ${t("listings.sar")} / ${t("listings.yearly")}`;
         } else {
-          title = `${typeLabel} for sale`;
+          title = `${typeLabel} ${t("listings.forSale")}`;
           const saleProperty = item as any;
           const formattedPrice = saleProperty.price
             ? formatPrice(saleProperty.price)
             : "0";
-          priceLine = `${formattedPrice} SAR`;
+          priceLine = `${formattedPrice} ${t("listings.sar")}`;
         }
 
         return { title, priceLine };
-      }, [item, listingType, typeLabel, calculateDailyPrice]);
+      }, [item, listingType, typeLabel, calculateDailyPrice, t]);
 
       const handlePress = useCallback(() => {
         onPress(item);
@@ -612,7 +691,7 @@ export default function PropertyListScreen(): React.JSX.Element {
           <DailyBookingListCard
             property={item}
             onPress={handlePress}
-            priceLine={priceLine || "Price not available"}
+            priceLine={priceLine || t("listings.priceNotAvailable")}
             calculatedPrice={calculatedPrice}
           />
         );
@@ -637,8 +716,8 @@ export default function PropertyListScreen(): React.JSX.Element {
         <PropertyCard
           property={item}
           onPress={handlePress}
-          title={title || "Property"}
-          priceLine={priceLine || "Price not available"}
+          title={title || t("listings.property")}
+          priceLine={priceLine || t("listings.priceNotAvailable")}
           listingType={listingType}
         />
       );
@@ -745,28 +824,30 @@ export default function PropertyListScreen(): React.JSX.Element {
     if (!isDailyListing) return null;
     return (
       <View style={styles.unitsCountContainer}>
-        <Text style={styles.unitsCountText}>
-          {sortedProperties.length} Units match your search
+        <Text style={[styles.unitsCountText, isRTL && styles.unitsCountTextRTL]}>
+          {sortedProperties.length} {t("listings.unitsMatchSearch")}
         </Text>
       </View>
     );
-  }, [isDailyListing, sortedProperties.length]);
+  }, [isDailyListing, sortedProperties.length, t, isRTL]);
 
   const listEmptyComponent = useMemo(() => {
     if (!isProjectsListing) return null;
     if (sortedProperties.length > 0) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Project not found</Text>
+        <Text style={[styles.emptyText, isRTL && styles.emptyTextRTL]}>
+          {t("listings.projectNotFound")}
+        </Text>
       </View>
     );
-  }, [isProjectsListing, sortedProperties.length]);
+  }, [isProjectsListing, sortedProperties.length, t, isRTL]);
 
   return (
     <View style={[styles.container]}>
       {!isDailyListing && !isProjectsListing && (
         <ScreenHeader
-          title="Listings"
+          title={t("navigation.listings")}
           onBackPress={handleBackPress}
           showRightSide={true}
           rightComponent={searchIcon}
@@ -782,6 +863,7 @@ export default function PropertyListScreen(): React.JSX.Element {
             onCityPress={handleCityPress}
             onFiltersPress={handleFiltersPress}
             cityText={selectedCity}
+            filterCount={activeFilterCount}
           />
         </View>
       )}
@@ -801,7 +883,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
       {!isDailyListing && !isProjectsListing && (
         <View style={styles.filterContainer}>
-          <View style={styles.filterTabsWrapper}>
+          <View style={[styles.filterTabsWrapper, isRTL && styles.filterTabsWrapperRTL]}>
             <TouchableOpacity
               style={[
                 styles.filterTab,
@@ -816,7 +898,7 @@ export default function PropertyListScreen(): React.JSX.Element {
                   selectedFilter === "latest" && styles.filterTextActive,
                 ]}
               >
-                Latest
+                {t("listings.latest")}
               </Text>
             </TouchableOpacity>
 
@@ -836,7 +918,7 @@ export default function PropertyListScreen(): React.JSX.Element {
                   selectedFilter === "price" && styles.filterTextActive,
                 ]}
               >
-                Price
+                {t("listings.price")}
               </Text>
             </TouchableOpacity>
 
@@ -856,7 +938,7 @@ export default function PropertyListScreen(): React.JSX.Element {
                   selectedFilter === "nearest" && styles.filterTextActive,
                 ]}
               >
-                Nearest
+                {t("listings.nearest")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -893,22 +975,32 @@ export default function PropertyListScreen(): React.JSX.Element {
         style={[
           styles.bottomActions,
           isDailyListing && styles.dailyBottomActions,
+          isRTL && styles.bottomActionsRTL,
         ]}
       >
         <TouchableOpacity
-          style={[styles.showMapBtn, isScrolling && styles.showMapBtnCompact]}
+          style={[styles.showMapBtn, isScrolling && styles.showMapBtnCompact, isRTL && styles.showMapBtnRTL]}
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
           <Ionicons name="map-sharp" size={wp(6)} color="#617381" />
-          {!isScrolling && <Text style={styles.showMapText}>Show map</Text>}
+          {!isScrolling && (
+            <Text style={[styles.showMapText, isRTL && styles.showMapTextRTL]}>
+              {t("listings.showMap")}
+            </Text>
+          )}
         </TouchableOpacity>
 
         {/* Add button - Only show for daily listings */}
         {isDailyListing && (
-          <TouchableOpacity style={styles.dailyAddBtn} onPress={handleAddPress}>
+          <TouchableOpacity 
+            style={[styles.dailyAddBtn, isRTL && styles.dailyAddBtnRTL]} 
+            onPress={handleAddPress}
+          >
             <Text style={styles.dailyPlusIcon}>+</Text>
-            <Text style={styles.dailyAddText}>Add</Text>
+            <Text style={[styles.dailyAddText, isRTL && styles.dailyAddTextRTL]}>
+              {t("listings.add")}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -929,7 +1021,7 @@ export default function PropertyListScreen(): React.JSX.Element {
         onClose={() => setCityModalVisible(false)}
         onSearch={handleCitySearch}
         onLocateMe={handleCityLocateMe}
-        selectedCity={selectedCity !== "City" ? selectedCity : undefined}
+        selectedCity={selectedCity !== t("listings.city") ? selectedCity : undefined}
       />
 
       <SearchFilterModal
@@ -937,6 +1029,7 @@ export default function PropertyListScreen(): React.JSX.Element {
         onClose={() => setFilterModalVisible(false)}
         onSearch={handleSearchFilters}
         properties={filteredPropertiesForModal}
+        initialFilters={searchFilters}
       />
 
       {/* Project Search Modal - Only for projects listings */}
@@ -1126,6 +1219,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#dedfe3",
   },
+  filterTabsWrapperRTL: {
+    flexDirection: "row-reverse",
+  },
   filterTab: {
     flex: 1,
     paddingVertical: hp(1),
@@ -1157,7 +1253,7 @@ const styles = StyleSheet.create({
     paddingBottom: hp(14), // extra space for bottom button
   },
   dailyListContent: {
-    paddingTop: hp(12), // Space for fixed header boxes
+    paddingTop: hp(9), // Space for fixed header boxes
   },
   bottomActions: {
     position: "absolute",
@@ -1169,16 +1265,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 100,
   },
+  bottomActionsRTL: {
+    flexDirection: "row-reverse",
+  },
   dailyBottomActions: {
     bottom: hp(3), // Lower position for daily listings
   },
   dailyAddBtn: {
-    backgroundColor: "#fffefd",
-    paddingHorizontal: wp(2.8),
-    paddingVertical: hp(0.5),
+    backgroundColor: "#ffffff",
+    paddingHorizontal: wp(3),
+    // paddingVertical: hp(1),
     borderRadius: wp(2),
-    borderWidth: 1.5,
-    borderColor: "#1a253d",
+    borderWidth: 2,
+    borderColor: "#3b82f6",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -1188,16 +1287,24 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   dailyPlusIcon: {
-    color: "#1a253d",
-    fontSize: wp(5),
+    color: "#3b82f6",
+    fontSize: wp(8),
     fontWeight: "400",
-    marginBottom: hp(-0.5),
+    marginBottom: hp(-1),
+    marginTop: hp(-0.5),
   },
   dailyAddText: {
-    color: "#1a253d",
+    color: "#3b82f6",
     fontWeight: "400",
-    fontSize: wp(3),
-    marginTop: hp(0.2),
+    fontSize: wp(4),
+    marginTop: hp(0.3),
+  },
+  dailyAddBtnRTL: {
+    // flexDirection: "row-reverse",
+    
+  },
+  dailyAddTextRTL: {
+    textAlign: "right",
   },
   showMapBtn: {
     flexDirection: "row",
@@ -1215,6 +1322,13 @@ const styles = StyleSheet.create({
     color: "#333",
     marginLeft: wp(2),
   },
+  showMapBtnRTL: {
+    flexDirection: "row-reverse",
+  },
+  showMapTextRTL: {
+    marginLeft: 0,
+    marginRight: wp(2),
+  },
   emptyContainer: {
     // paddingTop: hp(1),
     paddingBottom: hp(3),
@@ -1225,5 +1339,11 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     color: "#000000",
     fontWeight: "400",
+  },
+  unitsCountTextRTL: {
+    textAlign: "right",
+  },
+  emptyTextRTL: {
+    textAlign: "right",
   },
 });

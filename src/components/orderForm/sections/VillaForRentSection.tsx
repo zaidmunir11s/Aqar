@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo, useCallback } from "react";
 import {
   PriceInputSection,
   TabBarSection,
@@ -12,6 +12,7 @@ import {
   WC_OPTIONS,
   VILLA_TYPE_OPTIONS,
 } from "../../../constants/orderFormOptions";
+import { useLocalization } from "../../../hooks/useLocalization";
 
 export interface VillaForRentSectionProps {
   rentPeriod: "Yearly" | "Monthly" | null;
@@ -111,12 +112,47 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
     nearMetro,
     onNearMetroChange,
   }) => {
+    const { t, isRTL } = useLocalization();
+
+    // Translated villa type options
+    const translatedVillaTypeOptions = useMemo(
+      () =>
+        VILLA_TYPE_OPTIONS.map((opt) => {
+          if (opt === "Standalone") return t("listings.standalone");
+          if (opt === "Duplex") return t("listings.duplex");
+          if (opt === "Townhouse") return t("listings.townhouse");
+          return opt;
+        }),
+      [t]
+    );
+
+    // Create reverse map for villa type
+    const createReverseMap = useCallback((original: string[], translated: string[]) => {
+      const map: Record<string, string> = {};
+      original.forEach((orig, index) => {
+        map[translated[index]] = orig;
+      });
+      return map;
+    }, []);
+
+    const villaTypeReverseMap = useMemo(
+      () => createReverseMap(VILLA_TYPE_OPTIONS, translatedVillaTypeOptions),
+      [createReverseMap, translatedVillaTypeOptions]
+    );
+
+    // Get translated initial value
+    const getTranslatedInitialValue = useCallback((originalValue: string | null): string => {
+      if (!originalValue) return "";
+      const originalIndex = Object.values(villaTypeReverseMap).indexOf(originalValue);
+      return originalIndex >= 0 ? translatedVillaTypeOptions[originalIndex] : originalValue;
+    }, [villaTypeReverseMap, translatedVillaTypeOptions]);
+
     return (
       <>
         <RentPeriodTabBar selectedPeriod={rentPeriod} onSelect={onRentPeriodChange} />
 
         <PriceInputSection
-          label="Price"
+          label={t("listings.price")}
           fromValue={priceFrom}
           toValue={priceTo}
           onFromChange={onPriceFromChange}
@@ -124,88 +160,91 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
         />
 
         <TabBarSection
-          label="Bedrooms"
+          label={t("listings.bedrooms")}
           options={BEDROOM_OPTIONS}
           selectedValue={selectedBedroom}
           onSelect={onBedroomChange}
         />
 
         <FieldWithModal
-          label="Street Direction"
+          label={t("listings.streetDirection")}
           value={streetDirection}
-          placeholder="Select street direction"
+          placeholder={t("listings.selectStreetDirection")}
           onPress={onStreetDirectionPress}
           backgroundColor="background"
         />
 
         <TabBarSection
-          label="Living Rooms"
+          label={t("listings.livingRooms")}
           options={LIVING_ROOM_OPTIONS}
           selectedValue={selectedLivingRoom}
           onSelect={onLivingRoomChange}
         />
 
         <TabBarSection
-          label="WC"
+          label={t("listings.wc")}
           options={WC_OPTIONS}
           selectedValue={selectedWc}
           onSelect={onWcChange}
         />
 
         <PriceInputSection
-          label="Area (m²)"
+          label={t("listings.areaM2")}
           fromValue={areaFrom}
           toValue={areaTo}
           onFromChange={onAreaFromChange}
           onToChange={onAreaToChange}
-          fromPlaceholder="From area"
-          toPlaceholder="To area"
+          fromPlaceholder={t("listings.fromArea")}
+          toPlaceholder={t("listings.toArea")}
         />
 
         <FieldWithModal
-          label="Street Width"
+          label={t("listings.streetWidth")}
           value={streetWidth}
-          placeholder="Select street width"
+          placeholder={t("listings.selectStreetWidth")}
           onPress={onStreetWidthPress}
           backgroundColor="background"
         />
 
         <ToggleGroup
-          toggles={[{ label: "Stairs", value: stairs, onValueChange: onStairsChange }]}
+          toggles={[{ label: t("listings.stairs"), value: stairs, onValueChange: onStairsChange }]}
         />
 
         <FieldWithModal
-          label="Age"
+          label={t("listings.age")}
           value={age}
-          placeholder="Select age"
+          placeholder={t("listings.selectAge")}
           onPress={onAgePress}
           backgroundColor="background"
         />
 
         <ToggleGroup
           toggles={[
-            { label: "Driver room", value: driverRoom, onValueChange: onDriverRoomChange },
-            { label: "Maid room", value: maidRoom, onValueChange: onMaidRoomChange },
-            { label: "Pool", value: pool, onValueChange: onPoolChange },
-            { label: "Furnished", value: villaFurnished, onValueChange: onVillaFurnishedChange },
-            { label: "Kitchen", value: kitchen, onValueChange: onKitchenChange },
-            { label: "Car entrance", value: villaCarEntrance, onValueChange: onVillaCarEntranceChange },
-            { label: "Basement", value: basement, onValueChange: onBasementChange },
+            { label: t("listings.driverRoom"), value: driverRoom, onValueChange: onDriverRoomChange },
+            { label: t("listings.maidRoom"), value: maidRoom, onValueChange: onMaidRoomChange },
+            { label: t("listings.pool"), value: pool, onValueChange: onPoolChange },
+            { label: t("listings.furnished"), value: villaFurnished, onValueChange: onVillaFurnishedChange },
+            { label: t("listings.kitchen"), value: kitchen, onValueChange: onKitchenChange },
+            { label: t("listings.carEntrance"), value: villaCarEntrance, onValueChange: onVillaCarEntranceChange },
+            { label: t("listings.basement"), value: basement, onValueChange: onBasementChange },
           ]}
         />
 
         <TabBarSection
-          label="Villa Type"
-          options={VILLA_TYPE_OPTIONS}
-          selectedValue={selectedVillaType}
-          onSelect={onVillaTypeChange}
+          label={t("listings.villaType")}
+          options={translatedVillaTypeOptions}
+          selectedValue={getTranslatedInitialValue(selectedVillaType)}
+          onSelect={(translatedValue: string) => {
+            const originalValue = villaTypeReverseMap[translatedValue] || translatedValue;
+            onVillaTypeChange(originalValue);
+          }}
         />
 
         <ToggleGroup
           toggles={[
-            { label: "Air Conditioned", value: airConditioned, onValueChange: onAirConditionedChange },
-            { label: "Near bus", value: nearBus, onValueChange: onNearBusChange },
-            { label: "Near metro", value: nearMetro, onValueChange: onNearMetroChange },
+            { label: t("listings.airConditioned"), value: airConditioned, onValueChange: onAirConditionedChange },
+            { label: t("listings.nearBus"), value: nearBus, onValueChange: onNearBusChange },
+            { label: t("listings.nearMetro"), value: nearMetro, onValueChange: onNearMetroChange },
           ]}
         />
       </>

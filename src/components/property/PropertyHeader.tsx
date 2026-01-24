@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -7,6 +7,8 @@ import {
 import type { Property } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 export interface PropertyHeaderProps {
   property: Property;
@@ -29,17 +31,47 @@ const PropertyHeader = memo<PropertyHeaderProps>(
     selectedDates,
     onCalendarPress,
   }) => {
+    const { t, isRTL } = useLocalization();
+
+    const translatedAddress = useMemo(
+      () => translateAddress(property.address, t),
+      [property.address, t]
+    );
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        priceSection: {
+          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        },
+        address: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        title: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        priceRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        commission: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
+      }),
+      [isRTL]
+    );
+
     return (
-      <View style={styles.priceSection}>
-        <Text style={styles.address}>{property.address}</Text>
-        <Text style={styles.title}>
+      <View style={[styles.priceSection, rtlStyles.priceSection]}>
+        <Text style={[styles.address, rtlStyles.address]}>{translatedAddress}</Text>
+        <Text style={[styles.title, rtlStyles.title]}>
           {property.listingType === "daily"
             ? typeLabel
             : `${typeLabel} ${listingText}`}
         </Text>
         {property.listingType === "daily" ? (
           <TouchableOpacity onPress={onCalendarPress} activeOpacity={0.7}>
-            <View style={styles.priceRow}>
+            <View style={[styles.priceRow, rtlStyles.priceRow]}>
               <Text
                 style={[
                   styles.price,
@@ -52,10 +84,12 @@ const PropertyHeader = memo<PropertyHeaderProps>(
             </View>
           </TouchableOpacity>
         ) : (
-          <View style={styles.priceRow}>
+          <View style={[styles.priceRow, rtlStyles.priceRow]}>
             <Text style={styles.price}>{displayPrice}</Text>
             {property.listingType === "rent" && (
-              <Text style={styles.commission}>+ Commission (1,650 Riyals)</Text>
+              <Text style={[styles.commission, rtlStyles.commission]}>
+                + {t("listings.commission")} (1,650 {t("listings.riyals")})
+              </Text>
             )}
           </View>
         )}
@@ -98,7 +132,6 @@ const styles = StyleSheet.create({
   commission: {
     fontSize: wp(3),
     color: "#6b7280",
-    marginLeft: wp(2),
   },
 });
 

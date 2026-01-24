@@ -5,7 +5,8 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import SectionHeader from "./SectionHeader";
-
+import { useLocalization } from "@/hooks/useLocalization";
+  
 export interface ActivityItemProps {
   onPress?: () => void;
 }
@@ -14,9 +15,10 @@ export interface ActivityItemProps {
  * Activity item component with section header
  */
 const ActivityItem = memo<ActivityItemProps>(({ onPress }) => {
+  const { t } = useLocalization();
   return (
     <View style={styles.container}>
-      <SectionHeader title="Activity" iconName="bar-chart" />
+      <SectionHeader title={t("common.activity", { defaultValue: "Activity" })} iconName="bar-chart" />
     </View>
   );
 });

@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -6,6 +6,8 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import type { Property, RentSaleProperty } from "../../types/property";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 export interface AverageCardProps {
   property: Property;
@@ -16,18 +18,57 @@ export interface AverageCardProps {
  * Shows average price for location, rooms, and property type
  */
 const AverageCard = memo<AverageCardProps>(({ property }) => {
+  const { t, isRTL } = useLocalization();
+  
+  // Helper function to translate property type
+  const getTranslatedTypeLabel = (type: string): string => {
+    const translationKey = `listings.propertyTypes.${type}`;
+    const translated = t(translationKey);
+    if (translated && translated !== translationKey) {
+      return translated;
+    }
+    return type === "apartment" ? t("listings.propertyTypes.apartment") : type;
+  };
+
   // Calculate average price (in a real app, this would come from API)
   const rentProperty = property as RentSaleProperty;
   const averagePrice = rentProperty.price
     ? rentProperty.price.replace(" K", ",000")
     : "100,950";
-  const location = property.address || property.city || "العليا";
+  
+  // Translate the location/address
+  const rawLocation = property.address || property.city || "";
+  const translatedLocation = useMemo(
+    () => rawLocation ? translateAddress(rawLocation, t) : t("listings.city"),
+    [rawLocation, t]
+  );
+  
   const rooms = property.bedrooms || 3;
-  const propertyType = property.type === "apartment" ? "flat" : property.type;
+  const propertyType = getTranslatedTypeLabel(property.type === "apartment" ? "apartment" : property.type);
+
+  // RTL-aware styles
+  const rtlStyles = useMemo(
+    () => ({
+      card: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      iconContainer: {
+        marginRight: isRTL ? 0 : wp(3),
+        marginLeft: isRTL ? wp(3) : 0,
+      },
+      label: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+      price: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+      },
+    }),
+    [isRTL]
+  );
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-      <View style={styles.iconContainer}>
+    <TouchableOpacity style={[styles.card, rtlStyles.card]} activeOpacity={0.7}>
+      <View style={[styles.iconContainer, rtlStyles.iconContainer]}>
         <View style={styles.barChart}>
           <View style={[styles.bar, styles.bar1]} />
           <View style={[styles.bar, styles.bar2]} />
@@ -35,12 +76,12 @@ const AverageCard = memo<AverageCardProps>(({ property }) => {
         </View>
       </View>
       <View style={styles.content}>
-        <Text style={styles.label}>
-          Average {propertyType} for rent Rooms {rooms} in {location}
+        <Text style={[styles.label, rtlStyles.label]}>
+          {t("listings.averageForRent", { propertyType, rooms, location: translatedLocation })}
         </Text>
-        <Text style={styles.price}>{averagePrice} SAR</Text>
+        <Text style={[styles.price, rtlStyles.price]}>{averagePrice} {t("listings.sar")}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={wp(5)} color="#9ca3af" />
+      <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={wp(5)} color="#9ca3af" />
     </TouchableOpacity>
   );
 });

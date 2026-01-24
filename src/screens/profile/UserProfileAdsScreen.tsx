@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   Platform,
+  ViewStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -17,12 +18,13 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { ScreenHeader, UserInfoCard, ProfileTabs } from "../../components";
+import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function UserProfileAdsScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
-
+  const { t, isRTL } = useLocalization();
   const handleBackPress = () => {
     navigation.goBack();
   };
@@ -43,15 +45,23 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
     console.log("Tab changed to:", tab);
   };
 
+  const rtlStyles = useMemo(
+    () => ({
+      payBrokerButton: { flexDirection: isRTL ? "row-reverse" : "row" } as ViewStyle,
+      rightIconsContainer: { flexDirection: isRTL ? "row-reverse" : "row" } as ViewStyle,
+    }),
+    [isRTL]
+  );
+
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="User Profile - Ads (0)"
+        title={t("profile.userProfileAds", { defaultValue: "User Profile - Ads (0)" })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
         backButtonColor={COLORS.primary}
         rightComponent={
-          <View style={styles.rightIconsContainer}>
+          <View style={[styles.rightIconsContainer, rtlStyles.rightIconsContainer]}>
             <TouchableOpacity
               style={styles.iconButton}
               onPress={handleSharePress}
@@ -82,12 +92,12 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
           />
         </View>
         <TouchableOpacity
-          style={styles.payBrokerButton}
+          style={[styles.payBrokerButton, rtlStyles.payBrokerButton as ViewStyle]}
           onPress={handlePayBrokerCommissionPress}
           activeOpacity={0.7}
         >
           <Ionicons name="receipt-outline" size={wp(5)} color="#2563eb" />
-          <Text style={styles.payBrokerText}>Pay Broker Commission</Text>
+          <Text style={styles.payBrokerText}>{t("profile.payBrokerCommission", { defaultValue: "Pay Broker Commission" })}</Text>
         </TouchableOpacity>
         <UserInfoCard sinceDate="2025/11/27" lastSeen="now" />
         <ProfileTabs onTabChange={handleTabChange} />

@@ -3,3 +3,4 @@ export * from "./useLocation";
 export * from "./useCalendar";
 export * from "./useDailyPrice";
 export * from "./useBookingModal";
+export * from "./useLocalization";

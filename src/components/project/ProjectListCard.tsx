@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ import { getTypeLabelFromType, getDefaultImageUrl } from "../../utils";
 import type { ProjectProperty, FilterOption } from "../../types/property";
 import { SALE_FILTER_OPTIONS, RENT_FILTER_OPTIONS } from "../../data/propertyData";
 import { COLORS } from "@/constants/colors";
+import { useLocalization } from "../../hooks/useLocalization";
+import { translateAddress } from "../../utils/addressTranslation";
 
 export interface ProjectListCardProps {
   project: ProjectProperty;
@@ -27,8 +29,30 @@ export interface ProjectListCardProps {
  */
 const ProjectListCard = memo<ProjectListCardProps>(
   ({ project, onPress, filterOptions }) => {
+    const { t, isRTL } = useLocalization();
     const [imageError, setImageError] = useState(false);
     const [logoError, setLogoError] = useState(false);
+
+    // Helper function to translate property type
+    const getTranslatedTypeLabel = useCallback(
+      (type: string, filterOptions: FilterOption[]): string => {
+        const opt = filterOptions.find((o) => o.type === type);
+        if (!opt) return type;
+        
+        // Try to find translation in propertyTypes
+        const translationKey = `listings.propertyTypes.${type}`;
+        const translated = t(translationKey);
+        
+        // If translation exists and is different from the key, use it
+        if (translated && translated !== translationKey) {
+          return translated;
+        }
+        
+        // Fallback to filter option label
+        return opt.label;
+      },
+      [t]
+    );
 
     const imageUrl =
       project.images && project.images[0] && !imageError
@@ -37,15 +61,80 @@ const ProjectListCard = memo<ProjectListCardProps>(
 
     // Get all types that this project supports (from projectDetails or project type)
     // For now, we'll show the main type and potentially others
-    const mainTypeLabel = getTypeLabelFromType(project.type, filterOptions);
-    const typeLabels = [`${mainTypeLabel} for sale`];
+    const mainTypeLabel = getTranslatedTypeLabel(project.type, filterOptions);
+    const typeLabels = [`${mainTypeLabel} ${t("listings.forSale")}`];
 
-    // Format starting price
+    // Format starting price with translation
     const startingPrice = project.projectDetails.minPrice;
     const formattedPrice =
       startingPrice >= 1000000
-        ? `${(startingPrice / 1000000).toFixed(1)} M`
-        : `${(startingPrice / 1000).toFixed(0)} K`;
+        ? `${(startingPrice / 1000000).toFixed(1)} ${t("listings.million")}`
+        : `${(startingPrice / 1000).toFixed(0)} ${t("listings.thousand")}`;
+
+    const translatedAddress = useMemo(
+      () => translateAddress(project.address, t),
+      [project.address, t]
+    );
+
+    // Helper function to translate status
+    const translateStatus = useCallback((status: string): string => {
+      if (!status) return status;
+      const lowerStatus = status.toLowerCase().trim();
+      
+      if (lowerStatus === "available") {
+        return t("projects.status.available");
+      } else if (lowerStatus === "ready") {
+        return t("projects.status.ready");
+      } else if (lowerStatus === "under construction") {
+        return t("projects.status.underConstruction");
+      }
+      
+      // Fallback to original if no match
+      return status;
+    }, [t]);
+
+    const translatedAvailableStatus = useMemo(
+      () => translateStatus(project.projectDetails.availableStatus),
+      [project.projectDetails.availableStatus, translateStatus]
+    );
+
+    const translatedReadyStatus = useMemo(
+      () => translateStatus(project.projectDetails.readyStatus),
+      [project.projectDetails.readyStatus, translateStatus]
+    );
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        statusBadgesContainer: {
+          left: isRTL ? undefined : wp(4),
+          right: isRTL ? wp(4) : undefined,
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        priceContainer: {
+          left: isRTL ? undefined : wp(4),
+          right: isRTL ? wp(4) : undefined,
+        },
+        priceText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        nameRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        projectName: {
+          marginRight: isRTL ? 0 : wp(3),
+          marginLeft: isRTL ? wp(3) : 0,
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        typeTagsContainer: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        location: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL]
+    );
 
     return (
       <TouchableOpacity
@@ -63,30 +152,32 @@ const ProjectListCard = memo<ProjectListCardProps>(
           />
 
           {/* Status Badges - Top Left */}
-          <View style={styles.statusBadgesContainer}>
+          <View style={[styles.statusBadgesContainer, rtlStyles.statusBadgesContainer]}>
             <View style={[styles.statusBadge, styles.availableBadge]}>
               <Text style={styles.availableBadgeText}>
-                {project.projectDetails.availableStatus}
+                {translatedAvailableStatus}
               </Text>
             </View>
             <View style={[styles.statusBadge, styles.readyBadge]}>
               <Text style={styles.readyBadgeText}>
-                {project.projectDetails.readyStatus}
+                {translatedReadyStatus}
               </Text>
             </View>
           </View>
 
           {/* Starting Price - Bottom Left */}
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceText}>Starting from {formattedPrice}</Text>
+          <View style={[styles.priceContainer, rtlStyles.priceContainer]}>
+            <Text style={[styles.priceText, rtlStyles.priceText]}>
+              {t("projects.startingFrom")} {formattedPrice}
+            </Text>
           </View>
         </View>
 
         {/* Content Section */}
         <View style={styles.contentSection}>
           {/* Project Name and Logo Row */}
-          <View style={styles.nameRow}>
-            <Text style={styles.projectName} numberOfLines={1}>
+          <View style={[styles.nameRow, rtlStyles.nameRow]}>
+            <Text style={[styles.projectName, rtlStyles.projectName]} numberOfLines={1}>
               {project.projectNameArabic || project.projectName}
             </Text>
             {project.developerLogo && project.developerLogo.trim() !== "" && !logoError && (
@@ -107,7 +198,7 @@ const ProjectListCard = memo<ProjectListCardProps>(
           </View>
 
           {/* Type Tags */}
-          <View style={styles.typeTagsContainer}>
+          <View style={[styles.typeTagsContainer, rtlStyles.typeTagsContainer]}>
             {typeLabels.map((label, index) => (
               <View key={index} style={styles.typeTag}>
                 <Text style={styles.typeTagText}>{label}</Text>
@@ -117,8 +208,8 @@ const ProjectListCard = memo<ProjectListCardProps>(
 
           {/* Location */}
           {project.address && (
-            <Text style={styles.location} numberOfLines={2}>
-              {project.address}
+            <Text style={[styles.location, rtlStyles.location]} numberOfLines={2}>
+              {translatedAddress}
             </Text>
           )}
         </View>
@@ -185,8 +276,6 @@ const styles = StyleSheet.create({
   priceContainer: {
     position: "absolute",
     bottom: hp(1.5),
-    // left: wp(4),
-    // backgroundColor: "rgba(0, 0, 0, 0.6)",
     paddingHorizontal: wp(3.5),
     paddingVertical: hp(0.9),
     borderRadius: wp(1.5),
@@ -201,17 +290,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   nameRow: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    // marginBottom: hp(1.2),
   },
   projectName: {
     flex: 1,
     fontSize: wp(4.5),
     fontWeight: "700",
     color: "#111827",
-    marginRight: wp(3),
   },
   logoContainer: {
     width: wp(12),

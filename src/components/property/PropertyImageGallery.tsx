@@ -140,11 +140,17 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
     const renderImage = useCallback(
       ({ item }: { item: string }) => (
         <View style={styles.imageWrapper}>
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={onImageViewerOpen}
+            style={styles.imageTouchable}
+          >
           <Image
             source={{ uri: item }}
             style={styles.image}
             resizeMode="cover"
           />
+        </TouchableOpacity>
         </View>
       ),
       []
@@ -216,15 +222,15 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
 
         {/* See All Photos Button */}
         {validImages.length > 0 && (
-        <TouchableOpacity
-          style={[styles.seeAllPhotosBtn, isRTL && styles.seeAllPhotosBtnRTL]}
-          onPress={onImageViewerOpen}
-        >
-          <Ionicons name="images" size={wp(4.5)} color="#fff" />
-          <Text style={[styles.seeAllPhotosText, isRTL && styles.seeAllPhotosTextRTL]}>
+          <TouchableOpacity
+            style={[styles.seeAllPhotosBtn, isRTL && styles.seeAllPhotosBtnRTL]}
+            onPress={onImageViewerOpen}
+          >
+            <Ionicons name="images" size={wp(4.5)} color="#fff" />
+            <Text style={[styles.seeAllPhotosText, isRTL && styles.seeAllPhotosTextRTL]}>
               {validImages.length} {t("listings.seeAllPhotos")}
-          </Text>
-        </TouchableOpacity>
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     );

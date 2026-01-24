@@ -318,7 +318,6 @@ export default function DailyDetailScreen(): React.JSX.Element {
     [canGoPrev, canGoNext, handlePrevProperty, handleNextProperty]
   );
 
-
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
@@ -408,7 +407,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
     } else {
       return t("listings.chooseDateToSeePrice");
     }
-  }, [property, selectedDates]);
+  }, [property, selectedDates, t]);
 
   return (
     <>

@@ -232,6 +232,8 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
           bounces={false}
         />
 
+
+        {/* Image Counter Indicator */}
         {/* Scroll Bar Indicator */}
         {images.length > 1 && (
           <Animated.View

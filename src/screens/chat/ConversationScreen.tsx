@@ -150,6 +150,13 @@ export default function ConversationScreen(): React.JSX.Element {
           }
         }
       }
+      // Ensure userAvatar is set
+      if (conv && !conv.userAvatar) {
+        const avatar = getUserAvatar(conv.userId);
+        if (avatar) {
+          conv.userAvatar = avatar;
+        }
+      }
     } else if (propertyId && advertiserId) {
       // Create or find conversation by advertiserId (owner)
       // This ensures same owner = same conversation

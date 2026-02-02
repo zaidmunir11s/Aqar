@@ -46,17 +46,34 @@ const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const WheelPickerModal = memo<WheelPickerModalProps>(
   ({ visible, onClose, onSelect, title, options, initialValue }) => {
     const { t, isRTL } = useLocalization();
+
     const [selectedIndex, setSelectedIndex] = useState(() => {
-      if (initialValue) {
+      if (initialValue && options.length > 0) {
         const index = options.findIndex((opt) => opt === initialValue);
         return index >= 0 ? index : 0;
       }
       return 0;
     });
 
+    // Sync selectedIndex when initialValue or options change (e.g. after category change)
+    useEffect(() => {
+      if (initialValue && options.length > 0) {
+        const index = options.findIndex((opt) => opt === initialValue);
+        setSelectedIndex(index >= 0 ? index : 0);
+      } else {
+        setSelectedIndex(0);
+      }
+    }, [initialValue, options]);
+
     const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef<any>(null);
+
+    // When no initialValue: pre-select first option (index 0). When opening: use this so no stale selection.
+    const indexFromProps =
+      initialValue && options.length > 0
+        ? Math.max(0, options.findIndex((opt) => opt === initialValue))
+        : 0;
 
     // RTL-aware styles for header only
     const headerRtlStyles = useMemo(
@@ -73,9 +90,14 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
       [isRTL]
     );
 
-    // Initialize scroll position when modal opens
+    // When modal opens: sync selection from props and scroll to that index (avoids stale selectedIndex)
     useEffect(() => {
       if (visible) {
+        const index = indexFromProps;
+        setSelectedIndex(index);
+        // Sync scrollY so scale/opacity/color show the correct item immediately
+        scrollY.setValue(index * ITEM_HEIGHT);
+
         // Animate modal slide up
         Animated.timing(translateY, {
           toValue: 0,
@@ -83,11 +105,11 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
           useNativeDriver: true,
         }).start();
 
-        // Scroll to initial value
+        // Scroll to the index derived from current props, not from state
         setTimeout(() => {
           if (flatListRef.current) {
             flatListRef.current.scrollToIndex({
-              index: selectedIndex,
+              index,
               animated: false,
             });
           }
@@ -95,7 +117,7 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
       } else {
         translateY.setValue(SCREEN_HEIGHT);
       }
-    }, [visible, selectedIndex, translateY]);
+    }, [visible, indexFromProps, translateY, scrollY]);
 
     const handleClose = () => {
       Animated.timing(translateY, {

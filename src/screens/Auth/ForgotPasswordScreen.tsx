@@ -17,6 +17,7 @@ import { BackButton, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { Entypo } from "@expo/vector-icons";
 import { useLocalization } from "../../hooks/useLocalization";
+import { getSaudiPhoneValidationError } from "../../utils/validation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -24,14 +25,27 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
 
-  const isFormValid = phoneNumber.trim().length > 0;
+  const phoneErrorKey = getSaudiPhoneValidationError(phoneNumber);
+  const phoneError = phoneErrorKey ? t(phoneErrorKey) : "";
+  const isFormValid =
+    phoneNumber.trim().length > 0 && phoneErrorKey === "";
+
+  const handlePhoneChange = useCallback((text: string) => {
+    setPhoneNumber(text.replace(/[^0-9]/g, ""));
+    setPhoneErrorShown(false);
+  }, []);
 
   const handleContinue = useCallback(() => {
+    if (phoneErrorKey) {
+      setPhoneErrorShown(true);
+      return;
+    }
     if (!isFormValid) return;
     console.log("Continue with phone number:", phoneNumber);
     // TODO: Navigate to verification code screen or handle password reset
-  }, [isFormValid, phoneNumber]);
+  }, [isFormValid, phoneNumber, phoneErrorKey]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -84,8 +98,10 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
         {/* Phone Number Input */}
         <TextInput
           value={phoneNumber}
-          onChangeText={setPhoneNumber}
+          onChangeText={handlePhoneChange}
           label={t("auth.phoneNumber")}
+          error={phoneErrorShown ? phoneError : ""}
+          touched={phoneErrorShown}
           labelIcon={{
             name: "mobile",
             library: "Entypo",

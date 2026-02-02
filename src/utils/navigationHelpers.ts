@@ -52,6 +52,7 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
   // Get the navigation state to check which screens are available
   const state = navigation.getState();
   const routeNames = state?.routeNames || [];
+  const routes = state?.routes || [];
   
   // Check which map screen exists in the current navigator
   let mapScreen: string | null = null;
@@ -67,9 +68,15 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
     mapScreen = getMapScreenName(navigation);
   }
   
-  // Navigate to the determined screen
   if (mapScreen) {
-    navigation.navigate(mapScreen);
+    // If map screen is the root of the stack, use popToTop to preserve map state
+    // (visited markers, region, etc.) instead of navigate which causes a refresh
+    const firstRoute = routes[0];
+    if (firstRoute?.name === mapScreen && routes.length > 1) {
+      (navigation as unknown as { popToTop: () => void }).popToTop();
+    } else {
+      navigation.navigate(mapScreen);
+    }
   } else if (navigation.canGoBack()) {
     // If we can't determine the screen, just go back
     navigation.goBack();

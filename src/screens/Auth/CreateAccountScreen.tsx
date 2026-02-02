@@ -18,15 +18,19 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BackButton, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useSignupMutation } from "@/redux/api";
+import { getSaudiPhoneValidationError } from "../../utils/validation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function CreateAccountScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const [signup, { isLoading }] = useSignupMutation();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
@@ -51,16 +55,11 @@ export default function CreateAccountScreen(): React.JSX.Element {
     checkPendingResult();
   }, []);
 
-  // Validation functions
-  const validatePhoneNumber = (phone: string): string => {
-    if (phone.trim().length === 0) {
-      return t("auth.phoneRequired");
-    }
-    if (!/^\d+$/.test(phone)) {
-      return t("auth.invalidPhone");
-    }
-    return "";
-  };
+  // Validation functions (Saudi Arabia: 9 digits, must start with 5)
+  const validatePhoneNumber = useCallback((phone: string): string => {
+    const key = getSaudiPhoneValidationError(phone);
+    return key ? t(key) : "";
+  }, [t]);
 
   const validatePassword = (pwd: string): string => {
     if (pwd.trim().length === 0) {
@@ -104,9 +103,8 @@ export default function CreateAccountScreen(): React.JSX.Element {
     setPasswordTouched(true);
   }, []);
 
-  const handleAgreeAndContinue = useCallback(() => {
+  const handleAgreeAndContinue = useCallback(async () => {
     if (!isFormValid) {
-      // Show errors if form is invalid
       if (phoneError !== "") {
         setPhoneErrorShown(true);
       }
@@ -115,25 +113,70 @@ export default function CreateAccountScreen(): React.JSX.Element {
       }
       return;
     }
-    console.log("Agree & Continue:", {
-      firstName,
-      lastName,
-      phoneNumber,
-      password,
-    });
-    // Navigate to VerifyPhoneNumber screen
-    navigation.navigate("VerifyPhoneNumber", {
-      phoneNumber,
-    });
+
+    try {
+      const result = await signup({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phoneNumber,
+        password,
+        profileImage: profileImage || undefined,
+      }).unwrap();
+
+      if (result.data?.token) {
+        await AsyncStorage.setItem("auth_token", result.data.token);
+        if (result.data.refreshToken) {
+          await AsyncStorage.setItem(
+            "refresh_token",
+            result.data.refreshToken
+          );
+        }
+      }
+
+      const otp =
+        result.data?.otp ||
+        result.data?.verificationCode ||
+        result.otp ||
+        result.verificationCode;
+
+      const alertMessage = otp
+        ? `${result.message || (t("auth.accountCreatedSuccessfully") ?? "Account created successfully")}\n\n${t("auth.yourOTP") ?? "Your OTP"}: ${otp}`
+        : result.message || (t("auth.accountCreatedSuccessfully") ?? "Account created successfully");
+
+      Alert.alert(t("common.success"), alertMessage, [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.navigate("VerifyPhoneNumber", {
+              phoneNumber,
+              otp,
+            });
+          },
+        },
+      ]);
+    } catch (error: unknown) {
+      const err = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      const errorMessage =
+        err?.data?.message ??
+        err?.message ??
+        (t("auth.failedToCreateAccount") ?? "Failed to create account. Please try again.");
+      Alert.alert(t("common.error"), errorMessage);
+    }
   }, [
     isFormValid,
     firstName,
     lastName,
     phoneNumber,
     password,
+    profileImage,
     phoneError,
     passwordError,
+    signup,
     navigation,
+    t,
   ]);
 
   const handleBackPress = useCallback(() => {
@@ -181,9 +224,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert(t("auth.error"), t("auth.failedToPickImage"));
-      }
-    }, []);
+      Alert.alert(t("common.error"), t("auth.failedToPickImage"));
+    }
+  }, [t]);
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -351,11 +394,15 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Agree & Continue Button */}
         <PrimaryButton
-          text={t("auth.agreeAndContinue")}
+          text={
+            isLoading
+              ? (t("auth.creatingAccount") ?? "Creating account...")
+              : t("auth.agreeAndContinue")
+          }
           onPress={handleAgreeAndContinue}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoading}
           style={styles.continueButton}
-          showArrow={true}
+          showArrow={!isLoading}
         />
       </ScrollView>
     </KeyboardAvoidingView>

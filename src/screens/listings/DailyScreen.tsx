@@ -87,7 +87,13 @@ export default function DailyScreen(): React.JSX.Element {
   const lastMarkerPressTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
 
-  const [region, setRegion] = useState(RIYADH_REGION);
+  // Initial region: use city from params (when coming from list via "Show Map") or preserved city, else Riyadh
+  const initialRegionFromParams = useMemo(() => {
+    const params = route.params as { selectedCity?: string } | undefined;
+    const city = params?.selectedCity || getPreservedCity();
+    return (city && CITY_REGIONS[city]) ? CITY_REGIONS[city] : RIYADH_REGION;
+  }, [route.params]);
+  const [region, setRegion] = useState(initialRegionFromParams);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
@@ -176,6 +182,27 @@ export default function DailyScreen(): React.JSX.Element {
         setSearchFilters(preservedFilters);
       }
     }, [])
+  );
+
+  // When coming from PropertyList via "Show Map", animate map to selected city after a short delay
+  // so the map ref is ready (fixes map staying on Riyadh when opening from list)
+  useFocusEffect(
+    useCallback(() => {
+      const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string } | undefined;
+      if (!params?.shouldZoomOut) return;
+      const city = params.selectedCity || getPreservedCity();
+      if (!city || !CITY_REGIONS[city]) return;
+      const cityRegion = CITY_REGIONS[city];
+      const t = setTimeout(() => {
+        if (mapRef.current && cityRegion) {
+          mapRef.current.animateToRegion(cityRegion, 800);
+          setRegion(cityRegion);
+          setPreservedCity(city);
+          setSelectedCity(city);
+        }
+      }, 150);
+      return () => clearTimeout(t);
+    }, [route.params])
   );
   
   // Track component mount state and cleanup on unmount
@@ -409,7 +436,7 @@ export default function DailyScreen(): React.JSX.Element {
       // Hide error after 5 seconds
       setTimeout(() => {
         setShowLocationError(false);
-      }, 5000);
+      }, 2000);
     } else if (result.region) {
       mapRef.current?.animateToRegion(result.region, 800);
       setShowLocationError(false);
@@ -481,7 +508,7 @@ export default function DailyScreen(): React.JSX.Element {
       // Hide error after 5 seconds
       setTimeout(() => {
         setShowLocationError(false);
-      }, 5000);
+      }, 1000);
     } else if (result.region) {
       // TODO: Reverse geocode to get city name
       setSelectedCity("Current Location");
@@ -521,14 +548,14 @@ export default function DailyScreen(): React.JSX.Element {
       // Usage type
       if (searchFilters.usageType !== null) count++;
       
-      // Bedrooms
-      if (searchFilters.bedrooms !== "" && searchFilters.bedrooms !== "All") count++;
+      // Bedrooms (including "All" — user has made a selection)
+      if (searchFilters.bedrooms !== "") count++;
       
-      // Living rooms
-      if (searchFilters.livingRooms !== "" && searchFilters.livingRooms !== "All") count++;
+      // Living rooms (including "All")
+      if (searchFilters.livingRooms !== "") count++;
       
-      // WC
-      if (searchFilters.wc !== "" && searchFilters.wc !== "All") count++;
+      // WC (including "All")
+      if (searchFilters.wc !== "") count++;
       
       // Villa type
       if (searchFilters.villaType !== null) count++;
@@ -603,7 +630,7 @@ export default function DailyScreen(): React.JSX.Element {
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFillObject}
-        initialRegion={RIYADH_REGION}
+        initialRegion={region}
         mapType={isSatelliteMode ? "satellite" : "standard"}
         provider={Platform.OS === "android" ? "google" : undefined}
         onRegionChange={handleRegionChange}
@@ -628,14 +655,14 @@ export default function DailyScreen(): React.JSX.Element {
       {/* Error Message */}
       {showLocationError && (
         <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
-          <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
+          <Ionicons name="information-circle" size={wp(4)} color={COLORS.error} />
           <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
             {t("listings.locationError")}
           </Text>
         </View>
       )}
 
-      {!cardVisible && (
+      {!cardVisible && !showLocationError && (
         <MapBottomActions
           onShowListPress={handleShowList}
           onAddPress={handleAddPress}
@@ -728,26 +755,32 @@ function applySearchFilters(
     filtered = filtered.filter((p) => p.usage === usage);
   }
 
-  // Filter by bedrooms
-  if (filters.bedrooms) {
+  // Filter by bedrooms — "All" or empty means no filter (show any bedroom count)
+  if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
     if (filters.bedrooms === "6+") {
       filtered = filtered.filter((p) => p.bedrooms >= 6);
     } else {
-      const bedrooms = parseInt(filters.bedrooms);
-      filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+      const bedrooms = parseInt(filters.bedrooms, 10);
+      if (!Number.isNaN(bedrooms)) {
+        filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+      }
     }
   }
 
-  // Filter by living rooms
-  if (filters.livingRooms) {
-    const livingRooms = parseInt(filters.livingRooms.replace("+", ""));
-    filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+  // Filter by living rooms — "All" or empty means no filter
+  if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
+    const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
+    if (!Number.isNaN(livingRooms)) {
+      filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+    }
   }
 
-  // Filter by WC
-  if (filters.wc) {
-    const wc = parseInt(filters.wc.replace("+", ""));
-    filtered = filtered.filter((p) => p.restrooms >= wc);
+  // Filter by WC — "All" or empty means no filter
+  if (filters.wc && filters.wc !== "" && filters.wc !== "All") {
+    const wc = parseInt(filters.wc.replace("+", ""), 10);
+    if (!Number.isNaN(wc)) {
+      filtered = filtered.filter((p) => p.restrooms >= wc);
+    }
   }
 
   // Filter by features (toggles)
@@ -789,7 +822,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   errorMessageContainer: {
     position: "absolute",
-    bottom: hp(20),
+    bottom: hp(12),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",
@@ -798,14 +831,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: wp(2),
-    paddingHorizontal: wp(3),
-    paddingVertical: hp(1.2),
-    gap: wp(2),
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(0.6),
+    gap: wp(1.5),
     zIndex: 1000,
   },
   errorMessageText: {
     flex: 1,
-    fontSize: wp(3.5),
+    fontSize: wp(3.2),
     color: COLORS.error,
     fontWeight: "500",
   },

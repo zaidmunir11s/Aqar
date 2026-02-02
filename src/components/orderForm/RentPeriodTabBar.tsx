@@ -19,34 +19,36 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
   ({ selectedPeriod, onSelect }) => {
     const { t, isRTL } = useLocalization();
 
-    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    // RTL-aware styles: flip layout and borders so LTR ↔ RTL behave correctly
     const rtlStyles = useMemo(
       () => ({
         label: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         rentPeriodContainer: {
           flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
         },
-        rentPeriodSegment: {
-          borderRightWidth: isRTL ? 0 : 1,
-          borderLeftWidth: isRTL ? 1 : 0,
-          borderRightColor: isRTL ? "transparent" : "#e5e7eb",
-          borderLeftColor: isRTL ? "#e5e7eb" : "transparent",
+        rentPeriodText: {
+          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         firstSegment: {
           borderTopLeftRadius: isRTL ? 0 : wp(1.5),
           borderBottomLeftRadius: isRTL ? 0 : wp(1.5),
           borderTopRightRadius: isRTL ? wp(1.5) : 0,
           borderBottomRightRadius: isRTL ? wp(1.5) : 0,
+          // Divider between Yearly and Monthly
+          ...(!isRTL && { borderRightWidth: 1, borderRightColor: COLORS.border }),
+          ...(isRTL && { borderLeftWidth: 1, borderLeftColor: COLORS.border }),
         },
         lastSegment: {
           borderTopRightRadius: isRTL ? 0 : wp(1.5),
           borderBottomRightRadius: isRTL ? 0 : wp(1.5),
           borderTopLeftRadius: isRTL ? wp(1.5) : 0,
           borderBottomLeftRadius: isRTL ? wp(1.5) : 0,
-          borderRightWidth: isRTL ? 1 : 0,
-          borderLeftWidth: isRTL ? 0 : 0,
+          borderRightWidth: 0,
+          borderLeftWidth: 0,
         },
       }),
       [isRTL]
@@ -59,7 +61,6 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
           <TouchableOpacity
             style={[
               styles.rentPeriodSegment,
-              rtlStyles.rentPeriodSegment,
               styles.firstSegment,
               rtlStyles.firstSegment,
               selectedPeriod === "Yearly" && styles.rentPeriodSegmentActive,
@@ -70,6 +71,7 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
             <Text
               style={[
                 styles.rentPeriodText,
+                rtlStyles.rentPeriodText,
                 selectedPeriod === "Yearly" && styles.rentPeriodTextActive,
               ]}
             >
@@ -79,7 +81,6 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
           <TouchableOpacity
             style={[
               styles.rentPeriodSegment,
-              rtlStyles.rentPeriodSegment,
               styles.lastSegment,
               rtlStyles.lastSegment,
               selectedPeriod === "Monthly" && styles.rentPeriodSegmentActive,
@@ -90,6 +91,7 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
             <Text
               style={[
                 styles.rentPeriodText,
+                rtlStyles.rentPeriodText,
                 selectedPeriod === "Monthly" && styles.rentPeriodTextActive,
               ]}
             >
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: wp(2),
     padding: wp(0.5),
-    borderWidth: 1.8,
+    borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: "stretch",
   },
@@ -129,9 +131,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(2),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: wp(1.5),
-    borderRightWidth: 1,
-    borderRightColor: "#e5e7eb",
+    borderRadius: wp(0.5),
     minHeight: hp(5),
   },
   firstSegment: {
@@ -149,11 +149,11 @@ const styles = StyleSheet.create({
   rentPeriodText: {
     fontSize: wp(4),
     fontWeight: "500",
-    color: "#6b7280",
+    color: COLORS.textSecondary,
     textAlign: "center",
   },
   rentPeriodTextActive: {
-    color: "#fff",
+    color: COLORS.white,
     fontWeight: "500",
   },
 });

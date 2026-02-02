@@ -344,7 +344,7 @@ export default function MapLandingScreen(): React.JSX.Element {
           if (isMountedRef.current) {
             setShowLocationError(false);
           }
-        }, 5000);
+        }, 2000);
       } else if (result.region) {
         // Validate region before animating
         if (
@@ -494,15 +494,15 @@ export default function MapLandingScreen(): React.JSX.Element {
 
       {/* Error Message */}
       {showLocationError && (
-        <View style={styles.errorMessageContainer}>
-          <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
-          <Text style={styles.errorMessageText}>
-            Sorry, you cannot search for properties outside the Kingdom of Saudi Arabia
+        <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
+          <Ionicons name="information-circle" size={wp(4)} color={COLORS.error} />
+          <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
+            {t("listings.locationError")}
           </Text>
         </View>
       )}
 
-      {!cardVisible && (
+      {!cardVisible && !showLocationError && (
         <MapBottomActions
           onShowListPress={handleShowList}
           onAddPress={handleAddPress}
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   errorMessageContainer: {
     position: "absolute",
-    bottom: hp(20),
+    bottom: hp(5),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",
@@ -539,9 +539,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: wp(2),
-    paddingHorizontal: wp(3),
-    paddingVertical: hp(1.2),
-    gap: wp(2),
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(0.6),
+    gap: wp(1.5),
     zIndex: 1000,
   },
   errorMessageContainerRTL: {
@@ -549,8 +549,11 @@ const styles = StyleSheet.create({
   },
   errorMessageText: {
     flex: 1,
-    fontSize: wp(3.5),
+    fontSize: wp(3.2),
     color: COLORS.error,
     fontWeight: "500",
+  },
+  errorMessageTextRTL: {
+    textAlign: "right",
   },
 });

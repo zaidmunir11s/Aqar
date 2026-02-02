@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  Alert,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -14,15 +15,18 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { OtpInput } from "react-native-otp-entry";
-import { BackButton, TextInput as CustomTextInput } from "../../components";
+import { OtpInput, type OtpInputRef } from "react-native-otp-entry";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BackButton, PrimaryButton, TextInput as CustomTextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useVerifyOtpMutation } from "@/redux/api";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 interface RouteParams {
   phoneNumber: string;
+  otp?: string;
 }
 
 export default function VerifyPhoneNumberScreen(): React.JSX.Element {
@@ -30,12 +34,27 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
-  const { phoneNumber: initialPhoneNumber } = params || {};
+  const [verifyOtp, { isLoading }] = useVerifyOtpMutation();
+  const { phoneNumber: initialPhoneNumber, otp: initialOtp } = params || {};
 
   const [phoneNumber, setPhoneNumber] = useState<string>(initialPhoneNumber || "");
-  const [otp, setOtp] = useState<string>("");
+  const [otp, setOtp] = useState<string>(initialOtp || "");
   const [timeLeft, setTimeLeft] = useState<number>(120); // 2 minutes in seconds
   const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
+  const otpInputRef = useRef<OtpInputRef>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Focus OTP input and show keyboard as soon as screen is ready; pre-fill OTP if passed
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (initialOtp && initialOtp.length <= 6) {
+        otpInputRef.current?.setValue?.(initialOtp);
+        setOtp(initialOtp);
+      }
+      otpInputRef.current?.focus?.();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [initialOtp]);
 
   // Timer countdown
   useEffect(() => {
@@ -88,6 +107,63 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
 
   const isOtpComplete = otp.length === 6;
 
+  const performVerify = useCallback(
+    async (otpValue: string) => {
+      if (isLoading) return;
+      const trimmedOtp = otpValue.trim();
+      if (!phoneNumber || trimmedOtp.length !== 6) return;
+      try {
+        const result = await verifyOtp({
+          phoneNumber,
+          otp: trimmedOtp,
+        }).unwrap();
+        if (result.data?.token) {
+          await AsyncStorage.setItem("auth_token", result.data.token);
+          if (result.data.refreshToken) {
+            await AsyncStorage.setItem(
+              "refresh_token",
+              result.data.refreshToken
+            );
+          }
+        }
+        Alert.alert(
+          t("common.success"),
+          result.message ||
+            (t("auth.verifiedSuccessfully") ?? "Phone verified successfully"),
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                const parent = navigation.getParent();
+                if (parent) {
+                  parent.navigate("ProfileTab", { screen: "ProfileDetail" });
+                } else {
+                  navigation.navigate("ProfileDetail");
+                }
+              },
+            },
+          ]
+        );
+      } catch (error: unknown) {
+        const err = error as {
+          data?: { message?: string };
+          message?: string;
+        };
+        const errorMessage =
+          err?.data?.message ??
+          err?.message ??
+          (t("auth.failedToVerify") ?? "Failed to verify. Please try again.");
+        Alert.alert(t("common.error"), errorMessage);
+      }
+    },
+    [phoneNumber, verifyOtp, navigation, t, isLoading]
+  );
+
+  const handleVerify = useCallback(async () => {
+    if (!isOtpComplete) return;
+    await performVerify(otp);
+  }, [isOtpComplete, otp, performVerify]);
+
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
@@ -123,11 +199,14 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={rtlStyles.backButtonContainer}>
           <BackButton onPress={handleBackPress} />
@@ -164,9 +243,12 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         <View style={styles.otpSection}>
           <Text style={[styles.label, rtlStyles.label]}>{t("auth.verificationCode")}</Text>
           <OtpInput
+            ref={otpInputRef}
             numberOfDigits={6}
+            autoFocus={true}
             onTextChange={handleOtpChange}
             focusColor={COLORS.primary}
+            type="numeric"
             theme={{
               containerStyle: styles.otpContainer,
               pinCodeContainerStyle: styles.otpInput,
@@ -175,6 +257,19 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
             }}
           />
         </View>
+
+        {/* Verify Button */}
+        <PrimaryButton
+          text={
+            isLoading
+              ? (t("auth.verifying") ?? "Verifying...")
+              : (t("auth.verify") ?? "Verify")
+          }
+          onPress={handleVerify}
+          disabled={!isOtpComplete || isLoading}
+          style={styles.verifyButton}
+          showArrow={!isLoading}
+        />
 
         {/* Timer */}
         <View style={[styles.timerContainer, rtlStyles.timerContainer]}>
@@ -235,6 +330,10 @@ const styles = StyleSheet.create({
   },
   otpSection: {
     paddingBottom: hp(3),
+  },
+  verifyButton: {
+    marginTop: hp(2),
+    marginBottom: hp(3),
   },
   otpContainer: {
     gap: wp(2),

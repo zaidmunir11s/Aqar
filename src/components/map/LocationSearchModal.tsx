@@ -171,16 +171,37 @@ export default function LocationSearchModal({
     return cityName;
   }, [t]);
 
-  // Sync search query when modal opens
+  // Sync search query when modal opens — show translated city name in RTL
   useEffect(() => {
     if (visible) {
-      setSearchText(searchQuery || "");
+      const raw = searchQuery || "";
+      setSearchText(isRTL && raw ? translateCityName(raw) : raw);
     }
-  }, [visible, searchQuery]);
+  }, [visible, searchQuery, isRTL, translateCityName]);
+
+  // Resolve displayed value (possibly Arabic) back to English city name for onSelect
+  const getEnglishCityName = useCallback(
+    (displayValue: string): string => {
+      if (!displayValue) return displayValue;
+      const trimmed = displayValue.trim();
+      const normalizedDisplay = trimmed.toLowerCase();
+      for (const city of SAUDI_CITIES) {
+        if (city.toLowerCase() === normalizedDisplay) return city;
+        if (translateCityName(city) === trimmed) return city;
+      }
+      return trimmed;
+    },
+    [translateCityName]
+  );
 
   const filteredCities = useMemo(
-    () => SAUDI_CITIES.filter((city) => city.toLowerCase().includes(searchText.toLowerCase())),
-    [searchText]
+    () =>
+      SAUDI_CITIES.filter(
+        (city) =>
+          city.toLowerCase().includes(searchText.toLowerCase()) ||
+          translateCityName(city).toLowerCase().includes(searchText.toLowerCase())
+      ),
+    [searchText, translateCityName]
   );
 
   const handleSelect = useCallback(
@@ -282,8 +303,9 @@ export default function LocationSearchModal({
             )}
             <TouchableOpacity
               onPress={() => {
-                if (searchText.trim()) {
-                  handleSelect(searchText.trim());
+                const trimmed = searchText.trim();
+                if (trimmed) {
+                  handleSelect(getEnglishCityName(trimmed));
                 }
               }}
               style={[styles.searchIconButton, isRTL && styles.searchIconButtonRTL]}

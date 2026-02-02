@@ -23,17 +23,19 @@ const FieldWithModal = memo<FieldWithModalProps>(
   ({ label, value, placeholder, onPress, backgroundColor = "white" }) => {
     const { isRTL } = useLocalization();
 
-    // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+    // RTL-aware styles for LTR ↔ RTL layout and text flow
     const rtlStyles = useMemo(
       () => ({
         label: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         field: {
           flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
         },
         fieldText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
       [isRTL]
@@ -54,7 +56,7 @@ const FieldWithModal = memo<FieldWithModalProps>(
             {value || placeholder}
           </Text>
           <Ionicons 
-            name={isRTL ? "chevron-up" : "chevron-down"} 
+            name= "chevron-down" 
             size={wp(5)} 
             color={COLORS.primary} 
           />

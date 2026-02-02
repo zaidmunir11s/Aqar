@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons, FontAwesome6 } from "@expo/vector-icons";
+import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -52,10 +52,13 @@ const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
             onPress={() => onTabChange(tab.id)}
           >
             {tab.id === "sale" ? (
-              <Ionicons
-                name="key"
+              <MaterialCommunityIcons
+                name="key-chain-variant"
                 size={wp(5)}
                 color={activeTab === tab.id ? COLORS.activeTopTabBar : "#666"}
+                style={{
+                  transform: [{ scaleX: -1},{rotate: '-20deg'}],
+                }}
               />
             ) : (
               <FontAwesome6

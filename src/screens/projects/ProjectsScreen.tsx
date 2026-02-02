@@ -271,7 +271,7 @@ export default function ProjectsScreen(): React.JSX.Element {
           if (isMountedRef.current) {
             setShowLocationError(false);
           }
-        }, 5000);
+        }, 2000);
       } else if (result.region) {
         // Validate region before animating
         if (
@@ -489,23 +489,25 @@ export default function ProjectsScreen(): React.JSX.Element {
         selectedPropertyType={selectedPropertyType}
       />
 
-      {/* Bottom actions */}
-      <MapBottomActions
-        onShowListPress={handleShowList}
-        onAddPress={handleAddPress}
-        onLocatePress={handleLocateMe}
-        onToggleSatellite={handleToggleSatellite}
-        isSatelliteMode={isSatelliteMode}
-        isMapMoving={isMapMoving}
-        visibleCount={visibleCount}
-        totalCount={totalCount}
-        counterFadeAnim={counterFadeAnim}
-      />
+      {/* Bottom actions - hidden when location error is shown */}
+      {!showLocationError && (
+        <MapBottomActions
+          onShowListPress={handleShowList}
+          onAddPress={handleAddPress}
+          onLocatePress={handleLocateMe}
+          onToggleSatellite={handleToggleSatellite}
+          isSatelliteMode={isSatelliteMode}
+          isMapMoving={isMapMoving}
+          visibleCount={visibleCount}
+          totalCount={totalCount}
+          counterFadeAnim={counterFadeAnim}
+        />
+      )}
 
       {/* Location Error Message */}
       {showLocationError && (
         <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
-          <Ionicons name="warning" size={wp(5)} color={COLORS.error} />
+          <Ionicons name="warning" size={wp(4)} color={COLORS.error} />
           <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
             {t("listings.locationError")}
           </Text>
@@ -519,7 +521,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   errorMessageContainer: {
     position: "absolute",
-    bottom: hp(20),
+    bottom: hp(12),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",
@@ -528,14 +530,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: wp(2),
-    paddingHorizontal: wp(3),
-    paddingVertical: hp(1.2),
-    gap: wp(2),
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(0.6),
+    gap: wp(1.5),
     zIndex: 1000,
   },
   errorMessageText: {
     flex: 1,
-    fontSize: wp(3.5),
+    fontSize: wp(3.2),
     color: COLORS.error,
     fontWeight: "500",
   },

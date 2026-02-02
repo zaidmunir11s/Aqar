@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     width: wp(12),
     height: wp(12),
     justifyContent: "center",
-    alignItems: "center",
+    // alignItems: "center",
   },
 });
 

@@ -5,10 +5,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Platform,
   ScrollView,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -31,7 +28,6 @@ const ITEM_HEIGHT = hp(5);
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const SPACER_HEIGHT = ITEM_HEIGHT * 2;
-const SNAP_DELAY = 150;
 
 // Month names will be translated dynamically
 const MONTH_KEYS = [
@@ -69,14 +65,10 @@ const DatePickerModal = memo<DatePickerModalProps>(
     const [selectedYear, setSelectedYear] = useState(() => currentDate.getFullYear());
     const [selectedDay, setSelectedDay] = useState(() => currentDate.getDate());
 
-    // Refs
+    // Refs for initial scroll position
     const dayScrollRef = useRef<ScrollView | null>(null);
     const monthScrollRef = useRef<ScrollView | null>(null);
     const yearScrollRef = useRef<ScrollView | null>(null);
-    
-    const dayScrollTimeoutRef = useRef<number | null>(null);
-    const monthScrollTimeoutRef = useRef<number | null>(null);
-    const yearScrollTimeoutRef = useRef<number | null>(null);
 
     // Generate years: 1900 to current year (ascending order)
     const years = useMemo(() => {
@@ -147,17 +139,6 @@ const DatePickerModal = memo<DatePickerModalProps>(
       }
     }, [initialDate]);
 
-    // Cleanup timeouts on unmount
-    useEffect(() => {
-      return () => {
-        [dayScrollTimeoutRef, monthScrollTimeoutRef, yearScrollTimeoutRef].forEach(
-          (ref) => {
-            if (ref.current) clearTimeout(ref.current);
-          }
-        );
-      };
-    }, []);
-
     // RTL-aware styles
     const rtlStyles = useMemo(
       () => ({
@@ -177,74 +158,36 @@ const DatePickerModal = memo<DatePickerModalProps>(
       [isRTL]
     );
 
-    /**
-     * Snap scroll to nearest item
-     */
-    const snapToNearestItem = useCallback((
-      scrollRef: React.RefObject<ScrollView | null>,
-      y: number,
-      itemCount: number,
-      onSelect: (index: number) => void
-    ) => {
-      const index = Math.round(y / ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, itemCount - 1));
-      const targetY = clampedIndex * ITEM_HEIGHT;
+    // Sync state from scroll position when user stops scrolling (same pattern as BookingDateModal)
+    const onScrollEnd = useCallback(
+      (y: number, itemCount: number, onSelect: (index: number) => void) => {
+        const index = Math.round(y / ITEM_HEIGHT);
+        const clamped = Math.max(0, Math.min(index, itemCount - 1));
+        onSelect(clamped);
+      },
+      []
+    );
 
-      onSelect(clampedIndex);
-
-      scrollRef.current?.scrollTo({
-        y: targetY,
-        animated: true,
-      });
-    }, []);
-
-    /**
-     * Handle scroll end with debounced snap
-     */
-    const handleScrollEnd = useCallback((
-      event: NativeSyntheticEvent<NativeScrollEvent>,
-      scrollRef: React.RefObject<ScrollView | null>,
-      itemCount: number,
-      onSelect: (index: number) => void,
-      timeoutRef: { current: number | null }
-    ) => {
-      const y = event.nativeEvent.contentOffset.y;
-
-      // Clear existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      // Debounce snap to prevent janky behavior
-      timeoutRef.current = setTimeout(() => {
-        snapToNearestItem(scrollRef, y, itemCount, onSelect);
-      }, SNAP_DELAY);
-    }, [snapToNearestItem]);
-
-    /**
-     * Render picker column
-     */
-    const renderPickerColumn = useCallback((
-      items: (string | number)[],
-      selectedIndex: number,
-      onSelect: (index: number) => void,
-      scrollRef: React.RefObject<ScrollView | null>,
-      timeoutRef: { current: number | null }
-    ) => {
-      return (
+    const renderPickerColumn = useCallback(
+      (
+        items: (string | number)[],
+        selectedIndex: number,
+        onSelect: (index: number) => void,
+        scrollRef: React.RefObject<ScrollView | null>
+      ) => (
         <View style={styles.pickerColumn}>
           <ScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
-            decelerationRate={Platform.OS === "ios" ? 0.92 : 0.95}
-            scrollEventThrottle={16}
+            snapToAlignment="start"
+            decelerationRate="fast"
             bounces={false}
             onScrollEndDrag={(e) =>
-              handleScrollEnd(e, scrollRef, items.length, onSelect, timeoutRef)
+              onScrollEnd(e.nativeEvent.contentOffset.y, items.length, onSelect)
             }
             onMomentumScrollEnd={(e) =>
-              handleScrollEnd(e, scrollRef, items.length, onSelect, timeoutRef)
+              onScrollEnd(e.nativeEvent.contentOffset.y, items.length, onSelect)
             }
           >
             <View style={{ height: SPACER_HEIGHT }} />
@@ -267,8 +210,9 @@ const DatePickerModal = memo<DatePickerModalProps>(
             <View style={{ height: SPACER_HEIGHT }} />
           </ScrollView>
         </View>
-      );
-    }, [handleScrollEnd, rtlStyles]);
+      ),
+      [onScrollEnd, rtlStyles]
+    );
 
     const handleOk = useCallback(() => {
       // Format date based on RTL: DD / MM / YYYY for both, but order columns differently
@@ -319,22 +263,19 @@ const DatePickerModal = memo<DatePickerModalProps>(
                 days,
                 Math.min(selectedDay - 1, days.length - 1),
                 (index) => setSelectedDay(index + 1),
-                dayScrollRef,
-                dayScrollTimeoutRef
+                dayScrollRef
               )}
               {renderPickerColumn(
                 months,
                 selectedMonth,
                 setSelectedMonth,
-                monthScrollRef,
-                monthScrollTimeoutRef
+                monthScrollRef
               )}
               {renderPickerColumn(
                 years,
                 yearIndex >= 0 ? yearIndex : 0,
                 (index) => setSelectedYear(years[index]),
-                yearScrollRef,
-                yearScrollTimeoutRef
+                yearScrollRef
               )}
             </View>
           </View>

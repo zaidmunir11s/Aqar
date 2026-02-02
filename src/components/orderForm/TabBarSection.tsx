@@ -54,6 +54,7 @@ const TabBarSection = memo<TabBarSectionProps>(
         },
         segmentedTabText: {
           textAlign: "center" as const,
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
       [isRTL]
@@ -65,9 +66,9 @@ const TabBarSection = memo<TabBarSectionProps>(
       onSelect(option);
     };
 
-    // Helper function to translate "All" option only
+    // Helper function to translate "All" / "ALL" option for LTR/RTL
     const getDisplayText = (option: string): string => {
-      if (option === "All") {
+      if (option === "All" || option === "ALL") {
         return t("listings.all");
       }
       return option;

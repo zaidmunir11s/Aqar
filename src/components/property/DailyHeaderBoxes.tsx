@@ -1,12 +1,14 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { SlidersHorizontal } from "lucide-react-native";
+
 
 interface DailyHeaderBoxesProps {
   reservationText: string;
@@ -56,8 +58,8 @@ export default function DailyHeaderBoxes({
           onPress={onReservationPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="calendar-outline" size={wp(5)} color="#333" />
-          <Text 
+          <MaterialIcons name="calendar-month" size={wp(5)} color={COLORS.textSecondary} />
+          <Text
             style={[styles.boxText, rtlStyles.boxText]}
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -71,8 +73,8 @@ export default function DailyHeaderBoxes({
           onPress={onCityPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="location-outline" size={wp(5)} color="#333" />
-          <Text 
+          <MaterialCommunityIcons name="map-marker-radius-outline" size={wp(5)} color={COLORS.textSecondary} />
+          <Text
             style={[styles.boxText, rtlStyles.boxText]}
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -88,11 +90,11 @@ export default function DailyHeaderBoxes({
                 .replace(/\s+/g, "")
                 .replace(/al\s+/gi, "")
                 .replace(/`/g, "");
-              
+
               // Try direct match first
               let translationKey = `listings.cities.${cityKey}`;
               let translated = t(translationKey);
-              
+
               // If no direct match, try common variations
               if (translated === translationKey) {
                 // Handle "Al Khobar" -> "khobar", "Macca" -> "mecca", etc.
@@ -106,14 +108,14 @@ export default function DailyHeaderBoxes({
                   "riyadhalkhabra": "riyadhAlKhabra",
                   "aljubail": "alJubail",
                 };
-                
+
                 const variation = cityVariations[cityKey];
                 if (variation) {
                   translationKey = `listings.cities.${variation}`;
                   translated = t(translationKey);
                 }
               }
-              
+
               // If translation exists and is different from the key, use it
               return translated !== translationKey ? translated : cityText;
             })()}
@@ -131,8 +133,12 @@ export default function DailyHeaderBoxes({
           activeOpacity={0.7}
         >
           <View style={[styles.filterContent, rtlStyles.filterContent]}>
-            <Ionicons name="filter-outline" size={wp(5)} color="#333" />
-            <Text 
+            <SlidersHorizontal
+              size={20}
+              color={COLORS.textSecondary}
+              strokeWidth={2.5}
+            />
+            <Text
               style={[styles.boxText, rtlStyles.boxText]}
               numberOfLines={1}
               ellipsizeMode="tail"

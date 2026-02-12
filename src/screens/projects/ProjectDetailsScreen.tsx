@@ -5,11 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   Dimensions,
   Platform,
-  Modal,
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -21,7 +19,6 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PROPERTY_DATA } from "../../data/propertyData";
 import { openPhoneDialer, getDefaultImageUrl } from "../../utils";
 import { IconButton } from "../../components";
@@ -31,11 +28,15 @@ import {
   ProjectDetails,
   ProjectFeatures,
   ProjectLocation,
+  ProjectUnitsFilterModal,
+  ProjectUnitsSortModal,
 } from "../../components";
-import ScreenHeader from "../../components/common/ScreenHeader";
+import type { ProjectUnitsFilterState, ProjectUnitsSortOption } from "../../components";
 import type { ProjectProperty } from "../../types/property";
 import { COLORS } from "@/constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { ListFilter, SlidersHorizontal } from "lucide-react-native";
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -50,12 +51,14 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const { propertyId } = params;
   const navigation = useNavigation<NavigationProp>();
-  const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
+  const [unitsFilterModalVisible, setUnitsFilterModalVisible] = useState<boolean>(false);
+  const [unitsFilterState, setUnitsFilterState] = useState<ProjectUnitsFilterState | null>(null);
+  const [unitsSortModalVisible, setUnitsSortModalVisible] = useState<boolean>(false);
+  const [selectedSortOption, setSelectedSortOption] = useState<ProjectUnitsSortOption>("normalSort");
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-100)).current; // Start off-screen
   const scrollViewRef = useRef<ScrollView>(null);
@@ -68,14 +71,28 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
     [propertyId]
   );
 
+  const hasActiveFilters = useMemo(() => {
+    if (!unitsFilterState) return false;
+    const f = unitsFilterState;
+    return (
+      f.rooms !== null ||
+      f.livingRooms !== null ||
+      f.wcs !== null ||
+      (f.minPrice?.trim() ?? "") !== "" ||
+      (f.maxPrice?.trim() ?? "") !== ""
+    );
+  }, [unitsFilterState]);
+
+  const hasNonDefaultSort = selectedSortOption !== "normalSort";
+
   const handleImageScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const scrollPosition = event.nativeEvent.contentOffset.x;
       const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
       // When RTL is active and gallery is inverted, adjust index calculation
       const imagesLength = project?.images?.length || 1;
-      const index = isRTL && imagesLength > 0 
-        ? imagesLength - 1 - rawIndex 
+      const index = isRTL && imagesLength > 0
+        ? imagesLength - 1 - rawIndex
         : rawIndex;
       setCurrentImageIndex(index);
     },
@@ -96,7 +113,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
       // Show sticky header when scrolled past image gallery (approximately hp(30))
       const threshold = hp(30) - hp(10); // Show header slightly before image ends
       const shouldShow = offsetY > threshold;
-      
+
       if (shouldShow !== showStickyHeader) {
         setShowStickyHeader(shouldShow);
         // Animate header sliding down/up
@@ -113,6 +130,14 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
     [scrollY, showStickyHeader, headerTranslateY]
   );
 
+  const handleDeveloperLogoPress = useCallback(() => {
+    if (!project) return;
+    navigation.navigate("DeveloperProfile", {
+      developerName: project.developerName,
+      developerLogo: project.developerLogo ?? "",
+    });
+  }, [navigation, project]);
+
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
@@ -122,12 +147,13 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   }, [navigation]);
 
   const openImageViewer = useCallback(() => {
-    setImageViewerVisible(true);
-  }, []);
-
-  const closeImageViewer = useCallback(() => {
-    setImageViewerVisible(false);
-  }, []);
+    if (!project) return;
+    const images =
+      project.images && project.images.length > 0
+        ? project.images
+        : [getDefaultImageUrl("project")];
+    navigation.navigate("ListingMedia", { images });
+  }, [navigation, project]);
 
   if (!project) {
     return (
@@ -147,22 +173,22 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
       <View style={styles.container}>
         {/* Icons - Always visible, absolute positioned */}
         <View style={[styles.headerIcons, isRTL && styles.headerIconsRTL]}>
-            <IconButton onPress={handleBackPress}>
-              <Ionicons 
-                name={isRTL ? "arrow-forward" : "arrow-back"} 
-                size={wp(6)} 
-                color={COLORS.primary} 
-              />
-            </IconButton>
+          <IconButton onPress={handleBackPress}>
+            <Ionicons
+              name={isRTL ? "arrow-forward" : "arrow-back"}
+              size={wp(6)}
+              color={COLORS.primary}
+            />
+          </IconButton>
           <View style={styles.headerIconsSpacer} />
-            <IconButton onPress={handleShare}>
-              <Ionicons
-                name="share-social-outline"
-                size={wp(5.5)}
-                color={COLORS.primary}
-              />
-            </IconButton>
-          </View>
+          <IconButton onPress={handleShare}>
+            <Ionicons
+              name="share-social-outline"
+              size={wp(5.5)}
+              color={COLORS.primary}
+            />
+          </IconButton>
+        </View>
 
         {/* Sticky Header Background with Title - slides in to join icons on scroll */}
         <Animated.View
@@ -200,7 +226,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           />
 
           {/* Project Header */}
-          <ProjectHeader project={project} />
+          <ProjectHeader project={project} onLogoPress={handleDeveloperLogoPress} />
 
           {/* Project Details */}
           <ProjectDetails
@@ -227,6 +253,42 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           {/* Nearby Landmarks */}
           <ProjectLocation project={project} />
 
+          {/* Project Units */}
+          <View style={[styles.section, styles.projectUnitsSection]}>
+            <View style={[styles.projectUnitsRow, isRTL && styles.projectUnitsRowRTL]}>
+              <Text style={[styles.projectUnitsTitle, isRTL && styles.sectionTitleRTL]}>
+                {t("projects.projectUnits")}
+              </Text>
+              <View style={[styles.projectUnitsButtons, isRTL && styles.projectUnitsButtonsRTL]}>
+                <TouchableOpacity
+                  style={[styles.filterButton, isRTL && styles.filterButtonRTL]}
+                  onPress={() => setUnitsFilterModalVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <SlidersHorizontal
+                    size={25}
+                    color={hasActiveFilters ? COLORS.primary : COLORS.textSecondary}
+                    strokeWidth={2.5}
+                  />
+                  <Text style={styles.filterButtonText}>
+                    {t("projects.filter")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.filterIconButton}
+                  onPress={() => setUnitsSortModalVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <ListFilter
+                    size={wp(5.5)}
+                    strokeWidth={3}
+                    color={hasNonDefaultSort ? COLORS.primary : COLORS.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
           <View style={{ height: hp(12) }} />
         </ScrollView>
 
@@ -238,49 +300,30 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
         </View>
       </View>
 
-      {/* Full Screen Image Viewer */}
-      <Modal
-        visible={imageViewerVisible}
-        transparent={false}
-        animationType="fade"
-        onRequestClose={closeImageViewer}
-        statusBarTranslucent={true}
-      >
-        <View style={styles.imageViewerContainer}>
-          <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
-            <ScreenHeader
-              title={t("listings.listingMedia")}
-              onBackPress={closeImageViewer}
-              backButtonColor={COLORS.backButton}
-            />
-          </View>
-          
-          <View style={styles.imageViewerContent}>
-            <View style={styles.imagesSectionHeader}>
-              <Text style={styles.imagesSectionTitle}>
-                {t("listings.images")}
-              </Text>
-              <View style={styles.imagesSectionBorder} />
-            </View>
-            
-            <ScrollView
-              style={styles.imagesScrollView}
-              contentContainerStyle={styles.imagesScrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              {projectImages.map((imageUri, index) => (
-                <View key={`image-${index}`} style={styles.imageItemContainer}>
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.imageItem}
-                    resizeMode="cover"
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {/* Project Units Filter Modal - slides up from bottom */}
+      <ProjectUnitsFilterModal
+        visible={unitsFilterModalVisible}
+        onClose={() => setUnitsFilterModalVisible(false)}
+        onSearch={(filters) => {
+          setUnitsFilterState(filters);
+          setUnitsFilterModalVisible(false);
+          // TODO: apply filters to project units list when list is implemented
+        }}
+        initialFilters={unitsFilterState}
+      />
+
+      {/* Project Units Sort Modal - Filter by (Normal Sort, Price, Area) */}
+      <ProjectUnitsSortModal
+        visible={unitsSortModalVisible}
+        onClose={() => setUnitsSortModalVisible(false)}
+        selectedOption={selectedSortOption}
+        onSelect={(option) => {
+          setSelectedSortOption(option);
+          setUnitsSortModalVisible(false);
+          // TODO: apply sort to project units list when list is implemented
+        }}
+      />
+
     </>
   );
 }
@@ -288,7 +331,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: COLORS.white,
   },
   center: {
     flex: 1,
@@ -371,6 +414,55 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#dcdcde",
   },
+  projectUnitsSection: {
+    paddingVertical: hp(1.8),
+  },
+  projectUnitsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  projectUnitsRowRTL: {
+    flexDirection: "row-reverse",
+  },
+  projectUnitsTitle: {
+    fontSize: wp(4.5),
+    fontWeight: "700",
+    color: "#111827",
+  },
+  projectUnitsButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: wp(2),
+  },
+  projectUnitsButtonsRTL: {
+    flexDirection: "row-reverse",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#DDE1E6",
+    paddingHorizontal: wp(3.5),
+    paddingVertical: hp(1.2),
+    borderRadius: wp(2),
+    gap: wp(1.5),
+  },
+  filterButtonRTL: {
+    flexDirection: "row-reverse",
+  },
+  filterButtonText: {
+    fontSize: wp(4.2),
+    fontWeight: "500",
+    color: COLORS.textSecondary,
+  },
+  filterIconButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#DDE1E6",
+    paddingHorizontal: wp(3.5),
+    paddingVertical: hp(1.2),
+    borderRadius: wp(2),
+  },
   sectionTitle: {
     fontSize: wp(4.5),
     fontWeight: "700",
@@ -412,53 +504,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: wp(4.5),
     fontWeight: "700",
-  },
-  imageViewerContainer: {
-    flex: 1,
-    backgroundColor: "#ebf1f1",
-  },
-  imageViewerHeaderContainer: {
-    backgroundColor: "#fff",
-  },
-  imageViewerContent: {
-    flex: 1,
-    backgroundColor: "#ebf1f1",
-  },
-  imagesSectionHeader: {
-    backgroundColor: "#ebf1f1",
-    paddingHorizontal: wp(4),
-    paddingTop: hp(2),
-    paddingBottom: hp(1.5),
-  },
-  imagesSectionTitle: {
-    fontSize: wp(4.5),
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: hp(1),
-    textAlign: "center",
-  },
-  imagesSectionBorder: {
-    height: 2,
-    backgroundColor: COLORS.primary,
-    width: "100%",
-  },
-  imagesScrollView: {
-    flex: 1,
-  },
-  imagesScrollContent: {
-    paddingHorizontal: wp(4),
-    paddingTop: hp(2),
-    paddingBottom: hp(4),
-  },
-  imageItemContainer: {
-    marginBottom: hp(2),
-    borderRadius: wp(2),
-    overflow: "hidden",
-    backgroundColor: "#fff",
-  },
-  imageItem: {
-    width: "100%",
-    height: hp(40),
-    borderRadius: wp(2),
   },
 });

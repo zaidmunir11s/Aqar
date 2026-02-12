@@ -2,6 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import ProjectsScreen from "../../screens/projects/ProjectsScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
+import DeveloperProfileScreen from "../../screens/projects/DeveloperProfileScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
 import PropertyListScreen from "../../screens/listings/PropertyListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
@@ -17,6 +18,7 @@ import NewOrderScreen from "../../screens/listings/addListing/searchRequest/NewO
 import ChooseLocationScreen from "../../screens/listings/addListing/searchRequest/ChooseLocationScreen";
 import DescriptionScreen from "../../screens/listings/addListing/searchRequest/DescriptionScreen";
 import MatchedListingsScreen from "../../screens/listings/addListing/searchRequest/MatchedListingsScreen";
+import ListingMediaScreen from "../../screens/listings/ListingMediaScreen";
 
 const Stack = createStackNavigator();
 
@@ -25,6 +27,8 @@ export default function ProjectsStack(): React.JSX.Element {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProjectsMap" component={ProjectsScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />
+      <Stack.Screen name="ListingMedia" component={ListingMediaScreen} />
+      <Stack.Screen name="DeveloperProfile" component={DeveloperProfileScreen} />
       <Stack.Screen name="PropertyDetails" component={PropertyDetailsScreen} />
       <Stack.Screen name="PropertyList" component={PropertyListScreen} />
       <Stack.Screen name="AddListing" component={AddListingScreen} />

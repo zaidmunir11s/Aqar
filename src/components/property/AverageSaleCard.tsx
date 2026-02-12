@@ -8,16 +8,23 @@ import {
 import type { Property, RentSaleProperty } from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
+import { ChartNoAxesColumn } from "lucide-react-native";
 
 export interface AverageSaleCardProps {
   property: Property;
+  /** When provided, card is pressable and navigates (e.g. to average detail screen). */
+  onPress?: () => void;
+  /** 'detail' shows Edit text (no price, no arrow) and uses onEditPress. */
+  variant?: "default" | "detail";
+  /** Called when Edit is pressed (only when variant is 'detail'). */
+  onEditPress?: () => void;
 }
 
 /**
  * Average sale card component for sale listings
  * Shows average villa for sale area and price in location
  */
-const AverageSaleCard = memo<AverageSaleCardProps>(({ property }) => {
+const AverageSaleCard = memo<AverageSaleCardProps>(({ property, onPress, variant = "default", onEditPress }) => {
   const { t, isRTL } = useLocalization();
   
   // Calculate average price (in a real app, this would come from API)
@@ -56,19 +63,33 @@ const AverageSaleCard = memo<AverageSaleCardProps>(({ property }) => {
     [isRTL]
   );
 
+  const isDetail = variant === "detail";
+  const Wrapper = isDetail ? View : TouchableOpacity;
+  const wrapperProps = isDetail
+    ? { style: [styles.card, rtlStyles.card] }
+    : { style: [styles.card, rtlStyles.card], onPress, activeOpacity: 0.7 };
+
   return (
-    <TouchableOpacity style={[styles.card, rtlStyles.card]} activeOpacity={0.7}>
+    <Wrapper {...wrapperProps}>
       <View style={[styles.iconContainer, rtlStyles.iconContainer]}>
-        <Ionicons name="bar-chart" size={wp(5.5)} color="#3b82f6" />
+        <ChartNoAxesColumn size={wp(7)} color="#3b82f6" strokeWidth={3} />
       </View>
       <View style={styles.content}>
-        <Text style={[styles.label, rtlStyles.label]}>
+        <Text style={[styles.label, rtlStyles.label, isDetail && styles.labelBold]}>
           {t("listings.averageForSale", { minArea, maxArea, location: translatedLocation })}
         </Text>
-        <Text style={[styles.price, rtlStyles.price]}>{averagePrice} {t("listings.sar")}</Text>
+        {!isDetail && (
+          <Text style={[styles.price, rtlStyles.price]}>{averagePrice} {t("listings.sar")}</Text>
+        )}
       </View>
-      <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={wp(5)} color="#9ca3af" />
-    </TouchableOpacity>
+      {isDetail ? (
+        <TouchableOpacity onPress={onEditPress} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <Text style={styles.editText}>{t("common.edit")}</Text>
+        </TouchableOpacity>
+      ) : (
+        <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={wp(5)} color="#9ca3af" />
+      )}
+    </Wrapper>
   );
 });
 
@@ -79,7 +100,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    padding: wp(4),
+    padding: wp(3),
     marginHorizontal: wp(4),
     marginTop: hp(1),
     marginBottom: hp(1),
@@ -88,8 +109,8 @@ const styles = StyleSheet.create({
     borderColor: "#d0d5d6",
   },
   iconContainer: {
-    width: wp(12),
-    height: wp(12),
+    width: wp(10),
+    height: wp(10),
     backgroundColor: "#e0f2fe",
     borderRadius: wp(2),
     alignItems: "center",
@@ -104,10 +125,19 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     marginBottom: hp(0.5),
   },
+  labelBold: {
+    fontWeight: "700",
+    color: "#111827",
+  },
   price: {
     fontSize: wp(4.5),
     fontWeight: "500",
     color: "#111827",
+  },
+  editText: {
+    fontSize: wp(3.5),
+    fontWeight: "600",
+    color: "#3b82f6",
   },
 });
 

@@ -17,6 +17,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useLocalization } from "../../hooks/useLocalization";
+import { COLORS } from "@/constants";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -320,9 +321,13 @@ const styles = StyleSheet.create({
   },
   availableBadge: {
     backgroundColor: "#e1eef4",
+    borderWidth: 1,
+    borderColor: COLORS.white,
   },
   readyBadge: {
     backgroundColor: "#d1d5e0",
+    borderWidth: 1,
+    borderColor: COLORS.white,
   },
   availableBadgeText: {
     color: "#1f85b3",
@@ -330,7 +335,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   readyBadgeText: {
-    color: "#6a747e",
+    color: COLORS.textSecondary ,
     fontSize: wp(3.2),
     fontWeight: "600",
   },

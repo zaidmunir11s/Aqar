@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { DetailRow } from "./PropertyInfo";
 import type { Property } from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
+import { COLORS } from "../../constants";
 
 export type TabType = "main" | "additional" | "location";
 
@@ -36,6 +37,18 @@ const PropertyTabs = memo<PropertyTabsProps>(
       { id: "additional" as TabType, label: t("listings.additionalInformation") },
       { id: "location" as TabType, label: t("listings.locationDetails") },
     ], [t]);
+
+    // In RTL, scroll to the end so the first tab (visually on the right) is in focus
+    useEffect(() => {
+      const timeoutId = setTimeout(() => {
+        if (isRTL) {
+          tabScrollViewRef.current?.scrollToEnd({ animated: false });
+        } else {
+          tabScrollViewRef.current?.scrollTo({ x: 0, animated: false });
+        }
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }, [isRTL]);
 
     const renderMainTabContent = useCallback(() => {
       const mainDetails = [
@@ -164,9 +177,9 @@ PropertyTabs.displayName = "PropertyTabs";
 
 const styles = StyleSheet.create({
   tabsContainer: {
-    backgroundColor: "#ebf1f1",
-    borderWidth: 2,
-    borderColor: "#dadee1",
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   tabsContentContainer: {
     paddingHorizontal: wp(3),
@@ -179,27 +192,27 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1.5),
     paddingHorizontal: wp(3),
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.white,
     borderRadius: wp(1.5),
-    borderWidth: 2,
-    borderColor: "#dadee1",
+    borderWidth: 1,
+    borderColor: COLORS.border,
     minWidth: wp(30),
   },
   activeTab: {
-    backgroundColor: "#fff",
-    borderColor: "#dadee1",
-    borderWidth: 2,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.border,
+    borderWidth: 1,
   },
   tabText: {
     fontSize: wp(3.2),
-    color: "#6b7280",
+    color: COLORS.textSecondary,
   },
   activeTabText: {
-    color: "#383f49",
+    color: COLORS.textPrimary,
     fontWeight: "bold",
   },
   tabContent: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   tabsContentContainerRTL: {
     flexDirection: "row-reverse",

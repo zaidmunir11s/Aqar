@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useRef, useEffect } from "react";
-import { View, Text, StyleSheet, Platform, AppState } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, StyleSheet, Platform, AppState, TouchableOpacity } from "react-native";
+import { Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -12,6 +12,8 @@ import { useLocalization } from "../../hooks/useLocalization";
   
 export interface PropertyLocationProps {
   property: Property;
+  /** When provided, the location section is pressable and navigates to Nearby Services (or custom action). */
+  onPress?: () => void;
 }
 
 // Helper functions to validate coordinates
@@ -38,7 +40,7 @@ const isValidLongitude = (value: number | undefined | null): boolean => {
 /**
  * Property location map component
  */
-const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
+const PropertyLocation = memo<PropertyLocationProps>(({ property, onPress }) => {
   const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const appState = useRef(AppState.currentState);
@@ -120,8 +122,8 @@ const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
     );
   }
 
-  return (
-    <View style={styles.section}>
+  const content = (
+    <>
       <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
         {t("listings.location")}
       </Text>
@@ -139,6 +141,7 @@ const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
             provider={Platform.OS === "android" ? "google" : undefined}
             scrollEnabled={false}
             zoomEnabled={false}
+            rotateEnabled={false}
             liteMode={Platform.OS === "android"}
             onMapReady={() => {
               // Map is ready - safe to use
@@ -149,8 +152,11 @@ const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
                 latitude,
                 longitude,
               }}
-              pinColor={COLORS.PinColor}
-            />
+            >
+              <View style={styles.customMarker}>
+                <FontAwesome6 name="location-dot" size={wp(8)} color={COLORS.PinColor} />
+              </View>
+            </Marker>
           </MapView>
         </View>
       </View>
@@ -160,6 +166,18 @@ const PropertyLocation = memo<PropertyLocationProps>(({ property }) => {
           {t("listings.locationDeedNote")}
         </Text>
       </View>
+    </>
+  );
+
+  return (
+    <View style={styles.section}>
+      {onPress ? (
+        <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
+          {content}
+        </TouchableOpacity>
+      ) : (
+        content
+      )}
     </View>
   );
 });
@@ -168,23 +186,23 @@ PropertyLocation.displayName = "PropertyLocation";
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     padding: wp(4),
     paddingTop: hp(2),
   },
   sectionTitle: {
     fontSize: wp(4.5),
     fontWeight: "700",
-    color: "#111827",
+    color: COLORS.textPrimary,
     marginBottom: hp(2),
   },
   mapWrapper: {
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.white,
     borderRadius: wp(2),
     overflow: "hidden",
     marginBottom: hp(2),
-    borderWidth: 2,
-    borderColor: "#dadee8",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   mapContainer: {
     height: hp(25),
@@ -194,18 +212,22 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  customMarker: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   locationAlert: {
     flexDirection: "row",
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     padding: wp(3),
     borderRadius: wp(2),
-    borderWidth: 2,
-    borderColor: "#dadee8",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   locationAlertText: {
     flex: 1,
     fontSize: wp(3),
-    color: "#374151",
+    color: COLORS.textPrimary,
   },
   errorContainer: {
     flex: 1,

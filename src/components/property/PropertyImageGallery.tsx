@@ -18,6 +18,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useLocalization } from "../../hooks/useLocalization";
+import { COLORS } from "@/constants";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -242,7 +243,7 @@ PropertyImageGallery.displayName = "PropertyImageGallery";
 const styles = StyleSheet.create({
   imageSection: {
     height: hp(30),
-    backgroundColor: "#000",
+    backgroundColor: COLORS.background,
     width: "100%",
   },
   imageWrapper: {

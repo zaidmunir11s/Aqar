@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -10,12 +10,13 @@ import { translateAddress } from "../../utils/addressTranslation";
 
 export interface ProjectHeaderProps {
   project: ProjectProperty;
+  onLogoPress?: () => void;
 }
 
 /**
  * Project header with title and developer info
  */
-const ProjectHeader = memo<ProjectHeaderProps>(({ project }) => {
+const ProjectHeader = memo<ProjectHeaderProps>(({ project, onLogoPress }) => {
   const { t, isRTL } = useLocalization();
 
   // RTL-aware styles
@@ -54,13 +55,18 @@ const ProjectHeader = memo<ProjectHeaderProps>(({ project }) => {
       </Text>
       <View style={[styles.projectHeader, rtlStyles.projectHeader]}>
         {project.developerLogo && (
-          <View style={[styles.logoContainer, rtlStyles.logoContainer]}>
-        <Image
-          source={{ uri: project.developerLogo }}
-          style={styles.developerLogo}
+          <TouchableOpacity
+            style={[styles.logoContainer, rtlStyles.logoContainer]}
+            onPress={onLogoPress}
+            activeOpacity={onLogoPress ? 0.7 : 1}
+            disabled={!onLogoPress}
+          >
+            <Image
+              source={{ uri: project.developerLogo }}
+              style={styles.developerLogo}
               resizeMode="cover"
-        />
-          </View>
+            />
+          </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
           <Text style={[styles.projectTitle, rtlStyles.projectTitle]}>

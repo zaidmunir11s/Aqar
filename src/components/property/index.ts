@@ -15,4 +15,6 @@ export { default as UnitRules } from "./UnitRules";
 export { default as AverageCard } from "./AverageCard";
 export { default as FinancingOptionsCard } from "./FinancingOptionsCard";
 export { default as AverageSaleCard } from "./AverageSaleCard";
+export { default as AveragePriceChart } from "./AveragePriceChart";
+export type { ChartDataPoint, ChartPeriodMode } from "./AveragePriceChart";
 export { default as DailyHeaderBoxes } from "./DailyHeaderBoxes";

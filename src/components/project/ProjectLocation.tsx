@@ -12,10 +12,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import MapView, { Marker, Circle } from "react-native-maps";
+import MapView, { Circle, Polyline } from "react-native-maps";
 import type { ProjectProperty } from "../../types/property";
 import { COLORS, RIYADH_REGION } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+
 export interface ProjectLocationProps {
   project: ProjectProperty;
 }
@@ -57,6 +58,21 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
   // Use fallback coordinates (Riyadh center) if project coordinates are invalid
   const latitude = hasValidCoords ? project.lat : RIYADH_REGION.latitude;
   const longitude = hasValidCoords ? project.lng : RIYADH_REGION.longitude;
+
+  // Calculate the bottom edge of the circle for the line to start from
+  // radius in meters, convert to approximate latitude degrees
+  const circleRadiusInMeters = 600;
+  const metersPerDegree = 111320; // approximate meters per degree of latitude
+  const radiusInDegrees = circleRadiusInMeters / metersPerDegree;
+
+  // Responsive stroke widths (scale with screen width)
+  const circleStrokeWidth = Math.max(4, wp(2));
+  const polylineStrokeWidth = Math.max(2, wp(0.75));
+
+  // Start point: bottom edge of circle
+  const lineStartLatitude = latitude - radiusInDegrees;
+  // End point: extend further down
+  const lineEndLatitude = latitude - radiusInDegrees - 0.002;
 
   // Handle app state changes to prevent MapView crashes on Android
   useEffect(() => {
@@ -125,26 +141,40 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
           provider={Platform.OS === "android" ? "google" : undefined}
           scrollEnabled={false}
           zoomEnabled={false}
+          rotateEnabled={false}
           liteMode={Platform.OS === "android"}
           onMapReady={() => {
             // Map is ready - safe to use
           }}
         >
-          <Marker
-            coordinate={{ latitude, longitude }}
-            pinColor={COLORS.PinColor}  
-          />
+          {/* Circle with green border and light fill - stroke scales with width */}
           <Circle
             center={{ latitude, longitude }}
-            radius={1000}
-            strokeColor="#0b7f33"
-            fillColor="rgba(16, 185, 129, 0.2)"
-            strokeWidth={2}
+            radius={circleRadiusInMeters}
+            strokeColor={COLORS.getLocation}
+            fillColor="rgba(16, 185, 129, 0.15)"
+            strokeWidth={circleStrokeWidth}
+          />
+
+          {/* Vertical line - starts from BOTTOM EDGE of circle (lollipop stick), stroke scales with width */}
+          <Polyline
+            coordinates={[
+              { latitude: lineStartLatitude, longitude }, // Bottom edge of circle
+              { latitude: lineEndLatitude, longitude },   // Extends downward
+            ]}
+            strokeColor={COLORS.getLocation}
+            strokeWidth={polylineStrokeWidth}
           />
         </MapView>
-        <TouchableOpacity style={styles.getLocationButton}>
+        
+        <TouchableOpacity
+          style={[styles.getLocationButton, rtlStyles.getLocationButton]}
+          activeOpacity={0.8}
+        >
           <Ionicons name="location" size={wp(5)} color="#fff" />
-          <Text style={styles.getLocationText}>Get the location</Text>
+          <Text style={[styles.getLocationText, rtlStyles.getLocationText]}>
+            {t("projects.getLocation")}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -167,8 +197,9 @@ const styles = StyleSheet.create({
     marginBottom: hp(2),
   },
   mapContainer: {
-    height: hp(55),
-    borderRadius: wp(1.5),
+    height: hp(42),
+    minHeight: hp(28),
+    borderRadius: wp(2),
     borderWidth: 1.5,
     borderColor: "#e4e3e8",
     overflow: "hidden",
@@ -179,27 +210,28 @@ const styles = StyleSheet.create({
   },
   getLocationButton: {
     position: "absolute",
-    bottom: hp(2),
+    bottom: hp(2.5),
     alignSelf: "center",
     backgroundColor: COLORS.getLocation,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: wp(6),
-    paddingVertical: hp(1.5),
-    borderRadius: wp(3),
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(1.4),
+    borderRadius: wp(2.5),
+    minHeight: hp(5),
     ...Platform.select({
       ios: {
         shadowColor: "#000",
         shadowOpacity: 0.2,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: wp(1.5),
+        shadowOffset: { width: 0, height: hp(0.4) },
       },
       android: { elevation: 8 },
     }),
   },
   getLocationText: {
     color: "#fff",
-    fontSize: wp(4),
+    fontSize: wp(3.8),
     fontWeight: "600",
   },
   errorContainer: {

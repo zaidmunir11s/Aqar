@@ -5,6 +5,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useLocalization } from "../../hooks/useLocalization";
+import { COLORS } from "@/constants";
 
 export interface FinancingOptionsCardProps {
   onPress: () => void;
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
   questionText: {
     flex: 1,
     fontSize: wp(3.8),
-    color: "#374151",
+    color: COLORS.textPrimary,
     fontWeight: "400",
     marginRight: wp(3),
   },

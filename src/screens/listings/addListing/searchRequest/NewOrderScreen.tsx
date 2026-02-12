@@ -48,50 +48,42 @@ import {
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
-// Category options - use from constants and add "Other"
-const CATEGORY_OPTIONS = [
-  ...ALL_CATEGORIES.map((cat) => cat.text),
-  "Other",
-];
+// Category ID → translation key (outside component to avoid recreating every render)
+const CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
+  "sale-1": "listings.propertyTypes.villaForSale",
+  "sale-2": "listings.propertyTypes.landForSale",
+  "sale-3": "listings.propertyTypes.apartmentForSale",
+  "sale-4": "listings.propertyTypes.buildingForSale",
+  "sale-5": "listings.propertyTypes.smallHouseForSale",
+  "sale-6": "listings.propertyTypes.loungeForSale",
+  "sale-7": "listings.propertyTypes.farmForSale",
+  "sale-8": "listings.propertyTypes.storeForSale",
+  "sale-9": "listings.propertyTypes.floorForSale",
+  "rent-1": "listings.propertyTypes.apartmentForRent",
+  "rent-2": "listings.propertyTypes.villaForRent",
+  "rent-3": "listings.propertyTypes.bigFlatForRent",
+  "rent-4": "listings.propertyTypes.loungeForRent",
+  "rent-5": "listings.propertyTypes.smallHouseForRent",
+  "rent-6": "listings.propertyTypes.storeForRent",
+  "rent-7": "listings.propertyTypes.buildingForRent",
+  "rent-8": "listings.propertyTypes.landForRent",
+  "rent-9": "listings.propertyTypes.roomForRent",
+  "rent-10": "listings.propertyTypes.officeForRent",
+  "rent-11": "listings.propertyTypes.tentForRent",
+  "rent-12": "listings.propertyTypes.warehouseForRent",
+  "rent-13": "listings.propertyTypes.chaletForRent",
+};
+
+function getCategoryTranslationKey(categoryId: string): string {
+  return CATEGORY_TRANSLATION_KEYS[categoryId] || "";
+}
 
 export default function NewOrderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const keyboardHeight = useRef(new Animated.Value(0)).current;
   const { t } = useLocalization();
   
-  // Get all state, handlers, and computed values from the hook
   const form = useOrderForm();
-
-  // Helper function to map category ID to translation key
-  function getCategoryTranslationKey(categoryId: string): string {
-    const categoryMap: Record<string, string> = {
-      // For Sale
-      "sale-1": "listings.propertyTypes.villaForSale",
-      "sale-2": "listings.propertyTypes.landForSale",
-      "sale-3": "listings.propertyTypes.apartmentForSale",
-      "sale-4": "listings.propertyTypes.buildingForSale",
-      "sale-5": "listings.propertyTypes.smallHouseForSale",
-      "sale-6": "listings.propertyTypes.loungeForSale",
-      "sale-7": "listings.propertyTypes.farmForSale",
-      "sale-8": "listings.propertyTypes.storeForSale",
-      "sale-9": "listings.propertyTypes.floorForSale",
-      // For Rent
-      "rent-1": "listings.propertyTypes.apartmentForRent",
-      "rent-2": "listings.propertyTypes.villaForRent",
-      "rent-3": "listings.propertyTypes.bigFlatForRent",
-      "rent-4": "listings.propertyTypes.loungeForRent",
-      "rent-5": "listings.propertyTypes.smallHouseForRent",
-      "rent-6": "listings.propertyTypes.storeForRent",
-      "rent-7": "listings.propertyTypes.buildingForRent",
-      "rent-8": "listings.propertyTypes.landForRent",
-      "rent-9": "listings.propertyTypes.roomForRent",
-      "rent-10": "listings.propertyTypes.officeForRent",
-      "rent-11": "listings.propertyTypes.tentForRent",
-      "rent-12": "listings.propertyTypes.warehouseForRent",
-      "rent-13": "listings.propertyTypes.chaletForRent",
-    };
-    return categoryMap[categoryId] || "";
-  }
 
   // Category options with translation and mapping
   const categoryOptions = useMemo(() => {
@@ -205,26 +197,36 @@ export default function NewOrderScreen(): React.JSX.Element {
     [createReverseMap, translatedStreetWidthOptions]
   );
 
-  // Helper functions to get translated initial values
-  const getTranslatedInitialValue = useCallback((originalValue: string | null, reverseMap: Record<string, string>, translatedOptions: string[]): string => {
-    if (!originalValue) return "";
-    // Find the translated value that corresponds to the original
-    const originalIndex = Object.values(reverseMap).indexOf(originalValue);
-    return originalIndex >= 0 ? translatedOptions[originalIndex] : originalValue;
-  }, []);
+  // Helper: get translated value for picker initialValue/display. Use originalOptions when provided so index is correct (Object.values order can be unreliable).
+  const getTranslatedInitialValue = useCallback(
+    (
+      originalValue: string | null,
+      reverseMap: Record<string, string>,
+      translatedOptions: string[],
+      originalOptions?: string[]
+    ): string => {
+      if (!originalValue) return "";
+      const originalIndex =
+        originalOptions && originalOptions.length === translatedOptions.length
+          ? originalOptions.indexOf(originalValue)
+          : Object.values(reverseMap).indexOf(originalValue);
+      return originalIndex >= 0 ? translatedOptions[originalIndex] : originalValue;
+    },
+    []
+  );
 
   // Helper function to translate picker values for display in FieldWithModal
   const getTranslatedPickerValue = useCallback((originalValue: string | null, type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"): string => {
     if (!originalValue) return "";
     
     if (type === "floor") {
-      return getTranslatedInitialValue(originalValue, floorReverseMap, translatedFloorOptions);
+      return getTranslatedInitialValue(originalValue, floorReverseMap, translatedFloorOptions, FLOOR_OPTIONS);
     } else if (type === "age") {
-      return getTranslatedInitialValue(originalValue, ageReverseMap, translatedAgeOptions);
+      return getTranslatedInitialValue(originalValue, ageReverseMap, translatedAgeOptions, AGE_OPTIONS);
     } else if (type === "streetDirection") {
-      return getTranslatedInitialValue(originalValue, streetDirectionReverseMap, translatedStreetDirectionOptions);
+      return getTranslatedInitialValue(originalValue, streetDirectionReverseMap, translatedStreetDirectionOptions, STREET_DIRECTION_OPTIONS);
     } else if (type === "streetWidth") {
-      return getTranslatedInitialValue(originalValue, streetWidthReverseMap, translatedStreetWidthOptions);
+      return getTranslatedInitialValue(originalValue, streetWidthReverseMap, translatedStreetWidthOptions, STREET_WIDTH_OPTIONS);
     } else if (type === "stores") {
       // Stores options: ["All", "1", "2", "3", "4"]
       if (originalValue === "All") return t("listings.all");
@@ -267,9 +269,49 @@ export default function NewOrderScreen(): React.JSX.Element {
     [createReverseMap, translatedResidentialCommercialOptions]
   );
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     navigation.goBack();
-  };
+  }, [navigation]);
+
+  // Stable modal openers so children don't re-render unnecessarily
+  const openCategoryModal = useCallback(() => form.setShowCategoryModal(true), []);
+  const openFloorModal = useCallback(() => form.setShowFloorModal(true), []);
+  const openAgeModal = useCallback(() => form.setShowAgeModal(true), []);
+
+  // When category is set, pre-select first option for all FieldWithModal pickers (no placeholders)
+  useEffect(() => {
+    if (!form.category) return;
+    const firstFloor = FLOOR_OPTIONS[0] ?? "";
+    const firstAge = AGE_OPTIONS[0] ?? "";
+    const firstStreetDirection = STREET_DIRECTION_OPTIONS[0] ?? "";
+    const firstStreetWidth = STREET_WIDTH_OPTIONS[0] ?? "";
+    const firstStores = STORES_OPTIONS[0] ?? "";
+
+    form.setFloor(firstFloor);
+    form.setAge(firstAge);
+    form.setStreetDirection(firstStreetDirection);
+    form.setLandStreetDirection(firstStreetDirection);
+    form.setSmallHouseStreetDirection(firstStreetDirection);
+    form.setBuildingStreetDirection(firstStreetDirection);
+    form.setVillaRentStreetDirection(firstStreetDirection);
+    form.setSmallHouseRentStreetDirection(firstStreetDirection);
+    form.setBuildingRentStreetDirection(firstStreetDirection);
+    form.setLandRentStreetDirection(firstStreetDirection);
+    form.setStreetWidth(firstStreetWidth);
+    form.setLandStreetWidth(firstStreetWidth);
+    form.setSmallHouseStreetWidth(firstStreetWidth);
+    form.setLoungeStreetWidth(firstStreetWidth);
+    form.setStoreStreetWidth(firstStreetWidth);
+    form.setVillaRentStreetWidth(firstStreetWidth);
+    form.setSmallHouseRentStreetWidth(firstStreetWidth);
+    form.setStoreRentStreetWidth(firstStreetWidth);
+    form.setBuildingRentStreetWidth(firstStreetWidth);
+    form.setLandRentStreetWidth(firstStreetWidth);
+    form.setOfficeRentStreetWidth(firstStreetWidth);
+    form.setWarehouseRentStreetWidth(firstStreetWidth);
+    form.setStores(firstStores);
+    form.setBuildingRentStores(firstStores);
+  }, [form.category]);
 
   // Listen to keyboard show/hide events
   useEffect(() => {
@@ -536,6 +578,9 @@ export default function NewOrderScreen(): React.JSX.Element {
     } else if (form.isTentForRent) {
       Object.assign(orderFormData, {
         tentRentRentPeriod: form.tentRentRentPeriod,
+        tentRentPriceFrom: form.tentRentPriceFrom,
+        tentRentPriceTo: form.tentRentPriceTo,
+        selectedPayment: form.selectedPayment,
         familySection: form.familySection,
       });
     } else if (form.isWarehouseForRent) {
@@ -587,13 +632,14 @@ export default function NewOrderScreen(): React.JSX.Element {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Category Field */}
         <FieldWithModal
           label={t("listings.category")}
           value={getTranslatedCategoryValue(form.category)}
           placeholder={t("listings.selectCategory")}
-          onPress={() => form.setShowCategoryModal(true)}
+          onPress={openCategoryModal}
         />
 
         {/* Apartment for rent content */}
@@ -606,13 +652,11 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             {form.showYearlyContent && (
               <>
-                <View style={styles.section}>
-                  <Text style={styles.label}>{t("listings.paymentOptions")}</Text>
-                  <PaymentChips
-                    selectedPayment={form.selectedPayment}
-                    onSelect={form.handlePaymentChipPress}
-                  />
-                </View>
+                <PaymentChips
+                  label={t("listings.paymentOptions")}
+                  selectedPayment={form.selectedPayment}
+                  onSelect={form.handlePaymentChipPress}
+                />
 
                 <PriceInputSection
                   label={form.priceLabel}
@@ -667,7 +711,7 @@ export default function NewOrderScreen(): React.JSX.Element {
               label={t("listings.floor")}
               value={getTranslatedPickerValue(form.floor, "floor")}
               placeholder={t("listings.selectFloor")}
-              onPress={() => form.setShowFloorModal(true)}
+              onPress={openFloorModal}
               backgroundColor="background"
             />
 
@@ -675,7 +719,7 @@ export default function NewOrderScreen(): React.JSX.Element {
               label={t("listings.age")}
               value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -792,7 +836,7 @@ export default function NewOrderScreen(): React.JSX.Element {
               label={t("listings.age")}
               value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -934,17 +978,17 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.floor")}
-              value={form.floor}
+              value={getTranslatedPickerValue(form.floor, "floor")}
               placeholder={t("listings.selectFloor")}
-              onPress={() => form.setShowFloorModal(true)}
+              onPress={openFloorModal}
               backgroundColor="background"
             />
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -977,7 +1021,7 @@ export default function NewOrderScreen(): React.JSX.Element {
               label={t("listings.apartments")}
               options={APARTMENT_OPTIONS}
               selectedValue={form.buildingApartments}
-              onSelect={form.handleApartmentPress}
+              onSelect={form.handleBuildingApartmentsPress}
             />
 
             <TabBarSection
@@ -991,7 +1035,7 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.streetDirection")}
-              value={form.buildingStreetDirection}
+              value={getTranslatedPickerValue(form.buildingStreetDirection, "streetDirection")}
               placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
@@ -999,7 +1043,7 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.stores")}
-              value={form.stores}
+              value={getTranslatedPickerValue(form.stores, "stores")}
               placeholder={t("listings.selectStores")}
               onPress={() => form.setShowStoresModal(true)}
               backgroundColor="background"
@@ -1027,7 +1071,7 @@ export default function NewOrderScreen(): React.JSX.Element {
               label={t("listings.age")}
               value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1060,7 +1104,7 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.streetDirection")}
-              value={form.smallHouseStreetDirection}
+              value={getTranslatedPickerValue(form.smallHouseStreetDirection, "streetDirection")}
               placeholder={t("listings.selectStreetDirection")}
               onPress={() => form.setShowStreetDirectionModal(true)}
               backgroundColor="background"
@@ -1093,9 +1137,9 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1133,7 +1177,7 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.streetWidth")}
-              value={form.loungeStreetWidth}
+              value={getTranslatedPickerValue(form.loungeStreetWidth, "streetWidth")}
               placeholder={t("listings.selectStreetWidth")}
               onPress={() => form.setShowStreetWidthModal(true)}
               backgroundColor="background"
@@ -1141,9 +1185,9 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1254,17 +1298,17 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.floor")}
-              value={form.floor}
+              value={getTranslatedPickerValue(form.floor, "floor")}
               placeholder={t("listings.selectFloor")}
-              onPress={() => form.setShowFloorModal(true)}
+              onPress={openFloorModal}
               backgroundColor="background"
             />
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1283,13 +1327,15 @@ export default function NewOrderScreen(): React.JSX.Element {
           <VillaForRentSection
             rentPeriod={form.villaRentRentPeriod}
             onRentPeriodChange={form.handleVillaRentRentPeriodPress}
+            selectedPayment={form.selectedPayment}
+            onPaymentChipSelect={form.handlePaymentChipPress}
             priceFrom={form.villaRentPriceFrom}
             priceTo={form.villaRentPriceTo}
             onPriceFromChange={form.setVillaRentPriceFrom}
             onPriceToChange={form.setVillaRentPriceTo}
             selectedBedroom={form.selectedBedroom}
             onBedroomChange={form.handleBedroomPress}
-            streetDirection={form.villaRentStreetDirection}
+            streetDirection={getTranslatedPickerValue(form.villaRentStreetDirection, "streetDirection")}
             onStreetDirectionPress={() => form.setShowStreetDirectionModal(true)}
             selectedLivingRoom={form.selectedLivingRoom}
             onLivingRoomChange={form.handleLivingRoomPress}
@@ -1299,12 +1345,12 @@ export default function NewOrderScreen(): React.JSX.Element {
             areaTo={form.villaRentAreaTo}
             onAreaFromChange={form.setVillaRentAreaFrom}
             onAreaToChange={form.setVillaRentAreaTo}
-            streetWidth={form.villaRentStreetWidth}
+            streetWidth={getTranslatedPickerValue(form.villaRentStreetWidth, "streetWidth")}
             onStreetWidthPress={() => form.setShowStreetWidthModal(true)}
             stairs={form.villaRentStairs}
             onStairsChange={form.setVillaRentStairs}
-            age={form.age}
-            onAgePress={() => form.setShowAgeModal(true)}
+            age={getTranslatedPickerValue(form.age, "age")}
+            onAgePress={openAgeModal}
             driverRoom={form.driverRoom}
             onDriverRoomChange={form.setDriverRoom}
             maidRoom={form.maidRoom}
@@ -1338,8 +1384,22 @@ export default function NewOrderScreen(): React.JSX.Element {
               onSelect={form.handleBigFlatRentPeriodPress}
             />
 
+            {form.bigFlatRentPeriod === "Yearly" && (
+              <PaymentChips
+                label={t("listings.paymentOptions")}
+                selectedPayment={form.selectedPayment}
+                onSelect={form.handlePaymentChipPress}
+              />
+            )}
+
             <PriceInputSection
-              label={t("listings.price")}
+              label={
+                form.bigFlatRentPeriod === "Yearly"
+                  ? form.selectedPayment === "Monthly"
+                    ? t("listings.priceMonthly")
+                    : t("listings.annualPrice")
+                  : t("listings.price")
+              }
               fromValue={form.bigFlatPriceFrom}
               toValue={form.bigFlatPriceTo}
               onFromChange={form.setBigFlatPriceFrom}
@@ -1379,17 +1439,17 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.floor")}
-              value={form.floor}
+              value={getTranslatedPickerValue(form.floor, "floor")}
               placeholder={t("listings.selectFloor")}
-              onPress={() => form.setShowFloorModal(true)}
+              onPress={openFloorModal}
               backgroundColor="background"
             />
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1415,8 +1475,22 @@ export default function NewOrderScreen(): React.JSX.Element {
               onSelect={form.handleLoungeRentRentPeriodPress}
             />
 
+            {form.loungeRentRentPeriod === "Yearly" && (
+              <PaymentChips
+                label={t("listings.paymentOptions")}
+                selectedPayment={form.selectedPayment}
+                onSelect={form.handlePaymentChipPress}
+              />
+            )}
+
             <PriceInputSection
-              label={t("listings.price")}
+              label={
+                form.loungeRentRentPeriod === "Yearly"
+                  ? form.selectedPayment === "Monthly"
+                    ? t("listings.priceMonthly")
+                    : t("listings.annualPrice")
+                  : t("listings.price")
+              }
               fromValue={form.loungeRentPriceFrom}
               toValue={form.loungeRentPriceTo}
               onFromChange={form.setLoungeRentPriceFrom}
@@ -1502,9 +1576,9 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1573,7 +1647,7 @@ export default function NewOrderScreen(): React.JSX.Element {
               label={t("listings.apartments")}
               options={APARTMENT_OPTIONS}
               selectedValue={form.buildingRentApartments}
-              onSelect={form.handleApartmentPress}
+              onSelect={form.handleBuildingRentApartmentsPress}
             />
 
             <TabBarSection
@@ -1621,9 +1695,9 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <FieldWithModal
               label={t("listings.age")}
-              value={form.age}
+              value={getTranslatedPickerValue(form.age, "age")}
               placeholder={t("listings.selectAge")}
-              onPress={() => form.setShowAgeModal(true)}
+              onPress={openAgeModal}
               backgroundColor="background"
             />
 
@@ -1691,8 +1765,22 @@ export default function NewOrderScreen(): React.JSX.Element {
               onSelect={form.handleRoomRentRentPeriodPress}
             />
 
+            {form.roomRentRentPeriod === "Yearly" && (
+              <PaymentChips
+                label={t("listings.paymentOptions")}
+                selectedPayment={form.selectedPayment}
+                onSelect={form.handlePaymentChipPress}
+              />
+            )}
+
             <PriceInputSection
-              label={t("listings.price")}
+              label={
+                form.roomRentRentPeriod === "Yearly"
+                  ? form.selectedPayment === "Monthly"
+                    ? t("listings.priceMonthly")
+                    : t("listings.annualPrice")
+                  : t("listings.price")
+              }
               fromValue={form.roomRentPriceFrom}
               toValue={form.roomRentPriceTo}
               onFromChange={form.setRoomRentPriceFrom}
@@ -1756,6 +1844,31 @@ export default function NewOrderScreen(): React.JSX.Element {
               onSelect={form.handleTentRentRentPeriodPress}
             />
 
+            {form.tentRentRentPeriod === "Yearly" && (
+              <>
+                <PaymentChips
+                  label={t("listings.paymentOptions")}
+                  selectedPayment={form.selectedPayment}
+                  onSelect={form.handlePaymentChipPress}
+                />
+                {form.selectedPayment && form.selectedPayment !== "1 Payment" && (
+                  <PriceInputSection
+                    label={
+                      form.selectedPayment === "Monthly"
+                        ? t("listings.priceMonthly")
+                        : t("listings.annualPrice")
+                    }
+                    fromValue={form.tentRentPriceFrom}
+                    toValue={form.tentRentPriceTo}
+                    onFromChange={form.setTentRentPriceFrom}
+                    onToChange={form.setTentRentPriceTo}
+                    fromPlaceholder={t("listings.fromPrice")}
+                    toPlaceholder={t("listings.toPrice")}
+                  />
+                )}
+              </>
+            )}
+
             <ToggleGroup
               toggles={[
                 { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
@@ -1812,8 +1925,22 @@ export default function NewOrderScreen(): React.JSX.Element {
               onSelect={form.handleChaletRentRentPeriodPress}
             />
 
+            {form.chaletRentRentPeriod === "Yearly" && (
+              <PaymentChips
+                label={t("listings.paymentOptions")}
+                selectedPayment={form.selectedPayment}
+                onSelect={form.handlePaymentChipPress}
+              />
+            )}
+
             <PriceInputSection
-              label={t("listings.price")}
+              label={
+                form.chaletRentRentPeriod === "Yearly"
+                  ? form.selectedPayment === "Monthly"
+                    ? t("listings.priceMonthly")
+                    : t("listings.annualPrice")
+                  : t("listings.price")
+              }
               fromValue={form.chaletRentPriceFrom}
               toValue={form.chaletRentPriceTo}
               onFromChange={form.setChaletRentPriceFrom}
@@ -1915,6 +2042,7 @@ export default function NewOrderScreen(): React.JSX.Element {
       />
 
       <WheelPickerModal
+        key={`floor-${form.category}`}
         visible={form.showFloorModal}
         onClose={() => form.setShowFloorModal(false)}
         onSelect={(translatedValue: string) => {
@@ -1923,10 +2051,11 @@ export default function NewOrderScreen(): React.JSX.Element {
         }}
         title={t("listings.selectFloor")}
         options={translatedFloorOptions}
-        initialValue={getTranslatedInitialValue(form.floor, floorReverseMap, translatedFloorOptions)}
+        initialValue={getTranslatedInitialValue(form.floor, floorReverseMap, translatedFloorOptions, FLOOR_OPTIONS)}
       />
 
       <WheelPickerModal
+        key={`age-${form.category}`}
         visible={form.showAgeModal}
         onClose={() => form.setShowAgeModal(false)}
         onSelect={(translatedValue: string) => {
@@ -1935,10 +2064,11 @@ export default function NewOrderScreen(): React.JSX.Element {
         }}
         title={t("listings.selectAge")}
         options={translatedAgeOptions}
-        initialValue={getTranslatedInitialValue(form.age, ageReverseMap, translatedAgeOptions)}
+        initialValue={getTranslatedInitialValue(form.age, ageReverseMap, translatedAgeOptions, AGE_OPTIONS)}
       />
 
       <WheelPickerModal
+        key={`streetDirection-${form.category}`}
         visible={form.showStreetDirectionModal}
         onClose={() => form.setShowStreetDirectionModal(false)}
         onSelect={(translatedValue: string) => {
@@ -1971,6 +2101,7 @@ export default function NewOrderScreen(): React.JSX.Element {
       />
 
       <WheelPickerModal
+        key={`streetWidth-${form.category}`}
         visible={form.showStreetWidthModal}
         onClose={() => form.setShowStreetWidthModal(false)}
         onSelect={(translatedValue: string) => {
@@ -2013,6 +2144,7 @@ export default function NewOrderScreen(): React.JSX.Element {
       />
 
       <WheelPickerModal
+        key={`stores-${form.category}`}
         visible={form.showStoresModal}
         onClose={() => form.setShowStoresModal(false)}
         onSelect={(value: string) => {

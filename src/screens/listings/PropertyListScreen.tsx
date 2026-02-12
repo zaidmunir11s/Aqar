@@ -34,6 +34,7 @@ import {
   formatPrice,
   formatDateRange,
   calculateDays,
+  navigateToMapScreen,
 } from "../../utils";
 import {
   PropertyCard,
@@ -99,13 +100,15 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   const listingType = params?.listingType || "daily";
   const properties = useMemo(() => {
-    if (params?.properties) {
-      return params.properties;
-    }
+    // For daily, always use full list so changing city on list screen shows the right items
+    // (params.properties from map is only visible properties; filtering that by new city would be empty)
     if (listingType === "daily") {
       return PROPERTY_DATA.filter(
         (p) => p.listingType === "daily" && !("isProject" in p && p.isProject)
       );
+    }
+    if (params?.properties) {
+      return params.properties;
     }
     if (listingType === "sale") {
       // Include both regular sale properties and projects for sale
@@ -348,31 +351,23 @@ export default function PropertyListScreen(): React.JSX.Element {
   );
 
   const handleBackPress = useCallback(() => {
+    // When in daily section, navigate to DailyMap with current city/dates/filters
+    // so the map animates to the selected city (reflects list screen selection)
     if (listingType === "daily") {
-      navigation.navigate("DailyMap", {
+      const mapParams: Record<string, unknown> = {
         shouldZoomOut: true,
         selectedDates: effectiveSelectedDates,
-        selectedFilter: selectedFilter,
-        selectedCity: selectedCity !== t("listings.city") ? selectedCity : undefined,
         searchFilters: searchFilters,
-      });
-    } else if (listingType === "projects") {
-      navigation.navigate("ProjectsMap");
-    } else {
-      // Pass listingType to MapLanding to preserve the active tab (rent/sale)
-      navigation.navigate("MapLanding", {
-        listingType: listingType === "sale" ? "sale" : "rent",
-      });
+      };
+      if (selectedCity && selectedCity !== t("listings.city")) {
+        mapParams.selectedCity = selectedCity;
+      }
+      navigation.navigate("DailyMap", mapParams);
+      return;
     }
-  }, [
-    navigation,
-    listingType,
-    effectiveSelectedDates,
-    selectedFilter,
-    selectedCity,
-    searchFilters,
-    t,
-  ]);
+    // For other listing types, use navigateToMapScreen (popToTop or navigate)
+    navigateToMapScreen(navigation);
+  }, [navigation, listingType, selectedCity, effectiveSelectedDates, searchFilters, t]);
 
   const handleFilterPress = useCallback(
     (filterType: string) => {
@@ -455,14 +450,14 @@ export default function PropertyListScreen(): React.JSX.Element {
       // Usage type
       if (searchFilters.usageType !== null) count++;
       
-      // Bedrooms
-      if (searchFilters.bedrooms !== "" && searchFilters.bedrooms !== "All") count++;
+      // Bedrooms (including "All" — user has made a selection)
+      if (searchFilters.bedrooms !== "") count++;
       
-      // Living rooms
-      if (searchFilters.livingRooms !== "" && searchFilters.livingRooms !== "All") count++;
+      // Living rooms (including "All")
+      if (searchFilters.livingRooms !== "") count++;
       
-      // WC
-      if (searchFilters.wc !== "" && searchFilters.wc !== "All") count++;
+      // WC (including "All")
+      if (searchFilters.wc !== "") count++;
       
       // Villa type
       if (searchFilters.villaType !== null) count++;
@@ -597,11 +592,11 @@ export default function PropertyListScreen(): React.JSX.Element {
     return filtered;
   }, [filteredPropertiesForModal, searchFilters, listingType, properties, activeProjectFilter, projectSelectedCity, projectSelectedPropertyType]);
 
-  // Sort properties based on selected filter
+  // Sort properties based on selected filter (sort the filtered list, not the full source)
   const sortedProperties = useMemo(() => {
     if (!selectedFilter) return filteredProperties;
 
-    const sorted = [...properties];
+    const sorted = [...filteredProperties];
 
     switch (selectedFilter) {
       case "latest":
@@ -1081,24 +1076,32 @@ function applySearchFilters(
     filtered = filtered.filter((p) => p.usage === usage);
   }
 
-  // Filter by bedrooms
-  if (filters.bedrooms) {
+  // Filter by bedrooms — "All" or empty means no filter (show any bedroom count)
+  if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
     if (filters.bedrooms === "6+") {
       filtered = filtered.filter((p) => p.bedrooms >= 6);
     } else {
-      const bedrooms = parseInt(filters.bedrooms);
-      filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+      const bedrooms = parseInt(filters.bedrooms, 10);
+      if (!Number.isNaN(bedrooms)) {
+        filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+      }
     }
   }
 
-  if (filters.livingRooms) {
-    const livingRooms = parseInt(filters.livingRooms.replace("+", ""));
-    filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+  // Filter by living rooms — "All" or empty means no filter
+  if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
+    const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
+    if (!Number.isNaN(livingRooms)) {
+      filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+    }
   }
 
-  if (filters.wc) {
-    const wc = parseInt(filters.wc.replace("+", ""));
-    filtered = filtered.filter((p) => p.restrooms >= wc);
+  // Filter by WC — "All" or empty means no filter
+  if (filters.wc && filters.wc !== "" && filters.wc !== "All") {
+    const wc = parseInt(filters.wc.replace("+", ""), 10);
+    if (!Number.isNaN(wc)) {
+      filtered = filtered.filter((p) => p.restrooms >= wc);
+    }
   }
 
   const featureFilters: { [key: string]: string } = {

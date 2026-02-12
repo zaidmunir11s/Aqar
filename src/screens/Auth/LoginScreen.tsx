@@ -20,9 +20,12 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSSO, useAuth } from "@clerk/clerk-expo";
 import * as Linking from "expo-linking";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useLoginMutation } from "@/redux/api";
+import { getSaudiPhoneValidationError } from "../../utils/validation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -31,6 +34,7 @@ export default function LoginScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const { isSignedIn, isLoaded } = useAuth();
   const { startSSOFlow } = useSSO();
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [submitAttempted, setSubmitAttempted] = useState<boolean>(false);
@@ -50,13 +54,8 @@ export default function LoginScreen(): React.JSX.Element {
   }, [isLoaded, isSignedIn, navigation]);
 
   const validatePhoneNumber = useCallback((phone: string): string => {
-    if (phone.trim().length === 0) {
-      return t("auth.phoneRequired");
-    }
-    if (!/^\d+$/.test(phone)) {
-      return t("auth.invalidPhone");
-    }
-    return "";
+    const key = getSaudiPhoneValidationError(phone);
+    return key ? t(key) : "";
   }, [t]);
 
   const validatePassword = useCallback((pwd: string): string => {
@@ -128,7 +127,7 @@ export default function LoginScreen(): React.JSX.Element {
     setPassword(text);
   }, []);
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallback(async () => {
     setSubmitAttempted(true);
 
     const phoneErr = validatePhoneNumber(phoneNumber);
@@ -154,9 +153,56 @@ export default function LoginScreen(): React.JSX.Element {
       return;
     }
 
-    console.log("Login with:", phoneNumber, password);
-    navigation.navigate("ProfileDetail");
-  }, [phoneNumber, password, navigation]);
+    try {
+      const result = await login({
+        phoneNumber,
+        password,
+      }).unwrap();
+
+      if (result.data?.token) {
+        await AsyncStorage.setItem("auth_token", result.data.token);
+        if (result.data.refreshToken) {
+          await AsyncStorage.setItem(
+            "refresh_token",
+            result.data.refreshToken
+          );
+        }
+      }
+
+      Alert.alert(
+        t("common.success"),
+        result.message || (t("auth.loggedInSuccessfully") ?? "Logged in successfully"),
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              const parent = navigation.getParent();
+              if (parent) {
+                parent.navigate("ProfileTab", { screen: "ProfileDetail" });
+              } else {
+                navigation.navigate("ProfileDetail");
+              }
+            },
+          },
+        ]
+      );
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string }; message?: string };
+      const errorMessage =
+        err?.data?.message ??
+        err?.message ??
+        (t("auth.failedToLogin") ?? "Failed to login. Please try again.");
+      Alert.alert(t("auth.loginError"), errorMessage);
+    }
+  }, [
+    phoneNumber,
+    password,
+    navigation,
+    login,
+    validatePhoneNumber,
+    validatePassword,
+    t,
+  ]);
 
   const handleCreateAccount = useCallback(() => {
     navigation.navigate("CreateAccount");
@@ -373,11 +419,15 @@ export default function LoginScreen(): React.JSX.Element {
 
         {/* Login Button */}
         <PrimaryButton
-          text={t("auth.continue")}
+          text={
+            isLoggingIn
+              ? (t("auth.signingIn") ?? "Logging in...")
+              : t("auth.continue")
+          }
           onPress={handleLogin}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoggingIn}
           style={styles.loginButton}
-          showArrow={true}
+          showArrow={!isLoggingIn}
         />
 
         {/* Divider */}

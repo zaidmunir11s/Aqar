@@ -33,6 +33,7 @@ import {
   openWhatsApp,
   getDefaultImageUrl,
   calculateDays,
+  navigateToMapScreen,
 } from "../../utils";
 import {
   InfoItem,
@@ -249,7 +250,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate("MapLanding");
+      // Use navigateToMapScreen to go to correct map (MapLanding/DailyMap/ProjectsMap)
+      // and preserve map state via popToTop when possible
+      navigateToMapScreen(navigation);
     }
   }, [navigation]);
 
@@ -559,9 +562,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
               {[
                 { label: t("listings.water") },
                 { label: t("listings.electricity") },
-                { label: t("listings.privateRoof") },
+                { label: t("listings.privateRoofFeature") },
                 { label: t("listings.specialEntrance") },
-                { label: t("listings.nearBus") },
+                { label: t("listings.nearBusFeature") },
               ]
                 .reduce<Array<Array<{ label: string; index: number }>>>(
                   (rows, item, index) => {
@@ -755,7 +758,7 @@ const styles = StyleSheet.create({
     marginRight: wp(2),
   },
   imagesSectionTitleRTL: {
-    textAlign: "right",
+    textAlign: "center",
   },
   headerIcons: {
     position: "absolute",

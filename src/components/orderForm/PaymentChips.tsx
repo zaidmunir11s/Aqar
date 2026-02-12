@@ -11,12 +11,14 @@ import { useLocalization } from "../../hooks/useLocalization";
 export interface PaymentChipsProps {
   selectedPayment: string | null;
   onSelect: (payment: string) => void;
+  /** Optional header label (e.g. "Payment options"); when provided, section and label use RTL-aware layout */
+  label?: string;
 }
 
 /**
- * Payment chips component (horizontally scrollable)
+ * Payment chips component (horizontally scrollable). Supports RTL for layout and text.
  */
-const PaymentChips = memo<PaymentChipsProps>(({ selectedPayment, onSelect }) => {
+const PaymentChips = memo<PaymentChipsProps>(({ selectedPayment, onSelect, label }) => {
   const { t, isRTL } = useLocalization();
 
   // Translate payment options and create mapping
@@ -39,17 +41,30 @@ const PaymentChips = memo<PaymentChipsProps>(({ selectedPayment, onSelect }) => 
     return map;
   }, [translatedPaymentOptions]);
 
-  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  // RTL-aware styles for LTR ↔ RTL
   const rtlStyles = useMemo(
     () => ({
+      section: {
+        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+      },
+      label: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
+      },
       chipsContainer: {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        paddingRight: isRTL ? 0 : wp(4),
+        paddingLeft: isRTL ? wp(4) : 0,
+      },
+      chipText: {
+        textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
     [isRTL]
   );
 
-  return (
+  const chipsContent = (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -71,6 +86,7 @@ const PaymentChips = memo<PaymentChipsProps>(({ selectedPayment, onSelect }) => 
             <Text
               style={[
                 styles.chipText,
+                rtlStyles.chipText,
                 isSelected && styles.chipTextActive,
               ]}
             >
@@ -81,16 +97,35 @@ const PaymentChips = memo<PaymentChipsProps>(({ selectedPayment, onSelect }) => 
       })}
     </ScrollView>
   );
+
+  if (label) {
+    return (
+      <View style={[styles.section, rtlStyles.section]}>
+        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
+        {chipsContent}
+      </View>
+    );
+  }
+
+  return chipsContent;
 });
 
 PaymentChips.displayName = "PaymentChips";
 
 const styles = StyleSheet.create({
+  section: {
+    marginBottom: hp(2),
+  },
+  label: {
+    fontSize: wp(4),
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: hp(1),
+  },
   chipsContainer: {
     flexDirection: "row",
     gap: wp(2),
     marginTop: hp(1),
-    paddingRight: wp(4),
   },
   chip: {
     paddingVertical: hp(1),

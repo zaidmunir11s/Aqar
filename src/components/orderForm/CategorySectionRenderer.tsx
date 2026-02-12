@@ -9,6 +9,7 @@ import {
 } from "./index";
 import { View, Text, StyleSheet } from "react-native";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
+import { useLocalization } from "../../hooks/useLocalization";
 import {
   BEDROOM_OPTIONS,
   LIVING_ROOM_OPTIONS,
@@ -61,6 +62,8 @@ export interface CategorySectionRendererProps {
  */
 const CategorySectionRenderer = memo<CategorySectionRendererProps>(
   ({ fields, state, handlers, modalHandlers }) => {
+    const { t } = useLocalization();
+
     const renderField = (field: FieldConfig, index: number) => {
       switch (field.type) {
         case "price":
@@ -138,13 +141,12 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
 
         case "paymentChips":
           return (
-            <View key={index} style={styles.section}>
-              <Text style={styles.label}>Payment options</Text>
-              <PaymentChips
-                selectedPayment={state[field.selectedValueKey || "selectedPayment"] || null}
-                onSelect={handlers[`handle${field.selectedValueKey?.charAt(0).toUpperCase()}${field.selectedValueKey?.slice(1)}Press`] || (() => {})}
-              />
-            </View>
+            <PaymentChips
+              key={index}
+              label={t("listings.paymentOptions")}
+              selectedPayment={state[field.selectedValueKey || "selectedPayment"] || null}
+              onSelect={handlers[`handle${field.selectedValueKey?.charAt(0).toUpperCase()}${field.selectedValueKey?.slice(1)}Press`] || (() => {})}
+            />
           );
 
         default:

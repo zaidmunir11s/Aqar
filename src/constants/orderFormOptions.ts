@@ -1,10 +1,11 @@
 // All options for order form modals and selections
 
+// All, First floor, Second floor, then floors 3–20 (18 numeric options)
 export const FLOOR_OPTIONS = [
   "All",
   "First floor",
   "Second floor",
-  ...Array.from({ length: 13 }, (_, i) => `${i + 3}`),
+  ...Array.from({ length: 18 }, (_, i) => `${i + 3}`),
 ];
 
 export const AGE_OPTIONS = [

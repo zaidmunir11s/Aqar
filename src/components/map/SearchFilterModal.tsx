@@ -22,6 +22,7 @@ import { PROPERTY_DATA } from "../../data/propertyData";
 import { BEDROOM_OPTIONS, LIVING_ROOM_OPTIONS, WC_OPTIONS, VILLA_TYPE_OPTIONS } from "../../constants/orderFormOptions";
 import type { Property } from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
+import { SlidersHorizontal } from "lucide-react-native";
 
 export interface SearchFilterState {
   fromPrice: string;
@@ -68,7 +69,7 @@ export interface SearchFilterModalProps {
 
 // Property types will be translated in the component using useLocalization
 const PROPERTY_TYPES = [
-  { id: "apartment", nameKey: "apartment", icon: "home-outline", iconLibrary: "Ionicons" },
+  { id: "apartment", nameKey: "apartment", icon: "sofa-single", iconLibrary: "MaterialCommunityIcons" },
   { id: "chalet", nameKey: "chalet", icon: "umbrella-beach", iconLibrary: "MaterialCommunityIcons" },
   { id: "studio", nameKey: "studio", icon: "tv-outline", iconLibrary: "Ionicons" },
   { id: "villa", nameKey: "villa", icon: "home", iconLibrary: "MaterialCommunityIcons" },
@@ -208,11 +209,11 @@ export default function SearchFilterModal({
         marginRight: isRTL ? wp(2) : 0,
       },
       propertyTypeScrollContainer: {
-        flexDirection: "row" as const,
+        paddingEnd: 0,
       },
       propertyTypeButton: {
-        marginRight: wp(2),
-        marginLeft: 0,
+        marginEnd: 0,
+        marginStart: 0,
       },
       propertyTypeText: {
         textAlign: "center" as const,
@@ -258,16 +259,16 @@ export default function SearchFilterModal({
     }
   }, [visible, isRTL]);
 
-  // Check if any filters are applied
+  // Check if any filters are applied (including "All" for tab bars — user has made a selection)
   const hasFilters = useMemo(() => {
     return (
       filters.fromPrice !== "" ||
       filters.toPrice !== "" ||
       filters.selectedPropertyType !== null ||
       filters.usageType !== null ||
-      (filters.bedrooms !== "" && filters.bedrooms !== "All") ||
-      (filters.livingRooms !== "" && filters.livingRooms !== "All") ||
-      (filters.wc !== "" && filters.wc !== "All") ||
+      filters.bedrooms !== "" ||
+      filters.livingRooms !== "" ||
+      filters.wc !== "" ||
       filters.furnished ||
       filters.carEntrance ||
       filters.airConditioned ||
@@ -346,7 +347,7 @@ export default function SearchFilterModal({
     if (!filters.selectedPropertyType) {
       return (
         <View style={styles.instructionContainer}>
-          <Ionicons name="filter" size={wp(6)} color="#9ca3af" />
+          <SlidersHorizontal size={40} color={COLORS.textSecondary} strokeWidth={2.5} />
           <Text style={[styles.instructionText, rtlStyles.instructionText]}>
             {t("listings.searchFilter.selectPropertyType")}
           </Text>
@@ -1035,29 +1036,32 @@ function filterProperties(
     filtered = filtered.filter((p) => p.usage === usage);
   }
 
-  // Filter by bedrooms
-  // "All" means no filter (show all properties), empty string means unselected (no filter)
+  // Filter by bedrooms — "All" or empty means no filter (show any bedroom count)
   if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
     if (filters.bedrooms === "6+") {
       filtered = filtered.filter((p) => p.bedrooms >= 6);
     } else {
-      const bedrooms = parseInt(filters.bedrooms);
-      filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+      const bedrooms = parseInt(filters.bedrooms, 10);
+      if (!Number.isNaN(bedrooms)) {
+        filtered = filtered.filter((p) => p.bedrooms === bedrooms);
+      }
     }
   }
 
-  // Filter by living rooms
-  // "All" means no filter (show all properties), empty string means unselected (no filter)
+  // Filter by living rooms — "All" or empty means no filter
   if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
-    const livingRooms = parseInt(filters.livingRooms.replace("+", ""));
-    filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+    const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
+    if (!Number.isNaN(livingRooms)) {
+      filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
+    }
   }
 
-  // Filter by WC
-  // "All" means no filter (show all properties), empty string means unselected (no filter)
+  // Filter by WC — "All" or empty means no filter
   if (filters.wc && filters.wc !== "" && filters.wc !== "All") {
-    const wc = parseInt(filters.wc.replace("+", ""));
-    filtered = filtered.filter((p) => p.restrooms >= wc);
+    const wc = parseInt(filters.wc.replace("+", ""), 10);
+    if (!Number.isNaN(wc)) {
+      filtered = filtered.filter((p) => p.restrooms >= wc);
+    }
   }
 
   // Filter by features (toggles)
@@ -1259,9 +1263,10 @@ const styles = StyleSheet.create({
     marginLeft: wp(2),
   },
   propertyTypeScrollContainer: {
+    flexDirection: "row",
     gap: wp(2),
     paddingVertical: hp(0.5),
-    paddingHorizontal: wp(2),
+    paddingEnd: 0,
   },
   propertyTypeButton: {
     width: wp(30),
@@ -1270,7 +1275,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     backgroundColor: COLORS.background,
-    marginRight: wp(2),
     alignItems: "center",
     justifyContent: "center",
     gap: hp(0.5),

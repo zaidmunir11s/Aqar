@@ -12,6 +12,12 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import {
+  FLOOR_OPTIONS,
+  AGE_OPTIONS,
+  STREET_DIRECTION_OPTIONS,
+  STREET_WIDTH_OPTIONS,
+} from "../../constants/orderFormOptions";
 import { SearchRequestData } from "@/context/searchRequest-context";
 import { findMatchingProperties } from "@/utils/propertyMatching";
 import { DeleteConfirmationModal } from "../common";
@@ -81,6 +87,15 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       return value;
     }, [t]);
 
+    // Helper function to translate floor for card display
+    const translateFloor = useCallback((floor: string): string => {
+      if (!floor) return "";
+      if (floor === "All") return t("listings.all");
+      if (floor === "First floor") return t("listings.firstFloor");
+      if (floor === "Second floor") return t("listings.secondFloor");
+      return floor; // numeric floor (3, 4, ...)
+    }, [t]);
+
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleDateString("en-US", {
@@ -131,9 +146,8 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       const orderData = request.orderFormData || {};
       const chips: ChipData[] = [];
 
-      // Age
-      if (orderData.age && orderData.age !== "ALL") {
-        // Extract years from "Less than X years" or "Less than X year" format
+      // Age – only show when not first option (All)
+      if (orderData.age && orderData.age !== AGE_OPTIONS[0]) {
         let years = orderData.age;
         if (orderData.age.startsWith("Less than")) {
           const yearMatch = orderData.age.match(/\d+/)?.[0];
@@ -144,6 +158,16 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         chips.push({
           label: t("listings.lessThanYears", { years }),
           icon: "business-outline",
+          iconLibrary: "Ionicons",
+        });
+      }
+
+      // Floor – only show when not first option (All)
+      if (orderData.floor && orderData.floor !== FLOOR_OPTIONS[0]) {
+        const translatedFloor = translateFloor(orderData.floor);
+        chips.push({
+          label: t("listings.floorLabel", { floor: translatedFloor }),
+          icon: "layers-outline",
           iconLibrary: "Ionicons",
         });
       }
@@ -159,7 +183,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         });
       }
 
-      // WC
+      // WC (TabBar – show any selected option)
       if (orderData.selectedWc) {
         chips.push({
           label: translateAll(orderData.selectedWc),
@@ -168,7 +192,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         });
       }
 
-      // Living Rooms
+      // Living Rooms (TabBar – show any selected option)
       if (orderData.selectedLivingRoom) {
         chips.push({
           label: translateAll(orderData.selectedLivingRoom),
@@ -177,7 +201,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         });
       }
 
-      // Bedrooms
+      // Bedrooms (TabBar – show any selected option)
       if (orderData.selectedBedroom) {
         chips.push({
           label: translateAll(orderData.selectedBedroom),
@@ -186,33 +210,35 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         });
       }
 
-      // Street direction
-      if (orderData.streetDirection || orderData.landStreetDirection || 
+      // Apartments (TabBar – show any selected option: Apartment for rent, Building for sale/rent)
+      const apartmentsValue = orderData.selectedApartment || orderData.buildingApartments || orderData.buildingRentApartments;
+      if (apartmentsValue) {
+        chips.push({
+          label: t("listings.apartmentsLabel", { value: translateAll(apartmentsValue) }),
+          icon: "albums-outline",
+          iconLibrary: "Ionicons",
+        });
+      }
+
+      // Street direction – only show when not first option (All)
+      const streetDirectionValue = orderData.streetDirection || orderData.landStreetDirection ||
           orderData.smallHouseStreetDirection || orderData.buildingStreetDirection ||
           orderData.villaRentStreetDirection || orderData.smallHouseRentStreetDirection ||
-          orderData.buildingRentStreetDirection || orderData.landRentStreetDirection) {
-        const direction = orderData.streetDirection || orderData.landStreetDirection || 
-                         orderData.smallHouseStreetDirection || orderData.buildingStreetDirection ||
-                         orderData.villaRentStreetDirection || orderData.smallHouseRentStreetDirection ||
-                         orderData.buildingRentStreetDirection || orderData.landRentStreetDirection;
-        const translatedDirection = translateStreetDirection(direction);
+          orderData.buildingRentStreetDirection || orderData.landRentStreetDirection;
+      if (streetDirectionValue && streetDirectionValue !== STREET_DIRECTION_OPTIONS[0]) {
+        const translatedDirection = translateStreetDirection(streetDirectionValue);
         chips.push({ label: t("listings.streetDirectionLabel", { direction: translatedDirection }) });
       }
 
-      // Street width
-      if (orderData.streetWidth || orderData.landStreetWidth || 
+      // Street width – only show when not first option (All)
+      const streetWidthValue = orderData.streetWidth || orderData.landStreetWidth ||
           orderData.smallHouseStreetWidth || orderData.loungeStreetWidth ||
           orderData.storeStreetWidth || orderData.villaRentStreetWidth ||
           orderData.smallHouseRentStreetWidth || orderData.storeRentStreetWidth ||
           orderData.buildingRentStreetWidth || orderData.landRentStreetWidth ||
-          orderData.officeRentStreetWidth || orderData.warehouseRentStreetWidth) {
-        const width = orderData.streetWidth || orderData.landStreetWidth || 
-                     orderData.smallHouseStreetWidth || orderData.loungeStreetWidth ||
-                     orderData.storeStreetWidth || orderData.villaRentStreetWidth ||
-                     orderData.smallHouseRentStreetWidth || orderData.storeRentStreetWidth ||
-                     orderData.buildingRentStreetWidth || orderData.landRentStreetWidth ||
-                     orderData.officeRentStreetWidth || orderData.warehouseRentStreetWidth;
-        const translatedWidth = translateStreetWidth(width);
+          orderData.officeRentStreetWidth || orderData.warehouseRentStreetWidth;
+      if (streetWidthValue && streetWidthValue !== STREET_WIDTH_OPTIONS[0]) {
+        const translatedWidth = translateStreetWidth(streetWidthValue);
         chips.push({ label: t("listings.streetWidthLabel", { width: translatedWidth }) });
       }
 
@@ -264,7 +290,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       }
 
       return chips;
-    }, [request.orderFormData, t, translateStreetDirection, translateVillaType, translateRentPeriod, translateStreetWidth, translateAll]);
+    }, [request.orderFormData, t, translateStreetDirection, translateVillaType, translateRentPeriod, translateStreetWidth, translateAll, translateFloor]);
 
     const priceRange = getPriceRange();
     const chips = getChips;

@@ -5,6 +5,7 @@ import {
   FieldWithModal,
   ToggleGroup,
   RentPeriodTabBar,
+  PaymentChips,
 } from "../index";
 import {
   BEDROOM_OPTIONS,
@@ -61,6 +62,8 @@ export interface VillaForRentSectionProps {
   onNearBusChange: (value: boolean) => void;
   nearMetro: boolean;
   onNearMetroChange: (value: boolean) => void;
+  selectedPayment?: string | null;
+  onPaymentChipSelect?: (payment: string) => void;
 }
 
 const VillaForRentSection = memo<VillaForRentSectionProps>(
@@ -111,6 +114,8 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
     onNearBusChange,
     nearMetro,
     onNearMetroChange,
+    selectedPayment = null,
+    onPaymentChipSelect,
   }) => {
     const { t, isRTL } = useLocalization();
 
@@ -151,8 +156,22 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
       <>
         <RentPeriodTabBar selectedPeriod={rentPeriod} onSelect={onRentPeriodChange} />
 
+        {rentPeriod === "Yearly" && onPaymentChipSelect && (
+          <PaymentChips
+            label={t("listings.paymentOptions")}
+            selectedPayment={selectedPayment ?? null}
+            onSelect={onPaymentChipSelect}
+          />
+        )}
+
         <PriceInputSection
-          label={t("listings.price")}
+          label={
+            rentPeriod === "Yearly"
+              ? selectedPayment === "Monthly"
+                ? t("listings.priceMonthly")
+                : t("listings.annualPrice")
+              : t("listings.price")
+          }
           fromValue={priceFrom}
           toValue={priceTo}
           onFromChange={onPriceFromChange}

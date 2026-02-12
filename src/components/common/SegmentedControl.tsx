@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -53,17 +53,18 @@ const SegmentedControl = memo<SegmentedControlProps>(
     return (
       <View style={[styles.container, rtlStyles.container]}>
         {options.map((option, index) => (
-          <TouchableOpacity
+          <Pressable
             key={index}
-            style={[
+            style={({ pressed }) => [
               styles.segment,
               rtlStyles.segment,
               index === selectedIndex && styles.segmentActive,
               index === 0 && [styles.firstSegment, rtlStyles.firstSegment],
               index === options.length - 1 && [styles.lastSegment, rtlStyles.lastSegment],
+              pressed && styles.segmentPressed,
             ]}
             onPress={() => onSelect(index)}
-            activeOpacity={0.7}
+            delayLongPress={300}
           >
             <Text
               style={[
@@ -73,7 +74,7 @@ const SegmentedControl = memo<SegmentedControlProps>(
             >
               {option}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
     );
@@ -112,6 +113,9 @@ const styles = StyleSheet.create({
   },
   segmentActive: {
     backgroundColor: COLORS.primary,
+  },
+  segmentPressed: {
+    opacity: 0.8,
   },
   segmentText: {
     // To change tab text size, modify fontSize value below

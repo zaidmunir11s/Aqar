@@ -313,7 +313,7 @@ export default function CityModal({
                   !inputValue && styles.inputButtonPlaceholder,
                   isRTL && styles.inputButtonTextRTL
                 ]}>
-                  {inputValue ? translateCityName(inputValue) : t("listings.enterHere")}
+                  {inputValue ? translateCityName(inputValue) : t("listings.enterHere...")}
                 </Text>
               </TouchableOpacity>
 
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   inputButtonRTL: {
-    textAlign: "right",
+    // textAlign: "right",
   },
   inputButtonText: {
     fontSize: wp(4),

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useLocalization } from "./useLocalization";
 
 export type RentPeriod = "Yearly" | "Monthly" | null;
@@ -216,6 +216,8 @@ export function useOrderForm() {
 
   // ========== TENT FOR RENT STATE ==========
   const [tentRentRentPeriod, setTentRentRentPeriod] = useState<RentPeriod>(null);
+  const [tentRentPriceFrom, setTentRentPriceFrom] = useState("");
+  const [tentRentPriceTo, setTentRentPriceTo] = useState("");
 
   // ========== WAREHOUSE FOR RENT STATE ==========
   const [warehouseRentPriceFrom, setWarehouseRentPriceFrom] = useState("");
@@ -247,74 +249,267 @@ export function useOrderForm() {
   const handleCategorySelect = (value: string) => {
     setCategory(value);
     setShowCategoryModal(false);
+
+    // Close all WheelPicker modals when category changes
+    setShowFloorModal(false);
+    setShowAgeModal(false);
+    setShowStreetDirectionModal(false);
+    setShowStreetWidthModal(false);
+    setShowStoresModal(false);
+
+    // Reset all category-specific form fields (FieldWithModal values and related state)
+    // Apartment for rent
+    setRentPeriod(null);
+    setSelectedPayment(null);
+    setFromPrice("");
+    setToPrice("");
+    setPriceFrom("");
+    setPriceTo("");
+    setSelectedPaymentType(null);
+    setSelectedBedroom(null);
+    setSelectedLivingRoom(null);
+    setSelectedWc(null);
+    setFloor("");
+    setAge("");
+    setFurnished(false);
+    setCarEntrance(false);
+    setAirConditioned(false);
+    setPrivateRoof(false);
+    setApartmentInVilla(false);
+    setTwoEntrances(false);
+    setSpecialEntrances(false);
+    // Villa for sale
+    setVillaPriceFrom("");
+    setVillaPriceTo("");
+    setSelectedApartment(null);
+    setStreetDirection("");
+    setAreaFrom("");
+    setAreaTo("");
+    setStreetWidth("");
+    setStairs(false);
+    setSelectedVillaType(null);
+    setDriverRoom(false);
+    setMaidRoom(false);
+    setPool(false);
+    setVillaFurnished(false);
+    setKitchen(false);
+    setVillaCarEntrance(false);
+    setBasement(false);
+    setNearBus(false);
+    setNearMetro(false);
+    // Land for sale
+    setLandPriceFrom("");
+    setLandPriceTo("");
+    setSelectedLandType(null);
+    setLandAreaFrom("");
+    setLandAreaTo("");
+    setLandStreetDirection("");
+    setLandStreetWidth("");
+    // Apartment for sale
+    setApartmentSalePriceFrom("");
+    setApartmentSalePriceTo("");
+    setApartmentSaleAreaFrom("");
+    setApartmentSaleAreaTo("");
+    setApartmentSaleCarEntrance(false);
+    setApartmentSalePrivateRoof(false);
+    setApartmentSaleInVilla(false);
+    setApartmentSaleTwoEntrances(false);
+    setApartmentSaleSpecialEntrances(false);
+    // Building for sale
+    setBuildingPriceFrom("");
+    setBuildingPriceTo("");
+    setBuildingApartments(null);
+    setSelectedBuildingType(null);
+    setBuildingStreetDirection("");
+    setStores("");
+    setBuildingAreaFrom("");
+    setBuildingAreaTo("");
+    // Small house for sale
+    setSmallHousePriceFrom("");
+    setSmallHousePriceTo("");
+    setSmallHouseStreetDirection("");
+    setSmallHouseAreaFrom("");
+    setSmallHouseAreaTo("");
+    setSmallHouseStreetWidth("");
+    setSmallHouseFurnished(false);
+    setTent(false);
+    // Lounge for sale
+    setLoungePriceFrom("");
+    setLoungePriceTo("");
+    setLoungeAreaFrom("");
+    setLoungeAreaTo("");
+    setLoungeStreetWidth("");
+    // Farm for sale
+    setFarmPriceFrom("");
+    setFarmPriceTo("");
+    setFarmAreaFrom("");
+    setFarmAreaTo("");
+    // Store for sale
+    setStorePriceFrom("");
+    setStorePriceTo("");
+    setStoreAreaFrom("");
+    setStoreAreaTo("");
+    setStoreStreetWidth("");
+    // Floor for sale
+    setFloorSalePriceFrom("");
+    setFloorSalePriceTo("");
+    setFloorSaleAreaFrom("");
+    setFloorSaleAreaTo("");
+    setFloorSaleCarEntrance(false);
+    // Villa for rent
+    setVillaRentPriceFrom("");
+    setVillaRentPriceTo("");
+    setVillaRentStreetDirection("");
+    setVillaRentAreaFrom("");
+    setVillaRentAreaTo("");
+    setVillaRentStreetWidth("");
+    setVillaRentStairs(false);
+    setVillaRentAirConditioned(false);
+    setVillaRentRentPeriod(null);
+    // Big flat for rent
+    setBigFlatPriceFrom("");
+    setBigFlatPriceTo("");
+    setBigFlatAreaFrom("");
+    setBigFlatAreaTo("");
+    setBigFlatRentPeriod(null);
+    setBigFlatCarEntrance(false);
+    setBigFlatAirConditioned(false);
+    setBigFlatInVilla(false);
+    setBigFlatTwoEntrances(false);
+    setBigFlatSpecialEntrances(false);
+    // Lounge for rent
+    setLoungeRentPriceFrom("");
+    setLoungeRentPriceTo("");
+    setLoungeRentAreaFrom("");
+    setLoungeRentAreaTo("");
+    setLoungeRentRentPeriod(null);
+    setLoungeRentPool(false);
+    setFootballPitch(false);
+    setVolleyballCourt(false);
+    setLoungeRentTent(false);
+    setLoungeRentKitchen(false);
+    setPlayground(false);
+    setFamilySection(false);
+    // Small house for rent
+    setSmallHouseRentPriceFrom("");
+    setSmallHouseRentPriceTo("");
+    setSmallHouseRentStreetDirection("");
+    setSmallHouseRentAreaFrom("");
+    setSmallHouseRentAreaTo("");
+    setSmallHouseRentStreetWidth("");
+    setSmallHouseRentFurnished(false);
+    setSmallHouseRentTent(false);
+    setSmallHouseRentKitchen(false);
+    // Store for rent
+    setStoreRentPriceFrom("");
+    setStoreRentPriceTo("");
+    setStoreRentAreaFrom("");
+    setStoreRentAreaTo("");
+    setStoreRentStreetWidth("");
+    // Building for rent
+    setBuildingRentPriceFrom("");
+    setBuildingRentPriceTo("");
+    setBuildingRentApartments(null);
+    setSelectedBuildingRentType(null);
+    setBuildingRentStreetDirection("");
+    setBuildingRentStores("");
+    setBuildingRentAreaFrom("");
+    setBuildingRentAreaTo("");
+    setBuildingRentStreetWidth("");
+    // Land for rent
+    setLandRentStreetDirection("");
+    setLandRentAreaFrom("");
+    setLandRentAreaTo("");
+    setLandRentStreetWidth("");
+    setSelectedLandRentType(null);
+    // Room for rent
+    setRoomRentPriceFrom("");
+    setRoomRentPriceTo("");
+    setRoomRentRentPeriod(null);
+    setRoomRentKitchen(false);
+    // Office for rent
+    setOfficeRentPriceFrom("");
+    setOfficeRentPriceTo("");
+    setOfficeRentAreaFrom("");
+    setOfficeRentAreaTo("");
+    setOfficeRentStreetWidth("");
+    setOfficeRentFurnished(false);
+    // Tent for rent
+    setTentRentRentPeriod(null);
+    setTentRentPriceFrom("");
+    setTentRentPriceTo("");
+    // Warehouse for rent
+    setWarehouseRentPriceFrom("");
+    setWarehouseRentPriceTo("");
+    setWarehouseRentAreaFrom("");
+    setWarehouseRentAreaTo("");
+    setWarehouseRentStreetWidth("");
+    // Chalet for rent
+    setChaletRentPriceFrom("");
+    setChaletRentPriceTo("");
+    setChaletRentAreaFrom("");
+    setChaletRentAreaTo("");
+    setChaletRentRentPeriod(null);
+    setChaletRentPool(false);
+    setChaletFootballPitch(false);
+    setChaletVolleyballCourt(false);
+    setChaletRentTent(false);
+    setChaletRentKitchen(false);
+    setChaletPlayground(false);
+    // Other
+    setOtherPriceFrom("");
+    setOtherPriceTo("");
+    setOtherAreaFrom("");
+    setOtherAreaTo("");
   };
 
-  const handleRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (rentPeriod === period) {
-      setRentPeriod(null);
-      setSelectedPayment(null);
-    } else {
-      setRentPeriod(period);
-    }
-  };
+  const handleRentPeriodPress = useCallback((period: "Yearly" | "Monthly") => {
+    setRentPeriod((prev) => {
+      if (prev === period) {
+        setSelectedPayment(null);
+        return null;
+      }
+      return period;
+    });
+  }, []);
 
-  const handlePaymentChipPress = (payment: string) => {
-    if (selectedPayment === payment) {
-      setSelectedPayment(null);
-    } else {
-      setSelectedPayment(payment);
-    }
-  };
+  const handlePaymentChipPress = useCallback((payment: string) => {
+    setSelectedPayment((prev) => (prev === payment ? null : payment));
+  }, []);
 
-  const handlePaymentTypePress = (value: string) => {
-    if (selectedPaymentType === value) {
-      setSelectedPaymentType(null);
-    } else {
-      setSelectedPaymentType(value);
-    }
-  };
+  const handlePaymentTypePress = useCallback((value: string) => {
+    setSelectedPaymentType((prev) => (prev === value ? null : value));
+  }, []);
 
-  const handleBedroomPress = (value: string) => {
-    if (selectedBedroom === value) {
-      setSelectedBedroom(null);
-    } else {
-      setSelectedBedroom(value);
-    }
-  };
+  const handleBedroomPress = useCallback((value: string) => {
+    setSelectedBedroom((prev) => (prev === value ? null : value));
+  }, []);
 
-  const handleLivingRoomPress = (value: string) => {
-    if (selectedLivingRoom === value) {
-      setSelectedLivingRoom(null);
-    } else {
-      setSelectedLivingRoom(value);
-    }
-  };
+  const handleLivingRoomPress = useCallback((value: string) => {
+    setSelectedLivingRoom((prev) => (prev === value ? null : value));
+  }, []);
 
-  const handleWcPress = (value: string) => {
-    if (selectedWc === value) {
-      setSelectedWc(null);
-    } else {
-      setSelectedWc(value);
-    }
-  };
+  const handleWcPress = useCallback((value: string) => {
+    setSelectedWc((prev) => (prev === value ? null : value));
+  }, []);
 
-  const handleApartmentPress = (value: string) => {
-    if (selectedApartment === value) {
-      setSelectedApartment(null);
-    } else {
-      setSelectedApartment(value);
-    }
-  };
+  const handleApartmentPress = useCallback((value: string) => {
+    setSelectedApartment((prev) => (prev === value ? null : value));
+  }, []);
 
-  const handleVillaTypePress = (value: string) => {
-    if (selectedVillaType === value) {
-      setSelectedVillaType(null);
-    } else {
-      setSelectedVillaType(value);
-    }
-  };
+  const handleBuildingApartmentsPress = useCallback((value: string) => {
+    setBuildingApartments((prev) => (prev === value ? null : value));
+  }, []);
 
-  const handleStreetDirectionSelect = (value: string) => {
+  const handleBuildingRentApartmentsPress = useCallback((value: string) => {
+    setBuildingRentApartments((prev) => (prev === value ? null : value));
+  }, []);
+
+  const handleVillaTypePress = useCallback((value: string) => {
+    setSelectedVillaType((prev) => (prev === value ? null : value));
+  }, []);
+
+  const handleStreetDirectionSelect = useCallback((value: string) => {
     const currentCategory = category;
     if (currentCategory === "Villa for sale") {
       setStreetDirection(value);
@@ -334,9 +529,9 @@ export function useOrderForm() {
       setLandRentStreetDirection(value);
     }
     setShowStreetDirectionModal(false);
-  };
+  }, [category]);
 
-  const handleStreetWidthSelect = (value: string) => {
+  const handleStreetWidthSelect = useCallback((value: string) => {
     const currentCategory = category;
     if (currentCategory === "Villa for sale") {
       setStreetWidth(value);
@@ -366,7 +561,7 @@ export function useOrderForm() {
       setWarehouseRentStreetWidth(value);
     }
     setShowStreetWidthModal(false);
-  };
+  }, [category]);
 
   const handleLandRentTypePress = (value: string) => {
     if (selectedLandRentType === value) {
@@ -424,8 +619,12 @@ export function useOrderForm() {
   const handleTentRentRentPeriodPress = (period: "Yearly" | "Monthly") => {
     if (tentRentRentPeriod === period) {
       setTentRentRentPeriod(null);
+      setSelectedPayment(null);
     } else {
       setTentRentRentPeriod(period);
+      if (period !== "Yearly") {
+        setSelectedPayment(null);
+      }
     }
   };
 
@@ -453,20 +652,20 @@ export function useOrderForm() {
     }
   };
 
-  const handleStoresSelect = (value: string) => {
+  const handleStoresSelect = useCallback((value: string) => {
     setStores(value);
     setShowStoresModal(false);
-  };
+  }, []);
 
-  const handleFloorSelect = (value: string) => {
+  const handleFloorSelect = useCallback((value: string) => {
     setFloor(value);
     setShowFloorModal(false);
-  };
+  }, []);
 
-  const handleAgeSelect = (value: string) => {
+  const handleAgeSelect = useCallback((value: string) => {
     setAge(value);
     setShowAgeModal(false);
-  };
+  }, []);
 
   // ========== COMPUTED VALUES ==========
   const categoryChecks = useMemo(() => ({
@@ -620,6 +819,8 @@ export function useOrderForm() {
     nearMetro,
     setNearMetro,
     handleApartmentPress,
+    handleBuildingApartmentsPress,
+    handleBuildingRentApartmentsPress,
     handleVillaTypePress,
     handleStreetDirectionSelect,
     handleStreetWidthSelect,
@@ -914,7 +1115,11 @@ export function useOrderForm() {
     tentRentRentPeriod,
     setTentRentRentPeriod,
     handleTentRentRentPeriodPress,
-    
+    tentRentPriceFrom,
+    setTentRentPriceFrom,
+    tentRentPriceTo,
+    setTentRentPriceTo,
+
     // Warehouse for rent
     warehouseRentPriceFrom,
     setWarehouseRentPriceFrom,

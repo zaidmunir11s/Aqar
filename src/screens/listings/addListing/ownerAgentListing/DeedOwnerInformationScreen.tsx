@@ -1,15 +1,14 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  TouchableWithoutFeedback,
   Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -34,6 +33,185 @@ type NavigationProp = NativeStackNavigationProp<any>;
 type OwnerType = "individual" | "multi-agent" | "company";
 type DeedOwnerType = "electronic" | "other";
 
+// Memoized section: deed owner type + owner type (avoids re-render on every keystroke)
+const DeedOwnerTypeSection = memo(function DeedOwnerTypeSection({
+  deedOwnerType,
+  deedOwnerOptions,
+  ownerType,
+  ownerTypeOptions,
+  onDeedOwnerSelect,
+  onOwnerTypeSelect,
+  deedOwnerTypeLabel,
+  ownerTypeLabel,
+  rtlStyles,
+}: {
+  deedOwnerType: DeedOwnerType;
+  deedOwnerOptions: string[];
+  ownerType: OwnerType;
+  ownerTypeOptions: string[];
+  onDeedOwnerSelect: (index: number) => void;
+  onOwnerTypeSelect: (index: number) => void;
+  deedOwnerTypeLabel: string;
+  ownerTypeLabel: string;
+  rtlStyles: { sectionLabel: { textAlign: "left" | "right" } };
+}) {
+  return (
+    <>
+      <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>{deedOwnerTypeLabel}</Text>
+      <View style={styles.segmentedControlContainer}>
+        <SegmentedControl
+          options={deedOwnerOptions}
+          selectedIndex={deedOwnerType === "electronic" ? 0 : 1}
+          onSelect={onDeedOwnerSelect}
+        />
+      </View>
+      <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>{ownerTypeLabel}</Text>
+      <View style={styles.segmentedControlContainer}>
+        <SegmentedControl
+          options={ownerTypeOptions}
+          selectedIndex={ownerType === "individual" ? 0 : ownerType === "multi-agent" ? 1 : 2}
+          onSelect={onOwnerTypeSelect}
+        />
+      </View>
+    </>
+  );
+});
+
+const ContactLink = memo(function ContactLink({
+  rtlStyles,
+  haveQuestionText,
+}: {
+  rtlStyles: { contactLink: { flexDirection: "row" | "row-reverse" }; contactLinkText: Record<string, number> };
+  haveQuestionText: string;
+}) {
+  return (
+    <TouchableOpacity style={[styles.contactLink, rtlStyles.contactLink]}>
+      <Ionicons name="chatbubble-outline" size={wp(5)} color="#3b82f6" />
+      <Text style={[styles.contactLinkText, rtlStyles.contactLinkText]}>{haveQuestionText}</Text>
+    </TouchableOpacity>
+  );
+});
+
+// Single row for FlatList: only this row re-renders when its value/error/touched/focus changes
+type FormFieldItem = {
+  id: string;
+  kind: "text" | "date" | "phone";
+  fieldName: keyof FormFields;
+  label: string;
+  placeholder?: string;
+  validator?: (val: string) => string;
+  errorKey?: string;
+  dateType?: "owner" | "agent" | "company";
+};
+const FORM_ROW_HEIGHT = hp(11);
+
+const FormFieldRow = memo(function FormFieldRow({
+  item,
+  value,
+  error,
+  touched,
+  isFocused,
+  onUpdateField,
+  onFocus,
+  onBlur,
+  openDatePicker,
+  rtlStyles,
+  t,
+  phoneValidator,
+}: {
+  item: FormFieldItem;
+  value: string;
+  error: string;
+  touched: boolean;
+  isFocused: boolean;
+  onUpdateField: (name: keyof FormFields, value: string, validator?: (val: string) => string) => void;
+  onFocus: (name: string) => void;
+  onBlur: () => void;
+  openDatePicker: (type: "owner" | "agent" | "company") => void;
+  rtlStyles: Record<string, unknown>;
+  t: (key: string) => string;
+  phoneValidator: (val: string) => string;
+}) {
+  const errorKey = item.errorKey ?? item.fieldName;
+  if (item.kind === "text" && item.placeholder !== undefined && item.validator) {
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={[styles.label, rtlStyles.label]}>{item.label}</Text>
+        <TextInput
+          style={[
+            styles.textInput,
+            rtlStyles.textInput,
+            isFocused && styles.textInputFocused,
+            !isFocused && touched && error && styles.textInputError,
+          ]}
+          placeholder={item.placeholder}
+          value={value}
+          onChangeText={(val) => onUpdateField(item.fieldName, val, item.validator)}
+          placeholderTextColor="#9ca3af"
+          onFocus={() => onFocus(item.fieldName)}
+          onBlur={onBlur}
+        />
+        {touched && error ? (
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{error}</Text>
+        ) : null}
+      </View>
+    );
+  }
+  if (item.kind === "date" && item.dateType) {
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={[styles.label, rtlStyles.label]}>{item.label}</Text>
+        <TouchableOpacity
+          style={[
+            styles.dateSelector,
+            rtlStyles.dateSelector,
+            touched && error && styles.dateSelectorError,
+          ]}
+          onPress={() => openDatePicker(item.dateType!)}
+        >
+          <Text style={[styles.dateText, rtlStyles.dateText, !value && styles.placeholderText]}>
+            {value || t("listings.selectDate")}
+          </Text>
+          <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
+        </TouchableOpacity>
+        {touched && error ? (
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{error}</Text>
+        ) : null}
+      </View>
+    );
+  }
+  if (item.kind === "phone") {
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={[styles.label, rtlStyles.label]}>{item.label}</Text>
+        <View
+          style={[
+            styles.phoneInputWrapper,
+            isFocused && styles.textInputFocused,
+            !isFocused && touched && error && styles.textInputError,
+          ]}
+        >
+          <Text style={styles.countryCode}>+966</Text>
+          <TextInput
+            style={styles.phoneInput}
+            placeholder={t("listings.enterPhoneNumber")}
+            value={value}
+            onChangeText={(val) => onUpdateField(item.fieldName, val, phoneValidator)}
+            placeholderTextColor="#9ca3af"
+            keyboardType="phone-pad"
+            onFocus={() => onFocus(item.fieldName)}
+            onBlur={onBlur}
+          />
+        </View>
+        {touched && error ? (
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{error}</Text>
+        ) : null}
+      </View>
+    );
+  }
+  return null;
+});
+
 // Helper function to parse formatted date string (DD / MM / YYYY) to Date object
 const parseDateFromFormatted = (formattedDate: string): Date => {
   const parts = formattedDate.split(" / ");
@@ -46,13 +224,22 @@ const parseDateFromFormatted = (formattedDate: string): Date => {
   return new Date();
 };
 
-// Get current date formatted as DD / MM / YYYY
+// Get current date formatted as DD / MM / YYYY (storage format)
 const getCurrentDateFormatted = (): string => {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, "0");
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const year = now.getFullYear();
   return `${day} / ${month} / ${year}`;
+};
+
+// Format stored date (DD / MM / YYYY) for display: RTL shows YYYY / MM / DD, LTR shows DD / MM / YYYY
+const formatDateForDisplay = (storedDate: string, isRTL: boolean): string => {
+  if (!storedDate?.trim()) return "";
+  const parts = storedDate.split(" / ");
+  if (parts.length !== 3) return storedDate;
+  if (isRTL) return `${parts[2]} / ${parts[1]} / ${parts[0]}`; // YYYY / MM / DD
+  return storedDate; // DD / MM / YYYY
 };
 
 // Unified field management interface
@@ -110,6 +297,18 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const keyboardHeight = useRef(new Animated.Value(0)).current;
+
+  // Refs for stable renderItem: only the row whose data changed re-renders
+  const fieldsRef = useRef(fields);
+  const errorsRef = useRef(errors);
+  const touchedRef = useRef(touched);
+  const focusedFieldRef = useRef(focusedField);
+  const isRTLRef = useRef(isRTL);
+  fieldsRef.current = fields;
+  errorsRef.current = errors;
+  touchedRef.current = touched;
+  focusedFieldRef.current = focusedField;
+  isRTLRef.current = isRTL;
 
   const deedOwnerOptions = useMemo(
     () => [t("listings.electronicEyeRecord"), t("listings.other")],
@@ -427,147 +626,101 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     [isRTL]
   );
 
-  // Render phone input with +966 prefix
-  const renderPhoneInput = useCallback((
-    label: string,
-    value: string,
-    fieldName: "ownerPhone" | "agentPhone" | "companyAgentPhone"
-  ) => {
-    return (
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
-        <View style={[
-          styles.phoneInputWrapper,
-          rtlStyles.phoneInputWrapper,
-          focusedField === fieldName && styles.textInputFocused,
-          focusedField !== fieldName && touched[fieldName] && errors[fieldName] && styles.textInputError,
-        ]}>
-          <Text style={[styles.countryCode, rtlStyles.countryCode]}>+966</Text>
-          <TextInput
-            style={[styles.phoneInput, rtlStyles.phoneInput]}
-            placeholder={t("listings.enterPhoneNumber")}
-            value={value}
-            onChangeText={(val) => {
-              updateField(fieldName, val, validators.phone);
-            }}
-            placeholderTextColor="#9ca3af"
-            keyboardType="phone-pad"
-            onFocus={() => setFocusedField(fieldName)}
-            onBlur={() => setFocusedField(null)}
-          />
-        </View>
-        {touched[fieldName] && errors[fieldName] && (
-          <Text style={[styles.errorText, rtlStyles.errorText]}>{errors[fieldName]}</Text>
-        )}
-      </View>
-    );
-  }, [focusedField, touched, errors, updateField, validators, t, rtlStyles]);
-
-  // Render text input
-  const renderTextInput = useCallback((
-    label: string,
-    value: string,
-    fieldName: keyof FormFields,
-    placeholder: string,
-    validator: (val: string) => string,
-    errorKey?: string // For fields that use different error keys (e.g., deedNumber_ma)
-  ) => {
-    const errorKeyToUse = errorKey || fieldName;
-    return (
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
-        <TextInput
-          style={[
-            styles.textInput,
-            rtlStyles.textInput,
-            focusedField === fieldName && styles.textInputFocused,
-            focusedField !== fieldName && touched[errorKeyToUse] && errors[errorKeyToUse] && styles.textInputError,
-          ]}
-          placeholder={placeholder}
-          value={value}
-          onChangeText={(val) => {
-            updateField(fieldName, val, validator);
-          }}
-          placeholderTextColor="#9ca3af"
-          onFocus={() => setFocusedField(fieldName)}
-          onBlur={() => setFocusedField(null)}
-        />
-        {touched[errorKeyToUse] && errors[errorKeyToUse] && (
-          <Text style={[styles.errorText, rtlStyles.errorText]}>{errors[errorKeyToUse]}</Text>
-        )}
-      </View>
-    );
-  }, [focusedField, touched, errors, updateField, rtlStyles]);
-
-  // Render date selector
-  const renderDateSelector = useCallback((
-    label: string,
-    value: string,
-    fieldName: "ownerBirthdate" | "agentBirthdate" | "companyAgentBirthdate",
-    type: "owner" | "agent" | "company"
-  ) => {
-    return (
-      <View style={styles.inputContainer}>
-        <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
-        <TouchableOpacity
-          style={[
-            styles.dateSelector,
-            rtlStyles.dateSelector,
-            touched[fieldName] && errors[fieldName] && styles.dateSelectorError,
-          ]}
-          onPress={() => openDatePicker(type)}
-        >
-          <Text style={[styles.dateText, rtlStyles.dateText, !value && styles.placeholderText]}>
-            {value || t("listings.selectDate")}
-          </Text>
-          <Ionicons 
-            name={isRTL ? "chevron-up" : "chevron-down"} 
-            size={wp(5)} 
-            color={COLORS.primary} 
-          />
-        </TouchableOpacity>
-        {touched[fieldName] && errors[fieldName] && (
-          <Text style={[styles.errorText, rtlStyles.errorText]}>{errors[fieldName]}</Text>
-        )}
-      </View>
-    );
-  }, [touched, errors, openDatePicker, t, isRTL, rtlStyles]);
-
-  // Render form fields based on owner type
-  const renderFormFields = useMemo(() => {
+  // FlatList data: one item per form field (virtualized for smooth scroll)
+  const formFieldsList = useMemo(() => {
     if (ownerType === "individual") {
-      return (
-        <>
-          {renderTextInput(t("listings.deedNumber"), fields.deedNumber, "deedNumber", t("listings.deedNumber"), validators.deedNumber)}
-          {renderTextInput(t("listings.ownerId"), fields.ownerId, "ownerId", t("listings.enterHere"), validators.ownerId)}
-          {renderDateSelector(t("listings.ownerBirthdate"), fields.ownerBirthdate, "ownerBirthdate", "owner")}
-          {renderPhoneInput(t("listings.ownerPhoneNumber"), fields.ownerPhone, "ownerPhone")}
-        </>
-      );
-    } else if (ownerType === "multi-agent") {
-      return (
-        <>
-          {renderTextInput(t("listings.deedNumber"), fields.deedNumber, "deedNumber", t("listings.deedNumber"), validators.deedNumber, "deedNumber_ma")}
-          {renderTextInput(t("listings.ownerIdNumber"), fields.ownerIdNumber, "ownerIdNumber", t("listings.enterHere"), validators.ownerId)}
-          {renderTextInput(t("listings.poaAgentId"), fields.poaAgentId, "poaAgentId", t("listings.enterHere"), validators.poaAgentId)}
-          {renderTextInput(t("listings.poaId"), fields.poaId, "poaId", t("listings.enterHere"), validators.poaId)}
-          {renderDateSelector(t("listings.agentBirthdate"), fields.agentBirthdate, "agentBirthdate", "agent")}
-          {renderPhoneInput(t("listings.agentPhoneNumber"), fields.agentPhone, "agentPhone")}
-        </>
-      );
-    } else {
-      return (
-        <>
-          {renderTextInput(t("listings.deedNumber"), fields.deedNumber, "deedNumber", t("listings.deedNumber"), validators.deedNumber, "companyDeedNumber")}
-          {renderTextInput(t("listings.unifiedCrNumber"), fields.unifiedCrNumber, "unifiedCrNumber", t("listings.enterHere"), validators.unifiedCrNumber)}
-          {renderTextInput(t("listings.poaAgentId"), fields.poaAgentId, "poaAgentId", t("listings.enterHere"), validators.poaAgentId, "companyPoaAgentId")}
-          {renderTextInput(t("listings.poaId"), fields.poaId, "poaId", t("listings.enterHere"), validators.poaId, "companyPoaId")}
-          {renderDateSelector(t("listings.agentBirthdate"), fields.companyAgentBirthdate, "companyAgentBirthdate", "company")}
-          {renderPhoneInput(t("listings.agentPhoneNumber"), fields.companyAgentPhone, "companyAgentPhone")}
-        </>
-      );
+      return [
+        { id: "ind-deed", kind: "text" as const, fieldName: "deedNumber" as const, label: t("listings.deedNumber"), placeholder: t("listings.deedNumber"), validator: validators.deedNumber, errorKey: "deedNumber" },
+        { id: "ind-ownerId", kind: "text" as const, fieldName: "ownerId" as const, label: t("listings.ownerId"), placeholder: t("listings.enterHere"), validator: validators.ownerId, errorKey: "ownerId" },
+        { id: "ind-birth", kind: "date" as const, fieldName: "ownerBirthdate" as const, label: t("listings.ownerBirthdate"), dateType: "owner" as const },
+        { id: "ind-phone", kind: "phone" as const, fieldName: "ownerPhone" as const, label: t("listings.ownerPhoneNumber") },
+      ];
     }
-  }, [ownerType, fields, renderTextInput, renderDateSelector, renderPhoneInput, validators, t]);
+    if (ownerType === "multi-agent") {
+      return [
+        { id: "ma-deed", kind: "text" as const, fieldName: "deedNumber" as const, label: t("listings.deedNumber"), placeholder: t("listings.deedNumber"), validator: validators.deedNumber, errorKey: "deedNumber_ma" },
+        { id: "ma-ownerId", kind: "text" as const, fieldName: "ownerIdNumber" as const, label: t("listings.ownerIdNumber"), placeholder: t("listings.enterHere"), validator: validators.ownerId, errorKey: "ownerIdNumber" },
+        { id: "ma-poaAgent", kind: "text" as const, fieldName: "poaAgentId" as const, label: t("listings.poaAgentId"), placeholder: t("listings.enterHere"), validator: validators.poaAgentId, errorKey: "poaAgentId" },
+        { id: "ma-poaId", kind: "text" as const, fieldName: "poaId" as const, label: t("listings.poaId"), placeholder: t("listings.enterHere"), validator: validators.poaId, errorKey: "poaId" },
+        { id: "ma-birth", kind: "date" as const, fieldName: "agentBirthdate" as const, label: t("listings.agentBirthdate"), dateType: "agent" as const },
+        { id: "ma-phone", kind: "phone" as const, fieldName: "agentPhone" as const, label: t("listings.agentPhoneNumber") },
+      ];
+    }
+    return [
+      { id: "co-deed", kind: "text" as const, fieldName: "deedNumber" as const, label: t("listings.deedNumber"), placeholder: t("listings.deedNumber"), validator: validators.deedNumber, errorKey: "companyDeedNumber" },
+      { id: "co-cr", kind: "text" as const, fieldName: "unifiedCrNumber" as const, label: t("listings.unifiedCrNumber"), placeholder: t("listings.enterHere"), validator: validators.unifiedCrNumber, errorKey: "unifiedCrNumber" },
+      { id: "co-poaAgent", kind: "text" as const, fieldName: "poaAgentId" as const, label: t("listings.poaAgentId"), placeholder: t("listings.enterHere"), validator: validators.poaAgentId, errorKey: "companyPoaAgentId" },
+      { id: "co-poaId", kind: "text" as const, fieldName: "poaId" as const, label: t("listings.poaId"), placeholder: t("listings.enterHere"), validator: validators.poaId, errorKey: "companyPoaId" },
+      { id: "co-birth", kind: "date" as const, fieldName: "companyAgentBirthdate" as const, label: t("listings.agentBirthdate"), dateType: "company" as const },
+      { id: "co-phone", kind: "phone" as const, fieldName: "companyAgentPhone" as const, label: t("listings.agentPhoneNumber") },
+    ];
+  }, [ownerType, t, validators]);
+
+  const handleFocusField = useCallback((fieldName: string) => {
+    setFocusedField(fieldName);
+  }, []);
+  const handleBlurField = useCallback(() => {
+    setFocusedField(null);
+  }, []);
+
+  const renderFormFieldItem = useCallback(
+    ({ item }: { item: FormFieldItem }) => {
+      const errorKey = item.errorKey ?? item.fieldName;
+      const rawValue = fieldsRef.current[item.fieldName];
+      const value =
+        item.kind === "date"
+          ? formatDateForDisplay(rawValue, isRTLRef.current)
+          : rawValue;
+      return (
+        <FormFieldRow
+          item={item}
+          value={value}
+          error={errorsRef.current[errorKey] ?? ""}
+          touched={!!touchedRef.current[errorKey]}
+          isFocused={focusedFieldRef.current === item.fieldName}
+          onUpdateField={updateField}
+          onFocus={handleFocusField}
+          onBlur={handleBlurField}
+          openDatePicker={openDatePicker}
+          rtlStyles={rtlStyles}
+          t={t}
+          phoneValidator={validators.phone}
+        />
+      );
+    },
+    [updateField, handleFocusField, handleBlurField, openDatePicker, rtlStyles, t, validators.phone]
+  );
+
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({
+      length: FORM_ROW_HEIGHT,
+      offset: FORM_ROW_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <DeedOwnerTypeSection
+        deedOwnerType={deedOwnerType}
+        deedOwnerOptions={deedOwnerOptions}
+        ownerType={ownerType}
+        ownerTypeOptions={ownerTypeOptions}
+        onDeedOwnerSelect={handleDeedOwnerSelect}
+        onOwnerTypeSelect={handleOwnerTypeSelect}
+        deedOwnerTypeLabel={t("listings.deedOwnerType")}
+        ownerTypeLabel={t("listings.ownerType")}
+        rtlStyles={rtlStyles}
+      />
+    ),
+    [deedOwnerType, deedOwnerOptions, ownerType, ownerTypeOptions, handleDeedOwnerSelect, handleOwnerTypeSelect, t, rtlStyles]
+  );
+
+  const listFooter = useMemo(
+    () => <ContactLink rtlStyles={rtlStyles} haveQuestionText={t("listings.haveQuestionContactUs")} />,
+    [rtlStyles, t]
+  );
 
   return (
     <View style={styles.container}>
@@ -576,7 +729,6 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
           <View style={styles.mainContainer}>
           <ScreenHeader
             title={t("listings.addListing")}
@@ -595,46 +747,23 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
             fontSize={wp(4.5)}
           />
 
-          <ScrollView
+          <FlatList
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
-          >
-            <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
-              {t("listings.deedOwnerType")}
-            </Text>
-            <View style={styles.segmentedControlContainer}>
-              <SegmentedControl
-                options={deedOwnerOptions}
-                selectedIndex={deedOwnerType === "electronic" ? 0 : 1}
-                onSelect={handleDeedOwnerSelect}
-              />
-            </View>
-
-            <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
-              {t("listings.ownerType")}
-            </Text>
-            <View style={styles.segmentedControlContainer}>
-              <SegmentedControl
-                options={ownerTypeOptions}
-                selectedIndex={
-                  ownerType === "individual" ? 0 : ownerType === "multi-agent" ? 1 : 2
-                }
-                onSelect={handleOwnerTypeSelect}
-              />
-            </View>
-
-            {renderFormFields}
-
-            <TouchableOpacity style={[styles.contactLink, rtlStyles.contactLink]}>
-              <Ionicons name="chatbubble-outline" size={wp(5)} color="#3b82f6" />
-              <Text style={[styles.contactLinkText, rtlStyles.contactLinkText]}>
-                {t("listings.haveQuestionContactUs")}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
+            keyboardShouldPersistTaps="handled"
+            data={formFieldsList}
+            keyExtractor={(item) => item.id}
+            renderItem={renderFormFieldItem}
+            ListHeaderComponent={listHeader}
+            ListFooterComponent={listFooter}
+            getItemLayout={getItemLayout}
+            initialNumToRender={6}
+            maxToRenderPerBatch={4}
+            windowSize={7}
+            removeClippedSubviews={Platform.OS === "android"}
+          />
           </View>
-        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
       <Animated.View

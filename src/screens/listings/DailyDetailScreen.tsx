@@ -30,6 +30,7 @@ import {
 import {
   calculateDays,
   getDefaultImageUrl,
+  navigateToMapScreen,
 } from "../../utils";
 import {
   CalendarModal,
@@ -214,7 +215,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate("MapLanding");
+      // Use navigateToMapScreen to go to correct map (DailyMap when in Daily stack)
+      // and preserve map state via popToTop when possible
+      navigateToMapScreen(navigation);
     }
   }, [navigation]);
 
@@ -345,9 +348,6 @@ export default function DailyDetailScreen(): React.JSX.Element {
       reportAdText: {
         marginLeft: isRTL ? 0 : wp(2),
         marginRight: isRTL ? wp(2) : 0,
-      },
-      imagesSectionTitle: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
       center: {
         alignItems: "center" as const,
@@ -538,9 +538,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
               {[
                 { label: t("listings.water") },
                 { label: t("listings.electricity") },
-                { label: t("listings.privateRoof") },
+                { label: t("listings.privateRoofFeature") },
                 { label: t("listings.specialEntrance") },
-                { label: t("listings.nearBus") },
+                { label: t("listings.nearBusFeature") },
               ]
                 .reduce<Array<Array<{ label: string; index: number }>>>(
                   (rows, item, index) => {
@@ -678,7 +678,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
           
           <View style={styles.imageViewerContent}>
             <View style={styles.imagesSectionHeader}>
-              <Text style={[styles.imagesSectionTitle, rtlStyles.imagesSectionTitle]}>{t("listings.images")}</Text>
+              <Text style={styles.imagesSectionTitle}>{t("listings.images")}</Text>
               <View style={styles.imagesSectionBorder} />
             </View>
             

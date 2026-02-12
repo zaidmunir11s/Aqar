@@ -257,7 +257,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           
           <View style={styles.imageViewerContent}>
             <View style={styles.imagesSectionHeader}>
-              <Text style={[styles.imagesSectionTitle, isRTL && styles.imagesSectionTitleRTL]}>
+              <Text style={styles.imagesSectionTitle}>
                 {t("listings.images")}
               </Text>
               <View style={styles.imagesSectionBorder} />
@@ -316,9 +316,6 @@ const styles = StyleSheet.create({
   documentTextRTL: {
     marginLeft: 0,
     marginRight: wp(3),
-  },
-  imagesSectionTitleRTL: {
-    textAlign: "right",
   },
   headerIcons: {
     position: "absolute",

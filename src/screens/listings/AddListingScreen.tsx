@@ -8,6 +8,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { ScreenHeader } from "../../components";
+import { navigateToMapScreen } from "../../utils";
 import { ADD_SCREEN_SERVICES_LISTING, COLORS } from "@/constants";
 import { useLocalization } from "../../hooks/useLocalization";
 
@@ -27,54 +28,9 @@ export default function AddListingScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
 
   const handleBackPress = () => {
-    // Get the parent navigator (Tab Navigator) to determine which tab we're in
-    const parent = navigation.getParent();
-    const rootState = parent?.getState();
-    
-    // Find the current tab by checking the root navigator state
-    const currentTabRoute = rootState?.routes?.[rootState?.index || 0];
-    const tabName = currentTabRoute?.name;
-    
-    // Determine which map screen to navigate to based on the current tab
-    const targetMapScreen = 
-      tabName === "Listings" ? "MapLanding" :
-      tabName === "Projects" ? "ProjectsMap" :
-      tabName === "Bookings" ? "DailyMap" : "MapLanding";
-    
-    // Get the current stack state
-    const stackState = navigation.getState();
-    const stackRoutes = stackState?.routes || [];
-    
-    // If there are multiple screens in the stack, pop to the first one (map screen)
-    if (stackRoutes.length > 1) {
-      try {
-        // Pop to the first screen in the stack (should be the map screen)
-        navigation.popToTop();
-      } catch (error) {
-        // If popToTop fails, navigate directly to the map screen using parent navigator
-        if (tabName && (tabName === "Listings" || tabName === "Projects" || tabName === "Bookings")) {
-          parent?.navigate(tabName, { screen: targetMapScreen });
-        } else {
-          navigation.navigate(targetMapScreen);
-        }
-      }
-    } else {
-      // Only one screen in stack or can't determine, navigate directly to map screen
-      try {
-        if (tabName && (tabName === "Listings" || tabName === "Projects" || tabName === "Bookings")) {
-          // Use parent navigator to navigate to the tab and screen
-          parent?.navigate(tabName, { screen: targetMapScreen });
-        } else {
-          // Fallback: try direct navigation
-          navigation.navigate(targetMapScreen);
-        }
-      } catch (error) {
-        // If navigation fails, try going back
-        if (navigation.canGoBack()) {
-          navigation.goBack();
-        }
-      }
-    }
+    // Use navigateToMapScreen which uses popToTop when map is root,
+    // preserving visited markers, region, and other map state
+    navigateToMapScreen(navigation);
   };
 
   const handleSavePress = () => {
@@ -206,7 +162,7 @@ export default function AddListingScreen(): React.JSX.Element {
         {ownerAgentOption && (
           <View style={styles.mainCardContainer}>
             <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
-              {t("listings.listingType")}
+              {t("listings.listingTypeLabel")}
             </Text>
             <TouchableOpacity
               style={styles.mainCard}

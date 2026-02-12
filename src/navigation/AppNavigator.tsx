@@ -26,6 +26,10 @@ const getTabBarStyle = (route: Route<string, object | undefined>) => {
     "Login",
     "CreateAccount",
     "PropertyDetails",
+    "ListingMedia",
+    "NearbyServices",
+    "AveragePriceDetail",
+    "AqarResidentialStats",
     "DailyDetails",
     "ContactHost",
     "Reserve",
@@ -80,6 +84,10 @@ const CustomTabBar = (props: BottomTabBarProps) => {
     "Login",
     "CreateAccount",
     "PropertyDetails",
+    "ListingMedia",
+    "NearbyServices",
+    "AveragePriceDetail",
+    "AqarResidentialStats",
     "DailyDetails",
     "ContactHost",
     "Reserve",
@@ -103,6 +111,8 @@ const CustomTabBar = (props: BottomTabBarProps) => {
     "ChangePassword",
     "ChangePhoneNumber",
     "Conversation",
+    "DeveloperProfile",
+    "ListingMedia",
   ];
 
   if (hideTabBarRoutes.includes(focusedRouteName)) {

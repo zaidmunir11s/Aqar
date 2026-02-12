@@ -18,17 +18,26 @@ import { COLORS } from "@/constants/colors";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
 
+/** When "orange", Available badge uses orange text and light orange background (e.g. developer profile section). */
+export type AvailableBadgeVariant = "default" | "orange";
+
 export interface ProjectListCardProps {
   project: ProjectProperty;
   onPress: () => void;
   filterOptions: FilterOption[];
+  /** When true, hide the type tags row (e.g. "Apartment for Sale"). Used in developer profile section. */
+  hideTypeTags?: boolean;
+  /** Badge style for Available status. "orange" = orange text + light orange background. */
+  availableBadgeVariant?: AvailableBadgeVariant;
+  /** When true, hide the developer logo icon next to the project name. Used in developer profile section. */
+  hideDeveloperLogo?: boolean;
 }
 
 /**
  * Project list card component for projects list view
  */
 const ProjectListCard = memo<ProjectListCardProps>(
-  ({ project, onPress, filterOptions }) => {
+  ({ project, onPress, filterOptions, hideTypeTags = false, availableBadgeVariant = "default", hideDeveloperLogo = false }) => {
     const { t, isRTL } = useLocalization();
     const [imageError, setImageError] = useState(false);
     const [logoError, setLogoError] = useState(false);
@@ -153,8 +162,19 @@ const ProjectListCard = memo<ProjectListCardProps>(
 
           {/* Status Badges - Top Left */}
           <View style={[styles.statusBadgesContainer, rtlStyles.statusBadgesContainer]}>
-            <View style={[styles.statusBadge, styles.availableBadge]}>
-              <Text style={styles.availableBadgeText}>
+            <View
+              style={[
+                styles.statusBadge,
+                styles.availableBadge,
+                availableBadgeVariant === "orange" && styles.availableBadgeOrange,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.availableBadgeText,
+                  availableBadgeVariant === "orange" && styles.availableBadgeTextOrange,
+                ]}
+              >
                 {translatedAvailableStatus}
               </Text>
             </View>
@@ -180,7 +200,7 @@ const ProjectListCard = memo<ProjectListCardProps>(
             <Text style={[styles.projectName, rtlStyles.projectName]} numberOfLines={1}>
               {project.projectNameArabic || project.projectName}
             </Text>
-            {project.developerLogo && project.developerLogo.trim() !== "" && !logoError && (
+            {!hideDeveloperLogo && project.developerLogo && project.developerLogo.trim() !== "" && !logoError && (
               <View style={styles.logoContainer}>
                 <Image
                   source={{ uri: project.developerLogo }}
@@ -197,14 +217,16 @@ const ProjectListCard = memo<ProjectListCardProps>(
             )}
           </View>
 
-          {/* Type Tags */}
-          <View style={[styles.typeTagsContainer, rtlStyles.typeTagsContainer]}>
-            {typeLabels.map((label, index) => (
-              <View key={index} style={styles.typeTag}>
-                <Text style={styles.typeTagText}>{label}</Text>
-              </View>
-            ))}
-          </View>
+          {/* Type Tags - hidden when hideTypeTags (e.g. developer profile section) */}
+          {!hideTypeTags && (
+            <View style={[styles.typeTagsContainer, rtlStyles.typeTagsContainer]}>
+              {typeLabels.map((label, index) => (
+                <View key={index} style={styles.typeTag}>
+                  <Text style={styles.typeTagText}>{label}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Location */}
           {project.address && (
@@ -260,6 +282,12 @@ const styles = StyleSheet.create({
   availableBadge: {
     backgroundColor: "#e0eef7",
   },
+  availableBadgeOrange: {
+    backgroundColor: "#ffedd5",
+  },
+  availableBadgeTextOrange: {
+    color: "#ea580c",
+  },
   readyBadge: {
     backgroundColor: "#e8eff2",
   },
@@ -276,8 +304,8 @@ const styles = StyleSheet.create({
   priceContainer: {
     position: "absolute",
     bottom: hp(1.5),
-    paddingHorizontal: wp(3.5),
-    paddingVertical: hp(0.9),
+    // paddingHorizontal: wp(3.5),
+    // paddingVertical: hp(0.9),
     borderRadius: wp(1.5),
   },
   priceText: {

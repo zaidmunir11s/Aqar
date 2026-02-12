@@ -633,6 +633,7 @@ export default function DailyScreen(): React.JSX.Element {
         initialRegion={region}
         mapType={isSatelliteMode ? "satellite" : "standard"}
         provider={Platform.OS === "android" ? "google" : undefined}
+        rotateEnabled={false}
         onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}

@@ -1,15 +1,13 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   Dimensions,
   Platform,
-  Modal,
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -49,7 +47,6 @@ import {
   AverageSaleCard,
   IconButton,
 } from "../../components";
-import ScreenHeader from "../../components/common/ScreenHeader";
 import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
@@ -81,9 +78,10 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("main");
   const [expandedDescription, setExpandedDescription] =
+    useState<boolean>(false);
+  const [descriptionExceedsThreeLines, setDescriptionExceedsThreeLines] =
     useState<boolean>(false);
   const [liked, setLiked] = useState<boolean>(false);
   const [favorited, setFavorited] = useState<boolean>(false);
@@ -96,6 +94,11 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     () => PROPERTY_DATA.find((p) => p.id === propertyId),
     [propertyId]
   );
+
+  useEffect(() => {
+    setExpandedDescription(false);
+    setDescriptionExceedsThreeLines(false);
+  }, [propertyId]);
 
   // Filter visible properties based on selected dates and minimum days requirement
   const filteredVisiblePropertyIds = useMemo(() => {
@@ -210,36 +213,18 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   const handleChat = useCallback(() => {
     if (!property) return;
-    
-    // Navigate to conversation screen with default message
+
+    // Push Conversation in the same stack so back returns to PropertyDetails
     const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
-    // Get advertiser name from property data, fallback to default (don't translate - keep as is)
     const advertiserName = property.advertiserName || "Property Owner";
     const advertiserId = property.advertiserId || `advertiser-${property.id}`;
-    
-    // Navigate to Chat -> Conversation
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          propertyId: property.id,
-          advertiserName,
-          advertiserId,
-          defaultMessage,
-        },
-      });
-    } else {
-      navigation.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          propertyId: property.id,
-          advertiserName,
-          advertiserId,
-          defaultMessage,
-        },
-      });
-    }
+
+    navigation.navigate("Conversation", {
+      propertyId: property.id,
+      advertiserName,
+      advertiserId,
+      defaultMessage,
+    });
   }, [navigation, property, t]);
 
   const handleShare = useCallback(() => {
@@ -265,16 +250,29 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   }, []);
 
   const openImageViewer = useCallback(() => {
-    setImageViewerVisible(true);
-  }, []);
-
-  const closeImageViewer = useCallback(() => {
-    setImageViewerVisible(false);
-  }, []);
+    const images =
+      property?.images && property.images.length > 0
+        ? property.images
+        : [getDefaultImageUrl()];
+    navigation.navigate("ListingMedia", { images });
+  }, [navigation, property]);
 
   const expandDescription = useCallback(() => {
     setExpandedDescription(true);
   }, []);
+
+  const descriptionText =
+    property?.description ||
+    "شقة دور أرضي بخدمات متكاملة، مناسبة للعائلات، قريبة من المدارس والخدمات الأساسية. 5 غرف مع مكيفات، حمامين، مطبخ مجهز، الدور الثاني.";
+
+  const handleDescriptionTextLayout = useCallback(
+    (e: { nativeEvent: { lines: unknown[] } }) => {
+      if (e.nativeEvent.lines.length > 3) {
+        setDescriptionExceedsThreeLines(true);
+      }
+    },
+    []
+  );
 
   const handleTabPress = useCallback((tab: TabType) => {
     setActiveTab(tab);
@@ -294,6 +292,14 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       navigation.navigate("ProfileTab", { screen: "Login" });
     }
   }, [navigation]);
+
+  const handleAverageCardPress = useCallback(() => {
+    if (!property) return;
+    navigation.navigate("AveragePriceDetail", {
+      property,
+      averageType: property.listingType === "rent" ? "rent" : "sale",
+    });
+  }, [navigation, property]);
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -497,14 +503,14 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
           {/* Average Card - Only for Rent */}
           {property.listingType === "rent" && (
-            <AverageCard property={property} />
+            <AverageCard property={property} onPress={handleAverageCardPress} />
           )}
 
           {/* Financing Options Card and Average Sale Card - Only for Sale */}
           {property.listingType === "sale" && (
             <>
               <FinancingOptionsCard onPress={handleFinancingOptions} />
-              <AverageSaleCard property={property} />
+              <AverageSaleCard property={property} onPress={handleAverageCardPress} />
             </>
           )}
 
@@ -546,7 +552,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                   icon={item.icon}
                   label={item.label}
                   value={item.value}
-                  backgroundColor={index % 2 === 0 ? "#fff" : "#ebf1f1"}
+                  backgroundColor={index % 2 === 0 ? "#fff" : COLORS.background}
                 />
               ))}
             </View>
@@ -585,7 +591,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                       isRTL && styles.featureRowRTL,
                       {
                         backgroundColor:
-                          rowIndex % 2 === 0 ? "#fff" : "#ebf1f1",
+                          rowIndex % 2 === 0 ? "#fff" : COLORS.background,
                       },
                     ]}
                   >
@@ -608,26 +614,36 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
               {t("listings.extra")}
             </Text>
-            <Text
-              style={[styles.description, isRTL && styles.descriptionRTL]}
-              numberOfLines={expandedDescription ? undefined : 3}
-            >
-              {property.description ||
-                "شقة دور أرضي بخدمات متكاملة، مناسبة للعائلات، قريبة من المدارس والخدمات الأساسية. 5 غرف مع مكيفات، حمامين، مطبخ مجهز، الدور الثاني."}
-            </Text>
-            {!expandedDescription && (
-              <TouchableOpacity onPress={expandDescription}>
-                <Text style={[styles.readMore, isRTL && styles.readMoreRTL]}>
-                  {t("listings.readMore")}
-                </Text>
-              </TouchableOpacity>
-            )}
+            <View style={styles.descriptionWrapper}>
+              <Text
+                style={[styles.description, styles.descriptionMeasure]}
+                onTextLayout={handleDescriptionTextLayout}
+              >
+                {descriptionText}
+              </Text>
+              <Text
+                style={[styles.description, isRTL && styles.descriptionRTL]}
+                numberOfLines={expandedDescription ? undefined : 3}
+              >
+                {descriptionText}
+              </Text>
+              {!expandedDescription && descriptionExceedsThreeLines && (
+                <TouchableOpacity onPress={expandDescription}>
+                  <Text style={[styles.readMore, isRTL && styles.readMoreRTL]}>
+                    {t("listings.readMore")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
           <View style={styles.sectionSeparator} />
 
 
           {/* Location Map */}
-          <PropertyLocation property={property} />
+          <PropertyLocation
+            property={property}
+            onPress={() => navigation.navigate("NearbyServices", { propertyId: property.id })}
+          />
           <View style={styles.sectionSeparator} />
 
           {/* Advertiser Information */}
@@ -650,7 +666,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           {/* Report Ad */}
           <View style={styles.reportAdSection}>
             <TouchableOpacity style={[styles.reportAd, isRTL && styles.reportAdRTL]}>
-              <Ionicons name="flag" size={wp(5)} color="#ef4444" />
+              <Ionicons name="flag" size={wp(5.5)} color={COLORS.error} />
               <Text style={[styles.reportAdText, isRTL && styles.reportAdTextRTL]}>
                 {t("listings.reportAd")}
               </Text>
@@ -673,51 +689,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           onChat={handleChat}
         />
       </View>
-
-
-      {/* Full Screen Image Viewer */}
-      <Modal
-        visible={imageViewerVisible}
-        transparent={false}
-        animationType="fade"
-        onRequestClose={closeImageViewer}
-        statusBarTranslucent={true}
-      >
-        <View style={styles.imageViewerContainer}>
-          <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
-            <ScreenHeader
-              title={t("listings.listingMedia")}
-              onBackPress={closeImageViewer}
-              backButtonColor={COLORS.backButton}
-            />
-          </View>
-          
-          <View style={styles.imageViewerContent}>
-            <View style={styles.imagesSectionHeader}>
-              <Text style={[styles.imagesSectionTitle, isRTL && styles.imagesSectionTitleRTL]}>
-                {t("listings.images")}
-              </Text>
-              <View style={styles.imagesSectionBorder} />
-            </View>
-            
-            <ScrollView
-              style={styles.imagesScrollView}
-              contentContainerStyle={styles.imagesScrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              {propertyImages.map((imageUri, index) => (
-                <View key={`image-${index}`} style={styles.imageItemContainer}>
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.imageItem}
-                    resizeMode="cover"
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 }
@@ -725,7 +696,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   center: {
     flex: 1,
@@ -757,9 +728,6 @@ const styles = StyleSheet.create({
     marginLeft: 0,
     marginRight: wp(2),
   },
-  imagesSectionTitleRTL: {
-    textAlign: "center",
-  },
   headerIcons: {
     position: "absolute",
     top: Platform.OS === "ios" ? hp(3) : hp(2),
@@ -786,7 +754,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     zIndex: 1000,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: COLORS.border,
     overflow: "hidden",
     ...Platform.select({
       ios: {
@@ -802,28 +770,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   headerContainer: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(1),
   },
   sectionContainer: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
   },
   sectionTitle: {
     fontSize: wp(4.5),
     fontWeight: "700",
-    color: "#111827",
+    color: COLORS.textPrimary,
     marginBottom: hp(1.5),
     paddingHorizontal: wp(4),
   },
   infoList: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   featuresList: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   featureRow: {
     flexDirection: "row",
@@ -833,14 +801,23 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
   },
   extraSection: {
-    backgroundColor: "#ebf1f1",
-    paddingHorizontal: wp(4),
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
     paddingBottom: hp(1),
   },
+  descriptionWrapper: {
+    position: "relative",
+    paddingHorizontal: wp(4),
+  },
+  descriptionMeasure: {
+    position: "absolute",
+    opacity: 0,
+    width: "100%",
+    zIndex: -1,
+  },
   description: {
     fontSize: wp(3.5),
-    color: "#4b5563",
+    color: COLORS.textSecondary,
     lineHeight: hp(3),
   },
   readMore: {
@@ -852,73 +829,22 @@ const styles = StyleSheet.create({
   sectionSeparator: {
     paddingTop: hp(1),
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
-    marginHorizontal: wp(4),
+    borderBottomColor: COLORS.border,
   },
   reportAdSection: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
   },
   reportAd: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: wp(4),
-    marginHorizontal: wp(4),
-    borderRadius: wp(2),
+    justifyContent: "center",
+    padding: wp(2),
   },
   reportAdText: {
-    fontSize: wp(3.5),
-    color: "#ef4444",
+    fontSize: wp(4),
+    color: COLORS.error,
     marginLeft: wp(2),
     fontWeight: "600",
-  },
-  imageViewerContainer: {
-    flex: 1,
-    backgroundColor: "#ebf1f1",
-  },
-  imageViewerHeaderContainer: {
-    backgroundColor: "#fff",
-  },
-  imageViewerContent: {
-    flex: 1,
-    backgroundColor: "#ebf1f1",
-  },
-  imagesSectionHeader: {
-    backgroundColor: "#ebf1f1",
-    paddingHorizontal: wp(4),
-    paddingTop: hp(2),
-    paddingBottom: hp(1.5),
-  },
-  imagesSectionTitle: {
-    fontSize: wp(4.5),
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: hp(1),
-    textAlign: "center",
-  },
-  imagesSectionBorder: {
-    height: 2,
-    backgroundColor: COLORS.primary,
-    width: "100%",
-  },
-  imagesScrollView: {
-    flex: 1,
-  },
-  imagesScrollContent: {
-    paddingHorizontal: wp(4),
-    paddingTop: hp(2),
-    paddingBottom: hp(4),
-  },
-  imageItemContainer: {
-    marginBottom: hp(2),
-    borderRadius: wp(2),
-    overflow: "hidden",
-    backgroundColor: "#fff",
-  },
-  imageItem: {
-    width: "100%",
-    height: hp(40),
-    borderRadius: wp(2),
   },
 });

@@ -110,6 +110,25 @@ const getFeatureIcon = (featureName: string): FeatureIconConfig => {
   };
 };
 
+/**
+ * Get i18n key for feature name (same keyword matching as getFeatureIcon)
+ */
+const getFeatureTranslationKey = (featureName: string): string => {
+  const lowerName = featureName.toLowerCase();
+  if (lowerName.includes("location") || lowerName.includes("special")) return "location";
+  if (lowerName.includes("parking")) return "parking";
+  if (lowerName.includes("security")) return "security";
+  if (lowerName.includes("garden") || lowerName.includes("green")) return "garden";
+  if (lowerName.includes("pool") || lowerName.includes("swimming")) return "pool";
+  if (lowerName.includes("gym") || lowerName.includes("fitness")) return "gym";
+  if (lowerName.includes("kids") || lowerName.includes("playground")) return "kids";
+  if (lowerName.includes("design") || lowerName.includes("modern")) return "design";
+  if (lowerName.includes("luxury")) return "luxury";
+  if (lowerName.includes("prime")) return "prime";
+  if (lowerName.includes("central")) return "central";
+  return "default";
+};
+
 export interface ProjectFeaturesProps {
   features?: string[];
 }
@@ -145,9 +164,7 @@ const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
     [isRTL]
   );
 
-  if (!features || features.length === 0) {
-    return null;
-  }
+  const featureList = features ?? [];
 
   return (
     <View style={styles.section}>
@@ -155,34 +172,45 @@ const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
         {t("projects.projectFeatures")}
       </Text>
       <View style={[styles.featuresRow, rtlStyles.featuresRow]}>
-        {features.map((feature, index) => {
+        {featureList.map((feature, index) => {
           const iconConfig = getFeatureIcon(feature);
           return (
-            <View key={index} style={styles.featureItem}>
-              <View style={styles.featureIconBox}>
-                {iconConfig.library === "Ionicons" && (
-                  <Ionicons
-                    name={iconConfig.name as any}
-                    size={wp(5)}
-                    color={iconConfig.color}
-                  />
-                )}
-                {iconConfig.library === "MaterialCommunityIcons" && (
-                  <MaterialCommunityIcons
-                    name={iconConfig.name as any}
-                    size={wp(5)}
-                    color={iconConfig.color}
-                  />
-                )}
-                {iconConfig.library === "FontAwesome5" && (
-                  <FontAwesome5
-                    name={iconConfig.name as any}
-                    size={wp(5)}
-                    color={iconConfig.color}
-                  />
-                )}
+            <View key={index} style={[styles.featureItem, rtlStyles.featureItem]}>
+              <View style={[styles.featureIconBox, rtlStyles.featureIconBox]}>
+                <View
+                  style={[
+                    styles.iconBackground,
+                    { backgroundColor: iconConfig.backgroundColor },
+                  ]}
+                >
+                  {iconConfig.library === "Ionicons" && (
+                    <Ionicons
+                      name={iconConfig.name as any}
+                      size={wp(5)}
+                      color={iconConfig.color}
+                    />
+                  )}
+                  {iconConfig.library === "MaterialCommunityIcons" && (
+                    <MaterialCommunityIcons
+                      name={iconConfig.name as any}
+                      size={wp(5)}
+                      color={iconConfig.color}
+                    />
+                  )}
+                  {iconConfig.library === "FontAwesome5" && (
+                    <FontAwesome5
+                      name={iconConfig.name as any}
+                      size={wp(5)}
+                      color={iconConfig.color}
+                    />
+                  )}
+                </View>
               </View>
-              <Text style={[styles.featureText, rtlStyles.featureText]}>{feature}</Text>
+              <Text style={[styles.featureText, rtlStyles.featureText]}>
+                {t(`projects.features.${getFeatureTranslationKey(feature)}`, {
+                  defaultValue: feature,
+                })}
+              </Text>
             </View>
           );
         })}
@@ -223,6 +251,12 @@ const styles = StyleSheet.create({
     borderRadius: wp(2),
     borderWidth: 1.5,
     borderColor: "#e4e3e8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconBackground: {
+    padding: wp(0.7),
+    borderRadius: wp(1.5),
     alignItems: "center",
     justifyContent: "center",
   },

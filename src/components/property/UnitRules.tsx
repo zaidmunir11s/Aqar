@@ -161,7 +161,7 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
                   icon={rule.icon}
                   label={rule.label}
                   value={rule.value}
-                  backgroundColor={index % 2 === 0 ? "#fff" : "#ebf1f1"}
+                  backgroundColor={index % 2 === 0 ? "#fff" : COLORS.background}
                 />
               </View>
             );
@@ -174,7 +174,7 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
                 styles.ruleRow,
                 rtlStyles.ruleRow,
                 {
-                  backgroundColor: index % 2 === 0 ? "#fff" : "#ebf1f1",
+                  backgroundColor: index % 2 === 0 ? "#fff" : COLORS.background,
                 },
                 isFirst && styles.firstRow,
                 isLast && styles.lastRow,
@@ -198,18 +198,18 @@ UnitRules.displayName = "UnitRules";
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
   },
   sectionTitle: {
     fontSize: wp(4.5),
     fontWeight: "700",
-    color: "#111827",
+    color: COLORS.textPrimary,
     marginBottom: hp(1.5),
     paddingHorizontal: wp(4),
   },
   rulesList: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   ruleRow: {
     width: "100%",
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   ruleLabel: {
     fontSize: wp(3.5),
-    color: "#374151",
+    color: COLORS.textSecondary,
     marginLeft: wp(8), // Match InfoItem: icon width (wp(5)) + margin (wp(3)) = wp(8) total spacing
   },
   ruleValueContainer: {
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   ruleValue: {
     fontSize: wp(3.5),
     fontWeight: "600",
-    color: "#111827",
+    color: COLORS.textPrimary,
   },
   firstRow: {
     borderTopWidth: 1,

@@ -1,4 +1,5 @@
 import type { NavigationProp } from "@react-navigation/native";
+import { CommonActions } from "@react-navigation/native";
 
 /**
  * Determines the correct map screen to navigate to based on the current navigation state
@@ -83,3 +84,43 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
   }
 }
 
+/**
+ * When navigating back from another tab (e.g. Chat) to the Listings map screen,
+ * switch to the Listings tab and pop its stack to the first screen (MapLanding)
+ * so map state (region, markers, etc.) is preserved (same idea as AddListingScreen close / navigateToMapScreen).
+ * Call this from screens that live outside the Listings stack (e.g. ChatScreen).
+ * @param navigation - Navigation from the current screen (e.g. ChatStack); its parent must be the tab navigator
+ */
+export function navigateToListingsMapFromOtherTab(
+  navigation: NavigationProp<any>
+): void {
+  const tabNav = navigation.getParent();
+  if (!tabNav) {
+    navigation.navigate("Listings", { screen: "MapLanding" });
+    return;
+  }  const state = tabNav.getState();
+  const listingsRoute = state?.routes?.find(
+    (r: { name: string }) => r.name === "Listings"
+  );
+  const listingsState = listingsRoute?.state as
+    | { routes: Array<{ name: string; key?: string; params?: object }>; index: number }
+    | undefined;
+  const routes = listingsState?.routes ?? [];
+  const firstRoute = routes[0];
+  const hasStackToPop = routes.length > 1;  if (hasStackToPop && firstRoute) {
+    // Navigate to Listings tab with stack state that only shows the root screen.
+    // Reusing the existing first route object preserves the MapLanding instance and its state.
+    tabNav.dispatch(
+      CommonActions.navigate({
+        name: "Listings",
+        merge: true,
+        state: {
+          routes: [firstRoute],
+          index: 0,
+        },
+      } as { name: string; merge: boolean; state: object })
+    );
+  } else {
+    tabNav.navigate("Listings", { screen: "MapLanding" });
+  }
+}

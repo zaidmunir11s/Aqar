@@ -10,4 +10,5 @@ export * from "./propertyMatching";
 export * from "./rtlHelpers";
 export * from "./languageStorage";
 export * from "./addressTranslation";
+export * from "./cityTranslation";
 export * from "./validation";

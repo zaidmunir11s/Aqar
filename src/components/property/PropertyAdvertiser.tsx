@@ -11,6 +11,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useLocalization } from "../../hooks/useLocalization";
+import { COLORS } from "@/constants";
 
 export interface PropertyAdvertiserProps {
   onCall: () => void;
@@ -149,23 +150,23 @@ PropertyAdvertiser.displayName = "PropertyAdvertiser";
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     padding: wp(4),
     paddingTop: hp(2),
   },
   sectionTitle: {
     fontSize: wp(4.5),
     fontWeight: "700",
-    color: "#111827",
+    color: COLORS.textPrimary,
     marginBottom: hp(2),
   },
   advertiserCardWrapper: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     borderRadius: wp(2),
     padding: wp(4),
     marginBottom: hp(2),
-    borderWidth: 2,
-    borderColor: "#dadee8",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   advertiserCard: {
     marginBottom: 0,
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
   advertiserName: {
     fontSize: wp(4),
     fontWeight: "700",
-    color: "#111827",
+    color: COLORS.textPrimary,
   },
   ratingRow: {
     flexDirection: "row",
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: wp(3),
-    color: "#6b7280",
+    color: COLORS.textSecondary,
     marginLeft: wp(1),
   },
   contactButtons: {
@@ -219,34 +220,34 @@ const styles = StyleSheet.create({
     backgroundColor: "#0e856a",
   },
   waBtn: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     borderWidth: 2,
     borderColor: "#40ac55",
   },
   chatBtn: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: "#d1d6dc",
+    borderColor: COLORS.border,
   },
   contactBtnText: {
-    color: "#fff",
+    color: COLORS.white,
     fontSize: wp(3.5),
     fontWeight: "600",
     marginLeft: wp(2),
   },
   warningBox: {
     flexDirection: "row",
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     padding: wp(3),
     borderRadius: wp(2),
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#dadee8",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   warningText: {
     flex: 1,
     fontSize: wp(3),
-    color: "#777c81",
+    color: COLORS.textSecondary,
   },
 });
 

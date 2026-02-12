@@ -449,6 +449,7 @@ export default function ProjectsScreen(): React.JSX.Element {
         initialRegion={RIYADH_REGION}
         mapType={isSatelliteMode ? "satellite" : "standard"}
         provider={Platform.OS === "android" ? "google" : undefined}
+        rotateEnabled={false}
         onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={handleMapPress}

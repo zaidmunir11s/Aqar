@@ -108,13 +108,13 @@ const styles = StyleSheet.create({
   },
   address: {
     fontSize: wp(3.5),
-    color: "#374151",
+    color: COLORS.textPrimary,
     marginBottom: hp(0.5),
   },
   title: {
     fontSize: wp(4.5),
     fontWeight: "700",
-    color: "#111827",
+    color: COLORS.textPrimary,
     marginBottom: hp(1),
   },
   priceRow: {
@@ -127,11 +127,11 @@ const styles = StyleSheet.create({
     color: COLORS.propertyDetailPrice,
   },
   bookingTypePrice: {
-    color: "#10b981",
+    color: COLORS.success,
   },
   commission: {
     fontSize: wp(3),
-    color: "#6b7280",
+    color: COLORS.textSecondary,
   },
 });
 

@@ -2,6 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import DailyScreen from "../../screens/listings/DailyScreen";
 import DailyDetailScreen from "../../screens/listings/DailyDetailScreen";
+import NearbyServicesScreen from "../../screens/listings/NearbyServicesScreen";
 import ContactHostScreen from "../../screens/listings/ContactHostScreen";
 import ReserveScreen from "../../screens/listings/ReserveScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
@@ -20,6 +21,7 @@ import NewOrderScreen from "../../screens/listings/addListing/searchRequest/NewO
 import ChooseLocationScreen from "../../screens/listings/addListing/searchRequest/ChooseLocationScreen";
 import DescriptionScreen from "../../screens/listings/addListing/searchRequest/DescriptionScreen";
 import MatchedListingsScreen from "../../screens/listings/addListing/searchRequest/MatchedListingsScreen";
+import ListingMediaScreen from "../../screens/listings/ListingMediaScreen";
 
 const Stack = createStackNavigator();
 
@@ -31,6 +33,8 @@ export default function DailyStack(): React.JSX.Element {
     >
       <Stack.Screen name="DailyMap" component={DailyScreen} />
       <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
+      <Stack.Screen name="ListingMedia" component={ListingMediaScreen} />
+      <Stack.Screen name="NearbyServices" component={NearbyServicesScreen} />
       <Stack.Screen name="ContactHost" component={ContactHostScreen} />
       <Stack.Screen name="Reserve" component={ReserveScreen} />
       <Stack.Screen name="PropertyDetails" component={PropertyDetailsScreen} />

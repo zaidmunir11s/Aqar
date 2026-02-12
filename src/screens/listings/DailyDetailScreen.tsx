@@ -1,15 +1,13 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   Dimensions,
   Platform,
-  Modal,
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -45,7 +43,6 @@ import {
   IconButton,
   UnitRules,
 } from "../../components";
-import ScreenHeader from "../../components/common/ScreenHeader";
 import { useCalendar } from "../../hooks";
 import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
@@ -78,9 +75,10 @@ export default function DailyDetailScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [imageViewerVisible, setImageViewerVisible] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("main");
   const [expandedDescription, setExpandedDescription] =
+    useState<boolean>(false);
+  const [descriptionExceedsThreeLines, setDescriptionExceedsThreeLines] =
     useState<boolean>(false);
   const [liked, setLiked] = useState<boolean>(false);
   const [favorited, setFavorited] = useState<boolean>(false);
@@ -98,6 +96,11 @@ export default function DailyDetailScreen(): React.JSX.Element {
     () => PROPERTY_DATA.find((p) => p.id === propertyId) as DailyProperty | undefined,
     [propertyId]
   );
+
+  useEffect(() => {
+    setExpandedDescription(false);
+    setDescriptionExceedsThreeLines(false);
+  }, [propertyId]);
 
   // Filter visible properties based on selected dates and minimum days requirement
   const filteredVisiblePropertyIds = useMemo(() => {
@@ -230,16 +233,30 @@ export default function DailyDetailScreen(): React.JSX.Element {
   }, []);
 
   const openImageViewer = useCallback(() => {
-    setImageViewerVisible(true);
-  }, []);
-
-  const closeImageViewer = useCallback(() => {
-    setImageViewerVisible(false);
-  }, []);
+    if (!property) return;
+    const images =
+      property.images && property.images.length > 0
+        ? property.images
+        : [getDefaultImageUrl()];
+    navigation.navigate("ListingMedia", { images });
+  }, [navigation, property]);
 
   const expandDescription = useCallback(() => {
     setExpandedDescription(true);
   }, []);
+
+  const descriptionText =
+    property?.description ||
+    "شقة دور أرضي بخدمات متكاملة، مناسبة للعائلات، قريبة من المدارس والخدمات الأساسية. 5 غرف مع مكيفات، حمامين، مطبخ مجهز، الدور الثاني.";
+
+  const handleDescriptionTextLayout = useCallback(
+    (e: { nativeEvent: { lines: unknown[] } }) => {
+      if (e.nativeEvent.lines.length > 3) {
+        setDescriptionExceedsThreeLines(true);
+      }
+    },
+    []
+  );
 
   const handleTabPress = useCallback((tab: TabType) => {
     setActiveTab(tab);
@@ -525,7 +542,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
                   icon={item.icon}
                   label={item.label}
                   value={item.value}
-                  backgroundColor={index % 2 === 0 ? "#fff" : "#ebf1f1"}
+                  backgroundColor={index % 2 === 0 ? "#fff" : COLORS.background}
                 />
               ))}
             </View>
@@ -562,7 +579,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
                       rtlStyles.featureRow,
                       {
                         backgroundColor:
-                          rowIndex % 2 === 0 ? "#fff" : "#ebf1f1",
+                          rowIndex % 2 === 0 ? "#fff" : COLORS.background,
                       },
                     ]}
                   >
@@ -583,18 +600,25 @@ export default function DailyDetailScreen(): React.JSX.Element {
           {/* Extra / Description */}
           <View style={styles.extraSection}>
             <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.extra")}</Text>
-            <Text
-              style={[styles.description, rtlStyles.description]}
-              numberOfLines={expandedDescription ? undefined : 3}
-            >
-              {property.description ||
-                "شقة دور أرضي بخدمات متكاملة، مناسبة للعائلات، قريبة من المدارس والخدمات الأساسية. 5 غرف مع مكيفات، حمامين، مطبخ مجهز، الدور الثاني."}
-            </Text>
-            {!expandedDescription && (
-              <TouchableOpacity onPress={expandDescription}>
-                <Text style={[styles.readMore, rtlStyles.readMore]}>{t("listings.readMore")}</Text>
-              </TouchableOpacity>
-            )}
+            <View style={styles.descriptionWrapper}>
+              <Text
+                style={[styles.description, styles.descriptionMeasure]}
+                onTextLayout={handleDescriptionTextLayout}
+              >
+                {descriptionText}
+              </Text>
+              <Text
+                style={[styles.description, rtlStyles.description]}
+                numberOfLines={expandedDescription ? undefined : 3}
+              >
+                {descriptionText}
+              </Text>
+              {!expandedDescription && descriptionExceedsThreeLines && (
+                <TouchableOpacity onPress={expandDescription}>
+                  <Text style={[styles.readMore, rtlStyles.readMore]}>{t("listings.readMore")}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
           <View style={styles.sectionSeparator} />
 
@@ -603,7 +627,10 @@ export default function DailyDetailScreen(): React.JSX.Element {
           <View style={styles.sectionSeparator} />
 
           {/* Location Map */}
-          <PropertyLocation property={property} />
+          <PropertyLocation
+            property={property}
+            onPress={() => navigation.navigate("NearbyServices", { propertyId: property.id })}
+          />
           <View style={styles.sectionSeparator} />
 
           {/* Tabs Section */}
@@ -618,7 +645,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
           {/* Report Ad */}
           <View style={styles.reportAdSection}>
             <TouchableOpacity style={[styles.reportAd, rtlStyles.reportAd]}>
-              <Ionicons name="flag" size={wp(5)} color="#ef4444" />
+              <Ionicons name="flag" size={wp(5.5)} color={COLORS.error} />
               <Text style={[styles.reportAdText, rtlStyles.reportAdText]}>{t("listings.reportAd")}</Text>
             </TouchableOpacity>
           </View>
@@ -660,47 +687,6 @@ export default function DailyDetailScreen(): React.JSX.Element {
         property={property as DailyProperty}
       />
 
-      {/* Full Screen Image Viewer */}
-      <Modal
-        visible={imageViewerVisible}
-        transparent={false}
-        animationType="fade"
-        onRequestClose={closeImageViewer}
-        statusBarTranslucent={true}
-      >
-        <View style={styles.imageViewerContainer}>
-          <View style={[styles.imageViewerHeaderContainer, { paddingTop: insets.top }]}>
-            <ScreenHeader
-              title={t("listings.listingMedia")}
-              onBackPress={closeImageViewer}
-              backButtonColor={COLORS.backButton}
-            />
-          </View>
-          
-          <View style={styles.imageViewerContent}>
-            <View style={styles.imagesSectionHeader}>
-              <Text style={styles.imagesSectionTitle}>{t("listings.images")}</Text>
-              <View style={styles.imagesSectionBorder} />
-            </View>
-            
-            <ScrollView
-              style={styles.imagesScrollView}
-              contentContainerStyle={styles.imagesScrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              {propertyImages.map((imageUri, index) => (
-                <View key={`image-${index}`} style={styles.imageItemContainer}>
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.imageItem}
-                    resizeMode="cover"
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 }
@@ -708,7 +694,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   center: {
     flex: 1,
@@ -741,7 +727,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     zIndex: 1000,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: COLORS.border,
     overflow: "hidden",
     ...Platform.select({
       ios: {
@@ -757,14 +743,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   headerContainer: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(1),
-  },
+  },  
   sectionContainer: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
   },
   sectionTitle: {
@@ -775,24 +761,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
   },
   infoList: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   featuresList: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
   },
   featureRow: {
     flexDirection: "row",
     width: "100%",
   },
   extraSection: {
-    backgroundColor: "#ebf1f1",
-    paddingHorizontal: wp(4),
+    backgroundColor: COLORS.background, 
     paddingTop: hp(2),
     paddingBottom: hp(1),
   },
+  descriptionWrapper: {
+    position: "relative",
+    paddingHorizontal: wp(4),
+  },
+  descriptionMeasure: {
+    position: "absolute",
+    opacity: 0,
+    width: "100%",
+    zIndex: -1,
+  },
   description: {
     fontSize: wp(3.5),
-    color: "#4b5563",
+    color: COLORS.textSecondary,
     lineHeight: hp(3),
   },
   readMore: {
@@ -804,74 +799,25 @@ const styles = StyleSheet.create({
   sectionSeparator: {
     paddingTop: hp(1),
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
-    marginHorizontal: wp(4),
+    borderBottomColor: COLORS.border,
+    // marginHorizontal: wp(4),
   },
   reportAdSection: {
-    backgroundColor: "#ebf1f1",
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
   },
   reportAd: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: wp(4),
-    marginHorizontal: wp(4),
-    borderRadius: wp(2),
+    justifyContent: "center",
+    backgroundColor: COLORS.background,
+    padding: wp(2),
   },
   reportAdText: {
-    fontSize: wp(3.5),
-    color: "#ef4444",
+    fontSize: wp(4),
+    color: COLORS.error,
     marginLeft: wp(2),
     fontWeight: "600",
-  },
-  imageViewerContainer: {
-    flex: 1,
-    backgroundColor: "#ebf1f1",
-  },
-  imageViewerHeaderContainer: {
-    backgroundColor: "#fff",
-  },
-  imageViewerContent: {
-    flex: 1,
-    backgroundColor: "#ebf1f1",
-  },
-  imagesSectionHeader: {
-    backgroundColor: "#ebf1f1",
-    paddingHorizontal: wp(4),
-    paddingTop: hp(2),
-    paddingBottom: hp(1.5),
-  },
-  imagesSectionTitle: {
-    fontSize: wp(4.5),
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: hp(1),
-    textAlign: "center",
-  },
-  imagesSectionBorder: {
-    height: 2,
-    backgroundColor: COLORS.primary,
-    width: "100%",
-  },
-  imagesScrollView: {
-    flex: 1,
-  },
-  imagesScrollContent: {
-    paddingHorizontal: wp(4),
-    paddingTop: hp(2),
-    paddingBottom: hp(4),
-  },
-  imageItemContainer: {
-    marginBottom: hp(2),
-    borderRadius: wp(2),
-    overflow: "hidden",
-    backgroundColor: "#fff",
-  },
-  imageItem: {
-    width: "100%",
-    height: hp(40),
-    borderRadius: wp(2),
   },
 });
 

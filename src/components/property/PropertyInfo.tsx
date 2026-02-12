@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: wp(3.5),
-    color: "#374151",
+    color: COLORS.textPrimary,
   },
   infoValueContainer: {
     flex: 1,
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: wp(3.5),
     fontWeight: "600",
-    color: "#111827",
+    color: COLORS.textPrimary,
   },
   featureItem: {
     flex: 1,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   featureLabel: {
     fontSize: wp(3.5),
-    color: "#374151",
+    color: COLORS.textPrimary,
     flex: 1,
   },
   detailRow: {
@@ -215,12 +215,12 @@ const styles = StyleSheet.create({
   },
   lastDetailRow: {
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
+    borderBottomColor: COLORS.border,
     marginBottom: hp(1),
   },
   detailLabel: {
     fontSize: wp(3.5),
-    color: "#6b7280",
+    color: COLORS.textSecondary,
     flex: 1,
   },
   detailValueContainer: {
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: wp(3.5),
-    color: "#111827",
+    color: COLORS.textPrimary,
     fontWeight: "600",
   },
 });

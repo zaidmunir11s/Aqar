@@ -2,12 +2,16 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import MapLandingScreen from "../../screens/listings/MapLandingScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
+import NearbyServicesScreen from "../../screens/listings/NearbyServicesScreen";
+import AveragePriceDetailScreen from "../../screens/listings/AveragePriceDetailScreen";
+import AqarResidentialStatsScreen from "../../screens/listings/AqarResidentialStatsScreen";
 import DailyDetailScreen from "../../screens/listings/DailyDetailScreen";
 import ContactHostScreen from "../../screens/listings/ContactHostScreen";
 import ReserveScreen from "../../screens/listings/ReserveScreen";
 import PropertyListScreen from "../../screens/listings/PropertyListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
+import DeveloperProfileScreen from "../../screens/projects/DeveloperProfileScreen";
 import Step1LicenseScreen from "../../screens/listings/addListing/brokerListing/Step1LicenseScreen";
 import Step2AdLicenseScreen from "../../screens/listings/addListing/brokerListing/Step2AdLicenseScreen";
 import PublishLicenseAdvertisementScreen from "../../screens/listings/addListing/ownerAgentListing/PublishLicenseAdvertisementScreen";
@@ -20,8 +24,8 @@ import NewOrderScreen from "../../screens/listings/addListing/searchRequest/NewO
 import ChooseLocationScreen from "../../screens/listings/addListing/searchRequest/ChooseLocationScreen";
 import DescriptionScreen from "../../screens/listings/addListing/searchRequest/DescriptionScreen";
 import MatchedListingsScreen from "../../screens/listings/addListing/searchRequest/MatchedListingsScreen";
-
-
+import ConversationScreen from "../../screens/chat/ConversationScreen";
+import ListingMediaScreen from "../../screens/listings/ListingMediaScreen";
 
 const Stack = createStackNavigator();
 
@@ -30,12 +34,18 @@ export default function ListingsStack(): React.JSX.Element {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MapLanding" component={MapLandingScreen} />
       <Stack.Screen name="PropertyDetails" component={PropertyDetailsScreen} />
+      <Stack.Screen name="ListingMedia" component={ListingMediaScreen} />
+      <Stack.Screen name="NearbyServices" component={NearbyServicesScreen} />
+      <Stack.Screen name="AveragePriceDetail" component={AveragePriceDetailScreen} />
+      <Stack.Screen name="AqarResidentialStats" component={AqarResidentialStatsScreen} />
+      <Stack.Screen name="Conversation" component={ConversationScreen} />
       <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
       <Stack.Screen name="ContactHost" component={ContactHostScreen} />
       <Stack.Screen name="Reserve" component={ReserveScreen} />
       <Stack.Screen name="PropertyList" component={PropertyListScreen} />
       <Stack.Screen name="AddListing" component={AddListingScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />
+      <Stack.Screen name="DeveloperProfile" component={DeveloperProfileScreen} />
       <Stack.Screen name="Licence" component={Step1LicenseScreen} />
       <Stack.Screen name="Step2AdLicense" component={Step2AdLicenseScreen} />
       <Stack.Screen name="PublishLicenseAdvertisement" component={PublishLicenseAdvertisementScreen} />

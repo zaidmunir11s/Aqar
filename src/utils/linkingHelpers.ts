@@ -23,3 +23,11 @@ export function openWhatsApp(phoneNumber: string): void {
 export function openURL(url: string): void {
   Linking.openURL(url);
 }
+
+/**
+ * Open Google Maps at the given coordinates (opens app if installed, otherwise web).
+ */
+export function openInGoogleMaps(latitude: number, longitude: number): void {
+  const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+  Linking.openURL(url);
+}

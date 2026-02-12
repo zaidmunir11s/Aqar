@@ -17,6 +17,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { ScreenHeader } from "../../components";
+import { navigateToListingsMapFromOtherTab } from "../../utils";
 import { COLORS } from "../../constants";
 import { MOCK_CONVERSATIONS, getUserName, getUserAvatar, isAdminUser } from "../../data/chatData";
 import type { ChatConversation } from "../../types/chat";
@@ -191,19 +192,9 @@ export default function ChatScreen(): React.JSX.Element {
   }, [navigation, loadConversations]);
 
   const handleBackPress = useCallback(() => {
-    // Navigate back to Listings tab and reset to MapLandingScreen
-    const parent = navigation.getParent();
-    if (parent) {
-      // Navigate to Listings tab -> MapLanding screen (initial route)
-      parent.navigate("Listings", {
-        screen: "MapLanding",
-      });
-    } else {
-      // Fallback: try to navigate directly
-      navigation.navigate("Listings", {
-        screen: "MapLanding",
-      });
-    }
+    // Switch to Listings tab and pop to map (MapLanding) without resetting map state,
+    // same approach as AddListingScreen close button / navigateToMapScreen
+    navigateToListingsMapFromOtherTab(navigation);
     return true; // Prevent default back behavior
   }, [navigation]);
 

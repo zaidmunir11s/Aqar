@@ -247,18 +247,17 @@ export default function ConversationScreen(): React.JSX.Element {
   }, [keyboardHeight]);
 
   const handleBackPress = () => {
-    // Always navigate to ChatScreen (main screen of Chat tab)
-    // This ensures consistent behavior regardless of where user came from
-    // (ChatScreen, PropertyDetailsScreen, ContactHostScreen, etc.)
-    const parent = navigation.getParent();
-    if (parent) {
-      // Navigate to Chat tab -> ChatScreen
-      parent.navigate("Chat", {
-        screen: "ChatScreen",
-      });
+    // Go back to where we came from: PropertyDetails when opened from message icon,
+    // or ChatScreen when opened from the chat list
+    if (navigation.canGoBack()) {
+      navigation.goBack();
     } else {
-      // Fallback: navigate directly to ChatScreen
-      navigation.navigate("ChatScreen");
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("Chat", { screen: "ChatScreen" });
+      } else {
+        navigation.navigate("ChatScreen");
+      }
     }
   };
 

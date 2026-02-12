@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
     paddingVertical: hp(1.2),
     borderRadius: wp(3.5),
+    marginRight: wp(2),
     gap: wp(2),
   },
   searchText: {

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,8 @@ import {
   Text,
   ScrollView,
   TextInput as RNTextInput,
+  Keyboard,
+  Animated,
 } from "react-native";
 import { useNavigation, StackActions } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,7 +17,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import ScreenHeader from "../../components/common/ScreenHeader";
-import { TabBarSection } from "../../components";
+import { TabBarSection, SingleButtonFooter } from "../../components";
 import WheelPickerModal from "../../components/common/WheelPickerModal";
 import { COLORS, CITY_REGIONS } from "@/constants";
 import { useLocalization } from "../../hooks/useLocalization";
@@ -79,6 +81,35 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
   const [directionModalVisible, setDirectionModalVisible] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [districtModalVisible, setDistrictModalVisible] = useState(false);
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
+  const [keyboardHeightPx, setKeyboardHeightPx] = useState(0);
+
+  // Move footer above keyboard and allow scroll when keyboard is visible
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      const h = event.endCoordinates.height;
+      setKeyboardHeightPx(h);
+      Animated.timing(keyboardHeight, {
+        toValue: h,
+        duration: event.duration ?? 250,
+        useNativeDriver: false,
+      }).start();
+    });
+    const hideSub = Keyboard.addListener(hideEvent, (event) => {
+      setKeyboardHeightPx(0);
+      Animated.timing(keyboardHeight, {
+        toValue: 0,
+        duration: event.duration ?? 250,
+        useNativeDriver: false,
+      }).start();
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardHeight]);
 
   const handleBackPress = useCallback(() => {
     navigation.goBack();
@@ -313,8 +344,13 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       />
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: hp(14) + keyboardHeightPx },
+        ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={true}
       >
         <TabBarSection
           options={tabOptions}
@@ -459,26 +495,14 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[
-            styles.footerButton,
-            !canShowStats && styles.footerButtonDisabled,
-          ]}
+      <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
+        <SingleButtonFooter
+          fixed={false}
+          label={t("listings.showStats")}
           onPress={handleShowStatsPress}
-          activeOpacity={0.8}
           disabled={!canShowStats}
-        >
-          <Text
-            style={[
-              styles.footerButtonText,
-              !canShowStats && styles.footerButtonTextDisabled,
-            ]}
-          >
-            {t("listings.showStats")}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        />
+      </Animated.View>
 
       <WheelPickerModal
         key={`city-${tab}`}
@@ -527,6 +551,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  footerWrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
   },
   scroll: {
     flex: 1,
@@ -620,46 +649,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: wp(4),
     color: COLORS.textPrimary,
-  },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: wp(4),
-    paddingTop: hp(1),
-    paddingBottom: hp(1),
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  footerButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: wp(2),
-    height: hp(5),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerButtonDisabled: {
-    opacity: 0.5,
-  },
-  footerButtonText: {
-    fontSize: wp(4.5),
-    fontWeight: "600",
-    color: COLORS.white,
-  },
-  footerButtonTextDisabled: {
-    color: "rgba(255,255,255,0.8)",
   },
 });

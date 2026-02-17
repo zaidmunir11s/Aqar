@@ -1,21 +1,13 @@
 import React, { useMemo, useCallback, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, FlatList } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { PropertyCard } from "../../../../components";
+import { PropertyCard, ScreenHeader, FilterTabs } from "../../../../components";
 import { COLORS } from "@/constants";
 import { SearchRequestData } from "@/context/searchRequest-context";
 import { findMatchingProperties } from "@/utils/propertyMatching";
@@ -59,10 +51,6 @@ export default function MatchedListingsScreen(): React.JSX.Element {
   const handleBackPress = () => {
     navigation.goBack();
   };
-
-  const handleFilterPress = useCallback((filterType: string) => {
-    setSelectedFilter((prev) => (prev === filterType ? null : filterType));
-  }, []);
 
   // Helper function to get numeric price value for sorting
   const getNumericPrice = useCallback((property: Property) => {
@@ -158,21 +146,17 @@ export default function MatchedListingsScreen(): React.JSX.Element {
 
   const keyExtractor = useCallback((item: Property) => item.id.toString(), []);
 
-  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
+  const filterTabOptions = useMemo(
+    () => [
+      { value: "latest", label: t("listings.latest") },
+      { value: "price", label: t("listings.price") },
+      { value: "nearest", label: t("listings.nearest") },
+    ],
+    [t]
+  );
+
   const rtlStyles = useMemo(
     () => ({
-      header: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      headerTitle: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-      filterTabsWrapper: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      filterText: {
-        textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
-      },
       emptyText: {
         textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
       },
@@ -180,93 +164,18 @@ export default function MatchedListingsScreen(): React.JSX.Element {
     [isRTL]
   );
 
-  const customHeader = (
-    <View style={[styles.header, rtlStyles.header]}>
-      <TouchableOpacity
-        onPress={handleBackPress}
-        style={[styles.backButton, isRTL && styles.backButtonRTL]}
-        activeOpacity={0.7}
-      >
-        <Ionicons 
-          name={isRTL ? "arrow-forward" : "arrow-back"} 
-          size={wp(6.5)} 
-          color={COLORS.backButton} 
-        />
-      </TouchableOpacity>
-      <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>{t("listings.matchedListings")}</Text>
-      <View style={styles.headerRight} />
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      {customHeader}
+      <ScreenHeader
+        title={t("listings.matchedListings")}
+        onBackPress={handleBackPress}
+      />
 
-      {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        <View style={[styles.filterTabsWrapper, rtlStyles.filterTabsWrapper]}>
-          <TouchableOpacity
-            style={[
-              styles.filterTab,
-              selectedFilter === "latest" && styles.filterTabActive,
-            ]}
-            onPress={() => handleFilterPress("latest")}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                selectedFilter === "latest" && styles.filterTextActive,
-                rtlStyles.filterText,
-              ]}
-            >
-              {t("listings.latest")}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.filterSeparator} />
-
-          <TouchableOpacity
-            style={[
-              styles.filterTab,
-              selectedFilter === "price" && styles.filterTabActive,
-            ]}
-            onPress={() => handleFilterPress("price")}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                selectedFilter === "price" && styles.filterTextActive,
-                rtlStyles.filterText,
-              ]}
-            >
-              {t("listings.price")}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.filterSeparator} />
-
-          <TouchableOpacity
-            style={[
-              styles.filterTab,
-              selectedFilter === "nearest" && styles.filterTabActive,
-            ]}
-            onPress={() => handleFilterPress("nearest")}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                selectedFilter === "nearest" && styles.filterTextActive,
-                rtlStyles.filterText,
-              ]}
-            >
-              {t("listings.nearest")}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <FilterTabs
+        options={filterTabOptions}
+        selectedValue={selectedFilter}
+        onValueChange={setSelectedFilter}
+      />
 
       <FlatList
         data={sortedProperties}
@@ -288,84 +197,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: wp(4),
-    paddingBottom: hp(1),
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        shadowOffset: { width: 0, height: 1 },
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  backButton: {
-    width: wp(12),
-    height: wp(12),
-    justifyContent: "center",
-    alignItems: "flex-start",
-  },
-  backButtonRTL: {
-    alignItems: "flex-end",
-  },
-  headerTitle: {
-    fontSize: wp(5),
-    fontWeight: "bold",
-    flex: 1,
-  },
-  headerRight: {
-    width: wp(12),
-  },
-  filterContainer: {
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(4),
-  },
-  filterTabsWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: wp(2.5),
-    paddingHorizontal: wp(1),
-    paddingVertical: wp(1),
-    borderWidth: 1,
-    borderColor: "#dedfe3",
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: hp(1.2),
-    paddingHorizontal: wp(3),
-    borderRadius: wp(2),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterTabActive: {
-    backgroundColor: COLORS.showListFilterTabActive,
-  },
-  filterSeparator: {
-    width: 1,
-    height: hp(3),
-    backgroundColor: "#d1d5db",
-    marginHorizontal: wp(1),
-  },
-  filterText: {
-    fontSize: wp(4.2),
-    color: "#6b7280",
-    fontWeight: "500",
-  },
-  filterTextActive: {
-    color: "#fff",
-    fontWeight: "600",
   },
   listContent: {
     padding: wp(4),

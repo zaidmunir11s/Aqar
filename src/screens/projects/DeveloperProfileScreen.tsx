@@ -21,12 +21,14 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute, StackActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalization } from "../../hooks/useLocalization";
 import {
   IconButton,
   ProjectMarker,
   ProjectListCard,
   ProjectUnitsSortModal,
+  SingleButtonFooter,
 } from "../../components";
 import type { ProjectUnitsSortOption } from "../../components";
 import { COLORS, RIYADH_REGION } from "@/constants";
@@ -77,12 +79,16 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
   const developerName = params?.developerName ?? "";
   const developerLogo = params?.developerLogo ?? "";
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const { isRTL, t } = useLocalization();
+
+  const stickyHeaderHeight =
+    insets.top + (Platform.OS === "ios" ? hp(8) : hp(7));
 
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [selectedSortOption, setSelectedSortOption] = useState<ProjectUnitsSortOption>("normalSort");
-  const headerTranslateY = useRef(new Animated.Value(-100)).current;
+  const headerTranslateY = useRef(new Animated.Value(-200)).current;
 
   const logoUri = developerLogo.trim()
     ? developerLogo
@@ -173,19 +179,25 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
       if (shouldShow !== showStickyHeader) {
         setShowStickyHeader(shouldShow);
         Animated.timing(headerTranslateY, {
-          toValue: shouldShow ? 0 : -100,
+          toValue: shouldShow ? 0 : -stickyHeaderHeight,
           duration: 250,
           useNativeDriver: true,
         }).start();
       }
     },
-    [showStickyHeader, headerTranslateY]
+    [showStickyHeader, headerTranslateY, stickyHeaderHeight]
   );
 
   return (
     <View style={styles.container}>
       {/* Back and Share on image section */}
-      <View style={[styles.headerIcons, isRTL && styles.headerIconsRTL]}>
+      <View
+        style={[
+          styles.headerIcons,
+          isRTL && styles.headerIconsRTL,
+          { paddingTop: insets.top },
+        ]}
+      >
         <IconButton onPress={handleBackPress}>
           <Ionicons
             name={isRTL ? "arrow-forward" : "arrow-back"}
@@ -205,10 +217,15 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
 
       {/* Sticky header: company name only */}
       <Animated.View
+        pointerEvents={showStickyHeader ? "auto" : "none"}
         style={[
           styles.stickyHeaderBackground,
           isRTL && styles.stickyHeaderBackgroundRTL,
-          { transform: [{ translateY: headerTranslateY }] },
+          {
+            height: stickyHeaderHeight,
+            paddingTop: insets.top,
+            transform: [{ translateY: headerTranslateY }],
+          },
         ]}
       >
         <Text
@@ -393,16 +410,12 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
         options={DEVELOPER_PROJECTS_SORT_OPTIONS}
       />
 
-      {/* Bottom Call Bar */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={[styles.callButton, isRTL && styles.callButtonRTL]}
+        <SingleButtonFooter
+          fixed={false}
+          label={t("projects.call")}
           onPress={handleCall}
-        >
-          <Ionicons name="call" size={wp(5)} color={COLORS.white} />
-          <Text style={styles.callButtonText}>{t("projects.call")}</Text>
-        </TouchableOpacity>
-      </View>
+          icon={<Ionicons name="call" size={wp(5)} color={COLORS.white} />}
+        />
     </View>
   );
 }
@@ -414,7 +427,7 @@ const styles = StyleSheet.create({
   },
   headerIcons: {
     position: "absolute",
-    top: Platform.OS === "ios" ? hp(3) : hp(2),
+    top: 0,
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -434,7 +447,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === "ios" ? hp(10) : hp(9),
     backgroundColor: COLORS.white,
     zIndex: 1000,
     borderBottomWidth: 1,
@@ -682,29 +694,5 @@ const styles = StyleSheet.create({
   },
   aboutBodyRTL: {
     textAlign: "right",
-  },
-  bottomBar: {
-    backgroundColor: COLORS.white,
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(6),
-    borderTopWidth: 1.5,
-    borderTopColor: COLORS.borderLight,
-  },
-  callButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.primary,
-    paddingVertical: hp(1.5),
-    borderRadius: wp(1.5),
-    gap: wp(2),
-  },
-  callButtonRTL: {
-    flexDirection: "row-reverse",
-  },
-  callButtonText: {
-    color: COLORS.white,
-    fontSize: wp(4.5),
-    fontWeight: "700",
   },
 });

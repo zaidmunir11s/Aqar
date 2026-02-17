@@ -5,7 +5,22 @@ export * from "./project";
 export * from "./services";
 export * from "./input";
 export * from "./map";
-export * from "./profile";
+export {
+  PhoneCard,
+  ActionButtons,
+  AqarCard,
+  PromotionServiceCard,
+  ActivityItem,
+  AddButton,
+  MenuItemCard,
+  MenuList,
+  ClientsSection,
+  FinancialInformationSection,
+  AccountManagementSection,
+  SectionHeader,
+  UserInfoCard,
+  ProfileTabs,
+} from "./profile";
 export { default as CalendarModal } from "./calendar/CalendarModal";
 export { default as BookingDateModal } from "./calendar/BookingDateModal";
 export { default as DatePickerModal } from "./calendar/DatePickerModal";

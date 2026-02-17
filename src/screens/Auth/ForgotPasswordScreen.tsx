@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
   ScrollView,
+  Keyboard,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -13,7 +13,7 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { BackButton, PrimaryButton, TextInput } from "../../components";
+import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { Entypo } from "@expo/vector-icons";
 import { useLocalization } from "../../hooks/useLocalization";
@@ -26,6 +26,23 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const phoneErrorKey = getSaudiPhoneValidationError(phoneNumber);
   const phoneError = phoneErrorKey ? t(phoneErrorKey) : "";
@@ -58,9 +75,6 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
-      backButtonContainer: {
-        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
-      },
       title: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
@@ -74,19 +88,22 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
     [isRTL]
   );
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={rtlStyles.backButtonContainer}>
-          <BackButton onPress={handleBackPress} />
-        </View>
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: hp(3) + keyboardHeight }],
+    [keyboardHeight]
+  );
 
+  return (
+    <View style={styles.container}>
+      <Header onBackPress={handleBackPress} />
+      <ScrollView
+        contentContainerStyle={scrollContentStyle}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, rtlStyles.title]}>{t("auth.forgotPassword")}</Text>
@@ -123,7 +140,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
           showArrow={true}
         />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -135,7 +152,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: wp(4),
-    paddingBottom: hp(3),
   },
   header: {
     marginBottom: hp(4),

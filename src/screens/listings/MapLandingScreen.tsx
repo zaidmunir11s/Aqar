@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, Text} from "react-native";
+import { View, StyleSheet, Animated, Platform, Text, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -463,6 +463,7 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFillObject}

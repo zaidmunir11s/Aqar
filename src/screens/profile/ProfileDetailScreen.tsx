@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,8 +13,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useClerk } from "@clerk/clerk-expo";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useAuthContext } from "../../context/auth-context";
 import {
   ScreenHeader,
   PhoneCard,
@@ -33,6 +36,8 @@ type NavigationProp = NativeStackNavigationProp<any>;
 export default function ProfileDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const { setHasBackendSession } = useAuthContext();
+  const { signOut: clerkSignOut } = useClerk();
 
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
@@ -103,9 +108,17 @@ export default function ProfileDetailScreen(): React.JSX.Element {
     navigation.navigate("ChangePhoneNumber");
   };
 
-  const handleLogoutPress = () => {
-    console.log("Log out pressed");
-  };
+  const handleLogoutPress = useCallback(async () => {
+    await AsyncStorage.multiRemove(["auth_token", "refresh_token"]);
+    setHasBackendSession(false);
+    await clerkSignOut();
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate("ProfileTab", { screen: "Login" });
+    } else {
+      navigation.navigate("Login");
+    }
+  }, [navigation, setHasBackendSession, clerkSignOut]);
 
   // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
   const rtlStyles = useMemo(

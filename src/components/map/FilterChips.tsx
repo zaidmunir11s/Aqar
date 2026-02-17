@@ -14,7 +14,7 @@ import {
 import type { FilterOption } from "../../types/property";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 export interface FilterChipsProps {
   filterOptions: FilterOption[];
   activeFilter: string;
@@ -30,7 +30,8 @@ const FilterChips = memo<FilterChipsProps>(
   ({ filterOptions, activeFilter, onFilterChange, onSearchPress, variant = "map" }) => {
     const { t, isRTL } = useLocalization();
     const scrollViewRef = useRef<ScrollView>(null);
-
+    const insets = useSafeAreaInsets();
+    const { top } = insets;
     // Helper function to get translated label for filter
     const getTranslatedLabel = useMemo(() => {
       return (filter: FilterOption): string => {
@@ -142,7 +143,7 @@ const FilterChips = memo<FilterChipsProps>(
     );
 
     return (
-      <View style={[styles.chipsContainer, rtlStyles.chipsContainer, variant === "list" && styles.chipsContainerList]}>
+      <View style={[styles.chipsContainer, rtlStyles.chipsContainer, variant === "list" && styles.chipsContainerList, { top: hp(10) + top }]}>
         <TouchableOpacity style={[styles.searchButton, rtlStyles.searchButton]} onPress={onSearchPress}>
           <Text style={styles.searchText}>{t("common.search")}</Text>
           <Ionicons name="search" size={wp(4.5)} color="#fff" />
@@ -185,7 +186,6 @@ FilterChips.displayName = "FilterChips";
 const styles = StyleSheet.create({
   chipsContainer: {
     position: "absolute",
-    top: hp(11.5),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",

@@ -74,6 +74,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
 
+  const stickyHeaderHeight =
+    insets.top + (Platform.OS === "ios" ? hp(8) : hp(7));
+
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<TabType>("main");
   const [expandedDescription, setExpandedDescription] =
@@ -85,7 +88,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
   const [calendarVisible, setCalendarVisible] = useState<boolean>(false);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-100)).current; // Start off-screen
+  const headerTranslateY = useRef(new Animated.Value(-200)).current; // Start fully off-screen (hidden)
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Use calendar hook for daily bookings
@@ -286,15 +289,15 @@ export default function DailyDetailScreen(): React.JSX.Element {
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetY = event.nativeEvent.contentOffset.y;
-      // Show sticky header when scrolled past image gallery (approximately hp(30))
+      // Show sticky header only when scrolled past image gallery (approximately hp(30))
       const threshold = hp(30) - hp(10); // Show header slightly before image ends
       const shouldShow = offsetY > threshold;
-      
+
       if (shouldShow !== showStickyHeader) {
         setShowStickyHeader(shouldShow);
-        // Animate header sliding down/up
+        // Animate header sliding down/up - hide fully off-screen when not shown
         Animated.timing(headerTranslateY, {
-          toValue: shouldShow ? 0 : -100,
+          toValue: shouldShow ? 0 : -stickyHeaderHeight,
           duration: 250,
           useNativeDriver: true,
         }).start();
@@ -303,7 +306,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY, showStickyHeader, headerTranslateY]
+    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
   );
 
   // PanResponder for swipe navigation
@@ -430,7 +433,13 @@ export default function DailyDetailScreen(): React.JSX.Element {
     <>
       <View style={styles.container} {...panResponder.panHandlers}>
         {/* Icons - Always visible, absolute positioned */}
-        <View style={[styles.headerIcons, rtlStyles.headerIcons]}>
+        <View
+          style={[
+            styles.headerIcons,
+            rtlStyles.headerIcons,
+            { top: 0, paddingTop: insets.top },
+          ]}
+        >
           <IconButton onPress={handleBackPress}>
             <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={wp(6)} color={COLORS.backButton} />
           </IconButton>
@@ -460,11 +469,13 @@ export default function DailyDetailScreen(): React.JSX.Element {
           </View>
         </View>
 
-        {/* Sticky Header Background - slides in to join icons on scroll */}
+        {/* Sticky Header Background - only visible when scrolled past gallery */}
         <Animated.View
+          pointerEvents={showStickyHeader ? "auto" : "none"}
           style={[
             styles.stickyHeaderBackground,
             {
+              height: stickyHeaderHeight,
               transform: [{ translateY: headerTranslateY }],
             },
           ]}
@@ -650,8 +661,8 @@ export default function DailyDetailScreen(): React.JSX.Element {
           </View>
           <View style={styles.sectionSeparator} />
 
-          {/* Extra spacing for daily booking card */}
-          <View style={{ height: hp(22) }} />
+          {/* Extra spacing for daily booking card + bottom bar (responsive) */}
+          <View style={{ height: hp(5) + hp(4) + insets.bottom }} />
         </ScrollView>
 
         {/* Fixed Bottom Card for Daily Bookings */}
@@ -663,16 +674,18 @@ export default function DailyDetailScreen(): React.JSX.Element {
         />
 
         {/* Bottom Contact Bar with Navigation Arrows */}
-        <PropertyBottomBar
-          canGoPrev={canGoPrev}
-          canGoNext={canGoNext}
-          onPrevPress={handlePrevProperty}
-          onNextPress={handleNextProperty}
-          onCall={() => {}}
-          onWhatsApp={() => {}}
-          onChat={handleChat}
-          isDailyListing={true}
-        />
+        <View style={{ paddingBottom: insets.bottom, backgroundColor: COLORS.white }}>
+          <PropertyBottomBar
+            canGoPrev={canGoPrev}
+            canGoNext={canGoNext}
+            onPrevPress={handlePrevProperty}
+            onNextPress={handleNextProperty}
+            onCall={() => {}}
+            onWhatsApp={() => {}}
+            onChat={handleChat}
+            isDailyListing={true}
+          />
+        </View>
       </View>
 
       {/* Calendar Modal for Daily Bookings */}

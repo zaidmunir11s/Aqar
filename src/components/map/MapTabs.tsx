@@ -7,6 +7,8 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 
 export type TabType = "rent" | "sale";
 
@@ -20,7 +22,7 @@ export interface MapTabsProps {
  */
 const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
   const { t, isRTL } = useLocalization();
-
+  const insets = useSafeAreaInsets();
   // Memoize tabs with translations
   const tabs = useMemo(
     () => [
@@ -44,7 +46,7 @@ const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
   );
 
   return (
-    <View style={[styles.topTabs, rtlStyles.topTabs]}>
+    <View style={[styles.topTabs, rtlStyles.topTabs, { top: hp(1) + insets.top }]}>
       {tabs.map((tab, index) => (
         <React.Fragment key={tab.id}>
           <TouchableOpacity
@@ -90,7 +92,7 @@ MapTabs.displayName = "MapTabs";
 const styles = StyleSheet.create({
   topTabs: {
     position: "absolute",
-    top: hp(2),
+    // top: hp(2),
     left: wp(4),
     right: wp(4),
     backgroundColor: "#fff",

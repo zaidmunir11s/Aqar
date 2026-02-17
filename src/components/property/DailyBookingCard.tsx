@@ -10,6 +10,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatDateRange, calculateDays } from "../../utils";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { DailyPriceProperty } from "../../hooks/useDailyPrice";
@@ -21,14 +22,19 @@ export interface DailyBookingCardProps {
   selectedDates: CalendarDates;
   onChooseDate: () => void;
   onReserve: () => void;
+  /** Height of the bottom bar above which this card sits (for positioning when absolute). Default: hp(10) */
+  bottomBarHeight?: number;
 }
 
 /**
  * Fixed bottom card for daily bookings
  */
 const DailyBookingCard = memo<DailyBookingCardProps>(
-  ({ property, selectedDates, onChooseDate, onReserve }) => {
+  ({ property, selectedDates, onChooseDate, onReserve, bottomBarHeight }) => {
     const { t, isRTL } = useLocalization();
+    const insets = useSafeAreaInsets();
+
+    const bottomOffset = (bottomBarHeight ?? hp(9)) + insets.bottom;
 
     // RTL-aware styles
     const rtlStyles = useMemo(
@@ -59,10 +65,16 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
     
     if (!selectedDates.startDate || !selectedDates.endDate) {
       return (
-        <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard]}>
-          <Text style={[styles.fixedCardText, rtlStyles.fixedCardText]}>{t("listings.chooseDateToSeePrice")}</Text>
+        <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard, { bottom: bottomOffset }]}>
+          <Text
+            style={[styles.fixedCardText, rtlStyles.fixedCardText]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {t("listings.chooseDateToSeePrice")}
+          </Text>
           <TouchableOpacity
-            style={styles.fixedChooseButton}
+            style={[styles.fixedChooseButton, { flexShrink: 0 }]}
             onPress={onChooseDate}
           >
             <Text style={styles.fixedChooseButtonText}>{t("listings.choose")}</Text>
@@ -91,17 +103,27 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
     }
 
     return (
-      <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard]}>
-        <View style={{ flex: 1 }}>
+      <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard, { bottom: bottomOffset }]}>
+        <View style={styles.contentWrapper}>
           <View style={[styles.dateEditRow, rtlStyles.dateEditRow]}>
-            <Text style={[styles.selectedDateText, rtlStyles.selectedDateText]}>
+            <Text
+              style={[styles.selectedDateText, rtlStyles.selectedDateText]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDateRange(selectedDates.startDate, selectedDates.endDate, t, isRTL)}
             </Text>
-            <TouchableOpacity onPress={onChooseDate}>
+            <TouchableOpacity onPress={onChooseDate} style={{ flexShrink: 0 }}>
               <Text style={styles.editText}>{t("common.edit")}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={[styles.priceInCard, rtlStyles.priceInCard]}>{priceText}</Text>
+          <Text
+            style={[styles.priceInCard, rtlStyles.priceInCard]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {priceText}
+          </Text>
         </View>
         <TouchableOpacity style={[styles.reserveButton, rtlStyles.reserveButton]} onPress={onReserve}>
           <Text style={styles.reserveButtonText}>{t("listings.reserve")}</Text>
@@ -114,9 +136,12 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
 DailyBookingCard.displayName = "DailyBookingCard";
 
 const styles = StyleSheet.create({
+  contentWrapper: {
+    flex: 1,
+    minWidth: 0,
+  },
   fixedBottomCard: {
     position: "absolute",
-    bottom: hp(9),
     left: 0,
     right: 0,
     backgroundColor: "#fff",
@@ -140,6 +165,7 @@ const styles = StyleSheet.create({
   fixedCardText: {
     fontSize: wp(4),
     flex: 1,
+    minWidth: 0,
   },
   fixedChooseButton: {
     backgroundColor: COLORS.modalButton,
@@ -175,10 +201,11 @@ const styles = StyleSheet.create({
   },
   reserveButton: {
     backgroundColor: COLORS.modalButton,
-    paddingHorizontal: wp(6),
+    paddingHorizontal: wp(5),
     paddingVertical: hp(1.8),
     borderRadius: wp(3),
     marginLeft: wp(3),
+    flexShrink: 0,
   },
   reserveButtonText: {
     color: "#fff",

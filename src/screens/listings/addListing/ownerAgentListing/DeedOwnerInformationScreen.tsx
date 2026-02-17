@@ -10,6 +10,8 @@ import {
   Platform,
   Keyboard,
   Animated,
+  type TextStyle,
+  type ViewStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -128,7 +130,13 @@ const FormFieldRow = memo(function FormFieldRow({
   onFocus: (name: string) => void;
   onBlur: () => void;
   openDatePicker: (type: "owner" | "agent" | "company") => void;
-  rtlStyles: Record<string, unknown>;
+  rtlStyles: {
+    label: TextStyle;
+    textInput: TextStyle;
+    errorText: TextStyle;
+    dateSelector: ViewStyle;
+    dateText: TextStyle;
+  };
   t: (key: string) => string;
   phoneValidator: (val: string) => string;
 }) {

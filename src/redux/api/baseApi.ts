@@ -4,8 +4,9 @@ import {
     BaseQueryFn,
   } from "@reduxjs/toolkit/query/react";
   import type { FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
-  import AsyncStorage from "@react-native-async-storage/async-storage";
-  import { API_CONFIG } from "../../constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_CONFIG } from "../../constants/api";
+import { authSessionNotifier } from "../../context/auth-context";
   
   // Log the base URL for debugging
   console.log("API Base URL:", API_CONFIG.BASE_URL);
@@ -61,9 +62,11 @@ import {
             result = await baseQuery(args, api, extraOptions);
           } else {
             await AsyncStorage.multiRemove(["auth_token", "refresh_token"]);
+            authSessionNotifier.notifySessionExpired();
           }
         } else {
           await AsyncStorage.removeItem("auth_token");
+          authSessionNotifier.notifySessionExpired();
         }
       }
   

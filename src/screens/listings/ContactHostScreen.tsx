@@ -22,7 +22,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PROPERTY_DATA, DAILY_FILTER_OPTIONS } from "../../data/propertyData";
 import { calculateDays } from "../../utils";
-import { ScreenHeader, UnitRules } from "../../components";
+import { ScreenHeader, UnitRules, SingleButtonFooter } from "../../components";
 import type { DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "@/constants";
@@ -401,32 +401,13 @@ export default function ContactHostScreen(): React.JSX.Element {
       </ScrollView>
 
         {/* Footer with Send Button - Responsive to keyboard */}
-        <Animated.View
-          style={[
-            styles.footer,
-            {
-              bottom: keyboardHeight,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !isPledgeChecked && styles.sendButtonDisabled,
-            ]}
+        <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
+          <SingleButtonFooter
+            fixed={false}
+            label={t("chat.send")}
             onPress={handleSend}
             disabled={!isPledgeChecked}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.sendButtonText,
-                !isPledgeChecked && styles.sendButtonTextDisabled,
-              ]}
-            >
-              {t("chat.send")}
-            </Text>
-          </TouchableOpacity>
+          />
         </Animated.View>
     </KeyboardAvoidingView>
   );
@@ -588,45 +569,10 @@ const styles = StyleSheet.create({
     color: "#374151",
     lineHeight: hp(2.5),
   },
-  footer: {
+  footerWrapper: {
     position: "absolute",
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
-    paddingHorizontal: wp(4),
-    paddingTop: hp(1),
-    paddingBottom: hp(1),
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: -2 },
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  sendButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: hp(1.5),
-    borderRadius: wp(2),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: COLORS.buttonDisabled,
-  },
-  sendButtonText: {
-    fontSize: wp(4.5),
-    fontWeight: "700",
-    color: "#fff",
-  },
-  sendButtonTextDisabled: {
-    color: COLORS.textDisabled,
   },
 });
 

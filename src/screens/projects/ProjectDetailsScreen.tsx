@@ -19,6 +19,7 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PROPERTY_DATA } from "../../data/propertyData";
 import { openPhoneDialer, getDefaultImageUrl } from "../../utils";
 import { IconButton } from "../../components";
@@ -30,6 +31,7 @@ import {
   ProjectLocation,
   ProjectUnitsFilterModal,
   ProjectUnitsSortModal,
+  SingleButtonFooter,
 } from "../../components";
 import type { ProjectUnitsFilterState, ProjectUnitsSortOption } from "../../components";
 import type { ProjectProperty } from "../../types/property";
@@ -51,7 +53,11 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const { propertyId } = params;
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
+
+  const stickyHeaderHeight =
+    insets.top + (Platform.OS === "ios" ? hp(8) : hp(7));
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
@@ -60,7 +66,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const [unitsSortModalVisible, setUnitsSortModalVisible] = useState<boolean>(false);
   const [selectedSortOption, setSelectedSortOption] = useState<ProjectUnitsSortOption>("normalSort");
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-100)).current; // Start off-screen
+  const headerTranslateY = useRef(new Animated.Value(-200)).current; // Start fully off-screen (hidden)
   const scrollViewRef = useRef<ScrollView>(null);
 
   const project = useMemo(
@@ -110,15 +116,15 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetY = event.nativeEvent.contentOffset.y;
-      // Show sticky header when scrolled past image gallery (approximately hp(30))
+      // Show sticky header only when scrolled past image gallery (approximately hp(30))
       const threshold = hp(30) - hp(10); // Show header slightly before image ends
       const shouldShow = offsetY > threshold;
 
       if (shouldShow !== showStickyHeader) {
         setShowStickyHeader(shouldShow);
-        // Animate header sliding down/up
+        // Animate header sliding down/up - hide fully off-screen when not shown
         Animated.timing(headerTranslateY, {
-          toValue: shouldShow ? 0 : -100,
+          toValue: shouldShow ? 0 : -stickyHeaderHeight,
           duration: 250,
           useNativeDriver: true,
         }).start();
@@ -127,7 +133,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY, showStickyHeader, headerTranslateY]
+    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
   );
 
   const handleDeveloperLogoPress = useCallback(() => {
@@ -172,7 +178,13 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
     <>
       <View style={styles.container}>
         {/* Icons - Always visible, absolute positioned */}
-        <View style={[styles.headerIcons, isRTL && styles.headerIconsRTL]}>
+        <View
+          style={[
+            styles.headerIcons,
+            isRTL && styles.headerIconsRTL,
+            { top: 0, paddingTop: insets.top },
+          ]}
+        >
           <IconButton onPress={handleBackPress}>
             <Ionicons
               name={isRTL ? "arrow-forward" : "arrow-back"}
@@ -190,12 +202,15 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           </IconButton>
         </View>
 
-        {/* Sticky Header Background with Title - slides in to join icons on scroll */}
+        {/* Sticky Header Background with Title - only visible when scrolled past gallery */}
         <Animated.View
+          pointerEvents={showStickyHeader ? "auto" : "none"}
           style={[
             styles.stickyHeaderBackground,
             isRTL && styles.stickyHeaderBackgroundRTL,
             {
+              height: stickyHeaderHeight,
+              paddingTop: insets.top,
               transform: [{ translateY: headerTranslateY }],
             },
           ]}
@@ -292,12 +307,11 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           <View style={{ height: hp(12) }} />
         </ScrollView>
 
-        {/* Bottom Contact Bar */}
-        <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.contactButton} onPress={handleCall}>
-            <Text style={styles.contactButtonText}>{t("projects.contact")}</Text>
-          </TouchableOpacity>
-        </View>
+          <SingleButtonFooter
+            fixed={false}
+            label={t("projects.contact")}
+            onPress={handleCall}
+          />
       </View>
 
       {/* Project Units Filter Modal - slides up from bottom */}
@@ -362,7 +376,7 @@ const styles = StyleSheet.create({
   },
   headerIcons: {
     position: "absolute",
-    top: Platform.OS === "ios" ? hp(3) : hp(2),
+    // top: Platform.OS === "ios" ? hp(3) : hp(2),
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -486,23 +500,5 @@ const styles = StyleSheet.create({
     color: "#686f75",
     marginLeft: wp(3),
     fontWeight: "500",
-  },
-  bottomBar: {
-    backgroundColor: "#fff",
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(6),
-    borderTopWidth: 1.5,
-    borderTopColor: "#f0f3f4",
-  },
-  contactButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: hp(1.5),
-    borderRadius: wp(1.5),
-    alignItems: "center",
-  },
-  contactButtonText: {
-    color: "#fff",
-    fontSize: wp(4.5),
-    fontWeight: "700",
   },
 });

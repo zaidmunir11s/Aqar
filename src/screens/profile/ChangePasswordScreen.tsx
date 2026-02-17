@@ -18,7 +18,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
-import { ScreenHeader, TextInput } from "../../components";
+import { ScreenHeader, TextInput, SingleButtonFooter } from "../../components";
 import { useLocalization } from "../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -199,29 +199,13 @@ export default function ChangePasswordScreen(): React.JSX.Element {
         </ScrollView>
       </KeyboardAvoidingView>
       
-      {/* Footer with Save Button */}
-      <Animated.View
-        style={[
-          styles.footer,
-          {
-            bottom: keyboardHeight,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            !isFormValid && styles.saveButtonDisabled
-          ]}
+      <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
+        <SingleButtonFooter
+          fixed={false}
+          label={t("profile.save", { defaultValue: "Save" })}
           onPress={handleSave}
-          activeOpacity={0.8}
           disabled={!isFormValid}
-        >
-          <Text style={[
-            styles.saveButtonText,
-            !isFormValid && styles.saveButtonTextDisabled
-          ]}>{t("profile.save", { defaultValue: "Save" })}</Text>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
@@ -258,49 +242,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginBottom: 0,
   },
-  footer: {
+  footerWrapper: {
     position: "absolute",
     left: 0,
     right: 0,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: wp(4),
-    paddingTop: hp(1),
-    paddingBottom: hp(1),
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: -2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  saveButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: wp(2),
-    height: hp(5),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  saveButtonText: {
-    fontSize: wp(4.5),
-    fontWeight: "600",
-    color: COLORS.white,
-  },
-  saveButtonDisabled: {
-    backgroundColor: COLORS.primaryDark,
-    opacity: 0.6,
-  },
-  saveButtonTextDisabled: {
-    color: COLORS.textSecondary,
   },
 });
 

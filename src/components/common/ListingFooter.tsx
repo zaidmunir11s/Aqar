@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -40,8 +41,14 @@ const ListingFooter = memo<ListingFooterProps>(
     showNext = true,
     nextDisabled = false,
   }) => {
+    const insets = useSafeAreaInsets();
     const { isRTL } = useLocalization();
     const progressPercentage = (currentStep / totalSteps) * 100;
+
+    const containerStyle = useMemo(
+      () => [styles.container, { paddingBottom: insets.bottom + hp(1.5) }],
+      [insets.bottom]
+    );
 
     // RTL-aware styles
     const rtlStyles = useMemo(
@@ -57,7 +64,7 @@ const ListingFooter = memo<ListingFooterProps>(
     );
 
     return (
-      <View style={styles.container}>
+      <View style={containerStyle}>
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBarBackground, rtlStyles.progressBarBackground]}>
@@ -130,7 +137,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: wp(4),
-    paddingBottom: hp(1.5),
+    // paddingBottom from container safe area
   },
   backButton: {
     paddingVertical: hp(1),

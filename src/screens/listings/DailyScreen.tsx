@@ -9,6 +9,7 @@ import { View, StyleSheet, Animated, Platform, TouchableOpacity, Text } from "re
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -80,6 +81,7 @@ export default function DailyScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const { t, isRTL } = useLocalization();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -641,8 +643,8 @@ export default function DailyScreen(): React.JSX.Element {
         {visibleProperties.map(renderMarker).filter(Boolean)}
       </MapView>
 
-      {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top) */}
-      <View style={styles.dailyHeaderFixedContainer}>
+      {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top, below status bar) */}
+      <View style={[styles.dailyHeaderFixedContainer, { paddingTop: insets.top + hp(1) }]}>
         <DailyHeaderBoxes
           reservationText={reservationText}
           onReservationPress={openBookingDateModal}
@@ -855,7 +857,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    paddingTop: hp(1),
   },
 });
 

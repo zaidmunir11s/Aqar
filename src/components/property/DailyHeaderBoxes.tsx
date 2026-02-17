@@ -1,10 +1,11 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
-import {MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { SlidersHorizontal } from "lucide-react-native";
@@ -30,6 +31,7 @@ export default function DailyHeaderBoxes({
   filterCount = 0,
 }: DailyHeaderBoxesProps): React.JSX.Element {
   const { t, isRTL } = useLocalization();
+  const insets = useSafeAreaInsets();
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -51,7 +53,7 @@ export default function DailyHeaderBoxes({
   );
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, containerStyle, { paddingHorizontal: Math.max(insets.left, insets.right) }]}>
       <View style={[styles.boxes, rtlStyles.boxes]}>
         <TouchableOpacity
           style={[styles.box, styles.boxFirst, rtlStyles.box]}

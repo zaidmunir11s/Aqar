@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
-  KeyboardAvoidingView,
   ScrollView,
   Alert,
+  Keyboard,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -17,9 +17,10 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OtpInput, type OtpInputRef } from "react-native-otp-entry";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BackButton, PrimaryButton, TextInput as CustomTextInput } from "../../components";
+import { Header, PrimaryButton, TextInput as CustomTextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useAuthContext } from "../../context/auth-context";
 import { useVerifyOtpMutation } from "@/redux/api";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -34,6 +35,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const { setHasBackendSession } = useAuthContext();
   const [verifyOtp, { isLoading }] = useVerifyOtpMutation();
   const { phoneNumber: initialPhoneNumber, otp: initialOtp } = params || {};
 
@@ -43,6 +45,23 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
   const otpInputRef = useRef<OtpInputRef>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Focus OTP input and show keyboard as soon as screen is ready; pre-fill OTP if passed
   useEffect(() => {
@@ -125,6 +144,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
               result.data.refreshToken
             );
           }
+          setHasBackendSession(true);
         }
         Alert.alert(
           t("common.success"),
@@ -167,9 +187,6 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
-      backButtonContainer: {
-        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
-      },
       title: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
@@ -195,23 +212,23 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
     [isRTL]
   );
 
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: hp(3) + keyboardHeight }],
+    [keyboardHeight]
+  );
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
+    <View style={styles.container}>
+      <Header onBackPress={handleBackPress} />
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        keyboardDismissMode="none"
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
       >
-        <View style={rtlStyles.backButtonContainer}>
-          <BackButton onPress={handleBackPress} />
-        </View>
-
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, rtlStyles.title]}>{t("auth.verifyPhoneNumber")}</Text>
@@ -287,7 +304,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
           )}
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -300,7 +317,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: wp(6),
     paddingTop: Platform.OS === "ios" ? hp(2) : hp(1),
-    paddingBottom: hp(3),
   },
   header: {
     marginBottom: hp(4),

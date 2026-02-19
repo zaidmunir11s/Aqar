@@ -35,6 +35,7 @@ import {
   formatDateRange,
   calculateDays,
   navigateToMapScreen,
+  applySearchFilters,
 } from "../../utils";
 import {
   PropertyCard,
@@ -55,6 +56,13 @@ import { useCalendar, useBookingModal } from "../../hooks";
 import type { Property, ProjectProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useAppSelector, useAppDispatch } from "../../redux/hooks";
+import {
+  setPreservedFilter,
+  setPreservedDates,
+  setPreservedCity,
+  setPreservedSearchFilters,
+} from "../../redux/slices/listingsFiltersSlice";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -62,41 +70,18 @@ interface RouteParams {
   properties: Property[];
   listingType: string;
   selectedDates?: CalendarDates;
-  selectedFilter?: string | null; // Preserve filter selection
-  selectedCity?: string; // Preserve city selection
-  searchFilters?: SearchFilterState | null; // Preserve search filters
+  selectedFilter?: string | null;
+  selectedCity?: string;
+  searchFilters?: SearchFilterState | null;
 }
-
-// Module-level variables to preserve filter state across navigation resets
-let preservedFilter: string | null = null;
-let preservedDates: CalendarDates = { startDate: null, endDate: null };
-let preservedCity: string = "";
-let preservedSearchFilters: SearchFilterState | null = null;
-
-// Export getter and setter functions to access preserved filters from other modules
-export const getPreservedFilter = (): string | null => preservedFilter;
-export const getPreservedDates = (): CalendarDates => preservedDates;
-export const getPreservedCity = (): string => preservedCity;
-export const getPreservedSearchFilters = (): SearchFilterState | null =>
-  preservedSearchFilters;
-
-// Setter functions to update preserved values
-export const setPreservedDates = (dates: CalendarDates) => {
-  preservedDates = dates;
-};
-export const setPreservedCity = (city: string) => {
-  preservedCity = city;
-};
-export const setPreservedSearchFilters = (
-  filters: SearchFilterState | null
-) => {
-  preservedSearchFilters = filters;
-};
 
 export default function PropertyListScreen(): React.JSX.Element {
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
   const navigation = useNavigation<NavigationProp>();
+  const dispatch = useAppDispatch();
+  const { preservedFilter, preservedDates, preservedCity, preservedSearchFilters } =
+    useAppSelector((s) => s.listingsFilters);
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
 
@@ -136,7 +121,7 @@ export default function PropertyListScreen(): React.JSX.Element {
       params?.selectedFilter !== undefined &&
       params.selectedFilter !== null
     ) {
-      preservedFilter = params.selectedFilter;
+      dispatch(setPreservedFilter(params.selectedFilter));
       if (selectedFilter !== params.selectedFilter) {
         setSelectedFilter(params.selectedFilter);
       }
@@ -147,12 +132,12 @@ export default function PropertyListScreen(): React.JSX.Element {
     ) {
       setSelectedFilter(preservedFilter);
     }
-  }, [params?.selectedFilter]);
+  }, [params?.selectedFilter, preservedFilter, selectedFilter, dispatch]);
   useEffect(() => {
     if (selectedFilter !== null) {
-      preservedFilter = selectedFilter;
+      dispatch(setPreservedFilter(selectedFilter));
     }
-  }, [selectedFilter]);
+  }, [selectedFilter, dispatch]);
 
   const [isScrolling, setIsScrolling] = useState<boolean>(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -175,7 +160,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (params?.selectedCity) {
-      preservedCity = params.selectedCity;
+      dispatch(setPreservedCity(params.selectedCity));
       setSelectedCity(params.selectedCity);
     } else if (
       !params?.selectedCity &&
@@ -184,22 +169,22 @@ export default function PropertyListScreen(): React.JSX.Element {
     ) {
       setSelectedCity(preservedCity);
     }
-  }, [params?.selectedCity, t]);
+  }, [params?.selectedCity, preservedCity, t, dispatch]);
 
   useEffect(() => {
     if (params?.searchFilters) {
-      preservedSearchFilters = params.searchFilters;
+      dispatch(setPreservedSearchFilters(params.searchFilters));
       setSearchFilters(params.searchFilters);
     } else if (!params?.searchFilters && preservedSearchFilters) {
       setSearchFilters(preservedSearchFilters);
     }
-  }, [params?.searchFilters]);
+  }, [params?.searchFilters, preservedSearchFilters, dispatch]);
 
   useEffect(() => {
     if (selectedCity && selectedCity !== t("listings.city")) {
-      preservedCity = selectedCity;
+      dispatch(setPreservedCity(selectedCity));
     }
-  }, [selectedCity, t]);
+  }, [selectedCity, t, dispatch]);
 
   const initialDates = selectedDatesFromParams ||
     preservedDates || { startDate: null, endDate: null };
@@ -219,7 +204,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (selectedDatesFromParams) {
-      preservedDates = selectedDatesFromParams;
+      dispatch(setPreservedDates(selectedDatesFromParams));
       setSelectedDates(selectedDatesFromParams);
     } else if (
       !selectedDatesFromParams &&
@@ -228,13 +213,13 @@ export default function PropertyListScreen(): React.JSX.Element {
     ) {
       setSelectedDates(preservedDates);
     }
-  }, [selectedDatesFromParams, setSelectedDates]);
+  }, [selectedDatesFromParams, preservedDates, setSelectedDates, dispatch]);
 
   useEffect(() => {
     if (calendarSelectedDates.startDate && calendarSelectedDates.endDate) {
-      preservedDates = calendarSelectedDates;
+      dispatch(setPreservedDates(calendarSelectedDates));
     }
-  }, [calendarSelectedDates]);
+  }, [calendarSelectedDates, dispatch]);
 
   const effectiveSelectedDates = calendarSelectedDates;
   
@@ -371,10 +356,13 @@ export default function PropertyListScreen(): React.JSX.Element {
     navigateToMapScreen(navigation);
   }, [navigation, listingType, selectedCity, effectiveSelectedDates, searchFilters, t]);
 
-  const handleFilterValueChange = useCallback((value: string | null) => {
-    setSelectedFilter(value);
-    preservedFilter = value;
-  }, []);
+  const handleFilterValueChange = useCallback(
+    (value: string | null) => {
+      setSelectedFilter(value);
+      dispatch(setPreservedFilter(value));
+    },
+    [dispatch]
+  );
 
   const filterTabOptions = useMemo(
     () => [
@@ -427,16 +415,19 @@ export default function PropertyListScreen(): React.JSX.Element {
     setFilterModalVisible(true);
   }, []);
 
+  const closeCityModal = useCallback(() => setCityModalVisible(false), []);
+  const closeFilterModal = useCallback(() => setFilterModalVisible(false), []);
+  const closeProjectSearchModal = useCallback(() => setProjectSearchModalVisible(false), []);
+
   const handleSearchFilters = useCallback(
     (filters: SearchFilterState | null, count: number, shouldClose?: boolean) => {
-      preservedSearchFilters = filters;
+      dispatch(setPreservedSearchFilters(filters));
       setSearchFilters(filters);
-      // Only close modal if explicitly requested (when user presses search button)
       if (shouldClose) {
         setFilterModalVisible(false);
       }
     },
-    []
+    [dispatch]
   );
 
   // Count active filters - price range counts as 1, property type counts as 1, all sub-options count separately
@@ -487,9 +478,9 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (searchFilters) {
-      preservedSearchFilters = searchFilters;
+      dispatch(setPreservedSearchFilters(searchFilters));
     }
-  }, [searchFilters]);
+  }, [searchFilters, dispatch]);
 
   const handleAddPress = useCallback(() => {
     navigation.navigate("AddListing");
@@ -981,7 +972,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
       <CityModal
         visible={cityModalVisible}
-        onClose={() => setCityModalVisible(false)}
+        onClose={closeCityModal}
         onSearch={handleCitySearch}
         onLocateMe={handleCityLocateMe}
         selectedCity={selectedCity !== t("listings.city") ? selectedCity : undefined}
@@ -989,7 +980,7 @@ export default function PropertyListScreen(): React.JSX.Element {
 
       <SearchFilterModal
         visible={filterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
+        onClose={closeFilterModal}
         onSearch={handleSearchFilters}
         properties={filteredPropertiesForModal}
         initialFilters={searchFilters}
@@ -999,7 +990,7 @@ export default function PropertyListScreen(): React.JSX.Element {
       {isProjectsListing && (
         <ProjectSearchModal
           visible={projectSearchModalVisible}
-          onClose={() => setProjectSearchModalVisible(false)}
+          onClose={closeProjectSearchModal}
           onSearch={handleProjectSearch}
           selectedCity={projectSelectedCity || undefined}
           selectedPropertyType={projectSelectedPropertyType}
@@ -1007,103 +998,6 @@ export default function PropertyListScreen(): React.JSX.Element {
       )}
     </View>
   );
-}
-
-function applySearchFilters(
-  properties: Property[],
-  filters: SearchFilterState
-): Property[] {
-  let filtered = [...properties];
-
-  if (filters.selectedPropertyType) {
-    filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
-  }
-
-  if (filters.fromPrice || filters.toPrice) {
-    filtered = filtered.filter((p) => {
-      let price: number | null = null;
-
-      if (p.listingType === "daily" && "dailyPrice" in p) {
-        price = p.dailyPrice;
-      } else if (p.listingType === "daily" && "monthlyPrice" in p) {
-        price = p.monthlyPrice;
-      }
-
-      if (price === null) return false;
-
-      const fromPrice = filters.fromPrice ? parseFloat(filters.fromPrice) : 0;
-      const toPrice = filters.toPrice ? parseFloat(filters.toPrice) : Infinity;
-
-      return price >= fromPrice && price <= toPrice;
-    });
-  }
-
-  // Filter by usage type (Singles/Families)
-  if (filters.usageType) {
-    const usage = filters.usageType === "Singles" ? "single" : "family";
-    filtered = filtered.filter((p) => p.usage === usage);
-  }
-
-  // Filter by bedrooms — "All" or empty means no filter (show any bedroom count)
-  if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
-    if (filters.bedrooms === "6+") {
-      filtered = filtered.filter((p) => p.bedrooms >= 6);
-    } else {
-      const bedrooms = parseInt(filters.bedrooms, 10);
-      if (!Number.isNaN(bedrooms)) {
-        filtered = filtered.filter((p) => p.bedrooms === bedrooms);
-      }
-    }
-  }
-
-  // Filter by living rooms — "All" or empty means no filter
-  if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
-    const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
-    if (!Number.isNaN(livingRooms)) {
-      filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
-    }
-  }
-
-  // Filter by WC — "All" or empty means no filter
-  if (filters.wc && filters.wc !== "" && filters.wc !== "All") {
-    const wc = parseInt(filters.wc.replace("+", ""), 10);
-    if (!Number.isNaN(wc)) {
-      filtered = filtered.filter((p) => p.restrooms >= wc);
-    }
-  }
-
-  const featureFilters: { [key: string]: string } = {
-    furnished: "Furnished",
-    carEntrance: "Car Entrance",
-    airConditioned: "Air Conditioned",
-    privateRoof: "Private Roof",
-    apartmentInVilla: "Apartment in Villa",
-    twoEntrances: "Two Entrances",
-    specialEntrances: "Special Entrances",
-    nearBus: "Near Bus",
-    nearMetro: "Near Metro",
-    pool: "Pool",
-    footballPitch: "Football Pitch",
-    volleyballCourt: "Volleyball Court",
-    tent: "Tent",
-    kitchen: "Kitchen",
-    playground: "Playground",
-    familySection: "Family Section",
-    stairs: "Stairs",
-    driverRoom: "Driver Room",
-    maidRoom: "Maid Room",
-    basement: "Basement",
-  };
-
-  Object.entries(featureFilters).forEach(([key, featureName]) => {
-    if (filters[key as keyof SearchFilterState] === true) {
-      filtered = filtered.filter(
-        (p) => p.features && p.features.includes(featureName)
-      );
-    }
-  });
-
-  return filtered;
 }
 
 const styles = StyleSheet.create({

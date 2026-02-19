@@ -1,5 +1,5 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import DailyScreen from "../../screens/listings/DailyScreen";
 import DailyDetailScreen from "../../screens/listings/DailyDetailScreen";
 import NearbyServicesScreen from "../../screens/listings/NearbyServicesScreen";
@@ -23,7 +23,7 @@ import DescriptionScreen from "../../screens/listings/addListing/searchRequest/D
 import MatchedListingsScreen from "../../screens/listings/addListing/searchRequest/MatchedListingsScreen";
 import ListingMediaScreen from "../../screens/listings/ListingMediaScreen";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function DailyStack(): React.JSX.Element {
   return (

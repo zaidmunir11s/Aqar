@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { View, StyleSheet, Animated, Platform, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
@@ -67,6 +68,7 @@ function hasValidCoordinates(project: ProjectProperty): boolean {
 
 export default function ProjectsScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
@@ -153,11 +155,13 @@ export default function ProjectsScreen(): React.JSX.Element {
   }, [visibleProjects, filteredProjects]);
 
   useEffect(() => {
-    Animated.timing(counterFadeAnim, {
+    const anim = Animated.timing(counterFadeAnim, {
       toValue: visibleCount === 0 ? 0 : 1,
       duration: 250,
       useNativeDriver: true,
-    }).start();
+    });
+    anim.start();
+    return () => anim.stop();
   }, [visibleCount, counterFadeAnim]);
 
   // Track component mount state and cleanup on unmount
@@ -505,9 +509,15 @@ export default function ProjectsScreen(): React.JSX.Element {
         />
       )}
 
-      {/* Location Error Message */}
+      {/* Location Error Message - above bottom safe area / action area */}
       {showLocationError && (
-        <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
+        <View
+          style={[
+            styles.errorMessageContainer,
+            isRTL && styles.errorMessageContainerRTL,
+            { bottom: hp(10) + insets.bottom },
+          ]}
+        >
           <Ionicons name="warning" size={wp(4)} color={COLORS.error} />
           <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
             {t("listings.locationError")}
@@ -522,7 +532,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   errorMessageContainer: {
     position: "absolute",
-    bottom: hp(12),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",
@@ -531,9 +540,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: wp(2),
-    paddingHorizontal: wp(2.5),
-    paddingVertical: hp(0.6),
-    gap: wp(1.5),
+    paddingHorizontal: wp(3),
+    paddingVertical: hp(1),
+    gap: wp(2),
     zIndex: 1000,
   },
   errorMessageText: {

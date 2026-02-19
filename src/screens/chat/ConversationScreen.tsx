@@ -33,7 +33,7 @@ import {
 } from "../../data/chatData";
 import type { ChatMessage } from "../../types/chat";
 import { COLORS } from "../../constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useTabNavigation } from "../../hooks";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -108,6 +108,7 @@ export default function ConversationScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const { navigateToChat } = useTabNavigation();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useRef(new Animated.Value(0)).current;
@@ -120,62 +121,32 @@ export default function ConversationScreen(): React.JSX.Element {
     defaultMessage,
   } = params;
   
-  // Get or create conversation
+  // Get or create conversation (return enriched copy - never mutate source)
   const conversation = useMemo(() => {
-    let conv = null;
+    let base: typeof import("../../data/chatData").MOCK_CONVERSATIONS[0] | null = null;
     if (conversationId) {
-      // Find existing conversation by conversationId (which is now based on advertiserId)
       const { MOCK_CONVERSATIONS } = require("../../data/chatData");
-      conv = MOCK_CONVERSATIONS.find((c: any) => c.id === conversationId);
-      if (conv) {
-        // Use advertiserName from params if available, otherwise use stored name or get from data
-        if (advertiserName) {
-          conv.userName = advertiserName;
-        } else if (!conv.userName || conv.userName === "Property Owner") {
-          // Get name from data - don't translate, keep as is
-          const nameFromUsers = getUserName(conv.userId);
-          conv.userName = nameFromUsers !== "Property Owner" 
-            ? nameFromUsers 
-            : (advertiserName || "Property Owner");
-        }
-        // For admin, always use Arabic name
-        if (isAdminUser(conv.userId)) {
-          conv.userName = "تطبيق العقارات";
-        }
-        // Ensure userAvatar is set
-        if (!conv.userAvatar) {
-          const avatar = getUserAvatar(conv.userId);
-          if (avatar) {
-            conv.userAvatar = avatar;
-          }
-        }
-      }
-      // Ensure userAvatar is set
-      if (conv && !conv.userAvatar) {
-        const avatar = getUserAvatar(conv.userId);
-        if (avatar) {
-          conv.userAvatar = avatar;
-        }
-      }
+      base = MOCK_CONVERSATIONS.find((c: any) => c.id === conversationId) ?? null;
     } else if (propertyId && advertiserId) {
-      // Create or find conversation by advertiserId (owner)
-      // This ensures same owner = same conversation
       const defaultName = advertiserName || getUserName(advertiserId) || "Property Owner";
-      conv = getOrCreateConversationForProperty(
-        propertyId,
-        defaultName,
-        advertiserId
-      );
-      // Use advertiserName from params if available (keep as is, no translation)
-      if (advertiserName && conv) {
-        conv.userName = advertiserName;
-      }
-      // For admin, always use Arabic name
-      if (conv && isAdminUser(conv.userId)) {
-        conv.userName = "تطبيق العقارات";
-      }
+      base = getOrCreateConversationForProperty(propertyId, defaultName, advertiserId);
     }
-    return conv;
+    if (!base) return null;
+
+    let userName = base.userName;
+    if (advertiserName) {
+      userName = advertiserName;
+    } else if (!userName || userName === "Property Owner") {
+      const nameFromUsers = getUserName(base.userId);
+      userName = nameFromUsers !== "Property Owner" ? nameFromUsers : (advertiserName || "Property Owner");
+    }
+    if (isAdminUser(base.userId)) {
+      userName = "تطبيق العقارات";
+    }
+
+    const userAvatar = base.userAvatar ?? getUserAvatar(base.userId) ?? undefined;
+
+    return { ...base, userName, userAvatar };
   }, [conversationId, propertyId, advertiserId, advertiserName]);
 
   // Check if this is an admin conversation
@@ -191,15 +162,14 @@ export default function ConversationScreen(): React.JSX.Element {
   const [isBlocked, setIsBlocked] = useState(false);
   const modalSlideAnim = useRef(new Animated.Value(0)).current;
 
-  // Load messages - only show messages that have been sent
+  // Load messages - sort oldest first for display (chronological)
   useEffect(() => {
     if (conversation) {
       const chatMessages = getMessagesForConversation(conversation.id);
-      // Sort by date (oldest first for display)
       const sorted = [...chatMessages].sort((a, b) => {
         const dateA = typeof a.createdAt === "number" ? a.createdAt : a.createdAt.getTime();
         const dateB = typeof b.createdAt === "number" ? b.createdAt : b.createdAt.getTime();
-        return dateA - dateB;
+        return dateA - dateB; // Oldest first (chronological)
       });
       setMessages(sorted);
     } else {
@@ -214,14 +184,30 @@ export default function ConversationScreen(): React.JSX.Element {
     }
   }, [defaultMessage]);
 
-  // Scroll to bottom when messages change
+  const scrollToEnd = useCallback(
+    (animated = true) => {
+      if (messages.length > 0 && flatListRef.current) {
+        flatListRef.current.scrollToEnd({ animated });
+      }
+    },
+    [messages.length]
+  );
+
+  // Scroll to bottom when content size changes (e.g. new messages)
+  const handleContentSizeChange = useCallback(() => {
+    scrollToEnd(false); // No animation for content-driven scroll (smoother)
+  }, [scrollToEnd]);
+
+  // Scroll to bottom on initial load (when messages first populate) - use delay so FlatList has laid out
+  const hasScrolledToEndRef = useRef(false);
   useEffect(() => {
-    if (messages.length > 0 && flatListRef.current) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+    if (messages.length > 0 && !hasScrolledToEndRef.current) {
+      hasScrolledToEndRef.current = true;
+      const id = setTimeout(() => scrollToEnd(false), 150);
+      return () => clearTimeout(id);
     }
-  }, [messages.length]);
+    if (messages.length === 0) hasScrolledToEndRef.current = false;
+  }, [messages.length, scrollToEnd]);
 
   // Handle keyboard show/hide
   useEffect(() => {
@@ -254,17 +240,10 @@ export default function ConversationScreen(): React.JSX.Element {
   }, [keyboardHeight]);
 
   const handleBackPress = () => {
-    // Go back to where we came from: PropertyDetails when opened from message icon,
-    // or ChatScreen when opened from the chat list
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      const parent = navigation.getParent();
-      if (parent) {
-        parent.navigate("Chat", { screen: "ChatScreen" });
-      } else {
-        navigation.navigate("ChatScreen");
-      }
+      navigateToChat("ChatScreen");
     }
   };
 
@@ -306,7 +285,7 @@ export default function ConversationScreen(): React.JSX.Element {
     setIsBlocked(true);
     setBlockConfirmationModalVisible(false);
     // TODO: Implement actual block functionality (API call, etc.)
-    console.log("User blocked");
+    if (__DEV__) console.log("User blocked");
   }, []);
 
   const handleBlockCancel = useCallback(() => {
@@ -333,7 +312,6 @@ export default function ConversationScreen(): React.JSX.Element {
     setInputText("");
 
     // TODO: Send message to backend
-    console.log("Message sent:", newMessage.text);
   }, [inputText, conversation]);
 
   // Render message text with ad number highlighting
@@ -391,7 +369,7 @@ export default function ConversationScreen(): React.JSX.Element {
   const renderMessage = useCallback(
     ({ item, index }: { item: ChatMessage; index: number }) => {
       const isCurrentUser = item.user._id === MOCK_USERS.currentUser._id;
-      const showDateSeparator =
+      const       showDateSeparator =
         index === 0 ||
         !isSameDay(
           item.createdAt,
@@ -597,6 +575,11 @@ export default function ConversationScreen(): React.JSX.Element {
               inverted={false}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              onContentSizeChange={handleContentSizeChange}
+              initialNumToRender={15}
+              maxToRenderPerBatch={5}
+              windowSize={5}
+              removeClippedSubviews={true}
             />
           ) : (
             <View style={styles.emptyMessagesContainer}>
@@ -824,8 +807,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: wp(4),
-    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(2),
+    paddingVertical: hp(1),
   },
   headerLeft: {
     flexDirection: "row",

@@ -9,6 +9,7 @@ import {
 } from "react-native-responsive-screen";
 import { getFocusedRouteNameFromRoute, Route } from "@react-navigation/native";
 import { useIsAuthenticated } from "../context/auth-context";
+import { useAppSelector } from "../redux/hooks";
 
 import { AuthStack, ListingsStack, ProjectsStack, DailyStack, ChatStack } from "./stacks";
 import ServicesScreen from "../screens/services/ServicesScreen";
@@ -173,6 +174,7 @@ const defaultTabBarOptions = {
 export default function AppNavigator(): React.JSX.Element {
   const { isAuthenticated, isLoaded } = useIsAuthenticated();
   const { t, isRTL } = useLocalization();
+  const preservedFilter = useAppSelector((s) => s.listingsFilters.preservedFilter);
 
   return (
     <Tab.Navigator
@@ -256,11 +258,6 @@ export default function AppNavigator(): React.JSX.Element {
                 bookingsTabState?.state?.index || 0
               ];
             const isOnPropertyList = currentRoute?.name === "PropertyList";
-
-            const {
-              getPreservedFilter,
-            } = require("../screens/listings/PropertyListScreen");
-            const preservedFilter = getPreservedFilter();
 
             if (!isOnPropertyList) {
               e.preventDefault();

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Platform,
   ScrollView,
-  Keyboard,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -16,7 +15,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { Entypo } from "@expo/vector-icons";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useKeyboardHeight } from "../../hooks";
 import { getSaudiPhoneValidationError } from "../../utils/validation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -26,23 +25,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
-  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
-
-  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const { keyboardHeight } = useKeyboardHeight();
 
   const phoneErrorKey = getSaudiPhoneValidationError(phoneNumber);
   const phoneError = phoneErrorKey ? t(phoneErrorKey) : "";

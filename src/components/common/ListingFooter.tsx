@@ -46,7 +46,7 @@ const ListingFooter = memo<ListingFooterProps>(
     const progressPercentage = (currentStep / totalSteps) * 100;
 
     const containerStyle = useMemo(
-      () => [styles.container, { paddingBottom: insets.bottom + hp(1.5) }],
+      () => [styles.container, { paddingBottom: insets.bottom + hp(1) }],
       [insets.bottom]
     );
 

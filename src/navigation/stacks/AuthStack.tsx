@@ -1,6 +1,5 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
-import { useIsAuthenticated } from "../../context/auth-context";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../../screens/Auth/LoginScreen";
 import CreateAccountScreen from "../../screens/Auth/CreateAccountScreen";
 import VerifyPhoneNumberScreen from "../../screens/Auth/VerifyPhoneNumberScreen";
@@ -12,15 +11,17 @@ import ChangePhoneNumberScreen from "../../screens/profile/ChangePhoneNumberScre
 import UserProfileAdsScreen from "../../screens/profile/UserProfileAdsScreen";
 import PayBrokerCommissionScreen from "../../screens/profile/PayBrokerCommissionScreen";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
+/**
+ * Use fixed initialRouteName="Login" to prevent full stack re-mount on auth flip.
+ * LoginScreen redirects to ProfileDetail when authenticated; sign-out handlers reset to Login.
+ */
 export default function AuthStack(): React.JSX.Element {
-  const { isAuthenticated, isLoaded } = useIsAuthenticated();
-
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName={isLoaded && isAuthenticated ? "ProfileDetail" : "Login"}
+      initialRouteName="Login"
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />

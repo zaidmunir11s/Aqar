@@ -20,8 +20,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PROPERTY_DATA } from "../../data/propertyData";
-import { openPhoneDialer, getDefaultImageUrl } from "../../utils";
+import { openPhoneDialer, getDefaultImageUrl, getPropertyById } from "../../utils";
 import { IconButton } from "../../components";
 import {
   ProjectImageGallery,
@@ -69,13 +68,12 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   const headerTranslateY = useRef(new Animated.Value(-200)).current; // Start fully off-screen (hidden)
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const project = useMemo(
-    () =>
-      PROPERTY_DATA.find(
-        (p) => p.id === propertyId && "isProject" in p && p.isProject
-      ) as ProjectProperty | undefined,
-    [propertyId]
-  );
+  const project = useMemo(() => {
+    const p = getPropertyById(propertyId);
+    return p && "isProject" in p && p.isProject
+      ? (p as ProjectProperty)
+      : undefined;
+  }, [propertyId]);
 
   const hasActiveFilters = useMemo(() => {
     if (!unitsFilterState) return false;
@@ -106,8 +104,8 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   );
 
   const handleCall = useCallback(() => {
-    openPhoneDialer("+966123456789");
-  }, []);
+    openPhoneDialer(project?.advertiserPhone ?? "+966123456789");
+  }, [project?.advertiserPhone]);
 
   const handleShare = useCallback(() => {
     console.log("Share project");

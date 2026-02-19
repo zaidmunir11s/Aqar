@@ -1,6 +1,6 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { View, StyleSheet, Platform, TouchableOpacity } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MapView, { Marker } from "react-native-maps";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
@@ -11,8 +11,7 @@ import {
 import { ScreenHeader } from "../../components";
 import { COLORS, RIYADH_REGION } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
-import { openInGoogleMaps } from "../../utils";
-import { PROPERTY_DATA } from "../../data/propertyData";
+import { openInGoogleMaps, getPropertyById } from "../../utils";
 import type { Property } from "../../types/property";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -74,9 +73,17 @@ export default function NearbyServicesScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
 
   const [isSatelliteMode, setIsSatelliteMode] = useState(false);
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
 
   const property = useMemo<Property | undefined>(
-    () => PROPERTY_DATA.find((p) => p.id === propertyId),
+    () => getPropertyById(propertyId),
     [propertyId]
   );
 
@@ -118,26 +125,30 @@ export default function NearbyServicesScreen(): React.JSX.Element {
         backButtonColor={COLORS.backButton}
       />
       <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          initialRegion={initialRegion}
-          mapType={isSatelliteMode ? "satellite" : "standard"}
-          provider={Platform.OS === "android" ? "google" : undefined}
-          scrollEnabled={true}
-          zoomEnabled={true}
-          pitchEnabled={true}
-          liteMode={false}
-          rotateEnabled={false}
-        >
-          <Marker
-            coordinate={{ latitude, longitude }}
-            anchor={{ x: 0.5, y: 0.5 }}
-            onPress={handleMarkerPress}
+        {isScreenFocused ? (
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={initialRegion}
+            mapType={isSatelliteMode ? "satellite" : "standard"}
+            provider={Platform.OS === "android" ? "google" : undefined}
+            scrollEnabled={true}
+            zoomEnabled={true}
+            pitchEnabled={true}
+            liteMode={false}
+            rotateEnabled={false}
           >
-            <PropertyLocationMarker />
-          </Marker>
-        </MapView>
+            <Marker
+              coordinate={{ latitude, longitude }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              onPress={handleMarkerPress}
+            >
+              <PropertyLocationMarker />
+            </Marker>
+          </MapView>
+        ) : (
+          <View style={[styles.map, styles.mapPlaceholder]} />
+        )}
         <TouchableOpacity
           style={[styles.satelliteButton, satelliteButtonPosition]}
           onPress={handleToggleSatellite}
@@ -163,6 +174,9 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
+  },
+  mapPlaceholder: {
+    backgroundColor: "#e5e7eb",
   },
   satelliteButton: {
     position: "absolute",

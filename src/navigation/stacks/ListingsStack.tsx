@@ -1,5 +1,5 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MapLandingScreen from "../../screens/listings/MapLandingScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
 import NearbyServicesScreen from "../../screens/listings/NearbyServicesScreen";
@@ -27,7 +27,7 @@ import MatchedListingsScreen from "../../screens/listings/addListing/searchReque
 import ConversationScreen from "../../screens/chat/ConversationScreen";
 import ListingMediaScreen from "../../screens/listings/ListingMediaScreen";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function ListingsStack(): React.JSX.Element {
   return (

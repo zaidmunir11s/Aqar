@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Alert,
   ViewStyle,
-  Keyboard,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import {
@@ -24,7 +23,7 @@ import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
 import { useLoginMutation } from "@/redux/api";
 import { getSaudiPhoneValidationError } from "../../utils/validation";
 
@@ -32,6 +31,7 @@ type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { navigateToProfile, navigateToListings } = useTabNavigation();
   const { t, isRTL } = useLocalization();
   const { isSignedIn } = useAuth();
   const { isAuthenticated, isLoaded } = useIsAuthenticated();
@@ -46,15 +46,9 @@ export default function LoginScreen(): React.JSX.Element {
   // Check if user is already signed in when screen loads (Clerk or backend token)
   useEffect(() => {
     if (isLoaded && isAuthenticated) {
-      // User is already signed in, redirect to profile
-      const parent = navigation.getParent();
-      if (parent) {
-        parent.navigate("ProfileTab", { screen: "ProfileDetail" });
-      } else {
-        navigation.navigate("ProfileDetail");
-      }
+      navigateToProfile("ProfileDetail");
     }
-  }, [isLoaded, isAuthenticated, navigation]);
+  }, [isLoaded, isAuthenticated, navigateToProfile]);
 
   const validatePhoneNumber = useCallback((phone: string): string => {
     const key = getSaudiPhoneValidationError(phone);
@@ -85,23 +79,7 @@ export default function LoginScreen(): React.JSX.Element {
   const [storedPhoneError, setStoredPhoneError] = useState<string>("");
   const [storedPasswordError, setStoredPasswordError] = useState<string>("");
   const passwordErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
-
-  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const { keyboardHeight } = useKeyboardHeight();
 
   // Validate and get translated error messages
   const phoneError = validatePhoneNumber(phoneNumber);
@@ -197,12 +175,7 @@ export default function LoginScreen(): React.JSX.Element {
           {
             text: "OK",
             onPress: () => {
-              const parent = navigation.getParent();
-              if (parent) {
-                parent.navigate("ProfileTab", { screen: "ProfileDetail" });
-              } else {
-                navigation.navigate("ProfileDetail");
-              }
+              navigateToProfile("ProfileDetail");
             },
           },
         ]
@@ -218,7 +191,7 @@ export default function LoginScreen(): React.JSX.Element {
   }, [
     phoneNumber,
     password,
-    navigation,
+    navigateToProfile,
     login,
     validatePhoneNumber,
     validatePassword,
@@ -234,25 +207,15 @@ export default function LoginScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleBackPress = useCallback(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("Listings");
-    } else {
-      navigation.navigate("Listings");
-    }
-  }, [navigation]);
+    navigateToListings();
+  }, [navigateToListings]);
 
   const handleGoogleLogin = useCallback(async () => {
     try {
       setIsLoadingGoogle(true);
 
       if (isSignedIn) {
-        const parent = navigation.getParent();
-        if (parent) {
-          parent.navigate("ProfileTab", { screen: "ProfileDetail" });
-        } else {
-          navigation.navigate("ProfileDetail");
-        }
+        navigateToProfile("ProfileDetail");
         return;
       }
 
@@ -265,12 +228,7 @@ export default function LoginScreen(): React.JSX.Element {
 
       if (createdSessionId) {
         await setActive!({ session: createdSessionId });
-        const parent = navigation.getParent();
-        if (parent) {
-          parent.navigate("ProfileTab", { screen: "ProfileDetail" });
-        } else {
-          navigation.navigate("ProfileDetail");
-        }
+        navigateToProfile("ProfileDetail");
       }
     } catch (err: any) {
       console.error("OAuth error", err);
@@ -285,12 +243,7 @@ export default function LoginScreen(): React.JSX.Element {
         errorMessage.includes("already signed in") ||
         errorMessage.includes("Session already exists")
       ) {
-        const parent = navigation.getParent();
-        if (parent) {
-          parent.navigate("ProfileTab", { screen: "ProfileDetail" });
-        } else {
-          navigation.navigate("ProfileDetail");
-        }
+        navigateToProfile("ProfileDetail");
         return;
       }
 
@@ -301,7 +254,7 @@ export default function LoginScreen(): React.JSX.Element {
     } finally {
       setIsLoadingGoogle(false);
     }
-  }, [startSSOFlow, navigation, isSignedIn]);
+  }, [startSSOFlow, navigateToProfile, isSignedIn]);
 
   const handleAppleLogin = useCallback(() => {
     console.log("Continue with Apple");

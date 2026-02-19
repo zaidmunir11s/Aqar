@@ -7,7 +7,8 @@ import {
   Platform,
   Animated,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation, useRoute, StackActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -18,6 +19,10 @@ import { ScreenHeader, ListingFooter, TextInput } from "../../../../components";
 import { COLORS } from "@/constants";
 import { useSearchRequest } from "@/context/searchRequest-context";
 import { useLocalization } from "../../../../hooks/useLocalization";
+
+/** Footer content height (progress + buttons + padding) so error sits just above it */
+const FOOTER_CONTENT_HEIGHT = hp(8.5);
+const ERROR_GAP_ABOVE_FOOTER = hp(0.8);
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -35,10 +40,18 @@ export default function DescriptionScreen(): React.JSX.Element {
   const { addRequest } = useSearchRequest();
   const { t, isRTL } = useLocalization();
   
+  const insets = useSafeAreaInsets();
   const [description, setDescription] = useState("");
   const [showCategoryError, setShowCategoryError] = useState(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
-  const footerHeightValue = useRef(new Animated.Value(hp(12))).current; // Approximate footer height
+  const footerOffset = useRef(
+    new Animated.Value(FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + 0)
+  ).current;
+
+  useEffect(() => {
+    const total = FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + insets.bottom;
+    footerOffset.setValue(total);
+  }, [insets.bottom, footerOffset]);
 
   // Check if category is selected
   const isCategorySelected = !!params.orderFormData?.category;
@@ -114,9 +127,9 @@ export default function DescriptionScreen(): React.JSX.Element {
         assistFromPartners: params.assistFromPartners || false,
         orderFormData: params.orderFormData || {},
       });
-      
-      // Navigate back to SearchRequestScreen
-      navigation.navigate("SearchRequest");
+
+      // Pop NewOrder, ChooseLocation, Description so back button doesn't return to this flow
+      navigation.dispatch(StackActions.pop(3));
     } catch (error) {
       console.error("Error submitting request:", error);
     }
@@ -151,14 +164,14 @@ export default function DescriptionScreen(): React.JSX.Element {
 
       </View>
 
-      {/* Category Error Message - Positioned above footer */}
+      {/* Category Error Message - Positioned just above footer */}
       {showCategoryError && (
         <Animated.View
           style={[
             styles.errorContainer,
             rtlStyles.errorContainer,
             {
-              bottom: Animated.add(keyboardHeight, footerHeightValue), // Position above footer
+              bottom: Animated.add(keyboardHeight, footerOffset),
             },
           ]}
         >
@@ -200,7 +213,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: wp(5),
     paddingTop: hp(2),
-    paddingBottom: hp(12), // Extra padding for footer
+    paddingBottom: hp(14), // Space for footer + error strip
   },
   sectionTitle: {
     fontSize: wp(5),
@@ -228,12 +241,12 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     position: "absolute",
-    left: wp(5),
-    right: wp(5),
+    left: wp(4),
+    right: wp(4),
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: wp(4),
-    paddingVertical: hp(1),
+    paddingVertical: hp(1.2),
     backgroundColor: COLORS.bgRed,
     borderWidth: 1,
     borderColor: COLORS.error,

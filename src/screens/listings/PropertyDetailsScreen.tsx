@@ -11,7 +11,6 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  PanResponder,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -30,8 +29,8 @@ import {
   openPhoneDialer,
   openWhatsApp,
   getDefaultImageUrl,
-  calculateDays,
   navigateToMapScreen,
+  getPropertyById,
 } from "../../utils";
 import {
   InfoItem,
@@ -47,11 +46,11 @@ import {
   AverageSaleCard,
   IconButton,
 } from "../../components";
-import type { Property, DailyProperty } from "../../types/property";
+import type { Property } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, usePropertyDetailNavigation, useTabNavigation } from "../../hooks";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -94,7 +93,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const property = useMemo(
-    () => PROPERTY_DATA.find((p) => p.id === propertyId),
+    () => getPropertyById(propertyId),
     [propertyId]
   );
 
@@ -103,94 +102,22 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     setDescriptionExceedsThreeLines(false);
   }, [propertyId]);
 
-  // Filter visible properties based on selected dates and minimum days requirement
-  const filteredVisiblePropertyIds = useMemo(() => {
-    if (!passedDates?.startDate || !passedDates?.endDate) {
-      // If no dates selected, return all visible properties
-      return visiblePropertyIds;
-    }
-
-    const days = calculateDays(passedDates.startDate, passedDates.endDate);
-
-    // Filter properties that meet minimum days requirement
-    return visiblePropertyIds.filter((id) => {
-      const prop = PROPERTY_DATA.find((p) => p.id === id);
-      if (!prop || prop.listingType !== "daily") {
-        // For non-daily properties (rent/sale), include them (no minimum days requirement)
-        return true;
-      }
-
-      const dailyProp = prop as DailyProperty;
-      
-      // Check minimum days based on booking type
-      if (dailyProp.bookingType === "monthly") {
-        // Monthly properties require minimum 30 days
-        return days >= 30;
-      } else if (dailyProp.bookingType === "daily") {
-        // Daily properties require minimum 1 day
-        return days >= 1;
-      }
-      
-      // Default: include property
-      return true;
-    });
-  }, [visiblePropertyIds, passedDates]);
-
-  // Find current index in filtered visible properties list
-  const currentPropertyIndex = useMemo(() => {
-    if (!filteredVisiblePropertyIds || filteredVisiblePropertyIds.length === 0) return -1;
-    return filteredVisiblePropertyIds.indexOf(propertyId);
-  }, [filteredVisiblePropertyIds, propertyId]);
-
-  const hasNavigation = currentPropertyIndex >= 0;
-  const canGoPrev = hasNavigation && currentPropertyIndex > 0;
-  const canGoNext =
-    hasNavigation && currentPropertyIndex < filteredVisiblePropertyIds.length - 1;
-
-  // Navigation handlers
-  const handlePrevProperty = useCallback(() => {
-    if (canGoPrev) {
-      const prevPropertyId = filteredVisiblePropertyIds[currentPropertyIndex - 1];
-      // Check if previous property is daily or not
-      const prevProperty = PROPERTY_DATA.find((p) => p.id === prevPropertyId);
-      const screenName = prevProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
-      navigation.replace(screenName, {
-        propertyId: prevPropertyId,
-        visiblePropertyIds: filteredVisiblePropertyIds,
-        listingType: passedListingType,
-        selectedDates: passedDates,
-      });
-    }
-  }, [
+  const {
+    filteredVisiblePropertyIds,
     canGoPrev,
-    currentPropertyIndex,
-    filteredVisiblePropertyIds,
-    navigation,
-    passedListingType,
-    passedDates,
-  ]);
-
-  const handleNextProperty = useCallback(() => {
-    if (canGoNext) {
-      const nextPropertyId = filteredVisiblePropertyIds[currentPropertyIndex + 1];
-      // Check if next property is daily or not
-      const nextProperty = PROPERTY_DATA.find((p) => p.id === nextPropertyId);
-      const screenName = nextProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
-      navigation.replace(screenName, {
-        propertyId: nextPropertyId,
-        visiblePropertyIds: filteredVisiblePropertyIds,
-        listingType: passedListingType,
-        selectedDates: passedDates,
-      });
-    }
-  }, [
     canGoNext,
-    currentPropertyIndex,
-    filteredVisiblePropertyIds,
+    handlePrevProperty,
+    handleNextProperty,
+    panResponder,
+  } = usePropertyDetailNavigation({
+    propertyId,
+    visiblePropertyIds,
+    dates: passedDates,
+    listingType: passedListingType,
     navigation,
-    passedListingType,
-    passedDates,
-  ]);
+    selectedDatesForReplace: passedDates,
+    useFilteredIdsForReplace: true,
+  });
 
   const handleImageScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -207,12 +134,13 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   );
 
   const handleCall = useCallback(() => {
-    openPhoneDialer("+966123456789");
-  }, []);
+    openPhoneDialer(property?.advertiserPhone ?? "+966123456789");
+  }, [property?.advertiserPhone]);
 
   const handleWhatsApp = useCallback(() => {
-    openWhatsApp("966123456789");
-  }, []);
+    const phone = property?.advertiserPhone ?? "966123456789";
+    openWhatsApp(phone.replace(/^\+/, ""));
+  }, [property?.advertiserPhone]);
 
   const handleChat = useCallback(() => {
     if (!property) return;
@@ -287,14 +215,10 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     console.log("Copy ID:", property?.id);
   }, [property]);
 
+  const { navigateToProfile } = useTabNavigation();
   const handleFinancingOptions = useCallback(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("ProfileTab", { screen: "Login" });
-    } else {
-      navigation.navigate("ProfileTab", { screen: "Login" });
-    }
-  }, [navigation]);
+    navigateToProfile("Login");
+  }, [navigateToProfile]);
 
   const handleAverageCardPress = useCallback(() => {
     if (!property) return;
@@ -326,39 +250,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     },
     [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
   );
-
-  // PanResponder for swipe navigation
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-          // Only respond to horizontal swipes (not vertical scrolling)
-          const { dx, dy } = gestureState;
-          return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
-        },
-        onPanResponderRelease: (evt, gestureState) => {
-          const { dx, vx } = gestureState;
-          const swipeThreshold = 50; // Minimum swipe distance
-          const velocityThreshold = 0.3; // Minimum swipe velocity
-
-          // Swipe right (positive dx) = go to previous property
-          if (dx > swipeThreshold || vx > velocityThreshold) {
-            if (canGoPrev) {
-              handlePrevProperty();
-            }
-          }
-          // Swipe left (negative dx) = go to next property
-          else if (dx < -swipeThreshold || vx < -velocityThreshold) {
-            if (canGoNext) {
-              handleNextProperty();
-            }
-          }
-        },
-      }),
-    [canGoPrev, canGoNext, handlePrevProperty, handleNextProperty]
-  );
-
 
   if (!property) {
     return (

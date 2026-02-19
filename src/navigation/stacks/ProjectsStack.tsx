@@ -1,5 +1,5 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ProjectsScreen from "../../screens/projects/ProjectsScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
 import DeveloperProfileScreen from "../../screens/projects/DeveloperProfileScreen";
@@ -20,7 +20,7 @@ import DescriptionScreen from "../../screens/listings/addListing/searchRequest/D
 import MatchedListingsScreen from "../../screens/listings/addListing/searchRequest/MatchedListingsScreen";
 import ListingMediaScreen from "../../screens/listings/ListingMediaScreen";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function ProjectsStack(): React.JSX.Element {
   return (

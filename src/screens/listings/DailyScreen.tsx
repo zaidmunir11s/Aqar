@@ -33,17 +33,15 @@ import {
   CityModal,
   SearchFilterModal,
 } from "../../components";
+import { applySearchFilters } from "../../utils";
 import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import type { Property, DailyProperty } from "../../types/property";
-import { 
-  getPreservedFilter, 
-  getPreservedDates, 
-  getPreservedCity, 
-  getPreservedSearchFilters,
-  setPreservedDates,
+import { useAppSelector, useAppDispatch } from "../../redux/hooks";
+import {
   setPreservedCity,
-  setPreservedSearchFilters
-} from "./PropertyListScreen";
+  setPreservedSearchFilters,
+  setPreservedDates,
+} from "../../redux/slices/listingsFiltersSlice";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -80,21 +78,25 @@ function hasValidCoordinates(property: Property): boolean {
 export default function DailyScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
+  const dispatch = useAppDispatch();
+  const { preservedCity, preservedSearchFilters, preservedFilter, preservedDates } =
+    useAppSelector((s) => s.listingsFilters);
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locateMeErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMarkerPressTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
 
   // Initial region: use city from params (when coming from list via "Show Map") or preserved city, else Riyadh
   const initialRegionFromParams = useMemo(() => {
     const params = route.params as { selectedCity?: string } | undefined;
-    const city = params?.selectedCity || getPreservedCity();
+    const city = params?.selectedCity || preservedCity;
     return (city && CITY_REGIONS[city]) ? CITY_REGIONS[city] : RIYADH_REGION;
-  }, [route.params]);
+  }, [route.params, preservedCity]);
   const [region, setRegion] = useState(initialRegionFromParams);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
@@ -103,10 +105,10 @@ export default function DailyScreen(): React.JSX.Element {
   // Initialize from params or preserved values
   const routeParamsForInit = route.params as { selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
   const [selectedCity, setSelectedCity] = useState<string>(
-    routeParamsForInit?.selectedCity || getPreservedCity() || "City"
+    routeParamsForInit?.selectedCity || preservedCity || "City"
   );
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
-    routeParamsForInit?.searchFilters || getPreservedSearchFilters()
+    routeParamsForInit?.searchFilters || preservedSearchFilters
   );
   
   // Check if we should zoom out or navigate to city when navigating from list screen
@@ -119,7 +121,7 @@ export default function DailyScreen(): React.JSX.Element {
         if (cityRegion) {
           mapRef.current.animateToRegion(cityRegion, 800);
           setRegion(cityRegion);
-          setPreservedCity(params.selectedCity);
+          dispatch(setPreservedCity(params.selectedCity));
           setSelectedCity(params.selectedCity);
         } else {
           mapRef.current.animateToRegion(RIYADH_REGION, 800);
@@ -133,17 +135,17 @@ export default function DailyScreen(): React.JSX.Element {
       if (cityRegion) {
         mapRef.current.animateToRegion(cityRegion, 800);
         setRegion(cityRegion);
-        setPreservedCity(params.selectedCity);
+        dispatch(setPreservedCity(params.selectedCity));
         setSelectedCity(params.selectedCity);
       }
     }
     
     // Sync searchFilters from params
     if (params?.searchFilters !== undefined) {
-      setPreservedSearchFilters(params.searchFilters);
+      dispatch(setPreservedSearchFilters(params.searchFilters));
       setSearchFilters(params.searchFilters);
     }
-  }, [route.params, setPreservedCity, setPreservedSearchFilters]);
+  }, [route.params, dispatch]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<number>>(new Set());
   const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
@@ -152,9 +154,9 @@ export default function DailyScreen(): React.JSX.Element {
   // Use custom hooks
   const { getCurrentLocation } = useLocation();
   
-  // Get selectedDates and selectedFilter from route params if available (when navigating from list screen)
+  // Get selectedDates and selectedFilter from route params if available
   const routeParams = route.params as { shouldZoomOut?: boolean; selectedDates?: CalendarDates; selectedFilter?: string | null; selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
-  const initialDates = routeParams?.selectedDates || getPreservedDates() || { startDate: null, endDate: null };
+  const initialDates = routeParams?.selectedDates || preservedDates || { startDate: null, endDate: null };
   
   const { selectedDates, markedDates, handleDateSelect, resetDates, setSelectedDates } =
     useCalendar(initialDates);
@@ -171,40 +173,43 @@ export default function DailyScreen(): React.JSX.Element {
     }
   }, [routeParams?.selectedDates, setSelectedDates]);
 
+  // Sync selectedDates to Redux when user selects dates in calendar (for tab switching)
+  useEffect(() => {
+    if (selectedDates.startDate && selectedDates.endDate) {
+      dispatch(setPreservedDates(selectedDates));
+    }
+  }, [selectedDates.startDate, selectedDates.endDate, dispatch]);
+
   // Sync searchFilters from preserved state when screen comes into focus
-  // This ensures filters cleared in PropertyListScreen are reflected in DailyScreen
   const previousFiltersRef = useRef<string>("");
   useFocusEffect(
     useCallback(() => {
-      const preservedFilters = getPreservedSearchFilters();
-      const preservedFiltersString = JSON.stringify(preservedFilters);
-      // Only update if different to avoid unnecessary re-renders
+      const preservedFiltersString = JSON.stringify(preservedSearchFilters);
       if (preservedFiltersString !== previousFiltersRef.current) {
         previousFiltersRef.current = preservedFiltersString;
-        setSearchFilters(preservedFilters);
+        setSearchFilters(preservedSearchFilters);
       }
-    }, [])
+    }, [preservedSearchFilters])
   );
 
   // When coming from PropertyList via "Show Map", animate map to selected city after a short delay
-  // so the map ref is ready (fixes map staying on Riyadh when opening from list)
   useFocusEffect(
     useCallback(() => {
       const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string } | undefined;
       if (!params?.shouldZoomOut) return;
-      const city = params.selectedCity || getPreservedCity();
+      const city = params.selectedCity || preservedCity;
       if (!city || !CITY_REGIONS[city]) return;
       const cityRegion = CITY_REGIONS[city];
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         if (mapRef.current && cityRegion) {
           mapRef.current.animateToRegion(cityRegion, 800);
           setRegion(cityRegion);
-          setPreservedCity(city);
+          dispatch(setPreservedCity(city));
           setSelectedCity(city);
         }
       }, 150);
-      return () => clearTimeout(t);
-    }, [route.params])
+      return () => clearTimeout(timer);
+    }, [route.params, preservedCity, dispatch])
   );
   
   // Track component mount state and cleanup on unmount
@@ -219,6 +224,10 @@ export default function DailyScreen(): React.JSX.Element {
       if (markerPressTimeoutRef.current) {
         clearTimeout(markerPressTimeoutRef.current);
         markerPressTimeoutRef.current = null;
+      }
+      if (locateMeErrorTimeoutRef.current) {
+        clearTimeout(locateMeErrorTimeoutRef.current);
+        locateMeErrorTimeoutRef.current = null;
       }
     };
   }, []);
@@ -343,11 +352,13 @@ export default function DailyScreen(): React.JSX.Element {
 
   // Animate counter fade
   useEffect(() => {
-    Animated.timing(counterFadeAnim, {
+    const anim = Animated.timing(counterFadeAnim, {
       toValue: visibleCount === 0 ? 0 : 1,
       duration: 250,
       useNativeDriver: true,
-    }).start();
+    });
+    anim.start();
+    return () => anim.stop();
   }, [visibleCount, counterFadeAnim]);
 
   const selectedProperty = useMemo(
@@ -432,12 +443,17 @@ export default function DailyScreen(): React.JSX.Element {
   ]);
 
   const handleLocateMe = useCallback(async () => {
+    if (locateMeErrorTimeoutRef.current) {
+      clearTimeout(locateMeErrorTimeoutRef.current);
+      locateMeErrorTimeoutRef.current = null;
+    }
     const result = await getCurrentLocation();
+    if (!isMountedRef.current) return;
     if (result.isOutsideSaudi) {
       setShowLocationError(true);
-      // Hide error after 5 seconds
-      setTimeout(() => {
-        setShowLocationError(false);
+      locateMeErrorTimeoutRef.current = setTimeout(() => {
+        locateMeErrorTimeoutRef.current = null;
+        if (isMountedRef.current) setShowLocationError(false);
       }, 2000);
     } else if (result.region) {
       mapRef.current?.animateToRegion(result.region, 800);
@@ -474,42 +490,46 @@ export default function DailyScreen(): React.JSX.Element {
   );
 
   const handleShowList = useCallback(() => {
-    const preservedFilter = getPreservedFilter();
-    
     const params: any = {
       properties: visibleProperties,
       listingType: "daily",
-      selectedDates: selectedDates, // Always pass selectedDates, even if null
-      selectedFilter: preservedFilter, // Preserve filter selection
-      selectedCity: selectedCity !== "City" ? selectedCity : undefined, // Preserve city selection
-      searchFilters: searchFilters, // Pass search filters
+      selectedDates: selectedDates,
+      selectedFilter: preservedFilter,
+      selectedCity: selectedCity !== "City" ? selectedCity : undefined,
+      searchFilters: searchFilters,
     };
     navigation.navigate("PropertyList", params);
-  }, [visibleProperties, selectedDates, navigation, selectedCity, searchFilters, getPreservedFilter]);
+  }, [visibleProperties, selectedDates, navigation, selectedCity, searchFilters, preservedFilter]);
 
   const handleCityPress = useCallback(() => {
     setCityModalVisible(true);
   }, []);
 
-  const handleCitySearch = useCallback((city: string) => {
-    setPreservedCity(city);
-    setSelectedCity(city);
-    // Navigate map to selected city
-    const cityRegion = CITY_REGIONS[city];
-    if (cityRegion && mapRef.current) {
-      mapRef.current.animateToRegion(cityRegion, 800);
-      setRegion(cityRegion);
-    }
-  }, []);
+  const handleCitySearch = useCallback(
+    (city: string) => {
+      dispatch(setPreservedCity(city));
+      setSelectedCity(city);
+      const cityRegion = CITY_REGIONS[city];
+      if (cityRegion && mapRef.current) {
+        mapRef.current.animateToRegion(cityRegion, 800);
+        setRegion(cityRegion);
+      }
+    },
+    [dispatch]
+  );
 
   const handleCityLocateMe = useCallback(async () => {
-    // Get user's current location and set city
+    if (locateMeErrorTimeoutRef.current) {
+      clearTimeout(locateMeErrorTimeoutRef.current);
+      locateMeErrorTimeoutRef.current = null;
+    }
     const result = await getCurrentLocation();
+    if (!isMountedRef.current) return;
     if (result.isOutsideSaudi) {
       setShowLocationError(true);
-      // Hide error after 5 seconds
-      setTimeout(() => {
-        setShowLocationError(false);
+      locateMeErrorTimeoutRef.current = setTimeout(() => {
+        locateMeErrorTimeoutRef.current = null;
+        if (isMountedRef.current) setShowLocationError(false);
       }, 1000);
     } else if (result.region) {
       // TODO: Reverse geocode to get city name
@@ -523,14 +543,19 @@ export default function DailyScreen(): React.JSX.Element {
     setFilterModalVisible(true);
   }, []);
 
-  const handleSearchFilters = useCallback((filters: SearchFilterState | null, count: number, shouldClose?: boolean) => {
-    setPreservedSearchFilters(filters);
-    setSearchFilters(filters);
-    // Only close modal if explicitly requested (when user presses search button)
-    if (shouldClose) {
-      setFilterModalVisible(false);
-    }
-  }, [setPreservedSearchFilters]);
+  const closeCityModal = useCallback(() => setCityModalVisible(false), []);
+  const closeFilterModal = useCallback(() => setFilterModalVisible(false), []);
+
+  const handleSearchFilters = useCallback(
+    (filters: SearchFilterState | null, count: number, shouldClose?: boolean) => {
+      dispatch(setPreservedSearchFilters(filters));
+      setSearchFilters(filters);
+      if (shouldClose) {
+        setFilterModalVisible(false);
+      }
+    },
+    [dispatch]
+  );
 
   // Count active filters - price range counts as 1, property type counts as 1, all sub-options count separately
   const activeFilterCount = useMemo(() => {
@@ -655,9 +680,15 @@ export default function DailyScreen(): React.JSX.Element {
         />
       </View>
 
-      {/* Error Message */}
+      {/* Error Message - above bottom safe area / action area */}
       {showLocationError && (
-        <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
+        <View
+          style={[
+            styles.errorMessageContainer,
+            isRTL && styles.errorMessageContainerRTL,
+            { bottom: hp(10) + insets.bottom },
+          ]}
+        >
           <Ionicons name="information-circle" size={wp(4)} color={COLORS.error} />
           <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
             {t("listings.locationError")}
@@ -703,7 +734,7 @@ export default function DailyScreen(): React.JSX.Element {
 
       <CityModal
         visible={cityModalVisible}
-        onClose={() => setCityModalVisible(false)}
+        onClose={closeCityModal}
         onSearch={handleCitySearch}
         onLocateMe={handleCityLocateMe}
         selectedCity={selectedCity !== "City" ? selectedCity : undefined}
@@ -711,7 +742,7 @@ export default function DailyScreen(): React.JSX.Element {
 
       <SearchFilterModal
         visible={filterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
+        onClose={closeFilterModal}
         onSearch={handleSearchFilters}
         properties={filteredPropertiesForModal}
         initialFilters={searchFilters}
@@ -720,112 +751,10 @@ export default function DailyScreen(): React.JSX.Element {
   );
 }
 
-// Apply search filters to properties
-function applySearchFilters(
-  properties: Property[],
-  filters: SearchFilterState
-): Property[] {
-  let filtered = [...properties];
-
-  // Filter by property type
-  if (filters.selectedPropertyType) {
-    filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
-  }
-
-  // Filter by price (for daily properties, use dailyPrice or monthlyPrice)
-  if (filters.fromPrice || filters.toPrice) {
-    filtered = filtered.filter((p) => {
-      let price: number | null = null;
-
-      if (p.listingType === "daily" && "dailyPrice" in p) {
-        price = p.dailyPrice;
-      } else if (p.listingType === "daily" && "monthlyPrice" in p) {
-        price = p.monthlyPrice;
-      }
-
-      if (price === null) return false;
-
-      const fromPrice = filters.fromPrice ? parseFloat(filters.fromPrice) : 0;
-      const toPrice = filters.toPrice ? parseFloat(filters.toPrice) : Infinity;
-
-      return price >= fromPrice && price <= toPrice;
-    });
-  }
-
-  // Filter by usage type (Singles/Families)
-  if (filters.usageType) {
-    const usage = filters.usageType === "Singles" ? "single" : "family";
-    filtered = filtered.filter((p) => p.usage === usage);
-  }
-
-  // Filter by bedrooms — "All" or empty means no filter (show any bedroom count)
-  if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
-    if (filters.bedrooms === "6+") {
-      filtered = filtered.filter((p) => p.bedrooms >= 6);
-    } else {
-      const bedrooms = parseInt(filters.bedrooms, 10);
-      if (!Number.isNaN(bedrooms)) {
-        filtered = filtered.filter((p) => p.bedrooms === bedrooms);
-      }
-    }
-  }
-
-  // Filter by living rooms — "All" or empty means no filter
-  if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
-    const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
-    if (!Number.isNaN(livingRooms)) {
-      filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
-    }
-  }
-
-  // Filter by WC — "All" or empty means no filter
-  if (filters.wc && filters.wc !== "" && filters.wc !== "All") {
-    const wc = parseInt(filters.wc.replace("+", ""), 10);
-    if (!Number.isNaN(wc)) {
-      filtered = filtered.filter((p) => p.restrooms >= wc);
-    }
-  }
-
-  // Filter by features (toggles)
-  const featureFilters: { [key: string]: string } = {
-    furnished: "Furnished",
-    carEntrance: "Car Entrance",
-    airConditioned: "Air Conditioned",
-    privateRoof: "Private Roof",
-    apartmentInVilla: "Apartment in Villa",
-    twoEntrances: "Two Entrances",
-    specialEntrances: "Special Entrances",
-    nearBus: "Near Bus",
-    nearMetro: "Near Metro",
-    pool: "Pool",
-    footballPitch: "Football Pitch",
-    volleyballCourt: "Volleyball Court",
-    tent: "Tent",
-    kitchen: "Kitchen",
-    playground: "Playground",
-    familySection: "Family Section",
-    stairs: "Stairs",
-    driverRoom: "Driver Room",
-    maidRoom: "Maid Room",
-    basement: "Basement",
-  };
-
-  Object.entries(featureFilters).forEach(([key, featureName]) => {
-    if (filters[key as keyof SearchFilterState] === true) {
-      filtered = filtered.filter(
-        (p) => p.features && p.features.includes(featureName)
-      );
-    }
-  });
-
-  return filtered;
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   errorMessageContainer: {
     position: "absolute",
-    bottom: hp(12),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",
@@ -834,9 +763,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: wp(2),
-    paddingHorizontal: wp(2.5),
-    paddingVertical: hp(0.6),
-    gap: wp(1.5),
+    paddingHorizontal: wp(3),
+    paddingVertical: hp(1),
+    gap: wp(2),
     zIndex: 1000,
   },
   errorMessageText: {

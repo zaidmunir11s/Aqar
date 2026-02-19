@@ -92,6 +92,7 @@ function ListingMediaScreen(): React.JSX.Element {
         initialNumToRender={6}
         maxToRenderPerBatch={6}
         windowSize={5}
+        removeClippedSubviews={true}
       />
     </View>
   );

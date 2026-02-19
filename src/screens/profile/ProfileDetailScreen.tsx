@@ -5,9 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   widthPercentageToDP as wp,
@@ -16,7 +17,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useClerk } from "@clerk/clerk-expo";
 import { COLORS } from "../../constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useTabNavigation } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import {
   ScreenHeader,
@@ -39,85 +40,78 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   const { setHasBackendSession } = useAuthContext();
   const { signOut: clerkSignOut } = useClerk();
 
-  const handleBackPress = () => {
-    if (navigation.canGoBack()) {
+  const { navigateToListings } = useTabNavigation();
+
+  const handleBackPress = useCallback(() => {
+    const AUTH_SCREENS = ["Login", "CreateAccount", "ForgotPassword", "VerifyPhoneNumber"];
+    const state = navigation.getState();
+    const routes = state?.routes ?? [];
+    const currentIndex = state?.index ?? 0;
+    const prevRoute = currentIndex > 0 ? routes[currentIndex - 1] : null;
+    const prevIsAuth = prevRoute && AUTH_SCREENS.includes(prevRoute.name);
+
+    if (navigation.canGoBack() && !prevIsAuth) {
       navigation.goBack();
     } else {
-      // If there's no screen to go back to, navigate to Listings tab
-      const parent = navigation.getParent();
-      if (parent) {
-        parent.navigate("Listings");
-      } else {
-        navigation.navigate("Listings");
-      }
+      navigateToListings();
     }
-  };
+  }, [navigation, navigateToListings]);
 
-  const handleWalletPress = () => {
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBackPress();
+        return true;
+      };
+      const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => sub.remove();
+    }, [handleBackPress])
+  );
+
+  const handleWalletPress = useCallback(() => {
     // TODO: Navigate to wallet screen
-    console.log("Wallet pressed");
-  };
+  }, []);
 
-  const handlePhonePress = () => {
+  const handlePhonePress = useCallback(() => {
     navigation.navigate("UserProfileAds");
-  };
+  }, [navigation]);
 
-  const handleFavoritesPress = () => {
-    console.log("Favorites pressed");
-  };
+  const handleFavoritesPress = useCallback(() => {}, []);
+  const handleAlertsPress = useCallback(() => {}, []);
+  const handleAqarPress = useCallback(() => {}, []);
+  const handleActivityPress = useCallback(() => {}, []);
 
-  const handleAlertsPress = () => {
-    console.log("Alerts pressed");
-  };
+  const handleAddPress = useCallback(() => {
+    navigateToListings("AddListing");
+  }, [navigateToListings]);
 
-  const handleAqarPress = () => {
-    console.log("Aqar+ pressed");
-  };
+  const handleMyClientsPress = useCallback(() => {
+    // TODO: Navigate to My Clients
+  }, []);
 
-  const handleActivityPress = () => {
-    console.log("Activity pressed");
-  };
-
-  const handleAddPress = () => {
-    // Navigate to AddListing screen in Listings tab
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("Listings", {
-        screen: "AddListing",
-      });
-    } else {
-      navigation.navigate("Listings", {
-        screen: "AddListing",
-      });
-    }
-  };
-
-  const handleMyClientsPress = () => {
-    console.log("My Clients pressed");
-  };
-
-  const handleUpdateProfilePress = () => {
+  const handleUpdateProfilePress = useCallback(() => {
     navigation.navigate("UpdateProfile");
-  };
+  }, [navigation]);
 
-  const handleChangePasswordPress = () => {
+  const handleChangePasswordPress = useCallback(() => {
     navigation.navigate("ChangePassword");
-  };
+  }, [navigation]);
 
-  const handleChangePhoneNumberPress = () => {
+  const handleChangePhoneNumberPress = useCallback(() => {
     navigation.navigate("ChangePhoneNumber");
-  };
+  }, [navigation]);
 
   const handleLogoutPress = useCallback(async () => {
     await AsyncStorage.multiRemove(["auth_token", "refresh_token"]);
     setHasBackendSession(false);
     await clerkSignOut();
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("ProfileTab", { screen: "Login" });
-    } else {
-      navigation.navigate("Login");
-    }
+    // Reset Auth stack to only Login so back button cannot return to ProfileDetail
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      })
+    );
   }, [navigation, setHasBackendSession, clerkSignOut]);
 
   // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
@@ -133,23 +127,18 @@ export default function ProfileDetailScreen(): React.JSX.Element {
     [isRTL]
   );
 
-  const menuItems: MenuItem[] = [
-    {
-      title: t("profile.myDeals"),
-      subtitle: t("profile.verifyDeals"),
-      onPress: () => console.log("My Deals pressed"),
-    },
-    {
-      title: t("listings.requests"),
-      subtitle: t("profile.getAlertsForOffers"),
-      onPress: () => console.log("Requests pressed"),
-    },
-    {
-      title: t("profile.myBookings"),
-      subtitle: t("profile.bookingHistory"),
-      onPress: () => console.log("My Bookings pressed"),
-    },
-  ];
+  const onMyDealsPress = useCallback(() => {}, []);
+  const onRequestsPress = useCallback(() => {}, []);
+  const onMyBookingsPress = useCallback(() => {}, []);
+
+  const menuItems: MenuItem[] = useMemo(
+    () => [
+      { title: t("profile.myDeals"), subtitle: t("profile.verifyDeals"), onPress: onMyDealsPress },
+      { title: t("listings.requests"), subtitle: t("profile.getAlertsForOffers"), onPress: onRequestsPress },
+      { title: t("profile.myBookings"), subtitle: t("profile.bookingHistory"), onPress: onMyBookingsPress },
+    ],
+    [t, onMyDealsPress, onRequestsPress, onMyBookingsPress]
+  );
 
   return (
     <View style={styles.container}>

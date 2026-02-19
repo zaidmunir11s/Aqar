@@ -36,7 +36,7 @@ export const SearchRequestProvider = ({ children }: { children: ReactNode }) => 
         setRequests(JSON.parse(stored));
       }
     } catch (error) {
-      console.error("Error loading requests:", error);
+      if (__DEV__) console.error("Error loading requests:", error);
     }
   };
 
@@ -51,7 +51,7 @@ export const SearchRequestProvider = ({ children }: { children: ReactNode }) => 
       setRequests(updated);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch (error) {
-      console.error("Error saving request:", error);
+      if (__DEV__) console.error("Error saving request:", error);
     }
   };
 
@@ -61,7 +61,7 @@ export const SearchRequestProvider = ({ children }: { children: ReactNode }) => 
       setRequests(updated);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch (error) {
-      console.error("Error deleting request:", error);
+      if (__DEV__) console.error("Error deleting request:", error);
     }
   };
 

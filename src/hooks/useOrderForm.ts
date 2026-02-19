@@ -1,706 +1,299 @@
-import { useState, useMemo, useCallback } from "react";
+import { useReducer, useMemo, useCallback } from "react";
 import { useLocalization } from "./useLocalization";
+import {
+  orderFormReducer,
+  initialOrderFormState,
+  type RentPeriod,
+  type OrderFormState,
+} from "./orderFormReducer";
 
-export type RentPeriod = "Yearly" | "Monthly" | null;
+export type { RentPeriod };
 
 /**
- * Comprehensive hook to manage all order form state and handlers
- * This centralizes all form logic to reduce component size
+ * Order form state management via useReducer.
+ * Replaces 80+ useState with a single reducer for batched updates.
+ * Category reset is one dispatch instead of 80+ setState calls.
  */
 export function useOrderForm() {
   const { t } = useLocalization();
-  
-  // ========== CATEGORY STATE ==========
-  const [category, setCategory] = useState<string>("");
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [state, dispatch] = useReducer(orderFormReducer, initialOrderFormState);
 
-  // ========== APARTMENT FOR RENT STATE ==========
-  const [rentPeriod, setRentPeriod] = useState<RentPeriod>(null);
-  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [fromPrice, setFromPrice] = useState("");
-  const [toPrice, setToPrice] = useState("");
-  const [priceFrom, setPriceFrom] = useState("");
-  const [priceTo, setPriceTo] = useState("");
-  const [selectedPaymentType, setSelectedPaymentType] = useState<string | null>(null);
-  const [selectedBedroom, setSelectedBedroom] = useState<string | null>(null);
-  const [selectedLivingRoom, setSelectedLivingRoom] = useState<string | null>(null);
-  const [selectedWc, setSelectedWc] = useState<string | null>(null);
-  const [floor, setFloor] = useState<string>("");
-  const [showFloorModal, setShowFloorModal] = useState(false);
-  const [age, setAge] = useState<string>("");
-  const [showAgeModal, setShowAgeModal] = useState(false);
-  const [furnished, setFurnished] = useState(false);
-  const [carEntrance, setCarEntrance] = useState(false);
-  const [airConditioned, setAirConditioned] = useState(false);
-  const [privateRoof, setPrivateRoof] = useState(false);
-  const [apartmentInVilla, setApartmentInVilla] = useState(false);
-  const [twoEntrances, setTwoEntrances] = useState(false);
-  const [specialEntrances, setSpecialEntrances] = useState(false);
-
-  // ========== VILLA FOR SALE STATE ==========
-  const [villaPriceFrom, setVillaPriceFrom] = useState("");
-  const [villaPriceTo, setVillaPriceTo] = useState("");
-  const [selectedApartment, setSelectedApartment] = useState<string | null>(null);
-  const [streetDirection, setStreetDirection] = useState<string>("");
-  const [showStreetDirectionModal, setShowStreetDirectionModal] = useState(false);
-  const [areaFrom, setAreaFrom] = useState("");
-  const [areaTo, setAreaTo] = useState("");
-  const [streetWidth, setStreetWidth] = useState<string>("");
-  const [showStreetWidthModal, setShowStreetWidthModal] = useState(false);
-  const [stairs, setStairs] = useState(false);
-  const [selectedVillaType, setSelectedVillaType] = useState<string | null>(null);
-  const [driverRoom, setDriverRoom] = useState(false);
-  const [maidRoom, setMaidRoom] = useState(false);
-  const [pool, setPool] = useState(false);
-  const [villaFurnished, setVillaFurnished] = useState(false);
-  const [kitchen, setKitchen] = useState(false);
-  const [villaCarEntrance, setVillaCarEntrance] = useState(false);
-  const [basement, setBasement] = useState(false);
-  const [nearBus, setNearBus] = useState(false);
-  const [nearMetro, setNearMetro] = useState(false);
-
-  // ========== LAND FOR SALE STATE ==========
-  const [landPriceFrom, setLandPriceFrom] = useState("");
-  const [landPriceTo, setLandPriceTo] = useState("");
-  const [selectedLandType, setSelectedLandType] = useState<string | null>(null);
-  const [landAreaFrom, setLandAreaFrom] = useState("");
-  const [landAreaTo, setLandAreaTo] = useState("");
-  const [landStreetDirection, setLandStreetDirection] = useState<string>("");
-  const [landStreetWidth, setLandStreetWidth] = useState<string>("");
-
-  // ========== APARTMENT FOR SALE STATE ==========
-  const [apartmentSalePriceFrom, setApartmentSalePriceFrom] = useState("");
-  const [apartmentSalePriceTo, setApartmentSalePriceTo] = useState("");
-  const [apartmentSaleAreaFrom, setApartmentSaleAreaFrom] = useState("");
-  const [apartmentSaleAreaTo, setApartmentSaleAreaTo] = useState("");
-  const [apartmentSaleCarEntrance, setApartmentSaleCarEntrance] = useState(false);
-  const [apartmentSalePrivateRoof, setApartmentSalePrivateRoof] = useState(false);
-  const [apartmentSaleInVilla, setApartmentSaleInVilla] = useState(false);
-  const [apartmentSaleTwoEntrances, setApartmentSaleTwoEntrances] = useState(false);
-  const [apartmentSaleSpecialEntrances, setApartmentSaleSpecialEntrances] = useState(false);
-
-  // ========== BUILDING FOR SALE STATE ==========
-  const [buildingPriceFrom, setBuildingPriceFrom] = useState("");
-  const [buildingPriceTo, setBuildingPriceTo] = useState("");
-  const [buildingApartments, setBuildingApartments] = useState<string | null>(null);
-  const [selectedBuildingType, setSelectedBuildingType] = useState<string | null>(null);
-  const [buildingStreetDirection, setBuildingStreetDirection] = useState<string>("");
-  const [stores, setStores] = useState<string>("");
-  const [showStoresModal, setShowStoresModal] = useState(false);
-  const [buildingAreaFrom, setBuildingAreaFrom] = useState("");
-  const [buildingAreaTo, setBuildingAreaTo] = useState("");
-
-  // ========== SMALL HOUSE FOR SALE STATE ==========
-  const [smallHousePriceFrom, setSmallHousePriceFrom] = useState("");
-  const [smallHousePriceTo, setSmallHousePriceTo] = useState("");
-  const [smallHouseStreetDirection, setSmallHouseStreetDirection] = useState<string>("");
-  const [smallHouseAreaFrom, setSmallHouseAreaFrom] = useState("");
-  const [smallHouseAreaTo, setSmallHouseAreaTo] = useState("");
-  const [smallHouseStreetWidth, setSmallHouseStreetWidth] = useState<string>("");
-  const [smallHouseFurnished, setSmallHouseFurnished] = useState(false);
-  const [tent, setTent] = useState(false);
-
-  // ========== LOUNGE FOR SALE STATE ==========
-  const [loungePriceFrom, setLoungePriceFrom] = useState("");
-  const [loungePriceTo, setLoungePriceTo] = useState("");
-  const [loungeAreaFrom, setLoungeAreaFrom] = useState("");
-  const [loungeAreaTo, setLoungeAreaTo] = useState("");
-  const [loungeStreetWidth, setLoungeStreetWidth] = useState<string>("");
-
-  // ========== FARM FOR SALE STATE ==========
-  const [farmPriceFrom, setFarmPriceFrom] = useState("");
-  const [farmPriceTo, setFarmPriceTo] = useState("");
-  const [farmAreaFrom, setFarmAreaFrom] = useState("");
-  const [farmAreaTo, setFarmAreaTo] = useState("");
-
-  // ========== STORE FOR SALE STATE ==========
-  const [storePriceFrom, setStorePriceFrom] = useState("");
-  const [storePriceTo, setStorePriceTo] = useState("");
-  const [storeAreaFrom, setStoreAreaFrom] = useState("");
-  const [storeAreaTo, setStoreAreaTo] = useState("");
-  const [storeStreetWidth, setStoreStreetWidth] = useState<string>("");
-
-  // ========== FLOOR FOR SALE STATE ==========
-  const [floorSalePriceFrom, setFloorSalePriceFrom] = useState("");
-  const [floorSalePriceTo, setFloorSalePriceTo] = useState("");
-  const [floorSaleAreaFrom, setFloorSaleAreaFrom] = useState("");
-  const [floorSaleAreaTo, setFloorSaleAreaTo] = useState("");
-  const [floorSaleCarEntrance, setFloorSaleCarEntrance] = useState(false);
-
-  // ========== VILLA FOR RENT STATE ==========
-  const [villaRentPriceFrom, setVillaRentPriceFrom] = useState("");
-  const [villaRentPriceTo, setVillaRentPriceTo] = useState("");
-  const [villaRentStreetDirection, setVillaRentStreetDirection] = useState<string>("");
-  const [villaRentAreaFrom, setVillaRentAreaFrom] = useState("");
-  const [villaRentAreaTo, setVillaRentAreaTo] = useState("");
-  const [villaRentStreetWidth, setVillaRentStreetWidth] = useState<string>("");
-  const [villaRentStairs, setVillaRentStairs] = useState(false);
-  const [villaRentAirConditioned, setVillaRentAirConditioned] = useState(false);
-  const [villaRentRentPeriod, setVillaRentRentPeriod] = useState<RentPeriod>(null);
-
-  // ========== BIG FLAT FOR RENT STATE ==========
-  const [bigFlatPriceFrom, setBigFlatPriceFrom] = useState("");
-  const [bigFlatPriceTo, setBigFlatPriceTo] = useState("");
-  const [bigFlatAreaFrom, setBigFlatAreaFrom] = useState("");
-  const [bigFlatAreaTo, setBigFlatAreaTo] = useState("");
-  const [bigFlatRentPeriod, setBigFlatRentPeriod] = useState<RentPeriod>(null);
-  const [bigFlatCarEntrance, setBigFlatCarEntrance] = useState(false);
-  const [bigFlatAirConditioned, setBigFlatAirConditioned] = useState(false);
-  const [bigFlatInVilla, setBigFlatInVilla] = useState(false);
-  const [bigFlatTwoEntrances, setBigFlatTwoEntrances] = useState(false);
-  const [bigFlatSpecialEntrances, setBigFlatSpecialEntrances] = useState(false);
-
-  // ========== LOUNGE FOR RENT STATE ==========
-  const [loungeRentPriceFrom, setLoungeRentPriceFrom] = useState("");
-  const [loungeRentPriceTo, setLoungeRentPriceTo] = useState("");
-  const [loungeRentAreaFrom, setLoungeRentAreaFrom] = useState("");
-  const [loungeRentAreaTo, setLoungeRentAreaTo] = useState("");
-  const [loungeRentRentPeriod, setLoungeRentRentPeriod] = useState<RentPeriod>(null);
-  const [loungeRentPool, setLoungeRentPool] = useState(false);
-  const [footballPitch, setFootballPitch] = useState(false);
-  const [volleyballCourt, setVolleyballCourt] = useState(false);
-  const [loungeRentTent, setLoungeRentTent] = useState(false);
-  const [loungeRentKitchen, setLoungeRentKitchen] = useState(false);
-  const [playground, setPlayground] = useState(false);
-  const [familySection, setFamilySection] = useState(false);
-
-  // ========== SMALL HOUSE FOR RENT STATE ==========
-  const [smallHouseRentPriceFrom, setSmallHouseRentPriceFrom] = useState("");
-  const [smallHouseRentPriceTo, setSmallHouseRentPriceTo] = useState("");
-  const [smallHouseRentStreetDirection, setSmallHouseRentStreetDirection] = useState<string>("");
-  const [smallHouseRentAreaFrom, setSmallHouseRentAreaFrom] = useState("");
-  const [smallHouseRentAreaTo, setSmallHouseRentAreaTo] = useState("");
-  const [smallHouseRentStreetWidth, setSmallHouseRentStreetWidth] = useState<string>("");
-  const [smallHouseRentFurnished, setSmallHouseRentFurnished] = useState(false);
-  const [smallHouseRentTent, setSmallHouseRentTent] = useState(false);
-  const [smallHouseRentKitchen, setSmallHouseRentKitchen] = useState(false);
-
-  // ========== STORE FOR RENT STATE ==========
-  const [storeRentPriceFrom, setStoreRentPriceFrom] = useState("");
-  const [storeRentPriceTo, setStoreRentPriceTo] = useState("");
-  const [storeRentAreaFrom, setStoreRentAreaFrom] = useState("");
-  const [storeRentAreaTo, setStoreRentAreaTo] = useState("");
-  const [storeRentStreetWidth, setStoreRentStreetWidth] = useState<string>("");
-
-  // ========== BUILDING FOR RENT STATE ==========
-  const [buildingRentPriceFrom, setBuildingRentPriceFrom] = useState("");
-  const [buildingRentPriceTo, setBuildingRentPriceTo] = useState("");
-  const [buildingRentApartments, setBuildingRentApartments] = useState<string | null>(null);
-  const [selectedBuildingRentType, setSelectedBuildingRentType] = useState<string | null>(null);
-  const [buildingRentStreetDirection, setBuildingRentStreetDirection] = useState<string>("");
-  const [buildingRentStores, setBuildingRentStores] = useState<string>("");
-  const [buildingRentAreaFrom, setBuildingRentAreaFrom] = useState("");
-  const [buildingRentAreaTo, setBuildingRentAreaTo] = useState("");
-  const [buildingRentStreetWidth, setBuildingRentStreetWidth] = useState<string>("");
-
-  // ========== LAND FOR RENT STATE ==========
-  const [landRentStreetDirection, setLandRentStreetDirection] = useState<string>("");
-  const [landRentAreaFrom, setLandRentAreaFrom] = useState("");
-  const [landRentAreaTo, setLandRentAreaTo] = useState("");
-  const [landRentStreetWidth, setLandRentStreetWidth] = useState<string>("");
-  const [selectedLandRentType, setSelectedLandRentType] = useState<string | null>(null);
-
-  // ========== ROOM FOR RENT STATE ==========
-  const [roomRentPriceFrom, setRoomRentPriceFrom] = useState("");
-  const [roomRentPriceTo, setRoomRentPriceTo] = useState("");
-  const [roomRentRentPeriod, setRoomRentRentPeriod] = useState<RentPeriod>(null);
-  const [roomRentKitchen, setRoomRentKitchen] = useState(false);
-
-  // ========== OFFICE FOR RENT STATE ==========
-  const [officeRentPriceFrom, setOfficeRentPriceFrom] = useState("");
-  const [officeRentPriceTo, setOfficeRentPriceTo] = useState("");
-  const [officeRentAreaFrom, setOfficeRentAreaFrom] = useState("");
-  const [officeRentAreaTo, setOfficeRentAreaTo] = useState("");
-  const [officeRentStreetWidth, setOfficeRentStreetWidth] = useState<string>("");
-  const [officeRentFurnished, setOfficeRentFurnished] = useState(false);
-
-  // ========== TENT FOR RENT STATE ==========
-  const [tentRentRentPeriod, setTentRentRentPeriod] = useState<RentPeriod>(null);
-  const [tentRentPriceFrom, setTentRentPriceFrom] = useState("");
-  const [tentRentPriceTo, setTentRentPriceTo] = useState("");
-
-  // ========== WAREHOUSE FOR RENT STATE ==========
-  const [warehouseRentPriceFrom, setWarehouseRentPriceFrom] = useState("");
-  const [warehouseRentPriceTo, setWarehouseRentPriceTo] = useState("");
-  const [warehouseRentAreaFrom, setWarehouseRentAreaFrom] = useState("");
-  const [warehouseRentAreaTo, setWarehouseRentAreaTo] = useState("");
-  const [warehouseRentStreetWidth, setWarehouseRentStreetWidth] = useState<string>("");
-
-  // ========== CHALET FOR RENT STATE ==========
-  const [chaletRentPriceFrom, setChaletRentPriceFrom] = useState("");
-  const [chaletRentPriceTo, setChaletRentPriceTo] = useState("");
-  const [chaletRentAreaFrom, setChaletRentAreaFrom] = useState("");
-  const [chaletRentAreaTo, setChaletRentAreaTo] = useState("");
-  const [chaletRentRentPeriod, setChaletRentRentPeriod] = useState<RentPeriod>(null);
-  const [chaletRentPool, setChaletRentPool] = useState(false);
-  const [chaletFootballPitch, setChaletFootballPitch] = useState(false);
-  const [chaletVolleyballCourt, setChaletVolleyballCourt] = useState(false);
-  const [chaletRentTent, setChaletRentTent] = useState(false);
-  const [chaletRentKitchen, setChaletRentKitchen] = useState(false);
-  const [chaletPlayground, setChaletPlayground] = useState(false);
-
-  // ========== OTHER CATEGORY STATE ==========
-  const [otherPriceFrom, setOtherPriceFrom] = useState("");
-  const [otherPriceTo, setOtherPriceTo] = useState("");
-  const [otherAreaFrom, setOtherAreaFrom] = useState("");
-  const [otherAreaTo, setOtherAreaTo] = useState("");
+  const setField = useCallback(<K extends keyof OrderFormState>(key: K) => {
+    return (value: OrderFormState[K]) => {
+      dispatch({ type: "SET", payload: { key, value } });
+    };
+  }, []);
 
   // ========== HANDLERS ==========
-  const handleCategorySelect = (value: string) => {
-    setCategory(value);
-    setShowCategoryModal(false);
-
-    // Close all WheelPicker modals when category changes
-    setShowFloorModal(false);
-    setShowAgeModal(false);
-    setShowStreetDirectionModal(false);
-    setShowStreetWidthModal(false);
-    setShowStoresModal(false);
-
-    // Reset all category-specific form fields (FieldWithModal values and related state)
-    // Apartment for rent
-    setRentPeriod(null);
-    setSelectedPayment(null);
-    setFromPrice("");
-    setToPrice("");
-    setPriceFrom("");
-    setPriceTo("");
-    setSelectedPaymentType(null);
-    setSelectedBedroom(null);
-    setSelectedLivingRoom(null);
-    setSelectedWc(null);
-    setFloor("");
-    setAge("");
-    setFurnished(false);
-    setCarEntrance(false);
-    setAirConditioned(false);
-    setPrivateRoof(false);
-    setApartmentInVilla(false);
-    setTwoEntrances(false);
-    setSpecialEntrances(false);
-    // Villa for sale
-    setVillaPriceFrom("");
-    setVillaPriceTo("");
-    setSelectedApartment(null);
-    setStreetDirection("");
-    setAreaFrom("");
-    setAreaTo("");
-    setStreetWidth("");
-    setStairs(false);
-    setSelectedVillaType(null);
-    setDriverRoom(false);
-    setMaidRoom(false);
-    setPool(false);
-    setVillaFurnished(false);
-    setKitchen(false);
-    setVillaCarEntrance(false);
-    setBasement(false);
-    setNearBus(false);
-    setNearMetro(false);
-    // Land for sale
-    setLandPriceFrom("");
-    setLandPriceTo("");
-    setSelectedLandType(null);
-    setLandAreaFrom("");
-    setLandAreaTo("");
-    setLandStreetDirection("");
-    setLandStreetWidth("");
-    // Apartment for sale
-    setApartmentSalePriceFrom("");
-    setApartmentSalePriceTo("");
-    setApartmentSaleAreaFrom("");
-    setApartmentSaleAreaTo("");
-    setApartmentSaleCarEntrance(false);
-    setApartmentSalePrivateRoof(false);
-    setApartmentSaleInVilla(false);
-    setApartmentSaleTwoEntrances(false);
-    setApartmentSaleSpecialEntrances(false);
-    // Building for sale
-    setBuildingPriceFrom("");
-    setBuildingPriceTo("");
-    setBuildingApartments(null);
-    setSelectedBuildingType(null);
-    setBuildingStreetDirection("");
-    setStores("");
-    setBuildingAreaFrom("");
-    setBuildingAreaTo("");
-    // Small house for sale
-    setSmallHousePriceFrom("");
-    setSmallHousePriceTo("");
-    setSmallHouseStreetDirection("");
-    setSmallHouseAreaFrom("");
-    setSmallHouseAreaTo("");
-    setSmallHouseStreetWidth("");
-    setSmallHouseFurnished(false);
-    setTent(false);
-    // Lounge for sale
-    setLoungePriceFrom("");
-    setLoungePriceTo("");
-    setLoungeAreaFrom("");
-    setLoungeAreaTo("");
-    setLoungeStreetWidth("");
-    // Farm for sale
-    setFarmPriceFrom("");
-    setFarmPriceTo("");
-    setFarmAreaFrom("");
-    setFarmAreaTo("");
-    // Store for sale
-    setStorePriceFrom("");
-    setStorePriceTo("");
-    setStoreAreaFrom("");
-    setStoreAreaTo("");
-    setStoreStreetWidth("");
-    // Floor for sale
-    setFloorSalePriceFrom("");
-    setFloorSalePriceTo("");
-    setFloorSaleAreaFrom("");
-    setFloorSaleAreaTo("");
-    setFloorSaleCarEntrance(false);
-    // Villa for rent
-    setVillaRentPriceFrom("");
-    setVillaRentPriceTo("");
-    setVillaRentStreetDirection("");
-    setVillaRentAreaFrom("");
-    setVillaRentAreaTo("");
-    setVillaRentStreetWidth("");
-    setVillaRentStairs(false);
-    setVillaRentAirConditioned(false);
-    setVillaRentRentPeriod(null);
-    // Big flat for rent
-    setBigFlatPriceFrom("");
-    setBigFlatPriceTo("");
-    setBigFlatAreaFrom("");
-    setBigFlatAreaTo("");
-    setBigFlatRentPeriod(null);
-    setBigFlatCarEntrance(false);
-    setBigFlatAirConditioned(false);
-    setBigFlatInVilla(false);
-    setBigFlatTwoEntrances(false);
-    setBigFlatSpecialEntrances(false);
-    // Lounge for rent
-    setLoungeRentPriceFrom("");
-    setLoungeRentPriceTo("");
-    setLoungeRentAreaFrom("");
-    setLoungeRentAreaTo("");
-    setLoungeRentRentPeriod(null);
-    setLoungeRentPool(false);
-    setFootballPitch(false);
-    setVolleyballCourt(false);
-    setLoungeRentTent(false);
-    setLoungeRentKitchen(false);
-    setPlayground(false);
-    setFamilySection(false);
-    // Small house for rent
-    setSmallHouseRentPriceFrom("");
-    setSmallHouseRentPriceTo("");
-    setSmallHouseRentStreetDirection("");
-    setSmallHouseRentAreaFrom("");
-    setSmallHouseRentAreaTo("");
-    setSmallHouseRentStreetWidth("");
-    setSmallHouseRentFurnished(false);
-    setSmallHouseRentTent(false);
-    setSmallHouseRentKitchen(false);
-    // Store for rent
-    setStoreRentPriceFrom("");
-    setStoreRentPriceTo("");
-    setStoreRentAreaFrom("");
-    setStoreRentAreaTo("");
-    setStoreRentStreetWidth("");
-    // Building for rent
-    setBuildingRentPriceFrom("");
-    setBuildingRentPriceTo("");
-    setBuildingRentApartments(null);
-    setSelectedBuildingRentType(null);
-    setBuildingRentStreetDirection("");
-    setBuildingRentStores("");
-    setBuildingRentAreaFrom("");
-    setBuildingRentAreaTo("");
-    setBuildingRentStreetWidth("");
-    // Land for rent
-    setLandRentStreetDirection("");
-    setLandRentAreaFrom("");
-    setLandRentAreaTo("");
-    setLandRentStreetWidth("");
-    setSelectedLandRentType(null);
-    // Room for rent
-    setRoomRentPriceFrom("");
-    setRoomRentPriceTo("");
-    setRoomRentRentPeriod(null);
-    setRoomRentKitchen(false);
-    // Office for rent
-    setOfficeRentPriceFrom("");
-    setOfficeRentPriceTo("");
-    setOfficeRentAreaFrom("");
-    setOfficeRentAreaTo("");
-    setOfficeRentStreetWidth("");
-    setOfficeRentFurnished(false);
-    // Tent for rent
-    setTentRentRentPeriod(null);
-    setTentRentPriceFrom("");
-    setTentRentPriceTo("");
-    // Warehouse for rent
-    setWarehouseRentPriceFrom("");
-    setWarehouseRentPriceTo("");
-    setWarehouseRentAreaFrom("");
-    setWarehouseRentAreaTo("");
-    setWarehouseRentStreetWidth("");
-    // Chalet for rent
-    setChaletRentPriceFrom("");
-    setChaletRentPriceTo("");
-    setChaletRentAreaFrom("");
-    setChaletRentAreaTo("");
-    setChaletRentRentPeriod(null);
-    setChaletRentPool(false);
-    setChaletFootballPitch(false);
-    setChaletVolleyballCourt(false);
-    setChaletRentTent(false);
-    setChaletRentKitchen(false);
-    setChaletPlayground(false);
-    // Other
-    setOtherPriceFrom("");
-    setOtherPriceTo("");
-    setOtherAreaFrom("");
-    setOtherAreaTo("");
-  };
-
-  const handleRentPeriodPress = useCallback((period: "Yearly" | "Monthly") => {
-    setRentPeriod((prev) => {
-      if (prev === period) {
-        setSelectedPayment(null);
-        return null;
-      }
-      return period;
-    });
+  const handleCategorySelect = useCallback((value: string) => {
+    dispatch({ type: "RESET_AND_SELECT_CATEGORY", payload: value });
   }, []);
+
+  const handleRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.rentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "rentPeriod", value: next } });
+      if (next === null) {
+        dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      }
+    },
+    [state.rentPeriod]
+  );
 
   const handlePaymentChipPress = useCallback((payment: string) => {
-    setSelectedPayment((prev) => (prev === payment ? null : payment));
-  }, []);
+    const next = state.selectedPayment === payment ? null : payment;
+    dispatch({ type: "SET", payload: { key: "selectedPayment", value: next } });
+  }, [state.selectedPayment]);
 
   const handlePaymentTypePress = useCallback((value: string) => {
-    setSelectedPaymentType((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.selectedPaymentType === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "selectedPaymentType", value: next } });
+  }, [state.selectedPaymentType]);
 
   const handleBedroomPress = useCallback((value: string) => {
-    setSelectedBedroom((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.selectedBedroom === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "selectedBedroom", value: next } });
+  }, [state.selectedBedroom]);
 
   const handleLivingRoomPress = useCallback((value: string) => {
-    setSelectedLivingRoom((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.selectedLivingRoom === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "selectedLivingRoom", value: next } });
+  }, [state.selectedLivingRoom]);
 
   const handleWcPress = useCallback((value: string) => {
-    setSelectedWc((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.selectedWc === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "selectedWc", value: next } });
+  }, [state.selectedWc]);
 
   const handleApartmentPress = useCallback((value: string) => {
-    setSelectedApartment((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.selectedApartment === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "selectedApartment", value: next } });
+  }, [state.selectedApartment]);
 
   const handleBuildingApartmentsPress = useCallback((value: string) => {
-    setBuildingApartments((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.buildingApartments === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "buildingApartments", value: next } });
+  }, [state.buildingApartments]);
 
   const handleBuildingRentApartmentsPress = useCallback((value: string) => {
-    setBuildingRentApartments((prev) => (prev === value ? null : value));
-  }, []);
+    const next = state.buildingRentApartments === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "buildingRentApartments", value: next } });
+  }, [state.buildingRentApartments]);
 
   const handleVillaTypePress = useCallback((value: string) => {
-    setSelectedVillaType((prev) => (prev === value ? null : value));
+    const next = state.selectedVillaType === value ? null : value;
+    dispatch({ type: "SET", payload: { key: "selectedVillaType", value: next } });
+  }, [state.selectedVillaType]);
+
+  const handleStreetDirectionSelect = useCallback(
+    (value: string) => {
+      const currentCategory = state.category;
+      const key =
+        currentCategory === "Villa for sale"
+          ? "streetDirection"
+          : currentCategory === "Land for sale"
+            ? "landStreetDirection"
+            : currentCategory === "Small house for sale"
+              ? "smallHouseStreetDirection"
+              : currentCategory === "Building for sale"
+                ? "buildingStreetDirection"
+                : currentCategory === "Villa for rent"
+                  ? "villaRentStreetDirection"
+                  : currentCategory === "Small house for rent"
+                    ? "smallHouseRentStreetDirection"
+                    : currentCategory === "Building for rent"
+                      ? "buildingRentStreetDirection"
+                      : currentCategory === "Land for rent"
+                        ? "landRentStreetDirection"
+                        : null;
+      if (key) {
+        dispatch({ type: "SET", payload: { key, value } });
+      }
+      dispatch({ type: "SET", payload: { key: "showStreetDirectionModal", value: false } });
+    },
+    [state.category]
+  );
+
+  const handleStreetWidthSelect = useCallback(
+    (value: string) => {
+      const currentCategory = state.category;
+      const key =
+        currentCategory === "Villa for sale"
+          ? "streetWidth"
+          : currentCategory === "Land for sale"
+            ? "landStreetWidth"
+            : currentCategory === "Small house for sale"
+              ? "smallHouseStreetWidth"
+              : currentCategory === "Building for sale"
+                ? "streetWidth"
+                : currentCategory === "Lounge for sale"
+                  ? "loungeStreetWidth"
+                  : currentCategory === "Store for sale"
+                    ? "storeStreetWidth"
+                    : currentCategory === "Villa for rent"
+                      ? "villaRentStreetWidth"
+                      : currentCategory === "Small house for rent"
+                        ? "smallHouseRentStreetWidth"
+                        : currentCategory === "Store for rent"
+                          ? "storeRentStreetWidth"
+                          : currentCategory === "Building for rent"
+                            ? "buildingRentStreetWidth"
+                            : currentCategory === "Land for rent"
+                              ? "landRentStreetWidth"
+                              : currentCategory === "Office for rent"
+                                ? "officeRentStreetWidth"
+                                : currentCategory === "Warehouse for rent"
+                                  ? "warehouseRentStreetWidth"
+                                  : null;
+      if (key) {
+        dispatch({ type: "SET", payload: { key, value } });
+      }
+      dispatch({ type: "SET", payload: { key: "showStreetWidthModal", value: false } });
+    },
+    [state.category]
+  );
+
+  const handleLandRentTypePress = useCallback(
+    (value: string) => {
+      const next = state.selectedLandRentType === value ? null : value;
+      dispatch({ type: "SET", payload: { key: "selectedLandRentType", value: next } });
+    },
+    [state.selectedLandRentType]
+  );
+
+  const handleBuildingRentTypePress = useCallback(
+    (value: string) => {
+      const next = state.selectedBuildingRentType === value ? null : value;
+      dispatch({ type: "SET", payload: { key: "selectedBuildingRentType", value: next } });
+    },
+    [state.selectedBuildingRentType]
+  );
+
+  const handleBuildingRentStoresSelect = useCallback((value: string) => {
+    dispatch({ type: "SET", payload: { key: "buildingRentStores", value } });
+    dispatch({ type: "SET", payload: { key: "showStoresModal", value: false } });
   }, []);
 
-  const handleStreetDirectionSelect = useCallback((value: string) => {
-    const currentCategory = category;
-    if (currentCategory === "Villa for sale") {
-      setStreetDirection(value);
-    } else if (currentCategory === "Land for sale") {
-      setLandStreetDirection(value);
-    } else if (currentCategory === "Small house for sale") {
-      setSmallHouseStreetDirection(value);
-    } else if (currentCategory === "Building for sale") {
-      setBuildingStreetDirection(value);
-    } else if (currentCategory === "Villa for rent") {
-      setVillaRentStreetDirection(value);
-    } else if (currentCategory === "Small house for rent") {
-      setSmallHouseRentStreetDirection(value);
-    } else if (currentCategory === "Building for rent") {
-      setBuildingRentStreetDirection(value);
-    } else if (currentCategory === "Land for rent") {
-      setLandRentStreetDirection(value);
-    }
-    setShowStreetDirectionModal(false);
-  }, [category]);
+  const handleVillaRentRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.villaRentRentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "villaRentRentPeriod", value: next } });
+    },
+    [state.villaRentRentPeriod]
+  );
 
-  const handleStreetWidthSelect = useCallback((value: string) => {
-    const currentCategory = category;
-    if (currentCategory === "Villa for sale") {
-      setStreetWidth(value);
-    } else if (currentCategory === "Land for sale") {
-      setLandStreetWidth(value);
-    } else if (currentCategory === "Small house for sale") {
-      setSmallHouseStreetWidth(value);
-    } else if (currentCategory === "Building for sale") {
-      setStreetWidth(value);
-    } else if (currentCategory === "Lounge for sale") {
-      setLoungeStreetWidth(value);
-    } else if (currentCategory === "Store for sale") {
-      setStoreStreetWidth(value);
-    } else if (currentCategory === "Villa for rent") {
-      setVillaRentStreetWidth(value);
-    } else if (currentCategory === "Small house for rent") {
-      setSmallHouseRentStreetWidth(value);
-    } else if (currentCategory === "Store for rent") {
-      setStoreRentStreetWidth(value);
-    } else if (currentCategory === "Building for rent") {
-      setBuildingRentStreetWidth(value);
-    } else if (currentCategory === "Land for rent") {
-      setLandRentStreetWidth(value);
-    } else if (currentCategory === "Office for rent") {
-      setOfficeRentStreetWidth(value);
-    } else if (currentCategory === "Warehouse for rent") {
-      setWarehouseRentStreetWidth(value);
-    }
-    setShowStreetWidthModal(false);
-  }, [category]);
+  const handleBigFlatRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.bigFlatRentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "bigFlatRentPeriod", value: next } });
+    },
+    [state.bigFlatRentPeriod]
+  );
 
-  const handleLandRentTypePress = (value: string) => {
-    if (selectedLandRentType === value) {
-      setSelectedLandRentType(null);
-    } else {
-      setSelectedLandRentType(value);
-    }
-  };
+  const handleLoungeRentRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.loungeRentRentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "loungeRentRentPeriod", value: next } });
+    },
+    [state.loungeRentRentPeriod]
+  );
 
-  const handleBuildingRentTypePress = (value: string) => {
-    if (selectedBuildingRentType === value) {
-      setSelectedBuildingRentType(null);
-    } else {
-      setSelectedBuildingRentType(value);
-    }
-  };
+  const handleRoomRentRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.roomRentRentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "roomRentRentPeriod", value: next } });
+    },
+    [state.roomRentRentPeriod]
+  );
 
-  const handleBuildingRentStoresSelect = (value: string) => {
-    setBuildingRentStores(value);
-    setShowStoresModal(false);
-  };
-
-  const handleVillaRentRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (villaRentRentPeriod === period) {
-      setVillaRentRentPeriod(null);
-    } else {
-      setVillaRentRentPeriod(period);
-    }
-  };
-
-  const handleBigFlatRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (bigFlatRentPeriod === period) {
-      setBigFlatRentPeriod(null);
-    } else {
-      setBigFlatRentPeriod(period);
-    }
-  };
-
-  const handleLoungeRentRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (loungeRentRentPeriod === period) {
-      setLoungeRentRentPeriod(null);
-    } else {
-      setLoungeRentRentPeriod(period);
-    }
-  };
-
-  const handleRoomRentRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (roomRentRentPeriod === period) {
-      setRoomRentRentPeriod(null);
-    } else {
-      setRoomRentRentPeriod(period);
-    }
-  };
-
-  const handleTentRentRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (tentRentRentPeriod === period) {
-      setTentRentRentPeriod(null);
-      setSelectedPayment(null);
-    } else {
-      setTentRentRentPeriod(period);
-      if (period !== "Yearly") {
-        setSelectedPayment(null);
+  const handleTentRentRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.tentRentRentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "tentRentRentPeriod", value: next } });
+      if (next === null || period !== "Yearly") {
+        dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
       }
-    }
-  };
+    },
+    [state.tentRentRentPeriod]
+  );
 
-  const handleChaletRentRentPeriodPress = (period: "Yearly" | "Monthly") => {
-    if (chaletRentRentPeriod === period) {
-      setChaletRentRentPeriod(null);
-    } else {
-      setChaletRentRentPeriod(period);
-    }
-  };
+  const handleChaletRentRentPeriodPress = useCallback(
+    (period: "Yearly" | "Monthly") => {
+      const next = state.chaletRentRentPeriod === period ? null : period;
+      dispatch({ type: "SET", payload: { key: "chaletRentRentPeriod", value: next } });
+    },
+    [state.chaletRentRentPeriod]
+  );
 
-  const handleLandTypePress = (value: string) => {
-    if (selectedLandType === value) {
-      setSelectedLandType(null);
-    } else {
-      setSelectedLandType(value);
-    }
-  };
+  const handleLandTypePress = useCallback(
+    (value: string) => {
+      const next = state.selectedLandType === value ? null : value;
+      dispatch({ type: "SET", payload: { key: "selectedLandType", value: next } });
+    },
+    [state.selectedLandType]
+  );
 
-  const handleBuildingTypePress = (value: string) => {
-    if (selectedBuildingType === value) {
-      setSelectedBuildingType(null);
-    } else {
-      setSelectedBuildingType(value);
-    }
-  };
+  const handleBuildingTypePress = useCallback(
+    (value: string) => {
+      const next = state.selectedBuildingType === value ? null : value;
+      dispatch({ type: "SET", payload: { key: "selectedBuildingType", value: next } });
+    },
+    [state.selectedBuildingType]
+  );
 
   const handleStoresSelect = useCallback((value: string) => {
-    setStores(value);
-    setShowStoresModal(false);
+    dispatch({ type: "SET", payload: { key: "stores", value } });
+    dispatch({ type: "SET", payload: { key: "showStoresModal", value: false } });
   }, []);
 
   const handleFloorSelect = useCallback((value: string) => {
-    setFloor(value);
-    setShowFloorModal(false);
+    dispatch({ type: "SET", payload: { key: "floor", value } });
+    dispatch({ type: "SET", payload: { key: "showFloorModal", value: false } });
   }, []);
 
   const handleAgeSelect = useCallback((value: string) => {
-    setAge(value);
-    setShowAgeModal(false);
+    dispatch({ type: "SET", payload: { key: "age", value } });
+    dispatch({ type: "SET", payload: { key: "showAgeModal", value: false } });
   }, []);
 
   // ========== COMPUTED VALUES ==========
-  const categoryChecks = useMemo(() => ({
-    isApartmentForRent: category === "Apartment for rent",
-    isVillaForSale: category === "Villa for sale",
-    isLandForSale: category === "Land for sale",
-    isApartmentForSale: category === "Apartment for sale",
-    isBuildingForSale: category === "Building for sale",
-    isSmallHouseForSale: category === "Small house for sale",
-    isLoungeForSale: category === "Lounge for sale",
-    isFarmForSale: category === "Farm for sale",
-    isStoreForSale: category === "Store for sale",
-    isFloorForSale: category === "Floor for sale",
-    isVillaForRent: category === "Villa for rent",
-    isBigFlatForRent: category === "Big flat for rent",
-    isLoungeForRent: category === "Lounge for rent",
-    isSmallHouseForRent: category === "Small house for rent",
-    isStoreForRent: category === "Store for rent",
-    isBuildingForRent: category === "Building for rent",
-    isLandForRent: category === "Land for rent",
-    isRoomForRent: category === "Room for rent",
-    isOfficeForRent: category === "Office for rent",
-    isTentForRent: category === "Tent for rent",
-    isWarehouseForRent: category === "Warehouse for rent",
-    isChaletForRent: category === "Chalet for rent",
-    isOther: category === "Other",
-  }), [category]);
+  const categoryChecks = useMemo(
+    () => ({
+      isApartmentForRent: state.category === "Apartment for rent",
+      isVillaForSale: state.category === "Villa for sale",
+      isLandForSale: state.category === "Land for sale",
+      isApartmentForSale: state.category === "Apartment for sale",
+      isBuildingForSale: state.category === "Building for sale",
+      isSmallHouseForSale: state.category === "Small house for sale",
+      isLoungeForSale: state.category === "Lounge for sale",
+      isFarmForSale: state.category === "Farm for sale",
+      isStoreForSale: state.category === "Store for sale",
+      isFloorForSale: state.category === "Floor for sale",
+      isVillaForRent: state.category === "Villa for rent",
+      isBigFlatForRent: state.category === "Big flat for rent",
+      isLoungeForRent: state.category === "Lounge for rent",
+      isSmallHouseForRent: state.category === "Small house for rent",
+      isStoreForRent: state.category === "Store for rent",
+      isBuildingForRent: state.category === "Building for rent",
+      isLandForRent: state.category === "Land for rent",
+      isRoomForRent: state.category === "Room for rent",
+      isOfficeForRent: state.category === "Office for rent",
+      isTentForRent: state.category === "Tent for rent",
+      isWarehouseForRent: state.category === "Warehouse for rent",
+      isChaletForRent: state.category === "Chalet for rent",
+      isOther: state.category === "Other",
+    }),
+    [state.category]
+  );
 
   const apartmentForRentComputed = useMemo(() => {
-    const showYearlyContent = rentPeriod === "Yearly";
-    const showMonthlyContent = rentPeriod === "Monthly";
-    const showPriceSection = (!rentPeriod || rentPeriod === "Monthly") && categoryChecks.isApartmentForRent;
-    const showPaymentTypeTabBar = (!rentPeriod || rentPeriod === "Monthly") && categoryChecks.isApartmentForRent;
-    const priceLabel = selectedPayment === "Monthly" && showYearlyContent ? t("listings.priceMonthly") : t("listings.annualPrice");
-    
+    const showYearlyContent = state.rentPeriod === "Yearly";
+    const showMonthlyContent = state.rentPeriod === "Monthly";
+    const showPriceSection = (!state.rentPeriod || state.rentPeriod === "Monthly") && categoryChecks.isApartmentForRent;
+    const showPaymentTypeTabBar = (!state.rentPeriod || state.rentPeriod === "Monthly") && categoryChecks.isApartmentForRent;
+    const priceLabel =
+      state.selectedPayment === "Monthly" && showYearlyContent ? t("listings.priceMonthly") : t("listings.annualPrice");
+
     return {
       showYearlyContent,
       showMonthlyContent,
@@ -708,66 +301,66 @@ export function useOrderForm() {
       showPaymentTypeTabBar,
       priceLabel,
     };
-  }, [rentPeriod, selectedPayment, categoryChecks.isApartmentForRent, t]);
+  }, [state.rentPeriod, state.selectedPayment, categoryChecks.isApartmentForRent, t]);
 
   // ========== RETURN ALL STATE AND HANDLERS ==========
   return {
     // Category
-    category,
-    setCategory,
-    showCategoryModal,
-    setShowCategoryModal,
+    category: state.category,
+    setCategory: setField("category"),
+    showCategoryModal: state.showCategoryModal,
+    setShowCategoryModal: setField("showCategoryModal"),
     handleCategorySelect,
-    
+
     // Category checks
     ...categoryChecks,
-    
+
     // Apartment for rent computed
     ...apartmentForRentComputed,
-    
+
     // Apartment for rent
-    rentPeriod,
-    setRentPeriod,
-    selectedPayment,
-    setSelectedPayment,
-    fromPrice,
-    setFromPrice,
-    toPrice,
-    setToPrice,
-    priceFrom,
-    setPriceFrom,
-    priceTo,
-    setPriceTo,
-    selectedPaymentType,
-    setSelectedPaymentType,
-    selectedBedroom,
-    setSelectedBedroom,
-    selectedLivingRoom,
-    setSelectedLivingRoom,
-    selectedWc,
-    setSelectedWc,
-    floor,
-    setFloor,
-    showFloorModal,
-    setShowFloorModal,
-    age,
-    setAge,
-    showAgeModal,
-    setShowAgeModal,
-    furnished,
-    setFurnished,
-    carEntrance,
-    setCarEntrance,
-    airConditioned,
-    setAirConditioned,
-    privateRoof,
-    setPrivateRoof,
-    apartmentInVilla,
-    setApartmentInVilla,
-    twoEntrances,
-    setTwoEntrances,
-    specialEntrances,
-    setSpecialEntrances,
+    rentPeriod: state.rentPeriod,
+    setRentPeriod: setField("rentPeriod"),
+    selectedPayment: state.selectedPayment,
+    setSelectedPayment: setField("selectedPayment"),
+    fromPrice: state.fromPrice,
+    setFromPrice: setField("fromPrice"),
+    toPrice: state.toPrice,
+    setToPrice: setField("toPrice"),
+    priceFrom: state.priceFrom,
+    setPriceFrom: setField("priceFrom"),
+    priceTo: state.priceTo,
+    setPriceTo: setField("priceTo"),
+    selectedPaymentType: state.selectedPaymentType,
+    setSelectedPaymentType: setField("selectedPaymentType"),
+    selectedBedroom: state.selectedBedroom,
+    setSelectedBedroom: setField("selectedBedroom"),
+    selectedLivingRoom: state.selectedLivingRoom,
+    setSelectedLivingRoom: setField("selectedLivingRoom"),
+    selectedWc: state.selectedWc,
+    setSelectedWc: setField("selectedWc"),
+    floor: state.floor,
+    setFloor: setField("floor"),
+    showFloorModal: state.showFloorModal,
+    setShowFloorModal: setField("showFloorModal"),
+    age: state.age,
+    setAge: setField("age"),
+    showAgeModal: state.showAgeModal,
+    setShowAgeModal: setField("showAgeModal"),
+    furnished: state.furnished,
+    setFurnished: setField("furnished"),
+    carEntrance: state.carEntrance,
+    setCarEntrance: setField("carEntrance"),
+    airConditioned: state.airConditioned,
+    setAirConditioned: setField("airConditioned"),
+    privateRoof: state.privateRoof,
+    setPrivateRoof: setField("privateRoof"),
+    apartmentInVilla: state.apartmentInVilla,
+    setApartmentInVilla: setField("apartmentInVilla"),
+    twoEntrances: state.twoEntrances,
+    setTwoEntrances: setField("twoEntrances"),
+    specialEntrances: state.specialEntrances,
+    setSpecialEntrances: setField("specialEntrances"),
     handleRentPeriodPress,
     handlePaymentChipPress,
     handlePaymentTypePress,
@@ -776,396 +369,396 @@ export function useOrderForm() {
     handleWcPress,
     handleFloorSelect,
     handleAgeSelect,
-    
+
     // Villa for sale
-    villaPriceFrom,
-    setVillaPriceFrom,
-    villaPriceTo,
-    setVillaPriceTo,
-    selectedApartment,
-    setSelectedApartment,
-    streetDirection,
-    setStreetDirection,
-    showStreetDirectionModal,
-    setShowStreetDirectionModal,
-    areaFrom,
-    setAreaFrom,
-    areaTo,
-    setAreaTo,
-    streetWidth,
-    setStreetWidth,
-    showStreetWidthModal,
-    setShowStreetWidthModal,
-    stairs,
-    setStairs,
-    selectedVillaType,
-    setSelectedVillaType,
-    driverRoom,
-    setDriverRoom,
-    maidRoom,
-    setMaidRoom,
-    pool,
-    setPool,
-    villaFurnished,
-    setVillaFurnished,
-    kitchen,
-    setKitchen,
-    villaCarEntrance,
-    setVillaCarEntrance,
-    basement,
-    setBasement,
-    nearBus,
-    setNearBus,
-    nearMetro,
-    setNearMetro,
+    villaPriceFrom: state.villaPriceFrom,
+    setVillaPriceFrom: setField("villaPriceFrom"),
+    villaPriceTo: state.villaPriceTo,
+    setVillaPriceTo: setField("villaPriceTo"),
+    selectedApartment: state.selectedApartment,
+    setSelectedApartment: setField("selectedApartment"),
+    streetDirection: state.streetDirection,
+    setStreetDirection: setField("streetDirection"),
+    showStreetDirectionModal: state.showStreetDirectionModal,
+    setShowStreetDirectionModal: setField("showStreetDirectionModal"),
+    areaFrom: state.areaFrom,
+    setAreaFrom: setField("areaFrom"),
+    areaTo: state.areaTo,
+    setAreaTo: setField("areaTo"),
+    streetWidth: state.streetWidth,
+    setStreetWidth: setField("streetWidth"),
+    showStreetWidthModal: state.showStreetWidthModal,
+    setShowStreetWidthModal: setField("showStreetWidthModal"),
+    stairs: state.stairs,
+    setStairs: setField("stairs"),
+    selectedVillaType: state.selectedVillaType,
+    setSelectedVillaType: setField("selectedVillaType"),
+    driverRoom: state.driverRoom,
+    setDriverRoom: setField("driverRoom"),
+    maidRoom: state.maidRoom,
+    setMaidRoom: setField("maidRoom"),
+    pool: state.pool,
+    setPool: setField("pool"),
+    villaFurnished: state.villaFurnished,
+    setVillaFurnished: setField("villaFurnished"),
+    kitchen: state.kitchen,
+    setKitchen: setField("kitchen"),
+    villaCarEntrance: state.villaCarEntrance,
+    setVillaCarEntrance: setField("villaCarEntrance"),
+    basement: state.basement,
+    setBasement: setField("basement"),
+    nearBus: state.nearBus,
+    setNearBus: setField("nearBus"),
+    nearMetro: state.nearMetro,
+    setNearMetro: setField("nearMetro"),
     handleApartmentPress,
     handleBuildingApartmentsPress,
     handleBuildingRentApartmentsPress,
     handleVillaTypePress,
     handleStreetDirectionSelect,
     handleStreetWidthSelect,
-    
+
     // Land for sale
-    landPriceFrom,
-    setLandPriceFrom,
-    landPriceTo,
-    setLandPriceTo,
-    selectedLandType,
-    setSelectedLandType,
-    landAreaFrom,
-    setLandAreaFrom,
-    landAreaTo,
-    setLandAreaTo,
-    landStreetDirection,
-    setLandStreetDirection,
-    landStreetWidth,
-    setLandStreetWidth,
+    landPriceFrom: state.landPriceFrom,
+    setLandPriceFrom: setField("landPriceFrom"),
+    landPriceTo: state.landPriceTo,
+    setLandPriceTo: setField("landPriceTo"),
+    selectedLandType: state.selectedLandType,
+    setSelectedLandType: setField("selectedLandType"),
+    landAreaFrom: state.landAreaFrom,
+    setLandAreaFrom: setField("landAreaFrom"),
+    landAreaTo: state.landAreaTo,
+    setLandAreaTo: setField("landAreaTo"),
+    landStreetDirection: state.landStreetDirection,
+    setLandStreetDirection: setField("landStreetDirection"),
+    landStreetWidth: state.landStreetWidth,
+    setLandStreetWidth: setField("landStreetWidth"),
     handleLandTypePress,
     
     // Apartment for sale
-    apartmentSalePriceFrom,
-    setApartmentSalePriceFrom,
-    apartmentSalePriceTo,
-    setApartmentSalePriceTo,
-    apartmentSaleAreaFrom,
-    setApartmentSaleAreaFrom,
-    apartmentSaleAreaTo,
-    setApartmentSaleAreaTo,
-    apartmentSaleCarEntrance,
-    setApartmentSaleCarEntrance,
-    apartmentSalePrivateRoof,
-    setApartmentSalePrivateRoof,
-    apartmentSaleInVilla,
-    setApartmentSaleInVilla,
-    apartmentSaleTwoEntrances,
-    setApartmentSaleTwoEntrances,
-    apartmentSaleSpecialEntrances,
-    setApartmentSaleSpecialEntrances,
-    
+    apartmentSalePriceFrom: state.apartmentSalePriceFrom,
+    setApartmentSalePriceFrom: setField("apartmentSalePriceFrom"),
+    apartmentSalePriceTo: state.apartmentSalePriceTo,
+    setApartmentSalePriceTo: setField("apartmentSalePriceTo"),
+    apartmentSaleAreaFrom: state.apartmentSaleAreaFrom,
+    setApartmentSaleAreaFrom: setField("apartmentSaleAreaFrom"),
+    apartmentSaleAreaTo: state.apartmentSaleAreaTo,
+    setApartmentSaleAreaTo: setField("apartmentSaleAreaTo"),
+    apartmentSaleCarEntrance: state.apartmentSaleCarEntrance,
+    setApartmentSaleCarEntrance: setField("apartmentSaleCarEntrance"),
+    apartmentSalePrivateRoof: state.apartmentSalePrivateRoof,
+    setApartmentSalePrivateRoof: setField("apartmentSalePrivateRoof"),
+    apartmentSaleInVilla: state.apartmentSaleInVilla,
+    setApartmentSaleInVilla: setField("apartmentSaleInVilla"),
+    apartmentSaleTwoEntrances: state.apartmentSaleTwoEntrances,
+    setApartmentSaleTwoEntrances: setField("apartmentSaleTwoEntrances"),
+    apartmentSaleSpecialEntrances: state.apartmentSaleSpecialEntrances,
+    setApartmentSaleSpecialEntrances: setField("apartmentSaleSpecialEntrances"),
+
     // Building for sale
-    buildingPriceFrom,
-    setBuildingPriceFrom,
-    buildingPriceTo,
-    setBuildingPriceTo,
-    buildingApartments,
-    setBuildingApartments,
-    selectedBuildingType,
-    setSelectedBuildingType,
-    buildingStreetDirection,
-    setBuildingStreetDirection,
-    stores,
-    setStores,
-    showStoresModal,
-    setShowStoresModal,
-    buildingAreaFrom,
-    setBuildingAreaFrom,
-    buildingAreaTo,
-    setBuildingAreaTo,
+    buildingPriceFrom: state.buildingPriceFrom,
+    setBuildingPriceFrom: setField("buildingPriceFrom"),
+    buildingPriceTo: state.buildingPriceTo,
+    setBuildingPriceTo: setField("buildingPriceTo"),
+    buildingApartments: state.buildingApartments,
+    setBuildingApartments: setField("buildingApartments"),
+    selectedBuildingType: state.selectedBuildingType,
+    setSelectedBuildingType: setField("selectedBuildingType"),
+    buildingStreetDirection: state.buildingStreetDirection,
+    setBuildingStreetDirection: setField("buildingStreetDirection"),
+    stores: state.stores,
+    setStores: setField("stores"),
+    showStoresModal: state.showStoresModal,
+    setShowStoresModal: setField("showStoresModal"),
+    buildingAreaFrom: state.buildingAreaFrom,
+    setBuildingAreaFrom: setField("buildingAreaFrom"),
+    buildingAreaTo: state.buildingAreaTo,
+    setBuildingAreaTo: setField("buildingAreaTo"),
     handleBuildingTypePress,
     handleStoresSelect,
-    
+
     // Small house for sale
-    smallHousePriceFrom,
-    setSmallHousePriceFrom,
-    smallHousePriceTo,
-    setSmallHousePriceTo,
-    smallHouseStreetDirection,
-    setSmallHouseStreetDirection,
-    smallHouseAreaFrom,
-    setSmallHouseAreaFrom,
-    smallHouseAreaTo,
-    setSmallHouseAreaTo,
-    smallHouseStreetWidth,
-    setSmallHouseStreetWidth,
-    smallHouseFurnished,
-    setSmallHouseFurnished,
-    tent,
-    setTent,
-    
+    smallHousePriceFrom: state.smallHousePriceFrom,
+    setSmallHousePriceFrom: setField("smallHousePriceFrom"),
+    smallHousePriceTo: state.smallHousePriceTo,
+    setSmallHousePriceTo: setField("smallHousePriceTo"),
+    smallHouseStreetDirection: state.smallHouseStreetDirection,
+    setSmallHouseStreetDirection: setField("smallHouseStreetDirection"),
+    smallHouseAreaFrom: state.smallHouseAreaFrom,
+    setSmallHouseAreaFrom: setField("smallHouseAreaFrom"),
+    smallHouseAreaTo: state.smallHouseAreaTo,
+    setSmallHouseAreaTo: setField("smallHouseAreaTo"),
+    smallHouseStreetWidth: state.smallHouseStreetWidth,
+    setSmallHouseStreetWidth: setField("smallHouseStreetWidth"),
+    smallHouseFurnished: state.smallHouseFurnished,
+    setSmallHouseFurnished: setField("smallHouseFurnished"),
+    tent: state.tent,
+    setTent: setField("tent"),
+
     // Lounge for sale
-    loungePriceFrom,
-    setLoungePriceFrom,
-    loungePriceTo,
-    setLoungePriceTo,
-    loungeAreaFrom,
-    setLoungeAreaFrom,
-    loungeAreaTo,
-    setLoungeAreaTo,
-    loungeStreetWidth,
-    setLoungeStreetWidth,
-    
+    loungePriceFrom: state.loungePriceFrom,
+    setLoungePriceFrom: setField("loungePriceFrom"),
+    loungePriceTo: state.loungePriceTo,
+    setLoungePriceTo: setField("loungePriceTo"),
+    loungeAreaFrom: state.loungeAreaFrom,
+    setLoungeAreaFrom: setField("loungeAreaFrom"),
+    loungeAreaTo: state.loungeAreaTo,
+    setLoungeAreaTo: setField("loungeAreaTo"),
+    loungeStreetWidth: state.loungeStreetWidth,
+    setLoungeStreetWidth: setField("loungeStreetWidth"),
+
     // Farm for sale
-    farmPriceFrom,
-    setFarmPriceFrom,
-    farmPriceTo,
-    setFarmPriceTo,
-    farmAreaFrom,
-    setFarmAreaFrom,
-    farmAreaTo,
-    setFarmAreaTo,
-    
+    farmPriceFrom: state.farmPriceFrom,
+    setFarmPriceFrom: setField("farmPriceFrom"),
+    farmPriceTo: state.farmPriceTo,
+    setFarmPriceTo: setField("farmPriceTo"),
+    farmAreaFrom: state.farmAreaFrom,
+    setFarmAreaFrom: setField("farmAreaFrom"),
+    farmAreaTo: state.farmAreaTo,
+    setFarmAreaTo: setField("farmAreaTo"),
+
     // Store for sale
-    storePriceFrom,
-    setStorePriceFrom,
-    storePriceTo,
-    setStorePriceTo,
-    storeAreaFrom,
-    setStoreAreaFrom,
-    storeAreaTo,
-    setStoreAreaTo,
-    storeStreetWidth,
-    setStoreStreetWidth,
-    
+    storePriceFrom: state.storePriceFrom,
+    setStorePriceFrom: setField("storePriceFrom"),
+    storePriceTo: state.storePriceTo,
+    setStorePriceTo: setField("storePriceTo"),
+    storeAreaFrom: state.storeAreaFrom,
+    setStoreAreaFrom: setField("storeAreaFrom"),
+    storeAreaTo: state.storeAreaTo,
+    setStoreAreaTo: setField("storeAreaTo"),
+    storeStreetWidth: state.storeStreetWidth,
+    setStoreStreetWidth: setField("storeStreetWidth"),
+
     // Floor for sale
-    floorSalePriceFrom,
-    setFloorSalePriceFrom,
-    floorSalePriceTo,
-    setFloorSalePriceTo,
-    floorSaleAreaFrom,
-    setFloorSaleAreaFrom,
-    floorSaleAreaTo,
-    setFloorSaleAreaTo,
-    floorSaleCarEntrance,
-    setFloorSaleCarEntrance,
-    
+    floorSalePriceFrom: state.floorSalePriceFrom,
+    setFloorSalePriceFrom: setField("floorSalePriceFrom"),
+    floorSalePriceTo: state.floorSalePriceTo,
+    setFloorSalePriceTo: setField("floorSalePriceTo"),
+    floorSaleAreaFrom: state.floorSaleAreaFrom,
+    setFloorSaleAreaFrom: setField("floorSaleAreaFrom"),
+    floorSaleAreaTo: state.floorSaleAreaTo,
+    setFloorSaleAreaTo: setField("floorSaleAreaTo"),
+    floorSaleCarEntrance: state.floorSaleCarEntrance,
+    setFloorSaleCarEntrance: setField("floorSaleCarEntrance"),
+
     // Villa for rent
-    villaRentPriceFrom,
-    setVillaRentPriceFrom,
-    villaRentPriceTo,
-    setVillaRentPriceTo,
-    villaRentStreetDirection,
-    setVillaRentStreetDirection,
-    villaRentAreaFrom,
-    setVillaRentAreaFrom,
-    villaRentAreaTo,
-    setVillaRentAreaTo,
-    villaRentStreetWidth,
-    setVillaRentStreetWidth,
-    villaRentStairs,
-    setVillaRentStairs,
-    villaRentAirConditioned,
-    setVillaRentAirConditioned,
-    villaRentRentPeriod,
-    setVillaRentRentPeriod,
+    villaRentPriceFrom: state.villaRentPriceFrom,
+    setVillaRentPriceFrom: setField("villaRentPriceFrom"),
+    villaRentPriceTo: state.villaRentPriceTo,
+    setVillaRentPriceTo: setField("villaRentPriceTo"),
+    villaRentStreetDirection: state.villaRentStreetDirection,
+    setVillaRentStreetDirection: setField("villaRentStreetDirection"),
+    villaRentAreaFrom: state.villaRentAreaFrom,
+    setVillaRentAreaFrom: setField("villaRentAreaFrom"),
+    villaRentAreaTo: state.villaRentAreaTo,
+    setVillaRentAreaTo: setField("villaRentAreaTo"),
+    villaRentStreetWidth: state.villaRentStreetWidth,
+    setVillaRentStreetWidth: setField("villaRentStreetWidth"),
+    villaRentStairs: state.villaRentStairs,
+    setVillaRentStairs: setField("villaRentStairs"),
+    villaRentAirConditioned: state.villaRentAirConditioned,
+    setVillaRentAirConditioned: setField("villaRentAirConditioned"),
+    villaRentRentPeriod: state.villaRentRentPeriod,
+    setVillaRentRentPeriod: setField("villaRentRentPeriod"),
     handleVillaRentRentPeriodPress,
-    
+
     // Big flat for rent
-    bigFlatPriceFrom,
-    setBigFlatPriceFrom,
-    bigFlatPriceTo,
-    setBigFlatPriceTo,
-    bigFlatAreaFrom,
-    setBigFlatAreaFrom,
-    bigFlatAreaTo,
-    setBigFlatAreaTo,
-    bigFlatRentPeriod,
-    setBigFlatRentPeriod,
-    bigFlatCarEntrance,
-    setBigFlatCarEntrance,
-    bigFlatAirConditioned,
-    setBigFlatAirConditioned,
-    bigFlatInVilla,
-    setBigFlatInVilla,
-    bigFlatTwoEntrances,
-    setBigFlatTwoEntrances,
-    bigFlatSpecialEntrances,
-    setBigFlatSpecialEntrances,
+    bigFlatPriceFrom: state.bigFlatPriceFrom,
+    setBigFlatPriceFrom: setField("bigFlatPriceFrom"),
+    bigFlatPriceTo: state.bigFlatPriceTo,
+    setBigFlatPriceTo: setField("bigFlatPriceTo"),
+    bigFlatAreaFrom: state.bigFlatAreaFrom,
+    setBigFlatAreaFrom: setField("bigFlatAreaFrom"),
+    bigFlatAreaTo: state.bigFlatAreaTo,
+    setBigFlatAreaTo: setField("bigFlatAreaTo"),
+    bigFlatRentPeriod: state.bigFlatRentPeriod,
+    setBigFlatRentPeriod: setField("bigFlatRentPeriod"),
+    bigFlatCarEntrance: state.bigFlatCarEntrance,
+    setBigFlatCarEntrance: setField("bigFlatCarEntrance"),
+    bigFlatAirConditioned: state.bigFlatAirConditioned,
+    setBigFlatAirConditioned: setField("bigFlatAirConditioned"),
+    bigFlatInVilla: state.bigFlatInVilla,
+    setBigFlatInVilla: setField("bigFlatInVilla"),
+    bigFlatTwoEntrances: state.bigFlatTwoEntrances,
+    setBigFlatTwoEntrances: setField("bigFlatTwoEntrances"),
+    bigFlatSpecialEntrances: state.bigFlatSpecialEntrances,
+    setBigFlatSpecialEntrances: setField("bigFlatSpecialEntrances"),
     handleBigFlatRentPeriodPress,
-    
+
     // Lounge for rent
-    loungeRentPriceFrom,
-    setLoungeRentPriceFrom,
-    loungeRentPriceTo,
-    setLoungeRentPriceTo,
-    loungeRentAreaFrom,
-    setLoungeRentAreaFrom,
-    loungeRentAreaTo,
-    setLoungeRentAreaTo,
-    loungeRentRentPeriod,
-    setLoungeRentRentPeriod,
-    loungeRentPool,
-    setLoungeRentPool,
-    footballPitch,
-    setFootballPitch,
-    volleyballCourt,
-    setVolleyballCourt,
-    loungeRentTent,
-    setLoungeRentTent,
-    loungeRentKitchen,
-    setLoungeRentKitchen,
-    playground,
-    setPlayground,
-    familySection,
-    setFamilySection,
+    loungeRentPriceFrom: state.loungeRentPriceFrom,
+    setLoungeRentPriceFrom: setField("loungeRentPriceFrom"),
+    loungeRentPriceTo: state.loungeRentPriceTo,
+    setLoungeRentPriceTo: setField("loungeRentPriceTo"),
+    loungeRentAreaFrom: state.loungeRentAreaFrom,
+    setLoungeRentAreaFrom: setField("loungeRentAreaFrom"),
+    loungeRentAreaTo: state.loungeRentAreaTo,
+    setLoungeRentAreaTo: setField("loungeRentAreaTo"),
+    loungeRentRentPeriod: state.loungeRentRentPeriod,
+    setLoungeRentRentPeriod: setField("loungeRentRentPeriod"),
+    loungeRentPool: state.loungeRentPool,
+    setLoungeRentPool: setField("loungeRentPool"),
+    footballPitch: state.footballPitch,
+    setFootballPitch: setField("footballPitch"),
+    volleyballCourt: state.volleyballCourt,
+    setVolleyballCourt: setField("volleyballCourt"),
+    loungeRentTent: state.loungeRentTent,
+    setLoungeRentTent: setField("loungeRentTent"),
+    loungeRentKitchen: state.loungeRentKitchen,
+    setLoungeRentKitchen: setField("loungeRentKitchen"),
+    playground: state.playground,
+    setPlayground: setField("playground"),
+    familySection: state.familySection,
+    setFamilySection: setField("familySection"),
     handleLoungeRentRentPeriodPress,
-    
+
     // Small house for rent
-    smallHouseRentPriceFrom,
-    setSmallHouseRentPriceFrom,
-    smallHouseRentPriceTo,
-    setSmallHouseRentPriceTo,
-    smallHouseRentStreetDirection,
-    setSmallHouseRentStreetDirection,
-    smallHouseRentAreaFrom,
-    setSmallHouseRentAreaFrom,
-    smallHouseRentAreaTo,
-    setSmallHouseRentAreaTo,
-    smallHouseRentStreetWidth,
-    setSmallHouseRentStreetWidth,
-    smallHouseRentFurnished,
-    setSmallHouseRentFurnished,
-    smallHouseRentTent,
-    setSmallHouseRentTent,
-    smallHouseRentKitchen,
-    setSmallHouseRentKitchen,
-    
+    smallHouseRentPriceFrom: state.smallHouseRentPriceFrom,
+    setSmallHouseRentPriceFrom: setField("smallHouseRentPriceFrom"),
+    smallHouseRentPriceTo: state.smallHouseRentPriceTo,
+    setSmallHouseRentPriceTo: setField("smallHouseRentPriceTo"),
+    smallHouseRentStreetDirection: state.smallHouseRentStreetDirection,
+    setSmallHouseRentStreetDirection: setField("smallHouseRentStreetDirection"),
+    smallHouseRentAreaFrom: state.smallHouseRentAreaFrom,
+    setSmallHouseRentAreaFrom: setField("smallHouseRentAreaFrom"),
+    smallHouseRentAreaTo: state.smallHouseRentAreaTo,
+    setSmallHouseRentAreaTo: setField("smallHouseRentAreaTo"),
+    smallHouseRentStreetWidth: state.smallHouseRentStreetWidth,
+    setSmallHouseRentStreetWidth: setField("smallHouseRentStreetWidth"),
+    smallHouseRentFurnished: state.smallHouseRentFurnished,
+    setSmallHouseRentFurnished: setField("smallHouseRentFurnished"),
+    smallHouseRentTent: state.smallHouseRentTent,
+    setSmallHouseRentTent: setField("smallHouseRentTent"),
+    smallHouseRentKitchen: state.smallHouseRentKitchen,
+    setSmallHouseRentKitchen: setField("smallHouseRentKitchen"),
+
     // Store for rent
-    storeRentPriceFrom,
-    setStoreRentPriceFrom,
-    storeRentPriceTo,
-    setStoreRentPriceTo,
-    storeRentAreaFrom,
-    setStoreRentAreaFrom,
-    storeRentAreaTo,
-    setStoreRentAreaTo,
-    storeRentStreetWidth,
-    setStoreRentStreetWidth,
-    
+    storeRentPriceFrom: state.storeRentPriceFrom,
+    setStoreRentPriceFrom: setField("storeRentPriceFrom"),
+    storeRentPriceTo: state.storeRentPriceTo,
+    setStoreRentPriceTo: setField("storeRentPriceTo"),
+    storeRentAreaFrom: state.storeRentAreaFrom,
+    setStoreRentAreaFrom: setField("storeRentAreaFrom"),
+    storeRentAreaTo: state.storeRentAreaTo,
+    setStoreRentAreaTo: setField("storeRentAreaTo"),
+    storeRentStreetWidth: state.storeRentStreetWidth,
+    setStoreRentStreetWidth: setField("storeRentStreetWidth"),
+
     // Building for rent
-    buildingRentPriceFrom,
-    setBuildingRentPriceFrom,
-    buildingRentPriceTo,
-    setBuildingRentPriceTo,
-    buildingRentApartments,
-    setBuildingRentApartments,
-    selectedBuildingRentType,
-    setSelectedBuildingRentType,
-    buildingRentStreetDirection,
-    setBuildingRentStreetDirection,
-    buildingRentStores,
-    setBuildingRentStores,
-    buildingRentAreaFrom,
-    setBuildingRentAreaFrom,
-    buildingRentAreaTo,
-    setBuildingRentAreaTo,
-    buildingRentStreetWidth,
-    setBuildingRentStreetWidth,
+    buildingRentPriceFrom: state.buildingRentPriceFrom,
+    setBuildingRentPriceFrom: setField("buildingRentPriceFrom"),
+    buildingRentPriceTo: state.buildingRentPriceTo,
+    setBuildingRentPriceTo: setField("buildingRentPriceTo"),
+    buildingRentApartments: state.buildingRentApartments,
+    setBuildingRentApartments: setField("buildingRentApartments"),
+    selectedBuildingRentType: state.selectedBuildingRentType,
+    setSelectedBuildingRentType: setField("selectedBuildingRentType"),
+    buildingRentStreetDirection: state.buildingRentStreetDirection,
+    setBuildingRentStreetDirection: setField("buildingRentStreetDirection"),
+    buildingRentStores: state.buildingRentStores,
+    setBuildingRentStores: setField("buildingRentStores"),
+    buildingRentAreaFrom: state.buildingRentAreaFrom,
+    setBuildingRentAreaFrom: setField("buildingRentAreaFrom"),
+    buildingRentAreaTo: state.buildingRentAreaTo,
+    setBuildingRentAreaTo: setField("buildingRentAreaTo"),
+    buildingRentStreetWidth: state.buildingRentStreetWidth,
+    setBuildingRentStreetWidth: setField("buildingRentStreetWidth"),
     handleBuildingRentTypePress,
     handleBuildingRentStoresSelect,
-    
+
     // Land for rent
-    landRentStreetDirection,
-    setLandRentStreetDirection,
-    landRentAreaFrom,
-    setLandRentAreaFrom,
-    landRentAreaTo,
-    setLandRentAreaTo,
-    landRentStreetWidth,
-    setLandRentStreetWidth,
-    selectedLandRentType,
-    setSelectedLandRentType,
+    landRentStreetDirection: state.landRentStreetDirection,
+    setLandRentStreetDirection: setField("landRentStreetDirection"),
+    landRentAreaFrom: state.landRentAreaFrom,
+    setLandRentAreaFrom: setField("landRentAreaFrom"),
+    landRentAreaTo: state.landRentAreaTo,
+    setLandRentAreaTo: setField("landRentAreaTo"),
+    landRentStreetWidth: state.landRentStreetWidth,
+    setLandRentStreetWidth: setField("landRentStreetWidth"),
+    selectedLandRentType: state.selectedLandRentType,
+    setSelectedLandRentType: setField("selectedLandRentType"),
     handleLandRentTypePress,
-    
+
     // Room for rent
-    roomRentPriceFrom,
-    setRoomRentPriceFrom,
-    roomRentPriceTo,
-    setRoomRentPriceTo,
-    roomRentRentPeriod,
-    setRoomRentRentPeriod,
-    roomRentKitchen,
-    setRoomRentKitchen,
+    roomRentPriceFrom: state.roomRentPriceFrom,
+    setRoomRentPriceFrom: setField("roomRentPriceFrom"),
+    roomRentPriceTo: state.roomRentPriceTo,
+    setRoomRentPriceTo: setField("roomRentPriceTo"),
+    roomRentRentPeriod: state.roomRentRentPeriod,
+    setRoomRentRentPeriod: setField("roomRentRentPeriod"),
+    roomRentKitchen: state.roomRentKitchen,
+    setRoomRentKitchen: setField("roomRentKitchen"),
     handleRoomRentRentPeriodPress,
-    
+
     // Office for rent
-    officeRentPriceFrom,
-    setOfficeRentPriceFrom,
-    officeRentPriceTo,
-    setOfficeRentPriceTo,
-    officeRentAreaFrom,
-    setOfficeRentAreaFrom,
-    officeRentAreaTo,
-    setOfficeRentAreaTo,
-    officeRentStreetWidth,
-    setOfficeRentStreetWidth,
-    officeRentFurnished,
-    setOfficeRentFurnished,
-    
+    officeRentPriceFrom: state.officeRentPriceFrom,
+    setOfficeRentPriceFrom: setField("officeRentPriceFrom"),
+    officeRentPriceTo: state.officeRentPriceTo,
+    setOfficeRentPriceTo: setField("officeRentPriceTo"),
+    officeRentAreaFrom: state.officeRentAreaFrom,
+    setOfficeRentAreaFrom: setField("officeRentAreaFrom"),
+    officeRentAreaTo: state.officeRentAreaTo,
+    setOfficeRentAreaTo: setField("officeRentAreaTo"),
+    officeRentStreetWidth: state.officeRentStreetWidth,
+    setOfficeRentStreetWidth: setField("officeRentStreetWidth"),
+    officeRentFurnished: state.officeRentFurnished,
+    setOfficeRentFurnished: setField("officeRentFurnished"),
+
     // Tent for rent
-    tentRentRentPeriod,
-    setTentRentRentPeriod,
+    tentRentRentPeriod: state.tentRentRentPeriod,
+    setTentRentRentPeriod: setField("tentRentRentPeriod"),
     handleTentRentRentPeriodPress,
-    tentRentPriceFrom,
-    setTentRentPriceFrom,
-    tentRentPriceTo,
-    setTentRentPriceTo,
+    tentRentPriceFrom: state.tentRentPriceFrom,
+    setTentRentPriceFrom: setField("tentRentPriceFrom"),
+    tentRentPriceTo: state.tentRentPriceTo,
+    setTentRentPriceTo: setField("tentRentPriceTo"),
 
     // Warehouse for rent
-    warehouseRentPriceFrom,
-    setWarehouseRentPriceFrom,
-    warehouseRentPriceTo,
-    setWarehouseRentPriceTo,
-    warehouseRentAreaFrom,
-    setWarehouseRentAreaFrom,
-    warehouseRentAreaTo,
-    setWarehouseRentAreaTo,
-    warehouseRentStreetWidth,
-    setWarehouseRentStreetWidth,
-    
+    warehouseRentPriceFrom: state.warehouseRentPriceFrom,
+    setWarehouseRentPriceFrom: setField("warehouseRentPriceFrom"),
+    warehouseRentPriceTo: state.warehouseRentPriceTo,
+    setWarehouseRentPriceTo: setField("warehouseRentPriceTo"),
+    warehouseRentAreaFrom: state.warehouseRentAreaFrom,
+    setWarehouseRentAreaFrom: setField("warehouseRentAreaFrom"),
+    warehouseRentAreaTo: state.warehouseRentAreaTo,
+    setWarehouseRentAreaTo: setField("warehouseRentAreaTo"),
+    warehouseRentStreetWidth: state.warehouseRentStreetWidth,
+    setWarehouseRentStreetWidth: setField("warehouseRentStreetWidth"),
+
     // Chalet for rent
-    chaletRentPriceFrom,
-    setChaletRentPriceFrom,
-    chaletRentPriceTo,
-    setChaletRentPriceTo,
-    chaletRentAreaFrom,
-    setChaletRentAreaFrom,
-    chaletRentAreaTo,
-    setChaletRentAreaTo,
-    chaletRentRentPeriod,
-    setChaletRentRentPeriod,
-    chaletRentPool,
-    setChaletRentPool,
-    chaletFootballPitch,
-    setChaletFootballPitch,
-    chaletVolleyballCourt,
-    setChaletVolleyballCourt,
-    chaletRentTent,
-    setChaletRentTent,
-    chaletRentKitchen,
-    setChaletRentKitchen,
-    chaletPlayground,
-    setChaletPlayground,
+    chaletRentPriceFrom: state.chaletRentPriceFrom,
+    setChaletRentPriceFrom: setField("chaletRentPriceFrom"),
+    chaletRentPriceTo: state.chaletRentPriceTo,
+    setChaletRentPriceTo: setField("chaletRentPriceTo"),
+    chaletRentAreaFrom: state.chaletRentAreaFrom,
+    setChaletRentAreaFrom: setField("chaletRentAreaFrom"),
+    chaletRentAreaTo: state.chaletRentAreaTo,
+    setChaletRentAreaTo: setField("chaletRentAreaTo"),
+    chaletRentRentPeriod: state.chaletRentRentPeriod,
+    setChaletRentRentPeriod: setField("chaletRentRentPeriod"),
+    chaletRentPool: state.chaletRentPool,
+    setChaletRentPool: setField("chaletRentPool"),
+    chaletFootballPitch: state.chaletFootballPitch,
+    setChaletFootballPitch: setField("chaletFootballPitch"),
+    chaletVolleyballCourt: state.chaletVolleyballCourt,
+    setChaletVolleyballCourt: setField("chaletVolleyballCourt"),
+    chaletRentTent: state.chaletRentTent,
+    setChaletRentTent: setField("chaletRentTent"),
+    chaletRentKitchen: state.chaletRentKitchen,
+    setChaletRentKitchen: setField("chaletRentKitchen"),
+    chaletPlayground: state.chaletPlayground,
+    setChaletPlayground: setField("chaletPlayground"),
     handleChaletRentRentPeriodPress,
-    
+
     // Other category
-    otherPriceFrom,
-    setOtherPriceFrom,
-    otherPriceTo,
-    setOtherPriceTo,
-    otherAreaFrom,
-    setOtherAreaFrom,
-    otherAreaTo,
-    setOtherAreaTo,
+    otherPriceFrom: state.otherPriceFrom,
+    setOtherPriceFrom: setField("otherPriceFrom"),
+    otherPriceTo: state.otherPriceTo,
+    setOtherPriceTo: setField("otherPriceTo"),
+    otherAreaFrom: state.otherAreaFrom,
+    setOtherAreaFrom: setField("otherAreaFrom"),
+    otherAreaTo: state.otherAreaTo,
+    setOtherAreaTo: setField("otherAreaTo"),
   };
 }
 

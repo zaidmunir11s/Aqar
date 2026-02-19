@@ -11,7 +11,6 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  PanResponder,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -29,6 +28,7 @@ import {
   calculateDays,
   getDefaultImageUrl,
   navigateToMapScreen,
+  getPropertyById,
 } from "../../utils";
 import {
   CalendarModal,
@@ -43,7 +43,7 @@ import {
   IconButton,
   UnitRules,
 } from "../../components";
-import { useCalendar } from "../../hooks";
+import { useCalendar, usePropertyDetailNavigation, useTabNavigation } from "../../hooks";
 import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
@@ -96,7 +96,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
     useCalendar(passedDates);
 
   const property = useMemo(
-    () => PROPERTY_DATA.find((p) => p.id === propertyId) as DailyProperty | undefined,
+    () => getPropertyById(propertyId) as DailyProperty | undefined,
     [propertyId]
   );
 
@@ -105,113 +105,53 @@ export default function DailyDetailScreen(): React.JSX.Element {
     setDescriptionExceedsThreeLines(false);
   }, [propertyId]);
 
-  // Filter visible properties based on selected dates and minimum days requirement
-  const filteredVisiblePropertyIds = useMemo(() => {
-    if (!selectedDates?.startDate || !selectedDates?.endDate) {
-      // If no dates selected, return all visible properties
-      return visiblePropertyIds;
-    }
-
-    const days = calculateDays(selectedDates.startDate, selectedDates.endDate);
-
-    // Filter properties that meet minimum days requirement
-    return visiblePropertyIds.filter((id) => {
-      const prop = PROPERTY_DATA.find((p) => p.id === id);
-      if (!prop || prop.listingType !== "daily") {
-        // For non-daily properties, include them (no minimum days requirement)
-        return true;
-      }
-
-      const dailyProp = prop as DailyProperty;
-      
-      // Check minimum days based on booking type
-      if (dailyProp.bookingType === "monthly") {
-        // Monthly properties require minimum 30 days
-        return days >= 30;
-      } else if (dailyProp.bookingType === "daily") {
-        // Daily properties require minimum 1 day
-        return days >= 1;
-      }
-      
-      // Default: include property
-      return true;
-    });
-  }, [visiblePropertyIds, selectedDates]);
-
-  // Find current index in filtered visible properties list
-  const currentPropertyIndex = useMemo(() => {
-    if (!filteredVisiblePropertyIds || filteredVisiblePropertyIds.length === 0) return -1;
-    return filteredVisiblePropertyIds.indexOf(propertyId);
-  }, [filteredVisiblePropertyIds, propertyId]);
-
-  const hasNavigation = currentPropertyIndex >= 0;
-  const canGoPrev = hasNavigation && currentPropertyIndex > 0;
-  const canGoNext =
-    hasNavigation && currentPropertyIndex < filteredVisiblePropertyIds.length - 1;
-
-  // Navigation handlers
-  const handlePrevProperty = useCallback(() => {
-    if (canGoPrev) {
-      const prevPropertyId = filteredVisiblePropertyIds[currentPropertyIndex - 1];
-      // Check if previous property is daily or not
-      const prevProperty = PROPERTY_DATA.find((p) => p.id === prevPropertyId);
-      const screenName = prevProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
-      navigation.replace(screenName, {
-        propertyId: prevPropertyId,
-        visiblePropertyIds: visiblePropertyIds, // Use original list, not filtered
-        listingType: passedListingType,
-        // Don't pass selectedDates - let user select dates again for next property
-      });
-    }
-  }, [
+  const {
+    filteredVisiblePropertyIds,
     canGoPrev,
-    currentPropertyIndex,
-    filteredVisiblePropertyIds,
-    visiblePropertyIds,
-    navigation,
-    passedListingType,
-  ]);
-
-  const handleNextProperty = useCallback(() => {
-    if (canGoNext) {
-      const nextPropertyId = filteredVisiblePropertyIds[currentPropertyIndex + 1];
-      // Check if next property is daily or not
-      const nextProperty = PROPERTY_DATA.find((p) => p.id === nextPropertyId);
-      const screenName = nextProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
-      navigation.replace(screenName, {
-        propertyId: nextPropertyId,
-        visiblePropertyIds: visiblePropertyIds, // Use original list, not filtered
-        listingType: passedListingType,
-        // Don't pass selectedDates - let user select dates again for next property
-      });
-    }
-  }, [
     canGoNext,
-    currentPropertyIndex,
-    filteredVisiblePropertyIds,
+    handlePrevProperty,
+    handleNextProperty,
+    panResponder,
+  } = usePropertyDetailNavigation({
+    propertyId,
     visiblePropertyIds,
+    dates: selectedDates,
+    listingType: passedListingType,
     navigation,
-    passedListingType,
-  ]);
+    useFilteredIdsForReplace: false,
+  });
 
   const handleImageScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const scrollPosition = event.nativeEvent.contentOffset.x;
-      const index = Math.round(scrollPosition / SCREEN_WIDTH);
+      const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
+      // When RTL is active and gallery is inverted, adjust index calculation
+      const imagesLength = property?.images?.length || 1;
+      const index = isRTL && imagesLength > 0
+        ? imagesLength - 1 - rawIndex
+        : rawIndex;
       setCurrentImageIndex(index);
     },
-    []
+    [isRTL, property?.images?.length]
   );
+
+  const { navigateToChat } = useTabNavigation();
 
   const handleChat = useCallback(() => {
     if (!property) return;
-    
-    // Navigate to ContactHostScreen
-    navigation.navigate("ContactHost", {
+
+    // Navigate directly to Conversation (standardized with PropertyDetailsScreen)
+    const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
+    const advertiserName = property.advertiserName || "Property Owner";
+    const advertiserId = property.advertiserId || `advertiser-${property.id}`;
+
+    navigateToChat("Conversation", {
       propertyId: property.id,
-      selectedDates: selectedDates,
+      advertiserName,
+      advertiserId,
+      defaultMessage,
     });
-  }, [navigation, property, selectedDates]);
+  }, [navigateToChat, property, t]);
 
   const handleShare = useCallback(() => {
     console.log("Share property");
@@ -307,38 +247,6 @@ export default function DailyDetailScreen(): React.JSX.Element {
       scrollY.setValue(offsetY);
     },
     [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
-  );
-
-  // PanResponder for swipe navigation
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-          // Only respond to horizontal swipes (not vertical scrolling)
-          const { dx, dy } = gestureState;
-          return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
-        },
-        onPanResponderRelease: (evt, gestureState) => {
-          const { dx, vx } = gestureState;
-          const swipeThreshold = 50; // Minimum swipe distance
-          const velocityThreshold = 0.3; // Minimum swipe velocity
-
-          // Swipe right (positive dx) = go to previous property
-          if (dx > swipeThreshold || vx > velocityThreshold) {
-            if (canGoPrev) {
-              handlePrevProperty();
-            }
-          }
-          // Swipe left (negative dx) = go to next property
-          else if (dx < -swipeThreshold || vx < -velocityThreshold) {
-            if (canGoNext) {
-              handleNextProperty();
-            }
-          }
-        },
-      }),
-    [canGoPrev, canGoNext, handlePrevProperty, handleNextProperty]
   );
 
   // RTL-aware styles

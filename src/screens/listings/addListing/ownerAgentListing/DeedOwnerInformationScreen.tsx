@@ -13,7 +13,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, StackActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -256,21 +256,21 @@ interface FormFields {
   deedNumber: string;
   poaAgentId: string;
   poaId: string;
-  
+
   // Owner ID (synced: ownerId <-> ownerIdNumber)
   ownerId: string;
   ownerIdNumber: string;
-  
+
   // Birthdate (synced across all tabs)
   ownerBirthdate: string;
   agentBirthdate: string;
   companyAgentBirthdate: string;
-  
+
   // Phone (synced across all tabs)
   ownerPhone: string;
   agentPhone: string;
   companyAgentPhone: string;
-  
+
   // Company specific
   unifiedCrNumber: string;
 }
@@ -372,7 +372,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   // Update field with syncing logic
   const updateField = useCallback((fieldName: keyof FormFields, value: string, validator?: (val: string) => string) => {
     setTouched((prev) => ({ ...prev, [fieldName]: true }));
-    
+
     // Validate if validator provided
     if (validator) {
       const error = validator(value);
@@ -381,7 +381,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
 
     setFields((prev) => {
       const updated = { ...prev, [fieldName]: value };
-      
+
       // Sync ownerId <-> ownerIdNumber <-> unifiedCrNumber
       if (fieldName === "ownerId") {
         updated.ownerIdNumber = value;
@@ -393,7 +393,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         updated.ownerId = value;
         updated.ownerIdNumber = value;
       }
-      
+
       // Sync birthdate across all tabs
       if (fieldName === "ownerBirthdate") {
         updated.agentBirthdate = value;
@@ -405,7 +405,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         updated.ownerBirthdate = value;
         updated.agentBirthdate = value;
       }
-      
+
       // Sync phone across all tabs
       if (fieldName === "ownerPhone") {
         updated.agentPhone = value;
@@ -417,7 +417,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         updated.ownerPhone = value;
         updated.agentPhone = value;
       }
-      
+
       return updated;
     });
   }, []);
@@ -455,6 +455,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   // Handlers
   const handleDeedOwnerSelect = useCallback((index: number) => {
     if (index === 1) {
+      navigation.dispatch(StackActions.pop(2));
       navigation.navigate("MarketingRequestPlaceholder");
     } else {
       setDeedOwnerType("electronic");
@@ -467,6 +468,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   }, []);
 
   const handleBackPress = useCallback(() => {
+    navigation.dispatch(StackActions.pop(2));
     navigation.navigate("MarketingRequestPlaceholder");
   }, [navigation]);
 
@@ -511,6 +513,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   }, [validateAllTabs]);
 
   const handleFooterBackPress = useCallback(() => {
+    navigation.dispatch(StackActions.pop(2));
     navigation.navigate("MarketingRequestPlaceholder");
   }, [navigation]);
 
@@ -553,7 +556,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
       company: t("listings.agentBirthdate"),
     };
     setDatePickerTitle(titles[type]);
-    
+
     const fieldNames = {
       owner: "ownerBirthdate",
       agent: "agentBirthdate",
@@ -567,24 +570,24 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     // Update the active calendar type field, which will sync to all tabs
     if (activeCalendarType === "owner") {
       updateField("ownerBirthdate", formattedDate, validators.birthdate);
-      setErrors((prev) => ({ 
-        ...prev, 
+      setErrors((prev) => ({
+        ...prev,
         ownerBirthdate: "",
         agentBirthdate: "",
         companyAgentBirthdate: ""
       }));
     } else if (activeCalendarType === "agent") {
       updateField("agentBirthdate", formattedDate, validators.birthdate);
-      setErrors((prev) => ({ 
-        ...prev, 
+      setErrors((prev) => ({
+        ...prev,
         ownerBirthdate: "",
         agentBirthdate: "",
         companyAgentBirthdate: ""
       }));
     } else {
       updateField("companyAgentBirthdate", formattedDate, validators.birthdate);
-      setErrors((prev) => ({ 
-        ...prev, 
+      setErrors((prev) => ({
+        ...prev,
         ownerBirthdate: "",
         agentBirthdate: "",
         companyAgentBirthdate: ""
@@ -732,12 +735,12 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-    <KeyboardAvoidingView
+      <KeyboardAvoidingView
         style={styles.keyboardView}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-          <View style={styles.mainContainer}>
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        <View style={styles.mainContainer}>
           <ScreenHeader
             title={t("listings.addListing")}
             onBackPress={handleBackPress}
@@ -771,7 +774,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
             windowSize={7}
             removeClippedSubviews={Platform.OS === "android"}
           />
-          </View>
+        </View>
       </KeyboardAvoidingView>
 
       <Animated.View
@@ -782,15 +785,15 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
           },
         ]}
       >
-          <ListingFooter
-            currentStep={2}
-            totalSteps={2}
-            onBackPress={handleFooterBackPress}
-            onNextPress={handleNextPress}
-            backText={t("listings.completeLater")}
-            nextText={t("listings.next")}
-            nextDisabled={false}
-          />
+        <ListingFooter
+          currentStep={2}
+          totalSteps={2}
+          onBackPress={handleFooterBackPress}
+          onNextPress={handleNextPress}
+          backText={t("listings.completeLater")}
+          nextText={t("listings.next")}
+          nextDisabled={false}
+        />
       </Animated.View>
 
       <DatePickerModal
@@ -799,11 +802,11 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         onDateSelect={handleDateSelect}
         title={datePickerTitle}
         initialDate={
-          activeCalendarType === "owner" 
+          activeCalendarType === "owner"
             ? (fields.ownerBirthdate ? parseDateFromFormatted(fields.ownerBirthdate) : new Date())
             : activeCalendarType === "agent"
-            ? (fields.agentBirthdate ? parseDateFromFormatted(fields.agentBirthdate) : new Date())
-            : (fields.companyAgentBirthdate ? parseDateFromFormatted(fields.companyAgentBirthdate) : new Date())
+              ? (fields.agentBirthdate ? parseDateFromFormatted(fields.agentBirthdate) : new Date())
+              : (fields.companyAgentBirthdate ? parseDateFromFormatted(fields.companyAgentBirthdate) : new Date())
         }
       />
 
@@ -832,7 +835,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: wp(4),
-    paddingBottom: hp(12), // Extra padding for footer
+    paddingBottom: hp(20), // Extra padding for footer
   },
   footerContainer: {
     position: "absolute",

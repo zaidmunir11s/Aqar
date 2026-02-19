@@ -21,43 +21,12 @@ import { ToggleSwitch } from "../common";
 import { PROPERTY_DATA } from "../../data/propertyData";
 import { BEDROOM_OPTIONS, LIVING_ROOM_OPTIONS, WC_OPTIONS, VILLA_TYPE_OPTIONS } from "../../constants/orderFormOptions";
 import type { Property } from "../../types/property";
+import type { SearchFilterState } from "../../types/searchFilters";
+import { applySearchFilters } from "../../utils/searchFilters";
 import { useLocalization } from "../../hooks/useLocalization";
 import { SlidersHorizontal } from "lucide-react-native";
 
-export interface SearchFilterState {
-  fromPrice: string;
-  toPrice: string;
-  selectedPropertyType: string | null;
-  // Apartment/Studio specific
-  usageType: "Singles" | "Families" | null;
-  bedrooms: string | null;
-  livingRooms: string | null;
-  wc: string | null;
-  furnished: boolean;
-  carEntrance: boolean;
-  airConditioned: boolean;
-  privateRoof: boolean;
-  apartmentInVilla: boolean;
-  twoEntrances: boolean;
-  specialEntrances: boolean;
-  nearBus: boolean;
-  nearMetro: boolean;
-  // Chalet/Lounge specific
-  pool: boolean;
-  footballPitch: boolean;
-  volleyballCourt: boolean;
-  tent: boolean;
-  kitchen: boolean;
-  playground: boolean;
-  familySection: boolean;
-  // Villa specific
-  stairs: boolean;
-  driverRoom: boolean;
-  maidRoom: boolean;
-  basement: boolean;
-  villaType: string | null;
-  // Tent/Farm/Hall specific (only nearBus, nearMetro, familySection)
-}
+export type { SearchFilterState };
 
 export interface SearchFilterModalProps {
   visible: boolean;
@@ -140,7 +109,9 @@ export default function SearchFilterModal({
     if (visible) {
       const filtersToSet = initialFilters || defaultFilterState;
       setFilters(filtersToSet);
-      initialFiltersRef.current = JSON.parse(JSON.stringify(filtersToSet)); // Deep copy
+      initialFiltersRef.current = typeof structuredClone === "function"
+        ? structuredClone(filtersToSet)
+        : JSON.parse(JSON.stringify(filtersToSet));
       previousFiltersRef.current = JSON.stringify(filtersToSet);
       hasUserInteracted.current = false;
     } else {
@@ -164,7 +135,7 @@ export default function SearchFilterModal({
     // Use a timeout to debounce rapid changes
     const timeoutId = setTimeout(() => {
       if (!visible) return; // Check if still visible
-      const count = filterProperties(propertiesRef.current, filters).length;
+      const count = applySearchFilters(propertiesRef.current, filters).length;
       // Auto-apply filters immediately without closing modal
       onSearchRef.current(filters, count, false);
     }, 300); // 300ms debounce
@@ -307,7 +278,7 @@ export default function SearchFilterModal({
 
   // Calculate matching properties count
   const matchingCount = useMemo(() => {
-    return filterProperties(properties, filters).length;
+    return applySearchFilters(properties, filters).length;
   }, [properties, filters]);
 
   const handlePropertyTypeSelect = useCallback((typeId: string) => {
@@ -327,7 +298,9 @@ export default function SearchFilterModal({
 
   const handleReset = useCallback(() => {
     setFilters(defaultFilterState);
-    initialFiltersRef.current = JSON.parse(JSON.stringify(defaultFilterState)); // Deep copy
+    initialFiltersRef.current = typeof structuredClone === "function"
+      ? structuredClone(defaultFilterState)
+      : JSON.parse(JSON.stringify(defaultFilterState));
     hasUserInteracted.current = true; // Mark as interacted so auto-apply works
     // Immediately apply reset by calling onSearch with null to clear filters
     // This will update the preserved state so both screens see the reset
@@ -338,7 +311,7 @@ export default function SearchFilterModal({
   const handleSearch = useCallback(() => {
     // Filters are already applied automatically
     // When user presses search button, apply filters one more time and close modal
-    const count = filterProperties(properties, filters).length;
+    const count = applySearchFilters(properties, filters).length;
     onSearch(filters, count, true); // Pass true to close modal
   }, [filters, properties, onSearch]);
 
@@ -992,184 +965,6 @@ export default function SearchFilterModal({
       </View>
     </Modal>
   );
-}
-
-// Filter properties based on search filters
-function filterProperties(
-  properties: Property[],
-  filters: SearchFilterState
-): Property[] {
-  let filtered = [...properties];
-
-  // Filter by property type
-  if (filters.selectedPropertyType) {
-    filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
-  }
-
-  // Filter by price (for daily properties, use dailyPrice or monthlyPrice)
-  if (filters.fromPrice || filters.toPrice) {
-    filtered = filtered.filter((p) => {
-      let price: number | null = null;
-
-      if (p.listingType === "daily" && "dailyPrice" in p) {
-        price = p.dailyPrice;
-      } else if (p.listingType === "daily" && "monthlyPrice" in p) {
-        price = p.monthlyPrice;
-      } else if ("price" in p) {
-        // Parse price string like "90 K" to number
-        const priceStr = p.price.replace(/[^\d.]/g, "");
-        price = parseFloat(priceStr) * 1000; // Convert K to actual number
-      }
-
-      if (price === null) return false;
-
-      const fromPrice = filters.fromPrice ? parseFloat(filters.fromPrice) : 0;
-      const toPrice = filters.toPrice ? parseFloat(filters.toPrice) : Infinity;
-
-      return price >= fromPrice && price <= toPrice;
-    });
-  }
-
-  // Filter by usage type (Singles/Families)
-  if (filters.usageType) {
-    const usage = filters.usageType === "Singles" ? "single" : "family";
-    filtered = filtered.filter((p) => p.usage === usage);
-  }
-
-  // Filter by bedrooms — "All" or empty means no filter (show any bedroom count)
-  if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
-    if (filters.bedrooms === "6+") {
-      filtered = filtered.filter((p) => p.bedrooms >= 6);
-    } else {
-      const bedrooms = parseInt(filters.bedrooms, 10);
-      if (!Number.isNaN(bedrooms)) {
-        filtered = filtered.filter((p) => p.bedrooms === bedrooms);
-      }
-    }
-  }
-
-  // Filter by living rooms — "All" or empty means no filter
-  if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
-    const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
-    if (!Number.isNaN(livingRooms)) {
-      filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
-    }
-  }
-
-  // Filter by WC — "All" or empty means no filter
-  if (filters.wc && filters.wc !== "" && filters.wc !== "All") {
-    const wc = parseInt(filters.wc.replace("+", ""), 10);
-    if (!Number.isNaN(wc)) {
-      filtered = filtered.filter((p) => p.restrooms >= wc);
-    }
-  }
-
-  // Filter by features (toggles)
-  if (filters.furnished) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Furnished")
-    );
-  }
-  if (filters.carEntrance) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Car Entrance")
-    );
-  }
-  if (filters.airConditioned) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Air Conditioned")
-    );
-  }
-  if (filters.privateRoof) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Private Roof")
-    );
-  }
-  if (filters.apartmentInVilla) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Apartment in Villa")
-    );
-  }
-  if (filters.twoEntrances) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Two Entrances")
-    );
-  }
-  if (filters.specialEntrances) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Special Entrances")
-    );
-  }
-  if (filters.nearBus) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Near Bus")
-    );
-  }
-  if (filters.nearMetro) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Near Metro")
-    );
-  }
-  if (filters.pool) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Pool")
-    );
-  }
-  if (filters.footballPitch) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Football Pitch")
-    );
-  }
-  if (filters.volleyballCourt) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Volleyball Court")
-    );
-  }
-  if (filters.tent) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Tent")
-    );
-  }
-  if (filters.kitchen) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Kitchen")
-    );
-  }
-  if (filters.playground) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Playground")
-    );
-  }
-  if (filters.familySection) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Family Section")
-    );
-  }
-  if (filters.stairs) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Stairs")
-    );
-  }
-  if (filters.driverRoom) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Driver Room")
-    );
-  }
-  if (filters.maidRoom) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Maid Room")
-    );
-  }
-  if (filters.basement) {
-    filtered = filtered.filter(
-      (p) => p.features && p.features.includes("Basement")
-    );
-  }
-
-  // Filter by villa type (if applicable)
-  // Note: This would require additional property data structure
-
-  return filtered;
 }
 
 const styles = StyleSheet.create({

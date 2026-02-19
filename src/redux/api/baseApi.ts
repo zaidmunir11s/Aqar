@@ -8,15 +8,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_CONFIG } from "../../constants/api";
 import { authSessionNotifier } from "../../context/auth-context";
   
-  // Log the base URL for debugging
-  console.log("API Base URL:", API_CONFIG.BASE_URL);
+  if (__DEV__) {
+    console.log("API Base URL:", API_CONFIG.BASE_URL);
+  }
   
   const baseQuery = fetchBaseQuery({
     baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: async (headers, { getState }) => {
       const token = await AsyncStorage.getItem("auth_token");
-  
-      console.log("Request Interceptor - Token:", token || "No token found");
   
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -70,21 +69,16 @@ import { authSessionNotifier } from "../../context/auth-context";
         }
       }
   
-      if (status === 403) {
-        console.warn("Access forbidden:", data);
-      }
-  
-      if (status === 500) {
-        console.error("Server error:", data);
-      }
-  
-      if (status === "FETCH_ERROR" || status === "PARSING_ERROR") {
-        console.error("Network error:", result.error);
-        console.error("Attempted URL:", API_CONFIG.BASE_URL);
-        console.error(
-          "Full error details:",
-          JSON.stringify(result.error, null, 2)
-        );
+      if (__DEV__) {
+        if (status === 403) {
+          console.warn("Access forbidden:", data);
+        }
+        if (status === 500) {
+          console.error("Server error:", data);
+        }
+        if (status === "FETCH_ERROR" || status === "PARSING_ERROR") {
+          console.error("Network error:", result.error);
+        }
       }
     }
   

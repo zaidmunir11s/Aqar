@@ -17,8 +17,8 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { PROPERTY_DATA, DAILY_FILTER_OPTIONS } from "../../data/propertyData";
-import { calculateDays } from "../../utils";
+import { DAILY_FILTER_OPTIONS } from "../../data/propertyData";
+import { calculateDays, getPropertyById } from "../../utils";
 import { ScreenHeader, SingleButtonFooter } from "../../components";
 import type { DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
@@ -72,7 +72,7 @@ export default function ReserveScreen(): React.JSX.Element {
   }, [keyboardHeight]);
 
   const property = useMemo(
-    () => PROPERTY_DATA.find((p) => p.id === propertyId) as DailyProperty | undefined,
+    () => getPropertyById(propertyId) as DailyProperty | undefined,
     [propertyId]
   );
 

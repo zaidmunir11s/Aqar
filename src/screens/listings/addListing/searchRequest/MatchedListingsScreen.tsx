@@ -183,6 +183,10 @@ export default function MatchedListingsScreen(): React.JSX.Element {
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, rtlStyles.emptyText]}>{t("listings.noMatchingProperties")}</Text>

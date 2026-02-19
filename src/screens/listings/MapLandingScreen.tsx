@@ -6,9 +6,10 @@ import React, {
   useEffect,
 } from "react";
 import { View, StyleSheet, Animated, Platform, Text, StatusBar } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   PROPERTY_DATA,
@@ -74,6 +75,7 @@ export default function MapLandingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
+  const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
@@ -92,6 +94,14 @@ export default function MapLandingScreen(): React.JSX.Element {
   const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
+  const [isScreenFocused, setIsScreenFocused] = useState<boolean>(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
 
   // Use custom hooks
   const { getCurrentLocation } = useLocation();
@@ -208,11 +218,13 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   // Animate counter fade
   useEffect(() => {
-    Animated.timing(counterFadeAnim, {
+    const anim = Animated.timing(counterFadeAnim, {
       toValue: visibleCount === 0 ? 0 : 1,
       duration: 250,
       useNativeDriver: true,
-    }).start();
+    });
+    anim.start();
+    return () => anim.stop();
   }, [visibleCount, counterFadeAnim]);
 
   const selectedProperty = useMemo(() => {
@@ -464,19 +476,23 @@ export default function MapLandingScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <MapView
-        ref={mapRef}
-        style={StyleSheet.absoluteFillObject}
-        initialRegion={RIYADH_REGION}
-        mapType={isSatelliteMode ? "satellite" : "standard"}
-        provider={Platform.OS === "android" ? "google" : undefined}
-        rotateEnabled={false}
-        onRegionChange={handleRegionChange}
-        onRegionChangeComplete={handleRegionChangeComplete}
-        onPress={handleMapPress}
-      >
-        {visibleProperties.map(renderMarker).filter(Boolean)}
-      </MapView>
+      {isScreenFocused ? (
+        <MapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFillObject}
+          initialRegion={region}
+          mapType={isSatelliteMode ? "satellite" : "standard"}
+          provider={Platform.OS === "android" ? "google" : undefined}
+          rotateEnabled={false}
+          onRegionChange={handleRegionChange}
+          onRegionChangeComplete={handleRegionChangeComplete}
+          onPress={handleMapPress}
+        >
+          {visibleProperties.map(renderMarker).filter(Boolean)}
+        </MapView>
+      ) : (
+        <View style={[StyleSheet.absoluteFillObject, styles.mapPlaceholder]} />
+      )}
 
       <MapTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -494,9 +510,15 @@ export default function MapLandingScreen(): React.JSX.Element {
         />
       )}
 
-      {/* Error Message */}
+      {/* Error Message - above bottom safe area / action area */}
       {showLocationError && (
-        <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
+        <View
+          style={[
+            styles.errorMessageContainer,
+            isRTL && styles.errorMessageContainerRTL,
+            { bottom: hp(10) + insets.bottom },
+          ]}
+        >
           <Ionicons name="information-circle" size={wp(4)} color={COLORS.error} />
           <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
             {t("listings.locationError")}
@@ -530,9 +552,9 @@ export default function MapLandingScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mapPlaceholder: { backgroundColor: "#e5e7eb" },
   errorMessageContainer: {
     position: "absolute",
-    bottom: hp(5),
     left: wp(4),
     right: wp(4),
     flexDirection: "row",
@@ -541,9 +563,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: wp(2),
-    paddingHorizontal: wp(2.5),
-    paddingVertical: hp(0.6),
-    gap: wp(1.5),
+    paddingHorizontal: wp(3),
+    paddingVertical: hp(1),
+    gap: wp(2),
     zIndex: 1000,
   },
   errorMessageContainerRTL: {

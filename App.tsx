@@ -1,5 +1,7 @@
 // App.tsx - Main entry point with refactored navigation
 import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider, useDispatch } from "react-redux";
@@ -54,8 +56,9 @@ const LocalizationInitializer: React.FC<{ children: React.ReactNode }> = ({
 
 export default function App(): React.JSX.Element {
   return (
-    <ErrorBoundary>
-      <Provider store={store}>
+    <GestureHandlerRootView style={styles.flex}>
+      <ErrorBoundary>
+        <Provider store={store}>
         <I18nextProvider i18n={i18n}>
           <LocalizationInitializer>
             <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
@@ -75,7 +78,12 @@ export default function App(): React.JSX.Element {
             </ClerkProvider>
           </LocalizationInitializer>
         </I18nextProvider>
-      </Provider>
-    </ErrorBoundary>
+        </Provider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+});

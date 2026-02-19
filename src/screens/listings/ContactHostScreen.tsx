@@ -20,13 +20,13 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PROPERTY_DATA, DAILY_FILTER_OPTIONS } from "../../data/propertyData";
-import { calculateDays } from "../../utils";
+import { DAILY_FILTER_OPTIONS } from "../../data/propertyData";
+import { calculateDays, getPropertyById } from "../../utils";
 import { ScreenHeader, UnitRules, SingleButtonFooter } from "../../components";
 import type { DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "@/constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useTabNavigation } from "../../hooks";
 import { translateAddress } from "../../utils/addressTranslation";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -51,9 +51,10 @@ export default function ContactHostScreen(): React.JSX.Element {
   const [keyboardHeightValue, setKeyboardHeightValue] = useState<number>(0);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  const { navigateToChat } = useTabNavigation();
 
   const property = useMemo(
-    () => PROPERTY_DATA.find((p) => p.id === propertyId) as DailyProperty | undefined,
+    () => getPropertyById(propertyId) as DailyProperty | undefined,
     [propertyId]
   );
 
@@ -79,30 +80,13 @@ export default function ContactHostScreen(): React.JSX.Element {
     const advertiserName = property.advertiserName || "Property Owner";
     const advertiserId = property.advertiserId || `advertiser-${property.id}`;
     
-    // Navigate to Chat -> Conversation
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          propertyId: property.id,
-          advertiserName,
-          advertiserId,
-          defaultMessage: combinedMessage,
-        },
-      });
-    } else {
-      navigation.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          propertyId: property.id,
-          advertiserName,
-          advertiserId,
-          defaultMessage: combinedMessage,
-        },
-      });
-    }
-  }, [isPledgeChecked, message, property, navigation, t]);
+    navigateToChat("Conversation", {
+      propertyId: property.id,
+      advertiserName,
+      advertiserId,
+      defaultMessage: combinedMessage,
+    });
+  }, [isPledgeChecked, message, property, navigateToChat, t]);
 
   // Listen to keyboard show/hide events
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -21,15 +21,25 @@ import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
+const LOAD_DEBOUNCE_MS = 300;
+
 export default function SearchRequestScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { requests, loadRequests, deleteRequest } = useSearchRequest();
   const { t, isRTL } = useLocalization();
+  const lastLoadRef = useRef(0);
+
+  const debouncedLoad = useCallback(() => {
+    const now = Date.now();
+    if (now - lastLoadRef.current < LOAD_DEBOUNCE_MS) return;
+    lastLoadRef.current = now;
+    loadRequests();
+  }, [loadRequests]);
 
   useFocusEffect(
-    React.useCallback(() => {
-      loadRequests();
-    }, [loadRequests])
+    useCallback(() => {
+      debouncedLoad();
+    }, [debouncedLoad])
   );
 
   const handleBackPress = () => {

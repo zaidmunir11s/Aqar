@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  Keyboard,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -21,7 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useKeyboardHeight } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import { useSignupMutation } from "@/redux/api";
 import { getSaudiPhoneValidationError } from "../../utils/validation";
@@ -40,23 +39,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
   const [password, setPassword] = useState<string>("");
   const [passwordTouched, setPasswordTouched] = useState<boolean>(false);
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
-  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
-
-  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const { keyboardHeight } = useKeyboardHeight();
 
   // Check for pending image picker results (in case app restarted during cropping)
   useEffect(() => {

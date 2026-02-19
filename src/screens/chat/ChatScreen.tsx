@@ -21,7 +21,7 @@ import { navigateToListingsMapFromOtherTab } from "../../utils";
 import { COLORS } from "../../constants";
 import { MOCK_CONVERSATIONS, getUserName, getUserAvatar, isAdminUser } from "../../data/chatData";
 import type { ChatConversation } from "../../types/chat";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useTabNavigation } from "../../hooks";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -54,11 +54,11 @@ const formatLastMessageTime = (date: Date | number | undefined, isRTL: boolean):
 
 interface ChatListItemProps {
   conversation: ChatConversation;
-  onPress: () => void;
+  onPress: (conversation: ChatConversation) => void;
   isLast?: boolean;
 }
 
-const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLast = false }) => {
+const ChatListItem = React.memo<ChatListItemProps>(function ChatListItem({ conversation, onPress, isLast = false }) {
   const { t, isRTL } = useLocalization();
   const avatar = conversation.userAvatar || getUserAvatar(conversation.userId);
   
@@ -95,7 +95,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLa
   return (
     <TouchableOpacity
       style={[styles.chatItem, isLast && styles.chatItemLast, rtlStyles.chatItem]}
-      onPress={onPress}
+      onPress={() => onPress(conversation)}
       activeOpacity={0.7}
     >
       <View style={[styles.avatarContainer, rtlStyles.avatarContainer]}>
@@ -140,36 +140,32 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation, onPress, isLa
       ) : null}
     </TouchableOpacity>
   );
-};
+});
 
 export default function ChatScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { navigateToChat } = useTabNavigation();
   const { t } = useLocalization();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
 
-  // Load and filter conversations that have messages
+  // Load and filter conversations that have messages (no mutation of source data)
   const loadConversations = useCallback(() => {
     const filtered = MOCK_CONVERSATIONS.filter(
       (conv) => conv.lastMessage && conv.lastMessage.trim().length > 0
     );
-    // Set userName from data - don't translate, keep as is
-    // For admin, always use Arabic name
-    filtered.forEach((conv) => {
+    // Map to new objects with userName set - never mutate MOCK_CONVERSATIONS
+    const withNames = filtered.map((conv) => {
+      let userName = conv.userName;
       if (isAdminUser(conv.userId)) {
-        conv.userName = "تطبيق العقارات";
-      } else if (!conv.userName || conv.userName === "Property Owner") {
+        userName = "تطبيق العقارات";
+      } else if (!userName || userName === "Property Owner") {
         const nameFromUsers = getUserName(conv.userId);
-        // Use name from data - no translation
-        if (nameFromUsers && nameFromUsers !== "Property Owner") {
-          conv.userName = nameFromUsers;
-        } else if (!conv.userName) {
-          // Only set default if userName is completely missing
-          conv.userName = "Property Owner";
-        }
+        userName = nameFromUsers && nameFromUsers !== "Property Owner" ? nameFromUsers : "Property Owner";
       }
+      return { ...conv, userName };
     });
     // Sort by last message time (newest first)
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = [...withNames].sort((a, b) => {
       if (!a.lastMessageTime || !b.lastMessageTime) return 0;
       const timeA = typeof a.lastMessageTime === "number" 
         ? a.lastMessageTime 
@@ -212,42 +208,30 @@ export default function ChatScreen(): React.JSX.Element {
     }, [handleBackPress])
   );
 
-  const handleChatPress = (conversation: ChatConversation) => {
-    // Navigate to Chat tab -> Conversation screen
-    // Pass conversationId which is based on advertiserId
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          conversationId: conversation.id,
-          propertyId: conversation.propertyId,
-          advertiserName: conversation.userName,
-          advertiserId: conversation.userId,
-        },
+  const handleChatPress = useCallback(
+    (conversation: ChatConversation) => {
+      navigateToChat("Conversation", {
+        conversationId: conversation.id,
+        propertyId: conversation.propertyId,
+        advertiserName: conversation.userName,
+        advertiserId: conversation.userId,
       });
-    } else {
-      navigation.navigate("Chat", {
-        screen: "Conversation",
-        params: {
-          conversationId: conversation.id,
-          propertyId: conversation.propertyId,
-          advertiserName: conversation.userName,
-          advertiserId: conversation.userId,
-        },
-      });
-    }
-  };
-
-  const renderChatItem = ({ item, index }: { item: ChatConversation; index: number }) => (
-    <ChatListItem
-      conversation={item}
-      onPress={() => handleChatPress(item)}
-      isLast={index === conversations.length - 1}
-    />
+    },
+    [navigateToChat]
   );
 
-  const renderEmptyState = () => (
+  const renderChatItem = useCallback(
+    ({ item, index }: { item: ChatConversation; index: number }) => (
+      <ChatListItem
+        conversation={item}
+        onPress={handleChatPress}
+        isLast={index === conversations.length - 1}
+      />
+    ),
+    [handleChatPress, conversations.length]
+  );
+
+  const renderEmptyState = useCallback(() => (
     <View style={styles.emptyContainer}>
       <Ionicons name="chatbubbles-outline" size={wp(15)} color={COLORS.textTertiary} />
       <Text style={styles.emptyText}>{t("chat.noConversationsYet")}</Text>
@@ -255,22 +239,26 @@ export default function ChatScreen(): React.JSX.Element {
         {t("chat.startChatFromProperty")}
       </Text>
     </View>
-  );
+  ), [t]);
 
   return (
     <View style={styles.container}>
       <ScreenHeader title={t("chat.title")} onBackPress={handleBackPress} />
-      {conversations.length > 0 ? (
-        <FlatList
-          data={conversations}
-          renderItem={renderChatItem}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        renderEmptyState()
-      )}
+      <FlatList
+        data={conversations}
+        renderItem={renderChatItem}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={[
+          styles.listContent,
+          conversations.length === 0 && styles.listContentEmpty,
+        ]}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={renderEmptyState}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
+      />
     </View>
   );
 }
@@ -283,6 +271,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingTop: hp(1),
     paddingBottom: hp(1),
+  },
+  listContentEmpty: {
+    flexGrow: 1,
   },
   chatItem: {
     flexDirection: "row",

@@ -19,7 +19,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { useNavigation, useRoute, StackActions } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect, StackActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalization } from "../../hooks/useLocalization";
@@ -88,7 +88,15 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [selectedSortOption, setSelectedSortOption] = useState<ProjectUnitsSortOption>("normalSort");
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
   const headerTranslateY = useRef(new Animated.Value(-200)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
 
   const logoUri = developerLogo.trim()
     ? developerLogo
@@ -113,8 +121,9 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
   }, []);
 
   const handleCall = useCallback(() => {
-    openPhoneDialer("+966123456789");
-  }, []);
+    const phone = developerProjects[0]?.advertiserPhone ?? "+966123456789";
+    openPhoneDialer(phone);
+  }, [developerProjects]);
 
   // Projects by this developer with valid coordinates
   const developerProjects = useMemo(() => {
@@ -343,24 +352,28 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
             {t("projects.projectsMap")}
           </Text>
           <View style={styles.mapWrapper}>
-            <MapView
-              style={styles.map}
-              initialRegion={mapRegion}
-              scrollEnabled={false}
-              zoomEnabled={true}
-              pitchEnabled={false}
-              rotateEnabled={false}
-            >
-              {developerProjects.map((p) => (
-                <Marker
-                  key={p.id}
-                  coordinate={{ latitude: p.lat!, longitude: p.lng! }}
-                  anchor={{ x: 0.5, y: 1 }}
-                >
-                  <ProjectMarker project={p} />
-                </Marker>
-              ))}
-            </MapView>
+            {isScreenFocused ? (
+              <MapView
+                style={styles.map}
+                initialRegion={mapRegion}
+                scrollEnabled={false}
+                zoomEnabled={true}
+                pitchEnabled={false}
+                rotateEnabled={false}
+              >
+                {developerProjects.map((p) => (
+                  <Marker
+                    key={p.id}
+                    coordinate={{ latitude: p.lat!, longitude: p.lng! }}
+                    anchor={{ x: 0.5, y: 1 }}
+                  >
+                    <ProjectMarker project={p} />
+                  </Marker>
+                ))}
+              </MapView>
+            ) : (
+              <View style={[styles.map, styles.mapPlaceholder]} />
+            )}
           </View>
         </View>
 
@@ -636,6 +649,9 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  mapPlaceholder: {
+    backgroundColor: "#e5e7eb",
   },
   projectsListSection: {
     backgroundColor: COLORS.bgGray,

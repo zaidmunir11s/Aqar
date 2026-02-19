@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React, { useMemo, useCallback } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, BackHandler } from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
@@ -27,17 +27,26 @@ export default function AddListingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
 
-  const handleBackPress = () => {
-    // Use navigateToMapScreen which uses popToTop when map is root,
-    // preserving visited markers, region, and other map state
+  const handleBackPress = useCallback(() => {
     navigateToMapScreen(navigation);
-  };
+  }, [navigation]);
 
-  const handleSavePress = () => {
-    console.log("Save listing");
-  };
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBackPress();
+        return true;
+      };
+      const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => sub.remove();
+    }, [handleBackPress])
+  );
 
-  const handleOptionPress = (optionId: string) => {
+  const handleSavePress = useCallback(() => {
+    // TODO: Save listing when backend is ready
+  }, []);
+
+  const handleOptionPress = useCallback((optionId: string) => {
     if (optionId === "broker-listing") {
       navigation.navigate("Licence");
     } else if (optionId === "owner-agent-listing") {
@@ -49,13 +58,12 @@ export default function AddListingScreen(): React.JSX.Element {
     } else if(optionId === "search-request") {
       navigation.navigate("SearchRequest");
     }
-  };
+  }, [navigation]);
 
   const ownerAgentOption = (ADD_SCREEN_SERVICES_LISTING as ListingOption[])[1];
   const requestOptions = (ADD_SCREEN_SERVICES_LISTING as ListingOption[]).slice(3, 5);
 
-  // Map option IDs to translation keys
-  const getOptionTitle = (optionId: string): string => {
+  const getOptionTitle = useCallback((optionId: string): string => {
     const titleMap: Record<string, string> = {
       "broker-listing": t("listings.propertyListingByBroker"),
       "owner-agent-listing": t("listings.propertyListingByOwnerAgent"),
@@ -64,9 +72,9 @@ export default function AddListingScreen(): React.JSX.Element {
       "search-request": t("listings.propertySearchRequest"),
     };
     return titleMap[optionId] || "";
-  };
+  }, [t]);
 
-  const getOptionDescription = (optionId: string): string => {
+  const getOptionDescription = useCallback((optionId: string): string => {
     const descriptionMap: Record<string, string> = {
       "broker-listing": t("listings.brokerListingDescription"),
       "owner-agent-listing": t("listings.ownerAgentListingDescription"),
@@ -75,7 +83,7 @@ export default function AddListingScreen(): React.JSX.Element {
       "search-request": t("listings.searchRequestDescription"),
     };
     return descriptionMap[optionId] || "";
-  };
+  }, [t]);
 
   // RTL-aware styles
   const rtlStyles = useMemo(

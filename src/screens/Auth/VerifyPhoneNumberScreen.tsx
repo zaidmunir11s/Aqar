@@ -7,19 +7,18 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Keyboard,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, CommonActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OtpInput, type OtpInputRef } from "react-native-otp-entry";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, PrimaryButton, TextInput as CustomTextInput } from "../../components";
 import { COLORS } from "../../constants";
-import { useLocalization } from "../../hooks/useLocalization";
+import { useLocalization, useKeyboardHeight } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import { useVerifyOtpMutation } from "@/redux/api";
 
@@ -45,23 +44,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
   const otpInputRef = useRef<OtpInputRef>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
-
-  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const { keyboardHeight } = useKeyboardHeight();
 
   // Focus OTP input and show keyboard as soon as screen is ready; pre-fill OTP if passed
   useEffect(() => {
@@ -154,12 +137,12 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
             {
               text: "OK",
               onPress: () => {
-                const parent = navigation.getParent();
-                if (parent) {
-                  parent.navigate("ProfileTab", { screen: "ProfileDetail" });
-                } else {
-                  navigation.navigate("ProfileDetail");
-                }
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "ProfileDetail" }],
+                  })
+                );
               },
             },
           ]

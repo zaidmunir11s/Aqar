@@ -1,0 +1,30 @@
+export interface SearchFilterState {
+  fromPrice: string;
+  toPrice: string;
+  selectedPropertyType: string | null;
+  usageType: "Singles" | "Families" | null;
+  bedrooms: string | null;
+  livingRooms: string | null;
+  wc: string | null;
+  furnished: boolean;
+  carEntrance: boolean;
+  airConditioned: boolean;
+  privateRoof: boolean;
+  apartmentInVilla: boolean;
+  twoEntrances: boolean;
+  specialEntrances: boolean;
+  nearBus: boolean;
+  nearMetro: boolean;
+  pool: boolean;
+  footballPitch: boolean;
+  volleyballCourt: boolean;
+  tent: boolean;
+  kitchen: boolean;
+  playground: boolean;
+  familySection: boolean;
+  stairs: boolean;
+  driverRoom: boolean;
+  maidRoom: boolean;
+  basement: boolean;
+  villaType: string | null;
+}

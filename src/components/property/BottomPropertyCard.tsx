@@ -25,6 +25,7 @@ import type { Property, FilterOption } from "../../types/property";
 import { COLORS } from "../../constants/colors";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface BottomPropertyCardProps {
   property: Property | null;
@@ -40,7 +41,8 @@ export interface BottomPropertyCardProps {
 const BottomPropertyCard = memo<BottomPropertyCardProps>(
   ({ property, onPress, listingType, filterOptions, calculatedPrice }) => {
     const { t, isRTL } = useLocalization();
-    
+    const insets = useSafeAreaInsets();
+    const { bottom } = insets;
     if (!property) return null;
 
     // RTL-aware styles
@@ -87,8 +89,7 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
 
       return (
         <TouchableOpacity
-          style={styles.bottomCard}
-          activeOpacity={0.9}
+          style={[styles.bottomCard, { bottom: hp(10) + bottom }]}
           onPress={onPress}
         >
           {/* Price on top */}
@@ -197,8 +198,7 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
 
     return (
       <TouchableOpacity
-        style={styles.bottomCard}
-        activeOpacity={0.9}
+        style={[styles.bottomCard, { bottom: hp(1) + bottom }]}
         onPress={onPress}
       >
         {/* Price on top */}
@@ -269,7 +269,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: hp(10),
     marginHorizontal: wp(3),
     backgroundColor: "#fff",
     borderRadius: wp(4),

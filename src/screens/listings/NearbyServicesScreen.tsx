@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
   satelliteButton: {
     position: "absolute",
-    bottom: hp(4),
+    bottom: hp(8),
     backgroundColor: "#fff",
     padding: wp(3),
     borderRadius: wp(7.5),

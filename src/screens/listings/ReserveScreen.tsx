@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Image,
   Platform,
+  Keyboard,
+  Animated,
 } from "react-native";
 import { Ionicons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
@@ -15,10 +17,9 @@ import {
 } from "react-native-responsive-screen";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PROPERTY_DATA, DAILY_FILTER_OPTIONS } from "../../data/propertyData";
 import { calculateDays } from "../../utils";
-import { ScreenHeader } from "../../components";
+import { ScreenHeader, SingleButtonFooter } from "../../components";
 import type { DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import { COLORS } from "@/constants";
@@ -37,10 +38,38 @@ export default function ReserveScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const { propertyId, selectedDates } = params;
   const navigation = useNavigation<NavigationProp>();
-  const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
 
   const [isTermsAccepted, setIsTermsAccepted] = useState<boolean>(true); // Default checked
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
+  const [keyboardHeightPx, setKeyboardHeightPx] = useState(0);
+
+  // Move footer above keyboard and allow scroll when keyboard is visible
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      const h = event.endCoordinates.height;
+      setKeyboardHeightPx(h);
+      Animated.timing(keyboardHeight, {
+        toValue: h,
+        duration: event.duration ?? 250,
+        useNativeDriver: false,
+      }).start();
+    });
+    const hideSub = Keyboard.addListener(hideEvent, (event) => {
+      setKeyboardHeightPx(0);
+      Animated.timing(keyboardHeight, {
+        toValue: 0,
+        duration: event.duration ?? 250,
+        useNativeDriver: false,
+      }).start();
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardHeight]);
 
   const property = useMemo(
     () => PROPERTY_DATA.find((p) => p.id === propertyId) as DailyProperty | undefined,
@@ -224,8 +253,13 @@ export default function ReserveScreen(): React.JSX.Element {
       
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: hp(20) + keyboardHeightPx },
+        ]}
         showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={true}
       >
         {/* Booking Card - Same as ContactHostScreen */}
         <View style={styles.bookingCardContainer}>
@@ -385,27 +419,14 @@ export default function ReserveScreen(): React.JSX.Element {
         </View>
       </ScrollView>
 
-      {/* Footer with Continue Button */}
-      <View style={[styles.footer]}>
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            !isTermsAccepted && styles.continueButtonDisabled,
-          ]}
+      <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
+        <SingleButtonFooter
+          fixed={false}
+          label={t("common.next")}
           onPress={handleContinue}
           disabled={!isTermsAccepted}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[
-              styles.continueButtonText,
-              !isTermsAccepted && styles.continueButtonTextDisabled,
-            ]}
-          >
-            {t("common.next")}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -414,6 +435,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  footerWrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
   },
   center: {
     flex: 1,
@@ -571,47 +597,6 @@ const styles = StyleSheet.create({
     fontSize: wp(3.5),
     color: "#374151",
     lineHeight: hp(2.5),
-  },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#fff",
-    paddingHorizontal: wp(4),
-    paddingTop: hp(1),
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: -2 },
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  continueButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: hp(1.5),
-    borderRadius: wp(2),
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: hp(1),
-  },
-  continueButtonDisabled: {
-    backgroundColor: COLORS.buttonDisabled,
-  },
-  continueButtonText: {
-    fontSize: wp(4.5),
-    fontWeight: "700",
-    color: "#fff",
-  },
-  continueButtonTextDisabled: {
-    color: COLORS.textDisabled,
   },
   totalPriceValue: {
     color: COLORS.primary,

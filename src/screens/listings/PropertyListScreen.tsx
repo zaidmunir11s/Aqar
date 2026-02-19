@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-// import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -45,6 +45,7 @@ import {
   SearchFilterModal,
   ScreenHeader,
   FilterChips,
+  FilterTabs,
   ProjectListCard,
   ProjectSearchModal,
 } from "../../components";
@@ -97,6 +98,7 @@ export default function PropertyListScreen(): React.JSX.Element {
   const params = route.params as RouteParams | undefined;
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const insets = useSafeAreaInsets();
 
   const listingType = params?.listingType || "daily";
   const properties = useMemo(() => {
@@ -369,13 +371,18 @@ export default function PropertyListScreen(): React.JSX.Element {
     navigateToMapScreen(navigation);
   }, [navigation, listingType, selectedCity, effectiveSelectedDates, searchFilters, t]);
 
-  const handleFilterPress = useCallback(
-    (filterType: string) => {
-      const newFilter = selectedFilter === filterType ? null : filterType;
-      setSelectedFilter(newFilter);
-      preservedFilter = newFilter;
-    },
-    [selectedFilter]
+  const handleFilterValueChange = useCallback((value: string | null) => {
+    setSelectedFilter(value);
+    preservedFilter = value;
+  }, []);
+
+  const filterTabOptions = useMemo(
+    () => [
+      { value: "latest", label: t("listings.latest") },
+      { value: "price", label: t("listings.price") },
+      { value: "nearest", label: t("listings.nearest") },
+    ],
+    [t]
   );
 
   const handleSearchPress = useCallback(() => {
@@ -851,7 +858,7 @@ export default function PropertyListScreen(): React.JSX.Element {
       )}
 
       {isDailyListing && (
-        <View style={styles.dailyHeaderFixedContainer}>
+        <View style={[styles.dailyHeaderFixedContainer, { paddingTop: insets.top + hp(1) }]}>
           <DailyHeaderBoxes
             reservationText={reservationText}
             onReservationPress={handleChooseReservation}
@@ -863,81 +870,28 @@ export default function PropertyListScreen(): React.JSX.Element {
         </View>
       )}
 
-      {/* FilterChips for Projects */}
+      {/* FilterChips for Projects - at top, no ScreenHeader. Counteract FilterChips internal top offset so chips sit at top. */}
       {isProjectsListing && (
-        <View style={styles.projectsFilterContainer}>
-          <FilterChips
-            filterOptions={projectFilterOptions}
-            activeFilter={activeProjectFilter}
-            onFilterChange={handleProjectFilterChange}
-            onSearchPress={handleProjectSearchPress}
-            variant="list"
-          />
+        <View style={[styles.projectsFilterContainer, { paddingTop: insets.top + hp(1) }]}>
+          <View style={{ marginTop: -(hp(9) + insets.top) }}>
+            <FilterChips
+              filterOptions={projectFilterOptions}
+              activeFilter={activeProjectFilter}
+              onFilterChange={handleProjectFilterChange}
+              onSearchPress={handleProjectSearchPress}
+              variant="list"
+            />
+          </View>
         </View>
       )}
 
       {!isDailyListing && !isProjectsListing && (
-        <View style={styles.filterContainer}>
-          <View style={[styles.filterTabsWrapper, isRTL && styles.filterTabsWrapperRTL]}>
-            <TouchableOpacity
-              style={[
-                styles.filterTab,
-                selectedFilter === "latest" && styles.filterTabActive,
-              ]}
-              onPress={() => handleFilterPress("latest")}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedFilter === "latest" && styles.filterTextActive,
-                ]}
-              >
-                {t("listings.latest")}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.filterSeparator} />
-
-            <TouchableOpacity
-              style={[
-                styles.filterTab,
-                selectedFilter === "price" && styles.filterTabActive,
-              ]}
-              onPress={() => handleFilterPress("price")}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedFilter === "price" && styles.filterTextActive,
-                ]}
-              >
-                {t("listings.price")}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.filterSeparator} />
-
-            <TouchableOpacity
-              style={[
-                styles.filterTab,
-                selectedFilter === "nearest" && styles.filterTabActive,
-              ]}
-              onPress={() => handleFilterPress("nearest")}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedFilter === "nearest" && styles.filterTextActive,
-                ]}
-              >
-                {t("listings.nearest")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <FilterTabs
+          options={filterTabOptions}
+          selectedValue={selectedFilter}
+          onValueChange={handleFilterValueChange}
+          containerStyle={styles.filterContainer}
+        />
       )}
 
       <FlatList
@@ -946,7 +900,8 @@ export default function PropertyListScreen(): React.JSX.Element {
         keyExtractor={keyExtractor}
         contentContainerStyle={[
           styles.listContent,
-          isDailyListing && styles.dailyListContent,
+          isDailyListing && [styles.dailyListContent, { paddingTop: insets.top + hp(9) }],
+          isProjectsListing && styles.projectsListContent,
         ]}
         ListHeaderComponent={listHeaderComponent}
         ListEmptyComponent={listEmptyComponent}
@@ -969,18 +924,31 @@ export default function PropertyListScreen(): React.JSX.Element {
       <View
         style={[
           styles.bottomActions,
-          isDailyListing && styles.dailyBottomActions,
+          {
+            bottom: (isDailyListing ? hp(1) : hp(0.5)) + insets.bottom,
+          },
           isRTL && styles.bottomActionsRTL,
         ]}
       >
         <TouchableOpacity
-          style={[styles.showMapBtn, isScrolling && styles.showMapBtnCompact, isRTL && styles.showMapBtnRTL]}
+          style={[
+            styles.showMapBtn,
+            isScrolling && styles.showMapBtnCompact,
+            isRTL && styles.showMapBtnRTL,
+          ]}
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="map-sharp" size={wp(6)} color="#617381" />
+          <Ionicons
+            name="map-sharp"
+            size={Math.min(wp(6), 24)}
+            color="#617381"
+          />
           {!isScrolling && (
-            <Text style={[styles.showMapText, isRTL && styles.showMapTextRTL]}>
+            <Text
+              style={[styles.showMapText, isRTL && styles.showMapTextRTL]}
+              numberOfLines={1}
+            >
               {t("listings.showMap")}
             </Text>
           )}
@@ -1194,7 +1162,6 @@ const styles = StyleSheet.create({
     fontSize: wp(8),
     fontWeight: "400",
     marginBottom: hp(-1),
-    // marginTop: hp(-0.5),
   },
   addText: {
     color: COLORS.addBtnText,
@@ -1203,8 +1170,6 @@ const styles = StyleSheet.create({
     marginTop: hp(0.3),
   },
   projectsFilterContainer: {
-    paddingTop: hp(1),
-    paddingBottom: hp(1.5),
     paddingHorizontal: wp(4),
     backgroundColor: COLORS.background,
   },
@@ -1212,72 +1177,33 @@ const styles = StyleSheet.create({
     paddingVertical: hp(1),
     paddingHorizontal: wp(4),
   },
-  filterTabsWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: wp(2.5),
-    paddingHorizontal: wp(1),
-    paddingVertical: hp(0.5),
-    borderWidth: 1,
-    borderColor: "#dedfe3",
-  },
-  filterTabsWrapperRTL: {
-    flexDirection: "row-reverse",
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: hp(1),
-    borderRadius: wp(2),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterTabActive: {
-    backgroundColor: COLORS.showListFilterTabActive,
-  },
-  filterSeparator: {
-    width: 1,
-    height: "60%",
-    backgroundColor: "#d1d5db",
-    marginHorizontal: wp(1),
-  },
-  filterText: {
-    fontSize: wp(4),
-    color: "#6b7280",
-    fontWeight: "500",
-  },
-  filterTextActive: {
-    color: "#fff",
-    fontWeight: "600",
-  },
   listContent: {
     paddingHorizontal: wp(4),
     paddingTop: hp(1),
-    paddingBottom: hp(14), // extra space for bottom button
+    paddingBottom: hp(14), 
   },
   dailyListContent: {
-    paddingTop: hp(9), // Space for fixed header boxes
+    paddingTop: hp(9), 
+  },
+  projectsListContent: {
+    paddingTop: hp(7),
   },
   bottomActions: {
     position: "absolute",
-    bottom: hp(7),
     left: wp(3),
     right: wp(4),
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     zIndex: 100,
+    gap: wp(3),
   },
   bottomActionsRTL: {
     flexDirection: "row-reverse",
   },
-  dailyBottomActions: {
-    bottom: hp(3), // Lower position for daily listings
-  },
   dailyAddBtn: {
     backgroundColor: "#ffffff",
     paddingHorizontal: wp(3),
-    // paddingVertical: hp(1),
     borderRadius: wp(2),
     borderWidth: 2,
     borderColor: "#3b82f6",
@@ -1303,8 +1229,6 @@ const styles = StyleSheet.create({
     marginTop: hp(0.3),
   },
   dailyAddBtnRTL: {
-    // flexDirection: "row-reverse",
-    
   },
   dailyAddTextRTL: {
     textAlign: "right",
@@ -1312,18 +1236,27 @@ const styles = StyleSheet.create({
   showMapBtn: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#fff",
-    paddingHorizontal: wp(5),
-    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.8),
+    minHeight: 44,
     borderRadius: wp(3),
+    flexShrink: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   showMapBtnCompact: {
     paddingHorizontal: wp(3.5),
   },
   showMapText: {
-    fontSize: wp(3.2),
+    fontSize: Math.min(wp(3.5), 15),
     color: "#333",
     marginLeft: wp(2),
+    flexShrink: 0,
   },
   showMapBtnRTL: {
     flexDirection: "row-reverse",
@@ -1333,7 +1266,6 @@ const styles = StyleSheet.create({
     marginRight: wp(2),
   },
   emptyContainer: {
-    // paddingTop: hp(1),
     paddingBottom: hp(3),
     alignItems: "center",
     justifyContent: "center",

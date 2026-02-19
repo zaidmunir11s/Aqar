@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: hp(4),
+    paddingBottom: hp(10),
   },
   cardWrapper: {
     marginTop: hp(1),

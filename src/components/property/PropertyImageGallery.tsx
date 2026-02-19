@@ -144,7 +144,6 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
           <TouchableOpacity 
             activeOpacity={0.9} 
             onPress={onImageViewerOpen}
-            style={styles.imageTouchable}
           >
           <Image
             source={{ uri: item }}

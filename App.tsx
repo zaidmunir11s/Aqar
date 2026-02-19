@@ -6,9 +6,10 @@ import { Provider, useDispatch } from "react-redux";
 import { I18nextProvider } from "react-i18next";
 import { useAppSelector } from "./src/redux/hooks";
 import AppNavigator from "./src/navigation/AppNavigator";
-import SafeAreaView from "./src/components/common/SafeAreaView";
+// import SafeAreaView from "./src/components/common/SafeAreaView";
 import { ErrorBoundary } from "./src/components/common";
 import { SearchRequestProvider } from "./src/context/searchRequest-context";
+import { AuthProvider } from "./src/context/auth-context";
 import { SupabaseProvider } from "./providers/supabase-provider";
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
@@ -58,17 +59,19 @@ export default function App(): React.JSX.Element {
         <I18nextProvider i18n={i18n}>
           <LocalizationInitializer>
             <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-              <SafeAreaProvider>
-                <SupabaseProvider>
-                  <SafeAreaView>
+              <AuthProvider>
+                <SafeAreaProvider>
+                  <SupabaseProvider>
+                  {/* <SafeAreaView> */}
                     <SearchRequestProvider>
                       <NavigationContainer>
                         <AppNavigator />
                       </NavigationContainer>
                     </SearchRequestProvider>
-                  </SafeAreaView>
-                </SupabaseProvider>
-              </SafeAreaProvider>
+                    {/* </SafeAreaView> */}
+                  </SupabaseProvider>
+                </SafeAreaProvider>
+              </AuthProvider>
             </ClerkProvider>
           </LocalizationInitializer>
         </I18nextProvider>

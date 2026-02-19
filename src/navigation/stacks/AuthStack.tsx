@@ -1,6 +1,6 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { useAuth } from "@clerk/clerk-expo";
+import { useIsAuthenticated } from "../../context/auth-context";
 import LoginScreen from "../../screens/Auth/LoginScreen";
 import CreateAccountScreen from "../../screens/Auth/CreateAccountScreen";
 import VerifyPhoneNumberScreen from "../../screens/Auth/VerifyPhoneNumberScreen";
@@ -15,12 +15,12 @@ import PayBrokerCommissionScreen from "../../screens/profile/PayBrokerCommission
 const Stack = createStackNavigator();
 
 export default function AuthStack(): React.JSX.Element {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isAuthenticated, isLoaded } = useIsAuthenticated();
 
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName={isLoaded && isSignedIn ? "ProfileDetail" : "Login"}
+      initialRouteName={isLoaded && isAuthenticated ? "ProfileDetail" : "Login"}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />

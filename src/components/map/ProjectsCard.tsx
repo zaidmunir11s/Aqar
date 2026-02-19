@@ -12,7 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useLocalization } from "../../hooks/useLocalization";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 export interface ProjectsCardProps {
   projectCount: number;
   onPress: () => void;
@@ -25,7 +25,8 @@ export interface ProjectsCardProps {
 const ProjectsCard = memo<ProjectsCardProps>(
   ({ projectCount, onPress, showBelow = false }) => {
     const { t, isRTL } = useLocalization();
-
+    const insets = useSafeAreaInsets();
+    const { top } = insets;
     // RTL-aware styles
     const rtlStyles = useMemo(
       () => ({
@@ -47,6 +48,7 @@ const ProjectsCard = memo<ProjectsCardProps>(
         style={[
           showBelow ? styles.projectsCardBelow : styles.projectsCard,
           rtlStyles.projectsCard,
+          { top: hp(17) + top }
         ]}
         onPress={onPress}
         activeOpacity={0.8}
@@ -70,7 +72,6 @@ ProjectsCard.displayName = "ProjectsCard";
 const styles = StyleSheet.create({
   projectsCard: {
     position: "absolute",
-    top: hp(24),
     left: wp(4),
     backgroundColor: "#fff",
     padding: wp(3.5),

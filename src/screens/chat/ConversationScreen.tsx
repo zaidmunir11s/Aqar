@@ -524,7 +524,7 @@ export default function ConversationScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.headerWrapper}>
+      <View style={[styles.headerWrapper, { paddingTop: Math.max(insets.top, hp(1.5)) }]}>
           <View style={[styles.customHeader, rtlStyles.customHeader]}>
             <View style={[styles.headerLeft, rtlStyles.headerLeft]}>
               {handleBackPress && (
@@ -581,6 +581,7 @@ export default function ConversationScreen(): React.JSX.Element {
             {
               marginBottom: keyboardHeight,
             },
+            // isAdminChat && { paddingBottom: Math.max(insets.bottom, hp(0.5)) },
           ]}
         >
           {messages.length > 0 ? (
@@ -589,7 +590,10 @@ export default function ConversationScreen(): React.JSX.Element {
               data={messages}
               renderItem={renderMessage}
               keyExtractor={keyExtractor}
-              contentContainerStyle={styles.messagesList}
+              contentContainerStyle={[
+                styles.messagesList,
+                isAdminChat && { paddingBottom: Math.max(insets.bottom, hp(1)) },
+              ]}
               inverted={false}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
@@ -611,7 +615,7 @@ export default function ConversationScreen(): React.JSX.Element {
               styles.inputContainer,
               rtlStyles.inputContainer,
               {
-                paddingBottom: hp(1),
+                paddingBottom: Math.max(insets.bottom, hp(1)),
                 transform: [
                   {
                     translateY: keyboardHeight.interpolate({
@@ -675,6 +679,7 @@ export default function ConversationScreen(): React.JSX.Element {
             <Animated.View
               style={[
                 styles.modalContent,
+                { paddingBottom: Math.max(insets.bottom, hp(2)) },
                 {
                   transform: [
                     {

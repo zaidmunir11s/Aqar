@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
   ScrollView,
   TouchableOpacity,
   Image,
   Alert,
+  Keyboard,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -19,9 +19,10 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BackButton, PrimaryButton, TextInput } from "../../components";
+import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useAuthContext } from "../../context/auth-context";
 import { useSignupMutation } from "@/redux/api";
 import { getSaudiPhoneValidationError } from "../../utils/validation";
 
@@ -30,6 +31,7 @@ type NavigationProp = NativeStackNavigationProp<any>;
 export default function CreateAccountScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const { setHasBackendSession } = useAuthContext();
   const [signup, { isLoading }] = useSignupMutation();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [firstName, setFirstName] = useState<string>("");
@@ -38,6 +40,23 @@ export default function CreateAccountScreen(): React.JSX.Element {
   const [password, setPassword] = useState<string>("");
   const [passwordTouched, setPasswordTouched] = useState<boolean>(false);
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Check for pending image picker results (in case app restarted during cropping)
   useEffect(() => {
@@ -131,6 +150,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
             result.data.refreshToken
           );
         }
+        setHasBackendSession(true);
       }
 
       const otp =
@@ -263,26 +283,26 @@ export default function CreateAccountScreen(): React.JSX.Element {
         right: isRTL ? undefined : 0,
         left: isRTL ? 0 : undefined,
       },
-      backButtonContainer: {
-        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
-      },
     }),
     [isRTL]
   );
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={rtlStyles.backButtonContainer}>
-          <BackButton onPress={handleBackPress} />
-        </View>
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: hp(6) + keyboardHeight }],
+    [keyboardHeight]
+  );
 
+  return (
+    <View style={styles.container}>
+      <Header onBackPress={handleBackPress} />
+      <ScrollView
+        contentContainerStyle={scrollContentStyle}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, rtlStyles.title]}>{t("auth.finishingSignUp")}</Text>
@@ -405,7 +425,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
           showArrow={!isLoading}
         />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -418,11 +438,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: wp(6),
     paddingTop: Platform.OS === "ios" ? hp(2) : hp(1),
-    paddingBottom: hp(3),
+    // paddingBottom set dynamically in scrollContentStyle (hp(3) + keyboardHeight)
   },
   header: {
-    marginBottom: hp(4),
-    marginTop: hp(2),
+    marginBottom: hp(2),
+    // marginTop: hp(2),
   },
   title: {
     fontSize: wp(6.5),

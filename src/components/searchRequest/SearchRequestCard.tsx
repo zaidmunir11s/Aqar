@@ -444,8 +444,8 @@ const styles = StyleSheet.create({
     borderRadius: wp(2.5),
     padding: wp(4),
     marginBottom: hp(2),
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderWidth: 1.2,
+    borderColor: COLORS.border,
   },
   topRow: {
     flexDirection: "row",
@@ -518,8 +518,6 @@ const styles = StyleSheet.create({
   matchedSection: {
     marginTop: hp(1),
     paddingTop: hp(1),
-    // borderTopWidth: 1,
-    // borderTopColor: "#e5e7eb",
   },
   matchedLabel: {
     fontSize: wp(4),

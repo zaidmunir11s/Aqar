@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
   ScrollView,
   TouchableOpacity,
   Alert,
   ViewStyle,
+  Keyboard,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import {
@@ -19,9 +19,10 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSSO, useAuth } from "@clerk/clerk-expo";
+import { useAuthContext, useIsAuthenticated } from "../../context/auth-context";
 import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { PrimaryButton, TextInput } from "../../components";
+import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { useLoginMutation } from "@/redux/api";
@@ -32,7 +33,9 @@ type NavigationProp = NativeStackNavigationProp<any>;
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn } = useAuth();
+  const { isAuthenticated, isLoaded } = useIsAuthenticated();
+  const { setHasBackendSession } = useAuthContext();
   const { startSSOFlow } = useSSO();
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
@@ -40,9 +43,9 @@ export default function LoginScreen(): React.JSX.Element {
   const [submitAttempted, setSubmitAttempted] = useState<boolean>(false);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
 
-  // Check if user is already signed in when screen loads
+  // Check if user is already signed in when screen loads (Clerk or backend token)
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded && isAuthenticated) {
       // User is already signed in, redirect to profile
       const parent = navigation.getParent();
       if (parent) {
@@ -51,7 +54,7 @@ export default function LoginScreen(): React.JSX.Element {
         navigation.navigate("ProfileDetail");
       }
     }
-  }, [isLoaded, isSignedIn, navigation]);
+  }, [isLoaded, isAuthenticated, navigation]);
 
   const validatePhoneNumber = useCallback((phone: string): string => {
     const key = getSaudiPhoneValidationError(phone);
@@ -82,6 +85,23 @@ export default function LoginScreen(): React.JSX.Element {
   const [storedPhoneError, setStoredPhoneError] = useState<string>("");
   const [storedPasswordError, setStoredPasswordError] = useState<string>("");
   const passwordErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // Control bottom padding by keyboard state so layout resets correctly when keyboard hides
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Validate and get translated error messages
   const phoneError = validatePhoneNumber(phoneNumber);
@@ -167,6 +187,7 @@ export default function LoginScreen(): React.JSX.Element {
             result.data.refreshToken
           );
         }
+        setHasBackendSession(true);
       }
 
       Alert.alert(
@@ -313,10 +334,6 @@ export default function LoginScreen(): React.JSX.Element {
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
-      closeButton: {
-        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
-        alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
-      },
       title: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
@@ -356,24 +373,22 @@ export default function LoginScreen(): React.JSX.Element {
     [isRTL]
   );
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Close Button */}
-        <TouchableOpacity
-          onPress={handleBackPress}
-          style={[styles.closeButton, rtlStyles.closeButton]}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="close" size={wp(6)} color="#000" />
-        </TouchableOpacity>
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: hp(8) + keyboardHeight }],
+    [keyboardHeight]
+  );
 
+  return (
+    <View style={styles.container}>
+      <Header onClosePress={handleBackPress} />
+      <ScrollView
+        contentContainerStyle={scrollContentStyle}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, rtlStyles.title]}>{t("auth.loginToBayt")}</Text>
@@ -478,7 +493,7 @@ export default function LoginScreen(): React.JSX.Element {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -491,14 +506,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: wp(6),
     paddingTop: Platform.OS === "ios" ? hp(3) : hp(2),
-    paddingBottom: hp(3),
-  },
-  closeButton: {
-    width: wp(10),
-    height: wp(10),
-    justifyContent: "center",
-    alignItems: "flex-start",
-    marginBottom: hp(2),
   },
   header: {
     marginBottom: hp(5),

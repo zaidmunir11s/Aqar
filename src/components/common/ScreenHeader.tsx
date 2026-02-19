@@ -12,7 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useLocalization } from "@/hooks";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 export interface ScreenHeaderProps {
   title: string;
   onBackPress?: () => void;
@@ -40,7 +40,8 @@ const ScreenHeader = memo<ScreenHeaderProps>(
     backButtonColor = "#0e856a",
   }) => {
     const { isRTL } = useLocalization();
-
+    const insets = useSafeAreaInsets();
+    const { top } = insets;
     const renderRightSide = () => {
       if (!showRightSide) {
         return <View style={{ width: wp(12) }} />;
@@ -96,7 +97,7 @@ const ScreenHeader = memo<ScreenHeaderProps>(
     };
 
     return (
-      <View style={headerStyle}>
+      <View style={[headerStyle, { paddingTop: top }]}>
         <View style={leftContainerStyle}>
           {onBackPress && (
             <TouchableOpacity
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: wp(4),
+    paddingHorizontal: wp(2),
     backgroundColor: "#fff",
     ...Platform.select({
       ios: {

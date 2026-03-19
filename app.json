@@ -1,28 +1,28 @@
 {
   "expo": {
-    "name": "Bayt",
-    "slug": "bayt",
+    "name": "Aqark Syria",
+    "slug": "aqark-syria",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "scheme": "bayt",
+    "icon": "./assets/appIcon.png",
+    "scheme": "aqarksyria",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.flemingvincent.bayt",
+      "bundleIdentifier": "com.flemingvincent.aqarksyria",
       "config": {
         "googleMapsApiKey": "AIzaSyD6rcuWRjrWv0WzoFIW9ZM4OvsBgVF2WhQ"
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/appIcon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.flemingvincent.bayt",
+      "package": "com.flemingvincent.aqarksyria",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyD6rcuWRjrWv0WzoFIW9ZM4OvsBgVF2WhQ"
@@ -34,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
+          "image": "./assets/appIcon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

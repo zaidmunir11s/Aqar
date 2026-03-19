@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, Text } from "react-native";
+import { View, StyleSheet, Animated, Platform, Text, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
@@ -80,6 +80,8 @@ export default function ProjectsScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabType>("sale");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [region, setRegion] = useState(RIYADH_REGION);
+  const [homeRegion, setHomeRegion] = useState(RIYADH_REGION);
+  const [isLocationReady, setIsLocationReady] = useState<boolean>(false);
   const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
@@ -89,6 +91,7 @@ export default function ProjectsScreen(): React.JSX.Element {
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
   const mapReadyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { getCurrentLocation } = useLocation();
+  const hasCenteredOnMountRef = useRef<boolean>(false);
 
   const filteredProjects = useMemo(() => {
     let projects = PROPERTY_DATA.filter(
@@ -186,20 +189,64 @@ export default function ProjectsScreen(): React.JSX.Element {
     };
   }, []);
 
+  const centerOnCurrentLocation = useCallback(async () => {
+    if (!isMountedRef.current || !mapRef.current) return;
+    try {
+      const result = await getCurrentLocation();
+      if (!isMountedRef.current || !mapRef.current) return;
+
+      if (result.region) {
+        setHomeRegion(result.region);
+        setRegion(result.region);
+        mapRef.current.animateToRegion(result.region, 800);
+        setShowLocationError(false);
+        // Reveal map after animation so Riyadh is never visible
+        setTimeout(() => {
+          if (isMountedRef.current) setIsLocationReady(true);
+        }, 850);
+      } else if (result.error) {
+        setIsLocationReady(true);
+        setShowLocationError(true);
+        setTimeout(() => {
+          if (isMountedRef.current) setShowLocationError(false);
+        }, 2000);
+      }
+    } catch {
+      setIsLocationReady(true);
+      setShowLocationError(true);
+      setTimeout(() => {
+        if (isMountedRef.current) setShowLocationError(false);
+      }, 2000);
+    }
+  }, [getCurrentLocation]);
+
+  // Default: start at user's current location
+  useEffect(() => {
+    if (hasCenteredOnMountRef.current) return;
+    hasCenteredOnMountRef.current = true;
+    centerOnCurrentLocation();
+  }, [centerOnCurrentLocation]);
+
   // Handlers
   const handleTabChange = useCallback((tab: TabType) => {
     setActiveTab(tab);
     setActiveFilter("all"); // Reset filter when switching tabs
-    // Reset map to original starting point when switching between tabs
+    // Reset map to user's home region when switching between tabs
     // Only animate if component is mounted, map is ready, and ref is valid
-    if (isMountedRef.current && isMapReady && mapRef.current && isValidCoordinate(RIYADH_REGION.latitude) && isValidLongitude(RIYADH_REGION.longitude)) {
+    if (
+      isMountedRef.current &&
+      isMapReady &&
+      mapRef.current &&
+      isValidCoordinate(homeRegion.latitude) &&
+      isValidLongitude(homeRegion.longitude)
+    ) {
       try {
-        mapRef.current.animateToRegion(RIYADH_REGION, 800);
+        mapRef.current.animateToRegion(homeRegion, 800);
       } catch (error) {
         console.warn("Error animating to region:", error);
       }
     }
-  }, [isMapReady]);
+  }, [isMapReady, homeRegion]);
 
   const handleFilterChange = useCallback((filterId: string) => {
     setActiveFilter(filterId);
@@ -268,15 +315,7 @@ export default function ProjectsScreen(): React.JSX.Element {
         return;
       }
 
-      if (result.isOutsideSaudi) {
-        setShowLocationError(true);
-        // Hide error after 5 seconds
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            setShowLocationError(false);
-          }
-        }, 2000);
-      } else if (result.region) {
+      if (result.region) {
         // Validate region before animating
         if (
           mapRef.current &&
@@ -288,12 +327,19 @@ export default function ProjectsScreen(): React.JSX.Element {
           result.region.longitudeDelta > 0
         ) {
           try {
+            setHomeRegion(result.region);
+            setRegion(result.region);
             mapRef.current.animateToRegion(result.region, 800);
             setShowLocationError(false);
           } catch (error) {
             console.warn("Error animating to location:", error);
           }
         }
+      } else if (result.error) {
+        setShowLocationError(true);
+        setTimeout(() => {
+          if (isMountedRef.current) setShowLocationError(false);
+        }, 2000);
       }
     } catch (error) {
       console.warn("Error getting current location:", error);
@@ -450,7 +496,7 @@ export default function ProjectsScreen(): React.JSX.Element {
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFillObject}
-        initialRegion={RIYADH_REGION}
+        initialRegion={homeRegion}
         mapType={isSatelliteMode ? "satellite" : "standard"}
         provider={Platform.OS === "android" ? "google" : undefined}
         rotateEnabled={false}
@@ -473,6 +519,13 @@ export default function ProjectsScreen(): React.JSX.Element {
       >
         {visibleProjects.map(renderMarker).filter(Boolean)}
       </MapView>
+
+      {/* Loading overlay — hides map until user's location is ready so Riyadh is never shown */}
+      {!isLocationReady && (
+        <View style={styles.mapLoadingOverlay}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      )}
 
       {/* Top tabs */}
       <MapTabs activeTab={activeTab} onTabChange={handleTabChange} />
@@ -509,8 +562,8 @@ export default function ProjectsScreen(): React.JSX.Element {
         />
       )}
 
-      {/* Location Error Message - above bottom safe area / action area */}
-      {showLocationError && (
+      {/* Commented out: "you cannot search for properties outside Saudi Arabia" message on map */}
+      {/* {showLocationError && (
         <View
           style={[
             styles.errorMessageContainer,
@@ -523,13 +576,20 @@ export default function ProjectsScreen(): React.JSX.Element {
             {t("listings.locationError")}
           </Text>
         </View>
-      )}
+      )} */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#f8f8f8",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 5,
+  },
   errorMessageContainer: {
     position: "absolute",
     left: wp(4),

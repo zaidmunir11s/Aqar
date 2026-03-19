@@ -6,11 +6,20 @@ export interface CalendarDates {
   endDate: string | null;
 }
 
+export interface PreservedRegion {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
 interface ListingsFiltersState {
   preservedFilter: string | null;
   preservedDates: CalendarDates;
   preservedCity: string;
   preservedSearchFilters: SearchFilterState | null;
+  /** User's current/last map region (e.g. from GPS) so list/map don't reset to Riyadh on tab focus */
+  preservedRegion: PreservedRegion | null;
 }
 
 const initialState: ListingsFiltersState = {
@@ -18,6 +27,7 @@ const initialState: ListingsFiltersState = {
   preservedDates: { startDate: null, endDate: null },
   preservedCity: "",
   preservedSearchFilters: null,
+  preservedRegion: null,
 };
 
 const listingsFiltersSlice = createSlice({
@@ -39,6 +49,9 @@ const listingsFiltersSlice = createSlice({
     ) => {
       state.preservedSearchFilters = action.payload;
     },
+    setPreservedRegion: (state, action: PayloadAction<PreservedRegion | null>) => {
+      state.preservedRegion = action.payload;
+    },
   },
 });
 
@@ -47,6 +60,7 @@ export const {
   setPreservedDates,
   setPreservedCity,
   setPreservedSearchFilters,
+  setPreservedRegion,
 } = listingsFiltersSlice.actions;
 
 export default listingsFiltersSlice.reducer;

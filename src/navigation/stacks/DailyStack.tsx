@@ -7,6 +7,7 @@ import ContactHostScreen from "../../screens/listings/ContactHostScreen";
 import ReserveScreen from "../../screens/listings/ReserveScreen";
 import PropertyDetailsScreen from "../../screens/listings/PropertyDetailsScreen";
 import PropertyListScreen from "../../screens/listings/PropertyListScreen";
+import BookingListScreen from "../../screens/listings/BookingListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
 import Step1LicenseScreen from "../../screens/listings/addListing/brokerListing/Step1LicenseScreen";
@@ -29,8 +30,9 @@ export default function DailyStack(): React.JSX.Element {
   return (
     <Stack.Navigator 
       screenOptions={{ headerShown: false }}
-      initialRouteName="PropertyList"
+      initialRouteName="BookingList"
     >
+      <Stack.Screen name="BookingList" component={BookingListScreen} />
       <Stack.Screen name="DailyMap" component={DailyScreen} />
       <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
       <Stack.Screen name="ListingMedia" component={ListingMediaScreen} />

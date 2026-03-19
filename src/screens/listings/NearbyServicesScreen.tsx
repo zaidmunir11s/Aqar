@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, Platform, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,6 +13,7 @@ import { COLORS, RIYADH_REGION } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { openInGoogleMaps, getPropertyById } from "../../utils";
 import type { Property } from "../../types/property";
+import { useLocation } from "../../hooks";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -71,6 +72,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
   const { propertyId } = params;
   const mapRef = useRef<MapView>(null);
   const { t, isRTL } = useLocalization();
+  const { getCurrentLocation } = useLocation();
 
   const [isSatelliteMode, setIsSatelliteMode] = useState(false);
   const [isScreenFocused, setIsScreenFocused] = useState(true);
@@ -95,15 +97,41 @@ export default function NearbyServicesScreen(): React.JSX.Element {
   const latitude = hasValidCoords ? property!.lat : RIYADH_REGION.latitude;
   const longitude = hasValidCoords ? property!.lng : RIYADH_REGION.longitude;
 
-  const initialRegion = useMemo(
-    () => ({
-      latitude,
-      longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    }),
-    [latitude, longitude]
-  );
+  // Default map center should be user's current location.
+  // If the property has valid coords, we'll still show its marker, but the map starts at the user's location.
+  const [homeRegion, setHomeRegion] = useState({
+    latitude: RIYADH_REGION.latitude,
+    longitude: RIYADH_REGION.longitude,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
+  const hasCenteredOnMountRef = useRef(false);
+
+  const initialRegion = useMemo(() => homeRegion, [homeRegion]);
+
+  useEffect(() => {
+    if (hasCenteredOnMountRef.current) return;
+    hasCenteredOnMountRef.current = true;
+    (async () => {
+      if (!mapRef.current) return;
+      const result = await getCurrentLocation();
+      if (result.region && mapRef.current) {
+        setHomeRegion({
+          ...result.region,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+        mapRef.current.animateToRegion(
+          {
+            ...result.region,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          },
+          800
+        );
+      }
+    })();
+  }, [getCurrentLocation]);
 
   const satelliteButtonPosition = useMemo(
     () => ({
@@ -132,6 +160,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
             initialRegion={initialRegion}
             mapType={isSatelliteMode ? "satellite" : "standard"}
             provider={Platform.OS === "android" ? "google" : undefined}
+            showsUserLocation={true}
             scrollEnabled={true}
             zoomEnabled={true}
             pitchEnabled={true}

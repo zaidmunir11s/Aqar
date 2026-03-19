@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, TouchableOpacity, Text } from "react-native";
+import { View, StyleSheet, Animated, Platform, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -22,7 +22,11 @@ import {
 import { RIYADH_REGION, COLORS, CITY_REGIONS } from "../../constants";
 import { useLocation, useCalendar, useDailyPrice, useBookingModal } from "../../hooks";
 import type { CalendarDates } from "../../hooks/useCalendar";
-import { calculateDays, formatDateRange } from "../../utils";
+import {
+  formatDateRange,
+  filterDailyPropertiesByCityAndDates,
+  getFilteredDailyProperties,
+} from "../../utils";
 import { useLocalization } from "../../hooks/useLocalization";
 import {
   PriceMarker,
@@ -33,7 +37,6 @@ import {
   CityModal,
   SearchFilterModal,
 } from "../../components";
-import { applySearchFilters } from "../../utils";
 import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import type { Property, DailyProperty } from "../../types/property";
 import { useAppSelector, useAppDispatch } from "../../redux/hooks";
@@ -41,6 +44,7 @@ import {
   setPreservedCity,
   setPreservedSearchFilters,
   setPreservedDates,
+  setPreservedRegion,
 } from "../../redux/slices/listingsFiltersSlice";
 
 type NavigationProp = NativeStackNavigationProp<any>;
@@ -79,8 +83,12 @@ export default function DailyScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const dispatch = useAppDispatch();
-  const { preservedCity, preservedSearchFilters, preservedFilter, preservedDates } =
-    useAppSelector((s) => s.listingsFilters);
+  const listingsFilters = useAppSelector((s) => s?.listingsFilters);
+  const preservedCity = listingsFilters?.preservedCity ?? "";
+  const preservedSearchFilters = listingsFilters?.preservedSearchFilters ?? null;
+  const preservedFilter = listingsFilters?.preservedFilter ?? null;
+  const preservedDates = listingsFilters?.preservedDates ?? { startDate: null, endDate: null };
+  const preservedRegion = listingsFilters?.preservedRegion ?? null;
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
@@ -91,13 +99,21 @@ export default function DailyScreen(): React.JSX.Element {
   const lastMarkerPressTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
 
-  // Initial region: use city from params (when coming from list via "Show Map") or preserved city, else Riyadh
+  // Initial region: prefer preservedRegion (user's location), then city from params/preserved, else null
   const initialRegionFromParams = useMemo(() => {
+    if (preservedRegion && typeof preservedRegion.latitude === "number" && typeof preservedRegion.longitude === "number") {
+      return preservedRegion;
+    }
     const params = route.params as { selectedCity?: string } | undefined;
     const city = params?.selectedCity || preservedCity;
-    return (city && CITY_REGIONS[city]) ? CITY_REGIONS[city] : RIYADH_REGION;
-  }, [route.params, preservedCity]);
-  const [region, setRegion] = useState(initialRegionFromParams);
+    return (city && CITY_REGIONS[city]) ? CITY_REGIONS[city] : null;
+  }, [route.params, preservedCity, preservedRegion]);
+
+  // Determine if map can render immediately (we have a known region) or must wait for location
+  const [isMapReady, setIsMapReady] = useState<boolean>(() => initialRegionFromParams !== null);
+  const [region, setRegion] = useState(initialRegionFromParams ?? RIYADH_REGION);
+  const [homeRegion, setHomeRegion] = useState(initialRegionFromParams ?? RIYADH_REGION);
+  const hasCenteredOnMountRef = useRef<boolean>(false);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
@@ -105,7 +121,9 @@ export default function DailyScreen(): React.JSX.Element {
   // Initialize from params or preserved values
   const routeParamsForInit = route.params as { selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
   const [selectedCity, setSelectedCity] = useState<string>(
-    routeParamsForInit?.selectedCity || preservedCity || "City"
+    routeParamsForInit?.selectedCity ||
+    (preservedCity && preservedCity !== "Current Location" ? preservedCity : "") ||
+    "City"
   );
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
     routeParamsForInit?.searchFilters || preservedSearchFilters
@@ -124,10 +142,11 @@ export default function DailyScreen(): React.JSX.Element {
           dispatch(setPreservedCity(params.selectedCity));
           setSelectedCity(params.selectedCity);
         } else {
-          mapRef.current.animateToRegion(RIYADH_REGION, 800);
+          // Fall back to user's current location instead of a fixed default
+          centerOnCurrentLocation();
         }
       } else {
-        mapRef.current.animateToRegion(RIYADH_REGION, 800);
+        centerOnCurrentLocation();
       }
     } else if (params?.selectedCity && mapRef.current) {
       // If city is provided without shouldZoomOut, just navigate to it
@@ -153,6 +172,50 @@ export default function DailyScreen(): React.JSX.Element {
 
   // Use custom hooks
   const { getCurrentLocation } = useLocation();
+
+  const centerOnCurrentLocation = useCallback(async () => {
+    if (!isMountedRef.current || !mapRef.current) return;
+    try {
+      const result = await getCurrentLocation();
+      if (!isMountedRef.current || !mapRef.current) return;
+      if (result.region) {
+        setHomeRegion(result.region);
+        setRegion(result.region);
+        dispatch(setPreservedRegion(result.region));
+        mapRef.current.animateToRegion(result.region, 800);
+        setShowLocationError(false);
+        // Reveal map after animation so user never sees Riyadh flash
+        setTimeout(() => {
+          if (isMountedRef.current) setIsMapReady(true);
+        }, 850);
+      } else if (result.error) {
+        setIsMapReady(true);
+        setShowLocationError(true);
+        if (locateMeErrorTimeoutRef.current) clearTimeout(locateMeErrorTimeoutRef.current);
+        locateMeErrorTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current) setShowLocationError(false);
+        }, 2000);
+      }
+    } catch {
+      setIsMapReady(true);
+      setShowLocationError(true);
+      if (locateMeErrorTimeoutRef.current) clearTimeout(locateMeErrorTimeoutRef.current);
+      locateMeErrorTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) setShowLocationError(false);
+      }, 2000);
+    }
+  }, [getCurrentLocation, dispatch]);
+
+  // Default: start at user's current location (unless we have preservedRegion or a specific city)
+  useEffect(() => {
+    if (hasCenteredOnMountRef.current) return;
+    hasCenteredOnMountRef.current = true;
+    if (preservedRegion && typeof preservedRegion.latitude === "number") return;
+    const params = route.params as { selectedCity?: string } | undefined;
+    const city = params?.selectedCity || preservedCity;
+    if (city && CITY_REGIONS[city]) return;
+    centerOnCurrentLocation();
+  }, [centerOnCurrentLocation, route.params, preservedCity, preservedRegion]);
   
   // Get selectedDates and selectedFilter from route params if available
   const routeParams = route.params as { shouldZoomOut?: boolean; selectedDates?: CalendarDates; selectedFilter?: string | null; selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
@@ -180,24 +243,45 @@ export default function DailyScreen(): React.JSX.Element {
     }
   }, [selectedDates.startDate, selectedDates.endDate, dispatch]);
 
-  // Sync searchFilters from preserved state when screen comes into focus
-  const previousFiltersRef = useRef<string>("");
+  // Sync filters from Redux when screen gains focus (single run per focus, ref avoids update loop)
+  const preservedRef = useRef({
+    preservedCity,
+    preservedSearchFilters,
+    preservedDates,
+  });
+  const lastFiltersStringRef = useRef<string>("");
+  preservedRef.current = {
+    preservedCity,
+    preservedSearchFilters,
+    preservedDates,
+  };
   useFocusEffect(
     useCallback(() => {
-      const preservedFiltersString = JSON.stringify(preservedSearchFilters);
-      if (preservedFiltersString !== previousFiltersRef.current) {
-        previousFiltersRef.current = preservedFiltersString;
-        setSearchFilters(preservedSearchFilters);
+      const { preservedCity: city, preservedSearchFilters: filters, preservedDates: dates } =
+        preservedRef.current;
+      if (filters !== undefined) {
+        const next = JSON.stringify(filters);
+        if (next !== lastFiltersStringRef.current) {
+          lastFiltersStringRef.current = next;
+          setSearchFilters(filters);
+        }
       }
-    }, [preservedSearchFilters])
+      if (city && city !== "Current Location") setSelectedCity(city);
+      if (dates?.startDate && dates?.endDate) setSelectedDates(dates);
+    }, [])
   );
 
-  // When coming from PropertyList via "Show Map", animate map to selected city after a short delay
+  // When coming from BookingList via "Show Map", animate map to selected city after a short delay.
+  // IMPORTANT: preservedCity is read from preservedRef (NOT a dep) so that selecting a new city
+  // in the modal does NOT recreate this callback and re-trigger the animation back to the old
+  // navigation city (route.params.selectedCity). Without this, changing city would dispatch
+  // setPreservedCity → preservedCity dep changes → callback recreated → useFocusEffect re-runs
+  // → map snaps back to the old route.params.selectedCity. Bug fixed by reading via ref.
   useFocusEffect(
     useCallback(() => {
       const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string } | undefined;
       if (!params?.shouldZoomOut) return;
-      const city = params.selectedCity || preservedCity;
+      const city = params.selectedCity || preservedRef.current.preservedCity;
       if (!city || !CITY_REGIONS[city]) return;
       const cityRegion = CITY_REGIONS[city];
       const timer = setTimeout(() => {
@@ -209,7 +293,7 @@ export default function DailyScreen(): React.JSX.Element {
         }
       }, 150);
       return () => clearTimeout(timer);
-    }, [route.params, preservedCity, dispatch])
+    }, [route.params, dispatch])  // preservedCity intentionally removed from deps
   );
   
   // Track component mount state and cleanup on unmount
@@ -243,65 +327,30 @@ export default function DailyScreen(): React.JSX.Element {
     }
   }, [selectedDates.startDate, selectedDates.endDate, openBookingDateModal]);
 
-  // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters)
+  // Filter properties by city and dates only (for SearchFilterModal - excludes searchFilters). Shared logic with BookingListScreen.
   const filteredPropertiesForModal = useMemo(() => {
-    let properties = PROPERTY_DATA.filter(
-      (p) => 
-        p.listingType === "daily" && 
-        !("isProject" in p && p.isProject) &&
-        hasValidCoordinates(p)
+    const base = filterDailyPropertiesByCityAndDates(
+      PROPERTY_DATA,
+      selectedCity,
+      { startDate: selectedDates.startDate, endDate: selectedDates.endDate }
     );
+    return base.filter(hasValidCoordinates);
+  }, [selectedDates.startDate, selectedDates.endDate, selectedCity]);
 
-    // Filter by city if selected
-    if (selectedCity && selectedCity !== t("listings.city")) {
-      properties = properties.filter((p) => {
-        const city = (p as any).city;
-        return city && city.toLowerCase() === selectedCity.toLowerCase();
-      });
-    }
-
-    // Filter properties based on selected dates
-    if (
-      selectedDates.startDate &&
-      selectedDates.endDate
-    ) {
-      const days = calculateDays(
-        selectedDates.startDate,
-        selectedDates.endDate
-      );
-      
-      // Hide monthly properties if dates are less than 30 days
-      if (days < 30) {
-        properties = properties.filter(
-          (p) => !("bookingType" in p && p.bookingType === "monthly")
-        );
-      }
-      
-      // Hide weekly properties if dates are less than 7 days
-      if (days < 7) {
-        properties = properties.filter(
-          (p) => {
-            const dailyProp = p as any;
-            return !("bookingType" in p && dailyProp.bookingType === "weekly");
-          }
-        );
-      }
-    }
-
-    return properties;
-  }, [selectedDates, selectedCity, t]);
-
-  // Filter properties - only daily listings (includes searchFilters)
+  // Full filtered set (city + dates + searchFilters). Same as BookingListScreen so map and list stay in sync.
   const filteredProperties = useMemo(() => {
-    let properties = [...filteredPropertiesForModal];
-
-    // Apply search filters if any
-    if (searchFilters) {
-      properties = applySearchFilters(properties, searchFilters);
-    }
-
-    return properties;
-  }, [filteredPropertiesForModal, searchFilters]);
+    return getFilteredDailyProperties(
+      PROPERTY_DATA,
+      selectedCity,
+      { startDate: selectedDates.startDate, endDate: selectedDates.endDate },
+      searchFilters
+    ).filter(hasValidCoordinates);
+  }, [
+    selectedDates.startDate,
+    selectedDates.endDate,
+    selectedCity,
+    searchFilters,
+  ]);
 
   // Get only regular properties (exclude projects) for counter
   const regularPropertiesOnly = useMemo(() => {
@@ -449,13 +498,15 @@ export default function DailyScreen(): React.JSX.Element {
     }
     const result = await getCurrentLocation();
     if (!isMountedRef.current) return;
-    if (result.isOutsideSaudi) {
-      setShowLocationError(true);
-      locateMeErrorTimeoutRef.current = setTimeout(() => {
-        locateMeErrorTimeoutRef.current = null;
-        if (isMountedRef.current) setShowLocationError(false);
-      }, 2000);
-    } else if (result.region) {
+    // Commented out: restrict search to Saudi Arabia only
+    // if (result.isOutsideSaudi) {
+    //   setShowLocationError(true);
+    //   locateMeErrorTimeoutRef.current = setTimeout(() => {
+    //     locateMeErrorTimeoutRef.current = null;
+    //     if (isMountedRef.current) setShowLocationError(false);
+    //   }, 2000);
+    // } else if (result.region) {
+    if (result.region) {
       mapRef.current?.animateToRegion(result.region, 800);
       setShowLocationError(false);
     }
@@ -490,16 +541,17 @@ export default function DailyScreen(): React.JSX.Element {
   );
 
   const handleShowList = useCallback(() => {
-    const params: any = {
-      properties: visibleProperties,
-      listingType: "daily",
+    const params: Record<string, unknown> = {
       selectedDates: selectedDates,
-      selectedFilter: preservedFilter,
+      selectedFilter: preservedFilter ?? undefined,
       selectedCity: selectedCity !== "City" ? selectedCity : undefined,
-      searchFilters: searchFilters,
+      searchFilters: searchFilters ?? undefined,
+      // Pass the IDs of markers currently visible on the map so the list
+      // can show exactly what's on screen (user can override by changing filters)
+      visiblePropertyIds: visibleProperties.map((p) => p.id),
     };
-    navigation.navigate("PropertyList", params);
-  }, [visibleProperties, selectedDates, navigation, selectedCity, searchFilters, preservedFilter]);
+    navigation.navigate("BookingList", params);
+  }, [selectedDates, navigation, selectedCity, searchFilters, preservedFilter, visibleProperties]);
 
   const handleCityPress = useCallback(() => {
     setCityModalVisible(true);
@@ -525,19 +577,13 @@ export default function DailyScreen(): React.JSX.Element {
     }
     const result = await getCurrentLocation();
     if (!isMountedRef.current) return;
-    if (result.isOutsideSaudi) {
-      setShowLocationError(true);
-      locateMeErrorTimeoutRef.current = setTimeout(() => {
-        locateMeErrorTimeoutRef.current = null;
-        if (isMountedRef.current) setShowLocationError(false);
-      }, 1000);
-    } else if (result.region) {
-      // TODO: Reverse geocode to get city name
-      setSelectedCity("Current Location");
+    if (result.region) {
+      dispatch(setPreservedRegion(result.region));
+      setRegion(result.region);
       mapRef.current?.animateToRegion(result.region, 800);
       setShowLocationError(false);
     }
-  }, [getCurrentLocation]);
+  }, [getCurrentLocation, dispatch]);
 
   const handleFiltersPress = useCallback(() => {
     setFilterModalVisible(true);
@@ -660,6 +706,7 @@ export default function DailyScreen(): React.JSX.Element {
         initialRegion={region}
         mapType={isSatelliteMode ? "satellite" : "standard"}
         provider={Platform.OS === "android" ? "google" : undefined}
+        showsUserLocation={true}
         rotateEnabled={false}
         onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
@@ -667,6 +714,13 @@ export default function DailyScreen(): React.JSX.Element {
       >
         {visibleProperties.map(renderMarker).filter(Boolean)}
       </MapView>
+
+      {/* Loading overlay — shown until user's location is ready, so Riyadh is never visible */}
+      {!isMapReady && (
+        <View style={styles.mapLoadingOverlay}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      )}
 
       {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top, below status bar) */}
       <View style={[styles.dailyHeaderFixedContainer, { paddingTop: insets.top + hp(1) }]}>
@@ -680,8 +734,8 @@ export default function DailyScreen(): React.JSX.Element {
         />
       </View>
 
-      {/* Error Message - above bottom safe area / action area */}
-      {showLocationError && (
+      {/* Commented out: "you cannot search for properties outside Saudi Arabia" message on map */}
+      {/* {showLocationError && (
         <View
           style={[
             styles.errorMessageContainer,
@@ -694,7 +748,7 @@ export default function DailyScreen(): React.JSX.Element {
             {t("listings.locationError")}
           </Text>
         </View>
-      )}
+      )} */}
 
       {!cardVisible && !showLocationError && (
         <MapBottomActions
@@ -753,6 +807,13 @@ export default function DailyScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#f8f8f8",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 5,
+  },
   errorMessageContainer: {
     position: "absolute",
     left: wp(4),

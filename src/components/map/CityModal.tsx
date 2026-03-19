@@ -251,13 +251,15 @@ export default function CityModal({
 
   const handleLocateMe = useCallback(async () => {
     const result = await getCurrentLocation();
-    if (result.isOutsideSaudi) {
-      setShowLocationError(true);
-      // Hide error after 5 seconds
-      setTimeout(() => {
-        setShowLocationError(false);
-      }, 5000);
-    } else if (result.region) {
+    // Commented out: restrict search to Saudi Arabia only ("you cannot search for properties outside Saudi Arabia")
+    // if (result.isOutsideSaudi) {
+    //   setShowLocationError(true);
+    //   // Hide error after 5 seconds
+    //   setTimeout(() => {
+    //     setShowLocationError(false);
+    //   }, 5000);
+    // } else if (result.region) {
+    if (result.region) {
       onLocateMe();
       onClose();
     } else if (result.error) {
@@ -339,15 +341,15 @@ export default function CityModal({
               )}
             </ScrollView>
 
-            {/* Error Message */}
-            {showLocationError && (
+            {/* Commented out: "you cannot search for properties outside Saudi Arabia" message on map */}
+            {/* {showLocationError && (
               <View style={[styles.errorMessageContainer, isRTL && styles.errorMessageContainerRTL]}>
                 <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
                 <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
                   {t("listings.locationError")}
                 </Text>
               </View>
-            )}
+            )} */}
 
             {/* Bottom Buttons */}
             <View style={[

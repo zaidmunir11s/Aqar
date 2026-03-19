@@ -222,7 +222,7 @@ export default function LoginScreen(): React.JSX.Element {
       const { createdSessionId, setActive } = await startSSOFlow({
         strategy: "oauth_google",
         redirectUrl: Linking.createURL("/oauth-native-callback", {
-          scheme: "bayt",
+          scheme: "aqarksyria",
         }),
       });
 

@@ -1,5 +1,77 @@
 import type { Property } from "../types/property";
 import type { SearchFilterState } from "../types/searchFilters";
+import { calculateDays } from "./dateHelpers";
+
+/** Params for filtering daily listings (city + dates). */
+export interface DailyFilterDates {
+  startDate: string | null;
+  endDate: string | null;
+}
+
+/**
+ * Filter daily properties by city and dates (shared logic for DailyScreen and BookingListScreen).
+ * Treats empty city, "City", and "Current Location" as no city filter.
+ */
+export function filterDailyPropertiesByCityAndDates(
+  properties: Property[],
+  selectedCity: string,
+  dates: DailyFilterDates
+): Property[] {
+  let filtered = properties.filter(
+    (p) =>
+      p.listingType === "daily" &&
+      !("isProject" in p && (p as { isProject?: boolean }).isProject)
+  );
+
+  if (
+    selectedCity &&
+    selectedCity !== "City" &&
+    selectedCity !== "Current Location"
+  ) {
+    filtered = filtered.filter((p) => {
+      const city = (p as { city?: string }).city;
+      return city && city.toLowerCase() === selectedCity.toLowerCase();
+    });
+  }
+
+  if (dates.startDate && dates.endDate) {
+    const days = calculateDays(dates.startDate, dates.endDate);
+    if (days < 30) {
+      filtered = filtered.filter(
+        (p) => !("bookingType" in p && (p as { bookingType?: string }).bookingType === "monthly")
+      );
+    }
+    if (days < 7) {
+      filtered = filtered.filter((p) => {
+        const dailyProp = p as { bookingType?: string };
+        return !("bookingType" in p && dailyProp.bookingType === "weekly");
+      });
+    }
+  }
+
+  return filtered;
+}
+
+/**
+ * Full filtered set for daily listings: city + dates + search filters.
+ * Single source of truth so DailyScreen (map) and BookingListScreen (list) show the same properties.
+ */
+export function getFilteredDailyProperties(
+  properties: Property[],
+  selectedCity: string,
+  dates: DailyFilterDates,
+  searchFilters: SearchFilterState | null
+): Property[] {
+  let filtered = filterDailyPropertiesByCityAndDates(
+    properties,
+    selectedCity,
+    dates
+  );
+  if (searchFilters) {
+    filtered = applySearchFilters(filtered, searchFilters);
+  }
+  return filtered;
+}
 
 /**
  * Apply search filters to properties. Used by PropertyListScreen, DailyScreen, and SearchFilterModal.

@@ -174,7 +174,7 @@ const defaultTabBarOptions = {
 export default function AppNavigator(): React.JSX.Element {
   const { isAuthenticated, isLoaded } = useIsAuthenticated();
   const { t, isRTL } = useLocalization();
-  const preservedFilter = useAppSelector((s) => s.listingsFilters.preservedFilter);
+  const preservedFilter = useAppSelector((s) => s?.listingsFilters?.preservedFilter ?? null);
 
   return (
     <Tab.Navigator
@@ -257,9 +257,9 @@ export default function AppNavigator(): React.JSX.Element {
               bookingsTabState?.state?.routes?.[
                 bookingsTabState?.state?.index || 0
               ];
-            const isOnPropertyList = currentRoute?.name === "PropertyList";
+            const isOnBookingList = currentRoute?.name === "BookingList";
 
-            if (!isOnPropertyList) {
+            if (!isOnBookingList) {
               e.preventDefault();
               interface RouteParams {
                 selectedFilter?: string | null;
@@ -273,7 +273,7 @@ export default function AppNavigator(): React.JSX.Element {
                   ? preservedFilter
                   : filterFromCurrentRoute;
               navigation.navigate("Bookings", {
-                screen: "PropertyList",
+                screen: "BookingList",
                 params: filterToPreserve
                   ? { selectedFilter: filterToPreserve }
                   : undefined,
@@ -291,7 +291,7 @@ export default function AppNavigator(): React.JSX.Element {
               ) {
                 e.preventDefault();
                 navigation.navigate("Bookings", {
-                  screen: "PropertyList",
+                  screen: "BookingList",
                   params: { selectedFilter: preservedFilter },
                   merge: true,
                 });

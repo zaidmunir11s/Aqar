@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 import { ScreenHeader, ListingFooter, ToggleSwitch } from "../../../../components";
 import { COLORS, RIYADH_REGION } from "@/constants";
 import { useLocalization } from "../../../../hooks/useLocalization";
+import { useLocation } from "../../../../hooks";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -49,12 +50,14 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   const params = (route.params || {}) as RouteParams;
   const mapRef = useRef<MapView>(null);
   const { t, isRTL } = useLocalization();
+  const { getCurrentLocation } = useLocation();
 
   // Selected location - tracks the center coordinate of the map
   const [selectedLocation, setSelectedLocation] = useState({
     latitude: RIYADH_REGION.latitude,
     longitude: RIYADH_REGION.longitude,
   });
+  const hasCenteredRef = useRef(false);
 
   // Toggle states: true = ON (thumb left), false = OFF (thumb right)
   const [onlyAdsWithPhoto, setOnlyAdsWithPhoto] = useState(false);
@@ -72,6 +75,24 @@ export default function ChooseLocationScreen(): React.JSX.Element {
       orderFormData: params.orderFormData,
     });
   };
+
+  const centerOnCurrentLocation = useCallback(async () => {
+    if (!mapRef.current || hasCenteredRef.current) return;
+    const result = await getCurrentLocation();
+    if (result.region && mapRef.current) {
+      hasCenteredRef.current = true;
+      mapRef.current.animateToRegion(result.region, 800);
+      setSelectedLocation({
+        latitude: result.region.latitude,
+        longitude: result.region.longitude,
+      });
+    }
+  }, [getCurrentLocation]);
+
+  // Start the map at the user's current location by default
+  useEffect(() => {
+    centerOnCurrentLocation();
+  }, [centerOnCurrentLocation]);
 
   // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
   const rtlStyles = useMemo(
@@ -134,7 +155,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
             style={styles.map}
             initialRegion={RIYADH_REGION}
             onRegionChangeComplete={handleRegionChangeComplete}
-            showsUserLocation={false}
+            showsUserLocation={true}
             showsMyLocationButton={false}
             showsCompass={false}
             toolbarEnabled={false}

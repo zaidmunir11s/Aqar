@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import * as Location from "expo-location";
-import { isInsideSaudi } from "../constants";
 
 export interface LocationRegion {
   latitude: number;
@@ -38,13 +37,6 @@ export function useLocation() {
 
         const { latitude, longitude } = loc.coords;
 
-        if (!isInsideSaudi(latitude, longitude)) {
-          return {
-            region: null,
-            isOutsideSaudi: true,
-          };
-        }
-
         return {
           region: {
           latitude,
@@ -52,6 +44,7 @@ export function useLocation() {
           latitudeDelta: 0.02,
           longitudeDelta: 0.02,
           },
+          // Legacy field used by some screens; we no longer geo-restrict location.
           isOutsideSaudi: false,
         };
       } catch (e) {

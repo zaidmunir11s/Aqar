@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ApartmentRentTenant, RentPaymentFrequency } from "../constants/orderFormOptions";
 
 /**
  * Centralized state management for order form
@@ -10,13 +11,13 @@ export function useOrderFormState() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   // Apartment for rent
-  const [rentPeriod, setRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [rentPeriod, setRentPeriod] = useState<RentPaymentFrequency>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [fromPrice, setFromPrice] = useState("");
   const [toPrice, setToPrice] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
   const [priceTo, setPriceTo] = useState("");
-  const [selectedPaymentType, setSelectedPaymentType] = useState<string | null>(null);
+  const [apartmentRentTenant, setApartmentRentTenant] = useState<ApartmentRentTenant>(null);
   const [selectedBedroom, setSelectedBedroom] = useState<string | null>(null);
   const [selectedLivingRoom, setSelectedLivingRoom] = useState<string | null>(null);
   const [selectedWc, setSelectedWc] = useState<string | null>(null);
@@ -122,7 +123,7 @@ export function useOrderFormState() {
   const [floorSaleAreaTo, setFloorSaleAreaTo] = useState("");
 
   // Villa for rent
-  const [villaRentRentPeriod, setVillaRentRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [villaRentRentPeriod, setVillaRentRentPeriod] = useState<RentPaymentFrequency>(null);
   const [villaRentPriceFrom, setVillaRentPriceFrom] = useState("");
   const [villaRentPriceTo, setVillaRentPriceTo] = useState("");
   const [villaRentStreetDirection, setVillaRentStreetDirection] = useState<string>("");
@@ -141,7 +142,7 @@ export function useOrderFormState() {
   const [villaRentAirConditioned, setVillaRentAirConditioned] = useState(true);
 
   // Big flat for rent
-  const [bigFlatRentPeriod, setBigFlatRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [bigFlatRentPeriod, setBigFlatRentPeriod] = useState<RentPaymentFrequency>(null);
   const [bigFlatPriceFrom, setBigFlatPriceFrom] = useState("");
   const [bigFlatPriceTo, setBigFlatPriceTo] = useState("");
   const [bigFlatAreaFrom, setBigFlatAreaFrom] = useState("");
@@ -153,7 +154,7 @@ export function useOrderFormState() {
   const [bigFlatSpecialEntrances, setBigFlatSpecialEntrances] = useState(true);
 
   // Lounge for rent
-  const [loungeRentRentPeriod, setLoungeRentRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [loungeRentRentPeriod, setLoungeRentRentPeriod] = useState<RentPaymentFrequency>(null);
   const [loungeRentPriceFrom, setLoungeRentPriceFrom] = useState("");
   const [loungeRentPriceTo, setLoungeRentPriceTo] = useState("");
   const [loungeRentAreaFrom, setLoungeRentAreaFrom] = useState("");
@@ -203,7 +204,7 @@ export function useOrderFormState() {
   const [landRentStreetWidth, setLandRentStreetWidth] = useState<string>("");
 
   // Room for rent
-  const [roomRentRentPeriod, setRoomRentRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [roomRentRentPeriod, setRoomRentRentPeriod] = useState<RentPaymentFrequency>(null);
   const [roomRentPriceFrom, setRoomRentPriceFrom] = useState("");
   const [roomRentPriceTo, setRoomRentPriceTo] = useState("");
   const [roomRentKitchen, setRoomRentKitchen] = useState(true);
@@ -217,7 +218,7 @@ export function useOrderFormState() {
   const [officeRentFurnished, setOfficeRentFurnished] = useState(true);
 
   // Tent for rent
-  const [tentRentRentPeriod, setTentRentRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [tentRentRentPeriod, setTentRentRentPeriod] = useState<RentPaymentFrequency>(null);
   const [tentRentFamilySection, setTentRentFamilySection] = useState(true);
 
   // Warehouse for rent
@@ -228,7 +229,7 @@ export function useOrderFormState() {
   const [warehouseRentStreetWidth, setWarehouseRentStreetWidth] = useState<string>("");
 
   // Chalet for rent
-  const [chaletRentRentPeriod, setChaletRentRentPeriod] = useState<"Yearly" | "Monthly" | null>(null);
+  const [chaletRentRentPeriod, setChaletRentRentPeriod] = useState<RentPaymentFrequency>(null);
   const [chaletRentPriceFrom, setChaletRentPriceFrom] = useState("");
   const [chaletRentPriceTo, setChaletRentPriceTo] = useState("");
   const [chaletRentAreaFrom, setChaletRentAreaFrom] = useState("");
@@ -266,8 +267,8 @@ export function useOrderFormState() {
     setPriceFrom,
     priceTo,
     setPriceTo,
-    selectedPaymentType,
-    setSelectedPaymentType,
+    apartmentRentTenant,
+    setApartmentRentTenant,
     selectedBedroom,
     setSelectedBedroom,
     selectedLivingRoom,

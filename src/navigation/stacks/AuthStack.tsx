@@ -10,18 +10,23 @@ import ChangePasswordScreen from "../../screens/profile/ChangePasswordScreen";
 import ChangePhoneNumberScreen from "../../screens/profile/ChangePhoneNumberScreen";
 import UserProfileAdsScreen from "../../screens/profile/UserProfileAdsScreen";
 import PayBrokerCommissionScreen from "../../screens/profile/PayBrokerCommissionScreen";
+import { useIsAuthenticated } from "../../context/auth-context";
+import type { AuthStackParamList } from "../types";
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 /**
- * Use fixed initialRouteName="Login" to prevent full stack re-mount on auth flip.
- * LoginScreen redirects to ProfileDetail when authenticated; sign-out handlers reset to Login.
+ * initialRouteName is dynamic so the very first mount shows the correct screen.
+ * Once the navigator has state, initialRouteName is ignored by React Navigation,
+ * so subsequent auth flips do not cause a re-mount.
  */
 export default function AuthStack(): React.JSX.Element {
+  const { isAuthenticated, isLoaded } = useIsAuthenticated();
+
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="Login"
+      initialRouteName={isLoaded && isAuthenticated ? "ProfileDetail" : "Login"}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />

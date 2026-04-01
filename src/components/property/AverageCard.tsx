@@ -38,11 +38,30 @@ const AverageCard = memo<AverageCardProps>(({ property, onPress, variant = "defa
     return type === "apartment" ? t("listings.propertyTypes.apartment") : type;
   };
 
+  const parseCompactPrice = (rawPrice?: string): number | null => {
+    const raw = (rawPrice ?? "").trim();
+    if (!raw) return null;
+    const compactMatch = raw.match(/^([\d.,]+)\s*([kKmM])$/);
+    if (compactMatch) {
+      const amount = Number.parseFloat(compactMatch[1].replace(/,/g, ""));
+      if (!Number.isFinite(amount)) return null;
+      const multiplier = compactMatch[2].toLowerCase() === "m" ? 1_000_000 : 1_000;
+      return Math.round(amount * multiplier);
+    }
+    const digitsOnly = raw.replace(/[^\d]/g, "");
+    if (!digitsOnly) return null;
+    const numeric = Number(digitsOnly);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
   // Calculate average price (in a real app, this would come from API)
   const rentProperty = property as RentSaleProperty;
-  const averagePrice = rentProperty.price
-    ? rentProperty.price.replace(" K", ",000")
-    : "100,950";
+  const averagePrice = useMemo(() => {
+    const parsed = parseCompactPrice(rentProperty.price);
+    const fallback = 100950;
+    const numeric = parsed ?? fallback;
+    return numeric.toLocaleString(isRTL ? "ar-SA" : "en-US");
+  }, [isRTL, rentProperty.price]);
   
   // Translate the location/address
   const rawLocation = property.address || property.city || "";

@@ -21,6 +21,7 @@
         "foregroundImage": "./assets/appIcon.png",
         "backgroundColor": "#ffffff"
       },
+      "softwareKeyboardLayoutMode": "pan",
       "edgeToEdgeEnabled": true,
       "package": "com.flemingvincent.aqarksyria",
       "config": {
@@ -43,7 +44,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you set a profile picture."
+          "photosPermission": "Aqark Syria needs access to your photos and videos so you can upload listing media.",
+          "cameraPermission": "Aqark Syria needs access to your camera so you can take photos or record videos for your listing.",
+          "microphonePermission": "Aqark Syria needs access to your microphone so you can record videos with sound."
         }
       ]
     ],

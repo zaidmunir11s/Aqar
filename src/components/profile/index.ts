@@ -12,4 +12,7 @@ export { default as AccountManagementSection } from "./AccountManagementSection"
 export { default as SectionHeader } from "./SectionHeader";
 export { default as UserInfoCard } from "./UserInfoCard";
 export { default as ProfileTabs } from "./ProfileTabs";
-export { default as SegmentedControl } from "./SegmentedControl";
+export { default as ProfileAdsTabs } from "./ProfileAdsTabs";
+export type { ProfileAdsTabKey } from "./ProfileAdsTabs";
+export { default as ListingTypeSegmentFilter } from "./ListingTypeSegmentFilter";
+export type { ListingTypeFilter } from "./ListingTypeSegmentFilter";

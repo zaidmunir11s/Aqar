@@ -30,6 +30,10 @@ export interface SignupRequest {
   [key: string]: unknown;
 }
 
+/**
+ * Signup API response. `otp` / `verificationCode` must not be returned in production:
+ * codes belong in SMS only. The app surfaces them in dev (`__DEV__`) for local testing.
+ */
 export interface SignupResponse {
   success: boolean;
   message: string;
@@ -62,6 +66,10 @@ export interface LoginResponse {
       id: string;
       email: string;
       name?: string;
+      firstName?: string;
+      lastName?: string;
+      /** Avatar URL when backend returns it after login */
+      profileImageUrl?: string;
     };
     token: string;
     refreshToken?: string;
@@ -82,6 +90,9 @@ export interface VerifyOtpResponse {
       id: string;
       email: string;
       name?: string;
+      firstName?: string;
+      lastName?: string;
+      profileImageUrl?: string;
     };
     token: string;
     refreshToken?: string;
@@ -97,14 +108,6 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["Auth"],
-      async onQueryStarted(arg, { queryFulfilled }) {
-        try {
-          const result = await queryFulfilled;
-          if (result.data.success) {
-            console.log("User created successfully");
-          }
-        } catch (error) {}
-      },
     }),
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (body) => ({
@@ -113,14 +116,6 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["Auth"],
-      async onQueryStarted(arg, { queryFulfilled }) {
-        try {
-          const result = await queryFulfilled;
-          if (result.data.success) {
-            console.log("User logged in successfully");
-          }
-        } catch (error) {}
-      },
     }),
     verifyOtp: builder.mutation<VerifyOtpResponse, VerifyOtpRequest>({
       query: (body) => ({
@@ -135,6 +130,9 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ["Auth"],
     }),
   }),
+  // Helps with HMR / duplicate imports during development.
+  // Without this, RTK Query throws when the same endpointName is injected twice.
+  overrideExisting: true,
 });
 
 export const { useSignupMutation, useLoginMutation, useVerifyOtpMutation } =

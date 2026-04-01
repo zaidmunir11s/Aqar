@@ -12,26 +12,35 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { useNavigation, useRoute, CommonActions } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  CommonActions,
+  useFocusEffect,
+} from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OtpInput, type OtpInputRef } from "react-native-otp-entry";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, PrimaryButton, TextInput as CustomTextInput } from "../../components";
-import { COLORS } from "../../constants";
+import { COLORS, STORAGE_KEYS } from "../../constants";
+import {
+  setLoggedInPhoneNumber,
+  setLoggedInDisplayName,
+  setLoggedInProfileImageUri,
+} from "../../utils/loggedInPhoneStorage";
+import { syncAccountProfileMetaOnAuth, touchLastActiveAt } from "../../utils/accountActivityStorage";
 import { useLocalization, useKeyboardHeight } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import { useVerifyOtpMutation } from "@/redux/api";
+import type { AuthStackParamList } from "../../navigation/types";
 
-type NavigationProp = NativeStackNavigationProp<any>;
-
-interface RouteParams {
-  phoneNumber: string;
-  otp?: string;
-}
+type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
+type VerifyPhoneRouteProp = RouteProp<AuthStackParamList, "VerifyPhoneNumber">;
 
 export default function VerifyPhoneNumberScreen(): React.JSX.Element {
-  const route = useRoute();
-  const params = route.params as RouteParams;
+  const route = useRoute<VerifyPhoneRouteProp>();
+  const params = route.params;
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
   const { setHasBackendSession } = useAuthContext();
@@ -43,13 +52,12 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const [timeLeft, setTimeLeft] = useState<number>(120); // 2 minutes in seconds
   const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
   const otpInputRef = useRef<OtpInputRef>(null);
-  const scrollRef = useRef<ScrollView>(null);
   const { keyboardHeight } = useKeyboardHeight();
 
-  // Focus OTP input and show keyboard as soon as screen is ready; pre-fill OTP if passed
+  // Focus OTP when ready. Pre-fill only in __DEV__ when a dev OTP was passed (never in production).
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (initialOtp && initialOtp.length <= 6) {
+      if (__DEV__ && initialOtp && initialOtp.length <= 6) {
         otpInputRef.current?.setValue?.(initialOtp);
         setOtp(initialOtp);
       }
@@ -57,6 +65,16 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
     }, 150);
     return () => clearTimeout(timer);
   }, [initialOtp]);
+
+  // Keep profile phone in sync as soon as user reaches verify (post-signup session + after verify success).
+  useFocusEffect(
+    useCallback(() => {
+      const digits = phoneNumber.replace(/\D/g, "");
+      if (digits.length > 0) {
+        void setLoggedInPhoneNumber(phoneNumber);
+      }
+    }, [phoneNumber])
+  );
 
   // Timer countdown
   useEffect(() => {
@@ -97,8 +115,9 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
     setTimeLeft(120);
     setIsTimerActive(true);
     setOtp("");
-    // TODO: Resend OTP code
-    console.log("Resend OTP code");
+    otpInputRef.current?.clear?.();
+    otpInputRef.current?.focus?.();
+    // TODO: Call backend resend-OTP endpoint when available.
   }, []);
 
   const formatTime = useCallback((seconds: number): string => {
@@ -120,15 +139,32 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
           otp: trimmedOtp,
         }).unwrap();
         if (result.data?.token) {
-          await AsyncStorage.setItem("auth_token", result.data.token);
+          await AsyncStorage.setItem(STORAGE_KEYS.authToken, result.data.token);
           if (result.data.refreshToken) {
             await AsyncStorage.setItem(
-              "refresh_token",
+              STORAGE_KEYS.refreshToken,
               result.data.refreshToken
             );
           }
-          setHasBackendSession(true);
+          await setLoggedInPhoneNumber(phoneNumber);
+          await syncAccountProfileMetaOnAuth(phoneNumber);
+          await touchLastActiveAt();
+          const u = result.data?.user;
+          const resolvedName =
+            u?.name?.trim() ||
+            [u?.firstName, u?.lastName]
+              .filter(Boolean)
+              .map((s) => String(s).trim())
+              .join(" ")
+              .trim();
+          if (resolvedName) {
+            await setLoggedInDisplayName(resolvedName);
+          }
+          if (u?.profileImageUrl?.trim()) {
+            await setLoggedInProfileImageUri(u.profileImageUrl.trim());
+          }
         }
+        setHasBackendSession(true);
         Alert.alert(
           t("common.success"),
           result.message ||
@@ -159,7 +195,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         Alert.alert(t("common.error"), errorMessage);
       }
     },
-    [phoneNumber, verifyOtp, navigation, t, isLoading]
+    [phoneNumber, verifyOtp, navigation, t, isLoading, setHasBackendSession]
   );
 
   const handleVerify = useCallback(async () => {
@@ -204,7 +240,6 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
     <View style={styles.container}>
       <Header onBackPress={handleBackPress} />
       <ScrollView
-        ref={scrollRef}
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

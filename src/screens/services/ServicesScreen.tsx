@@ -28,10 +28,6 @@ export default function ServicesScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
 
-  const handleSocialMedia = useCallback((platform: string) => {
-    console.log("Open", platform);
-  }, []);
-
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
@@ -40,12 +36,9 @@ export default function ServicesScreen(): React.JSX.Element {
     }
   }, [navigation]);
 
-  const handleServicePress = useCallback((service: string) => {
-    console.log("Service pressed:", service);
-  }, []);
+  const headerRightComponent = useMemo(() => <LanguageConverter />, []);
 
-  // Memoize services with translations
-  const services = useMemo(() => [
+  const services = [
     {
       id: "1",
       title: t("services.customerService"),
@@ -83,7 +76,7 @@ export default function ServicesScreen(): React.JSX.Element {
       iconLib: "Ionicons" as const,
       accent: "#10b981",
     },
-  ], [t]);
+  ];
 
   const socialMediaItems: Array<{
     name: string;
@@ -160,7 +153,7 @@ export default function ServicesScreen(): React.JSX.Element {
         title={t("services.title")}
         onBackPress={handleBackPress}
         showRightSide={true}
-        rightComponent={<LanguageConverter />}
+        rightComponent={headerRightComponent}
       />
 
       <ScrollView 
@@ -175,7 +168,9 @@ export default function ServicesScreen(): React.JSX.Element {
               key={service.id}
               style={styles.serviceTile}
               activeOpacity={0.8}
-              onPress={() => handleServicePress(service.title)}
+              onPress={() => {
+                if (__DEV__) console.log("Service pressed:", service.title);
+              }}
             >
               <View style={[styles.tileIconWrapper, { backgroundColor: service.accent + "15" }]}>
                 {renderIcon(service.icon, service.iconLib, wp(8), service.accent)}
@@ -200,7 +195,9 @@ export default function ServicesScreen(): React.JSX.Element {
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.7}
-                onPress={() => handleSocialMedia(item.platform)}
+                onPress={() => {
+                  if (__DEV__) console.log("Open", item.platform);
+                }}
               >
                 <SocialMediaIcon
                   name={item.name}
@@ -208,7 +205,9 @@ export default function ServicesScreen(): React.JSX.Element {
                   library={item.library}
                   bgColor={item.bgColor}
                   iconColor={item.iconColor}
-                  onPress={() => handleSocialMedia(item.platform)}
+                  onPress={() => {
+                    if (__DEV__) console.log("Open", item.platform);
+                  }}
                 />
               </TouchableOpacity>
             ))}

@@ -42,3 +42,10 @@ ios/
 
 # android
 android/
+
+#cursor-rules
+.cursor/rules/
+
+#agent skills
+.agents
+skills-lock.json

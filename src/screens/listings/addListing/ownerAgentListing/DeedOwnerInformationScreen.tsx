@@ -6,10 +6,7 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
-  Keyboard,
-  Animated,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -304,7 +301,6 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   // Refs for stable renderItem: only the row whose data changed re-renders
   const fieldsRef = useRef(fields);
@@ -517,37 +513,6 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     navigation.navigate("MarketingRequestPlaceholder");
   }, [navigation]);
 
-  // Listen to keyboard show/hide events
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (event) => {
-        // Set keyboard height to position footer just above keyboard
-        Animated.timing(keyboardHeight, {
-          toValue: event.endCoordinates.height,
-          duration: event.duration || 250,
-          useNativeDriver: false, // Can't use native driver for bottom positioning
-        }).start();
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      (event) => {
-        // Reset keyboard height to 0 to bring footer back to original position
-        Animated.timing(keyboardHeight, {
-          toValue: 0,
-          duration: event.duration || 250,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, [keyboardHeight]);
-
   const openDatePicker = useCallback((type: "owner" | "agent" | "company") => {
     setActiveCalendarType(type);
     const titles = {
@@ -735,66 +700,51 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <View style={styles.mainContainer}>
-          <ScreenHeader
-            title={t("listings.addListing")}
-            onBackPress={handleBackPress}
-            showRightSide={true}
-            rightComponent={
-              <TouchableOpacity
-                onPress={handleClosePress}
-                activeOpacity={0.7}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
-              </TouchableOpacity>
-            }
-            fontWeightBold={true}
-            fontSize={wp(4.5)}
-          />
-
-          <FlatList
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            data={formFieldsList}
-            keyExtractor={(item) => item.id}
-            renderItem={renderFormFieldItem}
-            ListHeaderComponent={listHeader}
-            ListFooterComponent={listFooter}
-            getItemLayout={getItemLayout}
-            initialNumToRender={6}
-            maxToRenderPerBatch={4}
-            windowSize={7}
-            removeClippedSubviews={Platform.OS === "android"}
-          />
-        </View>
-      </KeyboardAvoidingView>
-
-      <Animated.View
-        style={[
-          styles.footerContainer,
-          {
-            bottom: keyboardHeight,
-          },
-        ]}
-      >
-        <ListingFooter
-          currentStep={2}
-          totalSteps={2}
-          onBackPress={handleFooterBackPress}
-          onNextPress={handleNextPress}
-          backText={t("listings.completeLater")}
-          nextText={t("listings.next")}
-          nextDisabled={false}
+      <View style={styles.mainContainer}>
+        <ScreenHeader
+          title={t("listings.addListing")}
+          onBackPress={handleBackPress}
+          showRightSide={true}
+          rightComponent={
+            <TouchableOpacity
+              onPress={handleClosePress}
+              activeOpacity={0.7}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
+            </TouchableOpacity>
+          }
+          fontWeightBold={true}
+          fontSize={wp(4.5)}
         />
-      </Animated.View>
+
+        <FlatList
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          data={formFieldsList}
+          keyExtractor={(item) => item.id}
+          renderItem={renderFormFieldItem}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          getItemLayout={getItemLayout}
+          initialNumToRender={6}
+          maxToRenderPerBatch={4}
+          windowSize={7}
+          removeClippedSubviews={Platform.OS === "android"}
+        />
+      </View>
+
+      <ListingFooter
+        currentStep={2}
+        totalSteps={2}
+        onBackPress={handleFooterBackPress}
+        onNextPress={handleNextPress}
+        backText={t("listings.completeLater")}
+        nextText={t("listings.next")}
+        nextDisabled={false}
+      />
 
       <DatePickerModal
         visible={datePickerVisible}
@@ -824,9 +774,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ebf1f1",
   },
-  keyboardView: {
-    flex: 1,
-  },
   mainContainer: {
     flex: 1,
   },
@@ -836,26 +783,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: wp(4),
     paddingBottom: hp(20), // Extra padding for footer
-  },
-  footerContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: -2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
   },
   closeButton: {
     width: wp(12),

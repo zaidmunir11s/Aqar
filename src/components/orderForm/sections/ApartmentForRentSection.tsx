@@ -1,34 +1,31 @@
 import React, { memo } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+import { View, StyleSheet } from "react-native";
+import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 import {
   PriceInputSection,
   TabBarSection,
   FieldWithModal,
   ToggleRow,
-  RentPeriodTabBar,
-  PaymentChips,
+  RentPaymentFrequencyChips,
 } from "../index";
-import { ToggleSwitch } from "../../common";
 import { COLORS } from "../../../constants";
 import {
+  APARTMENT_RENT_TENANT_OPTIONS,
   BEDROOM_OPTIONS,
   LIVING_ROOM_OPTIONS,
   WC_OPTIONS,
-  FLOOR_OPTIONS,
-  AGE_OPTIONS,
+  isRentAnnualPriceFrequency,
+  type ApartmentRentTenant,
+  type RentPaymentFrequency,
+  type RentPaymentFrequencyChoice,
 } from "../../../constants/orderFormOptions";
+import { useLocalization } from "../../../hooks/useLocalization";
 
-export type RentPeriod = "Yearly" | "Monthly" | null;
+export type RentPeriod = RentPaymentFrequency;
 
 export interface ApartmentForRentSectionProps {
-  rentPeriod: RentPeriod;
-  onRentPeriodChange: (period: "Yearly" | "Monthly") => void;
-  selectedPayment: string | null;
-  onPaymentChange: (payment: string) => void;
+  rentPeriod: RentPaymentFrequency;
+  onRentPeriodChange: (period: RentPaymentFrequencyChoice) => void;
   fromPrice: string;
   toPrice: string;
   onFromPriceChange: (value: string) => void;
@@ -37,8 +34,8 @@ export interface ApartmentForRentSectionProps {
   priceTo: string;
   onPriceFromChange: (value: string) => void;
   onPriceToChange: (value: string) => void;
-  selectedPaymentType: string | null;
-  onPaymentTypeChange: (value: string) => void;
+  apartmentRentTenant: ApartmentRentTenant;
+  onApartmentRentTenantSelect: (value: string) => void;
   selectedBedroom: string | null;
   onBedroomChange: (value: string) => void;
   selectedLivingRoom: string | null;
@@ -69,8 +66,6 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
   ({
     rentPeriod,
     onRentPeriodChange,
-    selectedPayment,
-    onPaymentChange,
     fromPrice,
     toPrice,
     onFromPriceChange,
@@ -79,8 +74,8 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
     priceTo,
     onPriceFromChange,
     onPriceToChange,
-    selectedPaymentType,
-    onPaymentTypeChange,
+    apartmentRentTenant,
+    onApartmentRentTenantSelect,
     selectedBedroom,
     onBedroomChange,
     selectedLivingRoom,
@@ -106,42 +101,26 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
     specialEntrances,
     onSpecialEntrancesChange,
   }) => {
-    const showYearlyContent = rentPeriod === "Yearly";
-    const showMonthlyContent = rentPeriod === "Monthly";
+    const { t } = useLocalization();
+    const showAnnualPriceBlock = rentPeriod != null && isRentAnnualPriceFrequency(rentPeriod);
+    const isMonthly = rentPeriod === "Monthly";
     const showPriceSection = !rentPeriod;
-    const showPaymentTypeTabBar = !rentPeriod || rentPeriod === "Monthly";
-    const priceLabel =
-      selectedPayment === "Monthly" && showYearlyContent
-        ? "Price monthly"
-        : "Annual Price";
+    const priceLabel = isMonthly ? t("listings.priceMonthly") : t("listings.annualPrice");
 
     return (
       <>
-        <RentPeriodTabBar
-          selectedPeriod={rentPeriod}
-          onSelect={onRentPeriodChange}
-        />
+        <RentPaymentFrequencyChips selectedFrequency={rentPeriod} onSelect={onRentPeriodChange} />
 
-        {showYearlyContent && (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.label}>Payment options</Text>
-              <PaymentChips
-                selectedPayment={selectedPayment}
-                onSelect={onPaymentChange}
-              />
-            </View>
-
-            <PriceInputSection
-              label={priceLabel}
-              fromValue={fromPrice}
-              toValue={toPrice}
-              onFromChange={onFromPriceChange}
-              onToChange={onToPriceChange}
-              fromPlaceholder="From price"
-              toPlaceholder="To price"
-            />
-          </>
+        {showAnnualPriceBlock && (
+          <PriceInputSection
+            label={priceLabel}
+            fromValue={fromPrice}
+            toValue={toPrice}
+            onFromChange={onFromPriceChange}
+            onToChange={onToPriceChange}
+            fromPlaceholder="From price"
+            toPlaceholder="To price"
+          />
         )}
 
         {showPriceSection && (
@@ -156,13 +135,11 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
           />
         )}
 
-        {showPaymentTypeTabBar && (
-          <TabBarSection
-            options={["ALL", "+1"]}
-            selectedValue={selectedPaymentType}
-            onSelect={onPaymentTypeChange}
-          />
-        )}
+        <TabBarSection
+          options={[...APARTMENT_RENT_TENANT_OPTIONS]}
+          selectedValue={apartmentRentTenant}
+          onSelect={onApartmentRentTenantSelect}
+        />
 
         <TabBarSection
           label="Bedrooms"
@@ -249,13 +226,6 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: hp(2.5),
   },
-  label: {
-    fontSize: wp(4),
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginBottom: hp(1),
-  },
 });
 
 export default ApartmentForRentSection;
-

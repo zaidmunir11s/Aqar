@@ -4,13 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
+  BackHandler,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -32,45 +31,13 @@ import {
   ALL_CATEGORIES,
   FOR_SALE_CATEGORIES,
   FOR_RENT_CATEGORIES,
+  getMarketingRequestCategoryTranslationKey,
   TabType,
   CategoryItem,
 } from "@/constants/categories";
 import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
-
-/**
- * Map category ID to translation key
- */
-function getCategoryTranslationKey(categoryId: string): string {
-  const categoryMap: Record<string, string> = {
-    // For Sale
-    "sale-1": "listings.propertyTypes.villaForSale",
-    "sale-2": "listings.propertyTypes.landForSale",
-    "sale-3": "listings.propertyTypes.apartmentForSale",
-    "sale-4": "listings.propertyTypes.buildingForSale",
-    "sale-5": "listings.propertyTypes.smallHouseForSale",
-    "sale-6": "listings.propertyTypes.loungeForSale",
-    "sale-7": "listings.propertyTypes.farmForSale",
-    "sale-8": "listings.propertyTypes.storeForSale",
-    "sale-9": "listings.propertyTypes.floorForSale",
-    // For Rent
-    "rent-1": "listings.propertyTypes.apartmentForRent",
-    "rent-2": "listings.propertyTypes.villaForRent",
-    "rent-3": "listings.propertyTypes.bigFlatForRent",
-    "rent-4": "listings.propertyTypes.loungeForRent",
-    "rent-5": "listings.propertyTypes.smallHouseForRent",
-    "rent-6": "listings.propertyTypes.storeForRent",
-    "rent-7": "listings.propertyTypes.buildingForRent",
-    "rent-8": "listings.propertyTypes.landForRent",
-    "rent-9": "listings.propertyTypes.roomForRent",
-    "rent-10": "listings.propertyTypes.officeForRent",
-    "rent-11": "listings.propertyTypes.tentForRent",
-    "rent-12": "listings.propertyTypes.warehouseForRent",
-    "rent-13": "listings.propertyTypes.chaletForRent",
-  };
-  return categoryMap[categoryId] || "";
-}
 
 /* ---------------------------------- */
 /* CATEGORY MAP (SCALABLE & CLEAN)     */
@@ -83,11 +50,24 @@ const CATEGORY_MAP: Record<TabType, CategoryItem[]> = {
 
 export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute();
   const { t, isRTL } = useLocalization();
+  const params = (route.params ?? {}) as {
+    selectedCategory?: string;
+    attachments?: Array<{
+      id: string;
+      uri: string;
+      mediaType?: "photo" | "video" | "unknown";
+      note?: string;
+    }>;
+    virtualTourLink?: string;
+  };
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>("ALL");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    params.selectedCategory ?? null
+  );
 
   const categories = CATEGORY_MAP[selectedTab];
 
@@ -132,8 +112,16 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
 
   const handleNextPress = () => {
     if (!selectedCategory) return;
-    console.log("Selected category:", selectedCategory);
-    // navigate to next step
+    const hasDraftData = (params.attachments?.length ?? 0) > 0 || !!params.virtualTourLink;
+    if (hasDraftData) {
+      navigation.navigate("MarketingRequestAttachments", {
+        selectedCategory,
+        attachments: params.attachments ?? [],
+        virtualTourLink: params.virtualTourLink ?? "",
+      });
+      return;
+    }
+    navigation.navigate("MarketingRequestMedia", { selectedCategory });
   };
 
   /* ------------------ */
@@ -153,12 +141,22 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
 
   const isSelected = (id: string) => selectedCategory === id;
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onHardwareBackPress = () => {
+        setShowCancelModal(true);
+        return true;
+      };
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onHardwareBackPress
+      );
+      return () => subscription.remove();
+    }, [])
+  );
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
+    <View style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           {/* HEADER */}
@@ -201,6 +199,8 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
             <View style={styles.cardContainer}>
               {categories.map((category, index) => {
                 const selected = isSelected(category.id);
+                const categoryI18nKey = getMarketingRequestCategoryTranslationKey(category.id);
+                const categoryDisplayName = categoryI18nKey ? t(categoryI18nKey) : category.text;
 
                 return (
                   <TouchableOpacity
@@ -225,9 +225,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
                         selected && styles.categoryTextSelected,
                       ]}
                     >
-                      {getCategoryTranslationKey(category.id)
-                        ? t(getCategoryTranslationKey(category.id))
-                        : category.text}
+                      {categoryDisplayName}
                     </Text>
 
                     <Ionicons
@@ -258,7 +256,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
         onBack={handleCancelBack}
         onConfirm={handleCancelYes}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -288,7 +286,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: COLORS.white,
     borderRadius: wp(2.5),
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: COLORS.border,
     overflow: "hidden",
   },
@@ -306,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ebf1f1",
   },
   categoryItemWithBorder: {
-    borderBottomWidth: 1.5,
+    borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   categoryItemSelected: {

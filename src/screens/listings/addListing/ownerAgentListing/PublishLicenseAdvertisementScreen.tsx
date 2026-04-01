@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   Image,
 } from "react-native";
@@ -34,9 +33,19 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
 
   const steps = useMemo(
     () => [
-      t("listings.step1PayFee"),
-      t("listings.step2AddDeed"),
-      t("listings.step3Approval"),
+      t("listings.licenseStep1"),
+      t("listings.licenseStep2"),
+      t("listings.licenseStep3"),
+      t("listings.licenseStep4"),
+    ],
+    [t]
+  );
+
+  const requirements = useMemo(
+    () => [
+      t("listings.licenseReq1"),
+      t("listings.licenseReq2"),
+      t("listings.licenseReq3"),
     ],
     [t]
   );
@@ -44,7 +53,10 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
-      heading: {
+      noticeRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
+      noticeText: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
       stepsTitle: {
@@ -53,26 +65,14 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
       stepItem: {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
-      bulletPoint: {
+      bullet: {
         marginRight: isRTL ? 0 : wp(2),
         marginLeft: isRTL ? wp(2) : 0,
       },
       stepText: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
-      headerRow: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      headerText: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-      dataRow: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      dataText: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-      footerNote: {
+      linkText: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
@@ -104,14 +104,14 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
     navigation.goBack();
   };
 
+  const handleLearnMorePress = () => {
+    // Placeholder until URL is confirmed.
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
+    <View style={styles.container}>
       <ScreenHeader
-        title={t("listings.publishLicenseAdvertisement")}
+        title={t("listings.publishLicenseAdvertisementFull")}
         onBackPress={handleBackPress}
         showRightSide={true}
         rightComponent={
@@ -123,8 +123,9 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
             <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
           </TouchableOpacity>
         }
-        fontWeightBold={true}
-        fontSize={wp(4.5)}
+        titleFontWeight="600"
+        fontSize={wp(5)}
+        titleNumberOfLines={2}
       />
 
       <ScrollView
@@ -132,9 +133,14 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* White Card Container */}
         <View style={styles.card}>
-          {/* Logo Section */}
+          <View style={[styles.noticeCard, rtlStyles.noticeRow]}>
+            <Ionicons name="checkmark-circle" size={wp(5)} color={COLORS.primary} />
+            <Text style={[styles.noticeText, rtlStyles.noticeText]}>
+              {t("listings.licenseExemptNotice")}
+            </Text>
+          </View>
+
           <View style={styles.logoContainer}>
             <Image
               source={require("../../../../../assets/images/aqar-license.png")}
@@ -143,68 +149,39 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
             />
           </View>
 
-          {/* Heading */}
-          <Text style={[styles.heading, rtlStyles.heading]}>
+          <Text style={styles.heading}>
             {t("listings.baytIssuesLicenses")}
           </Text>
 
-          {/* Steps Section */}
           <View style={styles.stepsContainer}>
             <Text style={[styles.stepsTitle, rtlStyles.stepsTitle]}>
               {t("listings.steps")}
             </Text>
             {steps.map((step, index) => (
               <View key={index} style={[styles.stepItem, rtlStyles.stepItem]}>
-                <View style={[styles.bulletPoint, rtlStyles.bulletPoint]} />
+                <View style={[styles.bullet, rtlStyles.bullet]} />
                 <Text style={[styles.stepText, rtlStyles.stepText]}>{step}</Text>
               </View>
             ))}
           </View>
 
-          {/* Table Section */}
-          <View style={styles.tableContainer}>
-            {/* Header Row */}
-            <View style={[styles.headerRow, rtlStyles.headerRow]}>
-              <Text style={[styles.headerText, rtlStyles.headerText]}>
-                {t("listings.listingType")}
-              </Text>
-              <Text style={[styles.headerText, rtlStyles.headerText]}>
-                {t("listings.price")}
-              </Text>
-              <Text style={[styles.headerText, rtlStyles.headerText]}>
-                {t("listings.commission")}
-              </Text>
-            </View>
-
-            {/* For Rent Row - with different background */}
-            <View style={[styles.dataRow, styles.rentRow, rtlStyles.dataRow]}>
-              <Text style={[styles.dataText, rtlStyles.dataText]}>
-                {t("listings.forRent")}
-              </Text>
-              <Text style={[styles.dataText, rtlStyles.dataText]}>
-                {t("listings.afterDetails")}
-              </Text>
-              <Text style={[styles.dataText, rtlStyles.dataText]}>
-                {t("listings.none")}
-              </Text>
-            </View>
-
-            {/* For Sale Row */}
-            <View style={[styles.dataRow, rtlStyles.dataRow]}>
-              <Text style={[styles.dataText, rtlStyles.dataText]}>
-                {t("listings.forSale")}
-              </Text>
-              <Text style={[styles.dataText, rtlStyles.dataText]}>
-                {t("listings.afterDetails")}
-              </Text>
-              <Text style={[styles.dataText, rtlStyles.dataText]}>
-                {t("listings.none")}
-              </Text>
-            </View>
+          <View style={styles.stepsContainer}>
+            <Text style={[styles.stepsTitle, rtlStyles.stepsTitle]}>
+              {t("listings.requirements")}
+            </Text>
+            {requirements.map((item, index) => (
+              <View key={index} style={[styles.stepItem, rtlStyles.stepItem]}>
+                <View style={[styles.bullet, rtlStyles.bullet]} />
+                <Text style={[styles.stepText, rtlStyles.stepText]}>{item}</Text>
+              </View>
+            ))}
           </View>
 
-          {/* Footer Note */}
-          <Text style={styles.footerNote}>*</Text>
+          <TouchableOpacity onPress={handleLearnMorePress} activeOpacity={0.7}>
+            <Text style={[styles.linkText, rtlStyles.linkText]}>
+              {t("listings.learnAboutLicenses")}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -223,7 +200,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
         onBack={handleCancelBack}
         onConfirm={handleCancelYes}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -262,89 +239,75 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  tableContainer: {
-    marginTop: hp(2),
-  },
-  headerRow: {
-    flexDirection: "row",
-    paddingVertical: hp(1.5),
+  noticeCard: {
+    backgroundColor: COLORS.bgGreen,
+    borderRadius: wp(3),
     paddingHorizontal: wp(3),
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  headerText: {
-    flex: 1,
-    fontSize: wp(3.8),
-    fontWeight: "600",
-    color: "#353f49",
-  },
-  dataRow: {
+    paddingVertical: hp(1.3),
+    marginBottom: hp(2),
+    alignItems: "center",
     flexDirection: "row",
-    paddingVertical: hp(1.5),
-    paddingHorizontal: wp(3),
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    gap: wp(2),
   },
-  rentRow: {
-    backgroundColor: "#f3f4f6",
-  },
-  dataText: {
+  noticeText: {
     flex: 1,
-    fontSize: wp(3.8),
-    fontWeight: "400",
-    color: "#353f49",
+    fontSize: wp(3.7),
+    fontWeight: "500",
+    color: COLORS.textPrimary,
+    lineHeight: hp(2.4),
   },
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: hp(2),
-    paddingVertical: hp(2),
+    marginBottom: hp(1.6),
+    paddingVertical: hp(0.8),
   },
   logo: {
-    width: wp(50),
-    height: hp(15),
+    width: wp(40),
+    height: hp(14),
   },
   heading: {
     fontSize: wp(4.2),
     fontWeight: "600",
-    color: "#353f49",
+    color: COLORS.textPrimary,
     textAlign: "center",
-    marginBottom: hp(2),
-    lineHeight: hp(3),
+    marginBottom: hp(1.8),
+    lineHeight: hp(3.3),
   },
   stepsContainer: {
-    marginTop: hp(1),
+    marginTop: hp(0.6),
   },
   stepsTitle: {
-    fontSize: wp(4),
+    fontSize: wp(4.5),
     fontWeight: "600",
-    color: "#353f49",
-    marginBottom: hp(1),
+    color: COLORS.textPrimary,
+    marginBottom: hp(0.8),
   },
   stepItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: hp(1),
+    marginBottom: hp(0.5),
   },
-  bulletPoint: {
-    width: wp(1.5),
-    height: wp(1.5),
-    borderRadius: wp(0.75),
-    backgroundColor: COLORS.primary,
-    marginTop: hp(0.8),
-    marginRight: wp(2),
+  bullet: {
+    width: wp(1.45),
+    height: wp(1.45),
+    borderRadius: wp(0.8),
+    backgroundColor: COLORS.textPrimary,
+    marginTop: hp(1.15),
+    marginRight: wp(1.6),
   },
   stepText: {
     flex: 1,
-    fontSize: wp(3.8),
+    fontSize: wp(4.3),
     fontWeight: "400",
-    color: "#353f49",
+    color: COLORS.textPrimary,
     lineHeight: hp(2.5),
   },
-  footerNote: {
-    fontSize: wp(3.5),
-    color: "#6b7280",
-    marginTop: hp(1),
+  linkText: {
+    fontSize: wp(4.1),
+    color: "#0b82a0",
+    textDecorationLine: "underline",
+    marginTop: hp(0.8),
   },
 });
 

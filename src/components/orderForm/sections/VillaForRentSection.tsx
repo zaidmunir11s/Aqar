@@ -4,20 +4,22 @@ import {
   TabBarSection,
   FieldWithModal,
   ToggleGroup,
-  RentPeriodTabBar,
-  PaymentChips,
+  RentPaymentFrequencyChips,
 } from "../index";
 import {
   BEDROOM_OPTIONS,
   LIVING_ROOM_OPTIONS,
   WC_OPTIONS,
   VILLA_TYPE_OPTIONS,
+  getRentSearchPriceLabel,
+  type RentPaymentFrequency,
+  type RentPaymentFrequencyChoice,
 } from "../../../constants/orderFormOptions";
 import { useLocalization } from "../../../hooks/useLocalization";
 
 export interface VillaForRentSectionProps {
-  rentPeriod: "Yearly" | "Monthly" | null;
-  onRentPeriodChange: (period: "Yearly" | "Monthly") => void;
+  rentPeriod: RentPaymentFrequency;
+  onRentPeriodChange: (period: RentPaymentFrequencyChoice) => void;
   priceFrom: string;
   priceTo: string;
   onPriceFromChange: (value: string) => void;
@@ -62,8 +64,6 @@ export interface VillaForRentSectionProps {
   onNearBusChange: (value: boolean) => void;
   nearMetro: boolean;
   onNearMetroChange: (value: boolean) => void;
-  selectedPayment?: string | null;
-  onPaymentChipSelect?: (payment: string) => void;
 }
 
 const VillaForRentSection = memo<VillaForRentSectionProps>(
@@ -114,8 +114,6 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
     onNearBusChange,
     nearMetro,
     onNearMetroChange,
-    selectedPayment = null,
-    onPaymentChipSelect,
   }) => {
     const { t, isRTL } = useLocalization();
 
@@ -154,24 +152,10 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
 
     return (
       <>
-        <RentPeriodTabBar selectedPeriod={rentPeriod} onSelect={onRentPeriodChange} />
-
-        {rentPeriod === "Yearly" && onPaymentChipSelect && (
-          <PaymentChips
-            label={t("listings.paymentOptions")}
-            selectedPayment={selectedPayment ?? null}
-            onSelect={onPaymentChipSelect}
-          />
-        )}
+        <RentPaymentFrequencyChips selectedFrequency={rentPeriod} onSelect={onRentPeriodChange} />
 
         <PriceInputSection
-          label={
-            rentPeriod === "Yearly"
-              ? selectedPayment === "Monthly"
-                ? t("listings.priceMonthly")
-                : t("listings.annualPrice")
-              : t("listings.price")
-          }
+          label={getRentSearchPriceLabel(rentPeriod, t)}
           fromValue={priceFrom}
           toValue={priceTo}
           onFromChange={onPriceFromChange}

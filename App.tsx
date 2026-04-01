@@ -34,8 +34,8 @@ const LocalizationInitializer: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { isInitialized, isLoading } = useAppSelector(
-    (state) => state.localization
+  const isInitialized = useAppSelector(
+    (state) => state.localization.isInitialized
   );
 
   useEffect(() => {

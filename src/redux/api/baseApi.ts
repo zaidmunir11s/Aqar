@@ -6,16 +6,13 @@ import {
   import type { FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_CONFIG } from "../../constants/api";
+import { STORAGE_KEYS } from "../../constants";
 import { authSessionNotifier } from "../../context/auth-context";
-  
-  if (__DEV__) {
-    console.log("API Base URL:", API_CONFIG.BASE_URL);
-  }
   
   const baseQuery = fetchBaseQuery({
     baseUrl: API_CONFIG.BASE_URL,
-    prepareHeaders: async (headers, { getState }) => {
-      const token = await AsyncStorage.getItem("auth_token");
+    prepareHeaders: async (headers) => {
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.authToken);
   
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -41,32 +38,15 @@ import { authSessionNotifier } from "../../context/auth-context";
       const { status, data } = result.error;
   
       if (status === 401) {
-        const refreshToken = await AsyncStorage.getItem("refresh_token");
-  
-        if (refreshToken) {
-          const refreshResult = await baseQuery(
-            {
-              url: "/api/auth/refresh",
-              method: "POST",
-              body: { refreshToken },
-            },
-            api,
-            extraOptions
-          );
-  
-          if (refreshResult.data) {
-            const newToken = (refreshResult.data as { token: string }).token;
-            await AsyncStorage.setItem("auth_token", newToken);
-  
-            result = await baseQuery(args, api, extraOptions);
-          } else {
-            await AsyncStorage.multiRemove(["auth_token", "refresh_token"]);
-            authSessionNotifier.notifySessionExpired();
-          }
-        } else {
-          await AsyncStorage.removeItem("auth_token");
-          authSessionNotifier.notifySessionExpired();
-        }
+        // Backend does not expose a refresh endpoint in this project.
+        // On auth failure, clear tokens and route through the existing
+        // "session expired" flow.
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.authToken,
+          STORAGE_KEYS.refreshToken,
+          STORAGE_KEYS.loggedInPhoneNumber,
+        ]);
+        authSessionNotifier.notifySessionExpired();
       }
   
       if (__DEV__) {
@@ -80,9 +60,6 @@ import { authSessionNotifier } from "../../context/auth-context";
           console.error("Network error:", result.error);
         }
       }
-    }
-  
-    if (result.data) {
     }
   
     return result;

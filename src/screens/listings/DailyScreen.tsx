@@ -83,12 +83,13 @@ export default function DailyScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const dispatch = useAppDispatch();
-  const listingsFilters = useAppSelector((s) => s?.listingsFilters);
-  const preservedCity = listingsFilters?.preservedCity ?? "";
-  const preservedSearchFilters = listingsFilters?.preservedSearchFilters ?? null;
-  const preservedFilter = listingsFilters?.preservedFilter ?? null;
-  const preservedDates = listingsFilters?.preservedDates ?? { startDate: null, endDate: null };
-  const preservedRegion = listingsFilters?.preservedRegion ?? null;
+  const preservedCity = useAppSelector((s) => s.listingsFilters.preservedCity);
+  const preservedSearchFilters = useAppSelector(
+    (s) => s.listingsFilters.preservedSearchFilters
+  );
+  const preservedFilter = useAppSelector((s) => s.listingsFilters.preservedFilter);
+  const preservedDates = useAppSelector((s) => s.listingsFilters.preservedDates);
+  const preservedRegion = useAppSelector((s) => s.listingsFilters.preservedRegion);
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);

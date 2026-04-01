@@ -41,6 +41,7 @@ export const COLORS = {
   // Shadow colors
   shadow: "rgba(0, 0, 0, 0.1)",
   shadowDark: "rgba(0, 0, 0, 0.2)",
+  shadowErrorLight: "rgba(239, 68, 68, 0.14)",
 
   // Background variants
   bgBlue: "#dbeafe",

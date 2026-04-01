@@ -9,23 +9,59 @@ import {
 } from "react-native";
 import {
   Ionicons,
-  FontAwesome,
   MaterialCommunityIcons,
+  Feather,
 } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import {
-  getTypeLabelFromType,
-  getUsageLabel,
   getDefaultImageUrl,
+  formatRentPropertyCardPriceLine,
+  buildPropertyInfoRows,
+  pickCorePropertyInfoRowsForMapCard,
+  type DetailIconSpec,
+  type PropertyDetailInfoRow,
 } from "../../utils";
 import type { Property, FilterOption } from "../../types/property";
 import { COLORS } from "../../constants/colors";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+function PropertyInfoMetaIcon({
+  spec,
+  size,
+}: {
+  spec: DetailIconSpec | null;
+  size: number;
+}): React.JSX.Element {
+  if (spec == null) {
+    return <View style={{ width: size, height: size }} />;
+  }
+  const color = "#9ca3af";
+  if (spec.library === "MaterialCommunityIcons") {
+    return <MaterialCommunityIcons name={spec.name as any} size={size} color={color} />;
+  }
+  if (spec.library === "Feather") {
+    return <Feather name={spec.name as any} size={size} color={color} />;
+  }
+  return <Ionicons name={spec.name as any} size={size} color={color} />;
+}
+
+function formatBottomCardDetailValue(
+  row: PropertyDetailInfoRow,
+  t: (key: string) => string
+): string {
+  if (row.label === t("listings.area")) {
+    const trimmed = row.value.trim();
+    if (/^\d+$/.test(trimmed)) {
+      return `${trimmed} ${t("listings.m2")}`;
+    }
+  }
+  return row.value;
+}
 
 export interface BottomPropertyCardProps {
   property: Property | null;
@@ -40,10 +76,9 @@ export interface BottomPropertyCardProps {
  */
 const BottomPropertyCard = memo<BottomPropertyCardProps>(
   ({ property, onPress, listingType, filterOptions, calculatedPrice }) => {
-    const { t, isRTL } = useLocalization();
+    const { t, isRTL, i18n } = useLocalization();
     const insets = useSafeAreaInsets();
     const { bottom } = insets;
-    if (!property) return null;
 
     // RTL-aware styles
     const rtlStyles = useMemo(
@@ -79,6 +114,15 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
       }),
       [isRTL]
     );
+
+    const mapMetaRows = useMemo(() => {
+      if (!property) return [];
+      if ("isProject" in property && property.isProject) return [];
+      const allRows = buildPropertyInfoRows(property, t);
+      return pickCorePropertyInfoRowsForMapCard(allRows, property, t);
+    }, [property, t]);
+
+    if (!property) return null;
 
     // Check if it's a project
     if ("isProject" in property && property.isProject) {
@@ -160,9 +204,6 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
     };
 
     const typeLabel = getTranslatedTypeLabel(property.type, filterOptions);
-    const usageLabel = property.usage === "family" 
-      ? t("listings.family") 
-      : t("listings.single");
 
     // Format price based on listing type
     let priceLine = "";
@@ -180,8 +221,7 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
       }
     } else if (listingType === "rent") {
       title = `${typeLabel} ${t("listings.forRent")}`;
-      const rentProperty = property as any;
-      priceLine = `${rentProperty.price.replace(" K", "000")} ${t("listings.sar")}`;
+      priceLine = formatRentPropertyCardPriceLine(property, t, i18n.language);
     } else {
       title = `${typeLabel} ${t("listings.forSale")}`;
       const saleProperty = property as any;
@@ -227,30 +267,25 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
           <View style={styles.bottomCardContent}>
             <Text style={[styles.bottomTitle, rtlStyles.bottomTitle]}>{title}</Text>
 
-            <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
-              <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
-                <MaterialCommunityIcons
-                  name="arrow-expand-horizontal"
-                  size={wp(4)}
-                  color="#9ca3af"
-                />
-                <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
-                  {property.area} {t("listings.m2")}
-                </Text>
+            {mapMetaRows.length > 0 ? (
+              <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
+                {mapMetaRows.map((row, idx) => (
+                  <View
+                    key={`${row.label}-${idx}`}
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                    accessibilityLabel={`${row.label}: ${row.value}`}
+                  >
+                    <PropertyInfoMetaIcon spec={row.icon} size={wp(4)} />
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
+                      {row.label}: {formatBottomCardDetailValue(row, t)}
+                    </Text>
+                  </View>
+                ))}
               </View>
-              <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
-                <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
-                  {property.bedrooms}
-                </Text>
-              </View>
-              <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
-                <Ionicons name="person" size={wp(4)} color="#9ca3af" />
-                <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
-                  {usageLabel}
-                </Text>
-              </View>
-            </View>
+            ) : null}
 
             <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.bottomAddress]}>
               {translateAddress(property.address, t)}
@@ -315,11 +350,17 @@ const styles = StyleSheet.create({
   },
   bottomMetaRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     marginTop: hp(1),
+    rowGap: hp(0.5),
+    columnGap: wp(3),
   },
   bottomMetaItem: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 1,
+    maxWidth: "100%",
+    gap: wp(1),
   },
   bottomMetaText: {
     fontSize: wp(3),

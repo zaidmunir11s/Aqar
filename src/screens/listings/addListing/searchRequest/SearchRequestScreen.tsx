@@ -14,6 +14,7 @@ import {
 } from "react-native-responsive-screen";
 
 import { ScreenHeader } from "../../../../components";
+import { navigateToMapScreen } from "../../../../utils";
 import { COLORS } from "@/constants";
 import { useSearchRequest } from "@/context/searchRequest-context";
 import SearchRequestCard from "../../../../components/searchRequest/SearchRequestCard";
@@ -42,9 +43,13 @@ export default function SearchRequestScreen(): React.JSX.Element {
     }, [debouncedLoad])
   );
 
-  const handleBackPress = () => {
-    navigation.navigate("AddListing");
-  };
+  const handleBackPress = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigateToMapScreen(navigation);
+  }, [navigation]);
 
   const handleNewOrderPress = () => {
     navigation.navigate("NewOrder");

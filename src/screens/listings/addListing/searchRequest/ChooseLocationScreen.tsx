@@ -3,17 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import MapView from "react-native-maps";
+import MapView, { Region } from "react-native-maps";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { ScreenHeader, ListingFooter, ToggleSwitch } from "../../../../components";
-import { COLORS, RIYADH_REGION } from "@/constants";
+import { COLORS } from "@/constants";
 import { useLocalization } from "../../../../hooks/useLocalization";
 import { useLocation } from "../../../../hooks";
 
@@ -52,47 +53,88 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const { getCurrentLocation } = useLocation();
 
-  // Selected location - tracks the center coordinate of the map
-  const [selectedLocation, setSelectedLocation] = useState({
-    latitude: RIYADH_REGION.latitude,
-    longitude: RIYADH_REGION.longitude,
-  });
-  const hasCenteredRef = useRef(false);
+  const initialSelectedLocation =
+    params.orderFormData?.selectedLocation &&
+    isValidCoordinate(params.orderFormData.selectedLocation.latitude) &&
+    isValidLongitude(params.orderFormData.selectedLocation.longitude)
+      ? {
+          latitude: params.orderFormData.selectedLocation.latitude,
+          longitude: params.orderFormData.selectedLocation.longitude,
+        }
+      : null;
+
+  // Selected location tracks map center and starts empty unless passed from previous step.
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(initialSelectedLocation);
+  const [mapInitialRegion, setMapInitialRegion] = useState<Region | null>(
+    initialSelectedLocation
+      ? {
+          latitude: initialSelectedLocation.latitude,
+          longitude: initialSelectedLocation.longitude,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        }
+      : null
+  );
+  const [isResolvingInitialLocation, setIsResolvingInitialLocation] = useState(
+    !initialSelectedLocation
+  );
 
   // Toggle states: true = ON (thumb left), false = OFF (thumb right)
   const [onlyAdsWithPhoto, setOnlyAdsWithPhoto] = useState(false);
   const [assistFromPartners, setAssistFromPartners] = useState(true);
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     navigation.goBack();
-  };
+  }, [navigation]);
 
-  const handleNextPress = () => {
+  const handleNextPress = useCallback(() => {
+    if (!selectedLocation) return;
     navigation.navigate("Description", {
       selectedLocation,
       onlyAdsWithPhoto,
       assistFromPartners,
       orderFormData: params.orderFormData,
     });
-  };
+  }, [navigation, selectedLocation, onlyAdsWithPhoto, assistFromPartners, params.orderFormData]);
 
-  const centerOnCurrentLocation = useCallback(async () => {
-    if (!mapRef.current || hasCenteredRef.current) return;
-    const result = await getCurrentLocation();
-    if (result.region && mapRef.current) {
-      hasCenteredRef.current = true;
-      mapRef.current.animateToRegion(result.region, 800);
-      setSelectedLocation({
-        latitude: result.region.latitude,
-        longitude: result.region.longitude,
-      });
-    }
-  }, [getCurrentLocation]);
-
-  // Start the map at the user's current location by default
   useEffect(() => {
-    centerOnCurrentLocation();
-  }, [centerOnCurrentLocation]);
+    if (mapInitialRegion) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const result = await getCurrentLocation();
+        if (cancelled) return;
+        if (
+          result.region &&
+          isValidCoordinate(result.region.latitude) &&
+          isValidLongitude(result.region.longitude) &&
+          isValidCoordinate(result.region.latitudeDelta) &&
+          isValidLongitude(result.region.longitudeDelta) &&
+          result.region.latitudeDelta > 0 &&
+          result.region.longitudeDelta > 0
+        ) {
+          setMapInitialRegion(result.region);
+          setSelectedLocation({
+            latitude: result.region.latitude,
+            longitude: result.region.longitude,
+          });
+          return;
+        }
+      } finally {
+        if (!cancelled) {
+          setIsResolvingInitialLocation(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [getCurrentLocation, mapInitialRegion]);
 
   // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
   const rtlStyles = useMemo(
@@ -115,7 +157,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   // Handle map region change (when user pans/zooms)
   // The marker is fixed at center visually, but we track the center coordinate
   // This ensures we always know the exact location the user is pointing at
-  const handleRegionChangeComplete = (newRegion: typeof RIYADH_REGION) => {
+  const handleRegionChangeComplete = useCallback((newRegion: Region) => {
     // Validate region before setting state
     if (
       isValidCoordinate(newRegion.latitude) &&
@@ -132,7 +174,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
         longitude: newRegion.longitude,
       });
     }
-  };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -150,21 +192,27 @@ export default function ChooseLocationScreen(): React.JSX.Element {
 
         {/* Interactive Map */}
         <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={RIYADH_REGION}
-            onRegionChangeComplete={handleRegionChangeComplete}
-            showsUserLocation={true}
-            showsMyLocationButton={false}
-            showsCompass={false}
-            toolbarEnabled={false}
-            mapType="standard"
-            scrollEnabled={true}
-            zoomEnabled={true}
-            pitchEnabled={false}
-            rotateEnabled={false}
-          />
+          {isResolvingInitialLocation ? (
+            <View style={styles.mapLoadingPlaceholder}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          ) : (
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              initialRegion={mapInitialRegion ?? undefined}
+              onRegionChangeComplete={handleRegionChangeComplete}
+              showsUserLocation={false}
+              showsMyLocationButton={false}
+              showsCompass={false}
+              toolbarEnabled={false}
+              mapType="standard"
+              scrollEnabled={true}
+              zoomEnabled={true}
+              pitchEnabled={false}
+              rotateEnabled={false}
+            />
+          )}
           {/* Fixed Center Marker - Always at center of viewport */}
           <View style={styles.centerMarkerContainer} pointerEvents="none">
             <MaterialIcons
@@ -203,6 +251,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
         totalSteps={3}
         onBackPress={handleBackPress}
         onNextPress={handleNextPress}
+        nextDisabled={!selectedLocation}
         showBack={true}
         showNext={true}
         backText={t("common.back")}
@@ -250,6 +299,12 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  mapLoadingPlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.white,
   },
   centerMarkerContainer: {
     position: "absolute",

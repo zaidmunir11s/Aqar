@@ -19,16 +19,27 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, PrimaryButton, TextInput } from "../../components";
-import { COLORS } from "../../constants";
-import { useLocalization, useKeyboardHeight } from "../../hooks";
+import { COLORS, STORAGE_KEYS } from "../../constants";
+import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import { useSignupMutation } from "@/redux/api";
-import { getSaudiPhoneValidationError } from "../../utils/validation";
+import {
+  getPasswordValidationError,
+  getSaudiPhoneValidationError,
+} from "../../utils/validation";
+import {
+  setLoggedInPhoneNumber,
+  setLoggedInDisplayName,
+  setLoggedInProfileImageUri,
+} from "../../utils/loggedInPhoneStorage";
+import { syncAccountProfileMetaOnAuth, touchLastActiveAt } from "../../utils/accountActivityStorage";
+import type { AuthStackParamList } from "../../navigation/types";
 
-type NavigationProp = NativeStackNavigationProp<any>;
+type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export default function CreateAccountScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { navigateToListings } = useTabNavigation();
   const { t, isRTL } = useLocalization();
   const { setHasBackendSession } = useAuthContext();
   const [signup, { isLoading }] = useSignupMutation();
@@ -49,9 +60,8 @@ export default function CreateAccountScreen(): React.JSX.Element {
         if (result && "assets" in result && result.assets && result.assets[0]) {
           setProfileImage(result.assets[0].uri);
         }
-      } catch (error) {
-        // Silently fail if no pending result
-        console.log("No pending image picker result");
+      } catch {
+        // Silently ignore when there is no pending picker result.
       }
     };
     checkPendingResult();
@@ -63,24 +73,10 @@ export default function CreateAccountScreen(): React.JSX.Element {
     return key ? t(key) : "";
   }, [t]);
 
-  const validatePassword = (pwd: string): string => {
-    if (pwd.trim().length === 0) {
-      return t("auth.passwordRequired");
-    }
-    if (pwd.length < 8) {
-      return t("auth.passwordMinLength");
-    }
-    if (!/[A-Z]/.test(pwd)) {
-      return t("auth.passwordUppercase");
-    }
-    if (!/[a-z]/.test(pwd)) {
-      return t("auth.passwordLowercase");
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
-      return t("auth.passwordSpecialChar");
-    }
-    return "";
-  };
+  const validatePassword = useCallback((pwd: string): string => {
+    const key = getPasswordValidationError(pwd, "detailed");
+    return key ? t(key) : "";
+  }, [t]);
 
   const phoneError = validatePhoneNumber(phoneNumber);
   const passwordError = validatePassword(password);
@@ -125,26 +121,43 @@ export default function CreateAccountScreen(): React.JSX.Element {
         profileImage: profileImage || undefined,
       }).unwrap();
 
+      await setLoggedInDisplayName(
+        `${firstName.trim()} ${lastName.trim()}`.trim()
+      );
+      await setLoggedInProfileImageUri(profileImage || null);
+
       if (result.data?.token) {
-        await AsyncStorage.setItem("auth_token", result.data.token);
+        await AsyncStorage.setItem(STORAGE_KEYS.authToken, result.data.token);
         if (result.data.refreshToken) {
           await AsyncStorage.setItem(
-            "refresh_token",
+            STORAGE_KEYS.refreshToken,
             result.data.refreshToken
           );
         }
-        setHasBackendSession(true);
+        await setLoggedInPhoneNumber(phoneNumber);
+        await syncAccountProfileMetaOnAuth(phoneNumber);
+        await touchLastActiveAt();
       }
+      setHasBackendSession(true);
 
-      const otp =
+      /** Never show or route OTP in production — only SMS (and dev-only test helpers). */
+      const rawOtpFromApi =
         result.data?.otp ||
         result.data?.verificationCode ||
         result.otp ||
         result.verificationCode;
+      const devOtp =
+        typeof rawOtpFromApi === "string" && rawOtpFromApi.length > 0
+          ? __DEV__
+            ? rawOtpFromApi
+            : undefined
+          : undefined;
 
-      const alertMessage = otp
-        ? `${result.message || (t("auth.accountCreatedSuccessfully") ?? "Account created successfully")}\n\n${t("auth.yourOTP") ?? "Your OTP"}: ${otp}`
-        : result.message || (t("auth.accountCreatedSuccessfully") ?? "Account created successfully");
+      const baseSuccess =
+        result.message || t("auth.accountCreatedSuccessfully");
+      const alertMessage = devOtp
+        ? `${baseSuccess}\n\n${t("auth.yourOTP")}: ${devOtp}`
+        : `${baseSuccess}\n\n${t("auth.verificationCodeSent")}`;
 
       Alert.alert(t("common.success"), alertMessage, [
         {
@@ -152,7 +165,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
           onPress: () => {
             navigation.navigate("VerifyPhoneNumber", {
               phoneNumber,
-              otp,
+              ...(devOtp ? { otp: devOtp } : {}),
             });
           },
         },
@@ -186,17 +199,15 @@ export default function CreateAccountScreen(): React.JSX.Element {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate("Listings");
+      navigateToListings();
     }
-  }, [navigation]);
+  }, [navigation, navigateToListings]);
 
   const handleTermsPress = useCallback(() => {
-    console.log("Terms and Conditions pressed");
     // TODO: Navigate to Terms screen
   }, []);
 
   const handlePrivacyPress = useCallback(() => {
-    console.log("Privacy Policy pressed");
     // TODO: Navigate to Privacy screen
   }, []);
 
@@ -226,7 +237,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
         setProfileImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("Error picking image:", error);
+      if (__DEV__) {
+        console.warn("Image picker failed:", error);
+      }
       Alert.alert(t("common.error"), t("auth.failedToPickImage"));
     }
   }, [t]);

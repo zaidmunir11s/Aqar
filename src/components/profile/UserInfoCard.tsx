@@ -14,15 +14,13 @@ export interface UserInfoCardProps {
 }
 
 const UserInfoCard = memo<UserInfoCardProps>(
-  ({ sinceDate = "2025/11/27", lastSeen = "now" }) => {
+  ({ sinceDate = "", lastSeen = "" }) => {
     const { t, isRTL } = useLocalization();
 
-    // Translate "now" only when the value is exactly "now"
-    // (you can adjust this logic if lastSeen comes in other formats)
+    const sinceShown =
+      sinceDate.trim().length > 0 ? sinceDate : t("listings.notAvailable");
     const displayedLastSeen =
-      lastSeen === "now"
-        ? t("profile.now", { defaultValue: "now" })
-        : lastSeen;
+      lastSeen.trim().length > 0 ? lastSeen : t("profile.now");
 
     return (
       <View
@@ -39,7 +37,7 @@ const UserInfoCard = memo<UserInfoCardProps>(
           />
           <Text style={styles.infoText}>
             {t("profile.since", { defaultValue: "Since" })}{" "}
-            {sinceDate}
+            {sinceShown}
           </Text>
         </View>
 

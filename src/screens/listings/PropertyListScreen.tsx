@@ -23,12 +23,14 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { RENT_FILTER_OPTIONS, SALE_FILTER_OPTIONS } from "../../data/propertyData";
 import {
-  PROPERTY_DATA,
-  RENT_FILTER_OPTIONS,
-  SALE_FILTER_OPTIONS,
-} from "../../data/propertyData";
-import { formatPrice, navigateToMapScreen } from "../../utils";
+  formatPrice,
+  navigateToMapScreen,
+  isPublishedListingProperty,
+  ensurePropertyCardListingSuffix,
+} from "../../utils";
+import { filterRentSaleFromPropertyData } from "@/utils/listingPropertyFilters";
 import {
   PropertyCard,
   ScreenHeader,
@@ -36,10 +38,11 @@ import {
   FilterTabs,
   ProjectListCard,
   ProjectSearchModal,
+  ShowMapFloatingButton,
 } from "../../components";
 import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import { COLORS } from "../../constants";
-import type { Property, ProjectProperty } from "../../types/property";
+import type { Property, ProjectProperty, RentSaleProperty } from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
 import { useAppSelector, useAppDispatch } from "../../redux/hooks";
 import { setPreservedFilter } from "../../redux/slices/listingsFiltersSlice";
@@ -59,8 +62,9 @@ export default function PropertyListScreen(): React.JSX.Element {
   const params = route.params as RouteParams | undefined;
   const navigation = useNavigation<NavigationProp>();
   const dispatch = useAppDispatch();
-  const listingsFilters = useAppSelector((s) => s?.listingsFilters);
-  const preservedFilter = listingsFilters?.preservedFilter ?? null;
+  const preservedFilter = useAppSelector(
+    (s) => s.listingsFilters.preservedFilter
+  );
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
 
@@ -70,12 +74,10 @@ export default function PropertyListScreen(): React.JSX.Element {
       return params.properties;
     }
     if (listingType === "sale") {
-      return PROPERTY_DATA.filter((p) => p.listingType === "sale");
+      return filterRentSaleFromPropertyData("sale");
     }
     if (listingType === "rent") {
-      return PROPERTY_DATA.filter(
-        (p) => p.listingType === "rent" && !("isProject" in p && p.isProject)
-      );
+      return filterRentSaleFromPropertyData("rent");
     }
     return [];
   }, [params?.properties, listingType]);
@@ -85,27 +87,20 @@ export default function PropertyListScreen(): React.JSX.Element {
   );
 
   useEffect(() => {
-    if (
-      params?.selectedFilter !== undefined &&
-      params.selectedFilter !== null
-    ) {
-      dispatch(setPreservedFilter(params.selectedFilter));
-      if (selectedFilter !== params.selectedFilter) {
-        setSelectedFilter(params.selectedFilter);
+    const paramFilter = params?.selectedFilter;
+
+    if (paramFilter !== undefined && paramFilter !== null) {
+      if (preservedFilter !== paramFilter) {
+        dispatch(setPreservedFilter(paramFilter));
       }
-    } else if (
-      params?.selectedFilter === undefined &&
-      preservedFilter !== null &&
-      selectedFilter === null
-    ) {
-      setSelectedFilter(preservedFilter);
+      setSelectedFilter((prev) => (prev !== paramFilter ? paramFilter : prev));
+      return;
     }
-  }, [params?.selectedFilter, preservedFilter, selectedFilter, dispatch]);
-  useEffect(() => {
-    if (selectedFilter !== null) {
-      dispatch(setPreservedFilter(selectedFilter));
+
+    if (paramFilter === undefined && preservedFilter !== null) {
+      setSelectedFilter((prev) => (prev === null ? preservedFilter : prev));
     }
-  }, [selectedFilter, dispatch]);
+  }, [params?.selectedFilter, preservedFilter, dispatch]);
 
   const [isScrolling, setIsScrolling] = useState<boolean>(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -291,14 +286,23 @@ export default function PropertyListScreen(): React.JSX.Element {
       const { title, priceLine } = useMemo(() => {
         let priceLine = "";
         let title = "";
+        const published = isPublishedListingProperty(item);
+        const categoryTitle = item.categoryLabel?.trim();
+
         if (listingType === "rent") {
-          title = `${typeLabel} ${t("listings.forRent")}`;
-          const rentProperty = item as any;
-          priceLine = `${rentProperty?.price ? formatPrice(rentProperty.price) : "0"} ${t("listings.sar")} / ${t("listings.yearly")}`;
+          const core = published && categoryTitle ? categoryTitle : typeLabel;
+          title = ensurePropertyCardListingSuffix(core, "rent", t);
+          priceLine = "";
         } else {
-          title = `${typeLabel} ${t("listings.forSale")}`;
-          const saleProperty = item as any;
-          priceLine = `${saleProperty?.price ? formatPrice(saleProperty.price) : "0"} ${t("listings.sar")}`;
+          const core = published && categoryTitle ? categoryTitle : typeLabel;
+          title = ensurePropertyCardListingSuffix(core, "sale", t);
+          const saleProperty = item as RentSaleProperty;
+          const rawPrice = saleProperty?.price?.trim();
+          if (published && rawPrice) {
+            priceLine = `${rawPrice} ${t("listings.sar")}`;
+          } else {
+            priceLine = `${rawPrice ? formatPrice(saleProperty.price) : "0"} ${t("listings.sar")}`;
+          }
         }
         return { title, priceLine };
       }, [item, listingType, typeLabel, t]);
@@ -384,16 +388,19 @@ export default function PropertyListScreen(): React.JSX.Element {
     }, 150);
   }, []);
 
-  const searchIcon = (
-    <TouchableOpacity
-      onPress={handleSearchPress}
-      style={styles.searchButtonContainer}
-      activeOpacity={0.7}
-    >
-      <View style={styles.searchButton}>
-        <Ionicons name="search-outline" size={wp(5)} color="#fff" />
-      </View>
-    </TouchableOpacity>
+  const searchIcon = useMemo(
+    () => (
+      <TouchableOpacity
+        onPress={handleSearchPress}
+        style={styles.searchButtonContainer}
+        activeOpacity={0.7}
+      >
+        <View style={styles.searchButton}>
+          <Ionicons name="search-outline" size={wp(5)} color="#fff" />
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleSearchPress]
   );
 
   const isProjectsListing = listingType === "projects";
@@ -474,30 +481,13 @@ export default function PropertyListScreen(): React.JSX.Element {
         updateCellsBatchingPeriod={100}
       />
 
-      <View
-        style={[
-          styles.bottomActions,
-          { bottom: hp(0.5) + insets.bottom },
-          isRTL && styles.bottomActionsRTL,
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            styles.showMapBtn,
-            isScrolling && styles.showMapBtnCompact,
-            isRTL && styles.showMapBtnRTL,
-          ]}
-          onPress={handleBackPress}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="map-sharp" size={Math.min(wp(6), 24)} color="#617381" />
-          {!isScrolling && (
-            <Text style={[styles.showMapText, isRTL && styles.showMapTextRTL]} numberOfLines={1}>
-              {t("listings.showMap")}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <ShowMapFloatingButton
+        onPress={handleBackPress}
+        label={t("listings.showMap")}
+        isCompact={isScrolling}
+        isRTL={isRTL}
+        bottomInset={insets.bottom}
+      />
 
       {isProjectsListing && (
         <ProjectSearchModal
@@ -572,51 +562,6 @@ const styles = StyleSheet.create({
   },
   projectsListContent: {
     paddingTop: hp(7),
-  },
-  bottomActions: {
-    position: "absolute",
-    left: wp(3),
-    right: wp(4),
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    zIndex: 100,
-    gap: wp(3),
-  },
-  bottomActionsRTL: {
-    flexDirection: "row-reverse",
-  },
-  showMapBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: wp(4),
-    paddingVertical: hp(1.8),
-    minHeight: 44,
-    borderRadius: wp(3),
-    flexShrink: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  showMapBtnCompact: {
-    paddingHorizontal: wp(3.5),
-  },
-  showMapText: {
-    fontSize: Math.min(wp(3.5), 15),
-    color: "#333",
-    marginLeft: wp(2),
-    flexShrink: 0,
-  },
-  showMapBtnRTL: {
-    flexDirection: "row-reverse",
-  },
-  showMapTextRTL: {
-    marginLeft: 0,
-    marginRight: wp(2),
   },
   emptyContainer: {
     paddingBottom: hp(3),

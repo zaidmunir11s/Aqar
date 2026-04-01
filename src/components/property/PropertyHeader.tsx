@@ -86,9 +86,9 @@ const PropertyHeader = memo<PropertyHeaderProps>(
         ) : (
           <View style={[styles.priceRow, rtlStyles.priceRow]}>
             <Text style={styles.price}>{displayPrice}</Text>
-            {property.listingType === "rent" && (
+            {property.listingType === "rent" && Boolean(property.commissionText?.trim()) && (
               <Text style={[styles.commission, rtlStyles.commission]}>
-                + {t("listings.commission")} (1,650 {t("listings.riyals")})
+                {property.commissionText}
               </Text>
             )}
           </View>

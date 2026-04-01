@@ -25,6 +25,13 @@ export type ListingType = "rent" | "sale" | "daily";
 export type UsageType = "family" | "single";
 export type BookingType = "daily" | "monthly";
 export type UnitStatus = "available" | "sold" | "reserved";
+export type PropertyDetailItem = {
+  type: "value" | "toggle";
+  label: string;
+  value?: string;
+  icon?: string;
+  enabled?: boolean;
+};
 
 export interface ProjectUnit {
   unitNumber: string;
@@ -51,6 +58,17 @@ export interface ProjectDetails {
 
 export interface BaseProperty {
   id: number;
+  /** Human-facing sequence number for published listings. */
+  listingId?: number;
+  /** ISO timestamp when listing was created. */
+  createdAt?: string;
+  /** ISO timestamp when listing was last updated. */
+  updatedAt?: string;
+  categoryLabel?: string;
+  categoryId?: string;
+  commissionText?: string;
+  videoUris?: string[];
+  detailsItems?: PropertyDetailItem[];
   lat: number;
   lng: number;
   type: PropertyType;
@@ -67,15 +85,38 @@ export interface BaseProperty {
   address: string;
   city: string;
   images?: string[];
+  /** Optional per-image description lines aligned by index with `images`. */
+  imageCaptions?: string[];
   description?: string;
   features?: string[]; // Property features (e.g., "Furnished", "Pool", "Car Entrance")
   advertiserName?: string; // Property owner/advertiser name
   advertiserId?: string | number; // Property owner/advertiser ID
   advertiserPhone?: string; // Contact phone (e.g. +966xxxxxxxxx)
+  /** Optional second line under name (e.g. reviews). Omit to hide that row. */
+  advertiserSubtitle?: string;
+  /** User moved listing to archive (profile “Archived ads”). */
+  isArchived?: boolean;
+}
+
+/** Rent listing payment schedule (e.g. yearly + accepted installment options). */
+export type RentPaymentFrequencyId =
+  | "yearly"
+  | "semiAnnual"
+  | "quarterly"
+  | "monthly";
+
+export interface RentPaymentScheduleRow {
+  frequency: RentPaymentFrequencyId;
+  /** Left column: contract/annual reference amount in SAR. */
+  primaryAmountSar: number;
+  /** Right column: amount per installment (omit for yearly-only row). */
+  installmentAmountSar?: number;
 }
 
 export interface RentSaleProperty extends BaseProperty {
   price: string;
+  /** When set (e.g. from publish flow), overrides computed defaults on details. */
+  rentPaymentSchedule?: RentPaymentScheduleRow[];
 }
 
 export interface DailyProperty extends BaseProperty {

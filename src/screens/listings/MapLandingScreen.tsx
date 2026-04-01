@@ -5,33 +5,38 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, Text, StatusBar, ActivityIndicator } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker } from "react-native-maps";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
-  PROPERTY_DATA,
-  RENT_FILTER_OPTIONS,
-  SALE_FILTER_OPTIONS,
-} from "../../data/propertyData";
+  View,
+  StyleSheet,
+  Animated,
+  Platform,
+  StatusBar,
+  ActivityIndicator,
+  BackHandler,
+} from "react-native";
+import MapView, { Marker } from "react-native-maps";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RENT_FILTER_OPTIONS, SALE_FILTER_OPTIONS } from "../../data/propertyData";
 import { RIYADH_REGION, COLORS } from "../../constants";
 import { useLocation } from "../../hooks";
+import type { LocationRegion } from "../../hooks/useLocation";
+import { useIsAuthenticated } from "../../context/auth-context";
+import { isValidMapRegion } from "@/utils/geoValidation";
 import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
-import { useLocalization } from "../../hooks/useLocalization";
+  filterRentSaleFromPropertyData,
+  hasValidMapCoordinates,
+} from "@/utils/listingPropertyFilters";
 import {
   PriceMarker,
   BottomPropertyCard,
   MapTabs,
   FilterChips,
-  ProjectsCard,
   MapBottomActions,
+  AddActionBottomSheet,
+  CancelModal,
 } from "../../components";
-import ProjectMarker from "../../components/project/ProjectMarker";
+import { useLocalization } from "../../hooks/useLocalization";
 import type { TabType } from "../../components/map/MapTabs";
 import type { Property } from "../../types/property";
 
@@ -41,45 +46,31 @@ interface RouteParams {
   listingType?: "rent" | "sale";
 }
 
-// Helper function to validate coordinates
-function isValidCoordinate(value: number | undefined | null): boolean {
-  return (
-    typeof value === "number" &&
-    !isNaN(value) &&
-    isFinite(value) &&
-    value >= -90 &&
-    value <= 90
-  );
-}
+/** Last user-centered map region for Map Landing; survives screen remounts within the app session. */
+let mapLandingLastUserRegion: LocationRegion | null = null;
 
-// Helper function to validate longitude
-function isValidLongitude(value: number | undefined | null): boolean {
-  return (
-    typeof value === "number" &&
-    !isNaN(value) &&
-    isFinite(value) &&
-    value >= -180 &&
-    value <= 180
-  );
-}
+/** Marker UI session: survives remount when returning via navigate/pop (e.g. cancel flow → map). */
+let mapLandingMarkerSession: { selectedId: number | null; visitedIds: number[] } = {
+  selectedId: null,
+  visitedIds: [],
+};
 
-// Helper function to check if property has valid coordinates
-function hasValidCoordinates(property: Property): boolean {
-  return (
-    isValidCoordinate(property.lat) &&
-    isValidLongitude(property.lng)
-  );
-}
+/** Satellite toggle: survives remount; Android native tiles can desync from JS until MapView remounts. */
+let mapPreferredSatellite = false;
+
+/** Debounce viewport-driven React state so marker list does not rebuild on every map frame completion. */
+const MAP_REGION_STATE_DEBOUNCE_MS = 200;
 
 export default function MapLandingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = route.params as RouteParams | undefined;
-  const insets = useSafeAreaInsets();
-  const { t, isRTL } = useLocalization();
+  const { t } = useLocalization();
+  const { isAuthenticated, isLoaded } = useIsAuthenticated();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const regionStateDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMarkerPressTimeRef = useRef<number>(0);
@@ -88,22 +79,21 @@ export default function MapLandingScreen(): React.JSX.Element {
   const initialTab = params?.listingType === "sale" ? "sale" : "rent";
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [region, setRegion] = useState(RIYADH_REGION);
-  const [homeRegion, setHomeRegion] = useState(RIYADH_REGION);
-  const [isLocationReady, setIsLocationReady] = useState<boolean>(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [visitedIds, setVisitedIds] = useState<Set<number>>(new Set());
-  const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
-  const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
-  const [showLocationError, setShowLocationError] = useState<boolean>(false);
-  const [isScreenFocused, setIsScreenFocused] = useState<boolean>(true);
-
-  useFocusEffect(
-    useCallback(() => {
-      setIsScreenFocused(true);
-      return () => setIsScreenFocused(false);
-    }, [])
+  const [region, setRegion] = useState<LocationRegion | null>(() => mapLandingLastUserRegion);
+  const [isLocationReady, setIsLocationReady] = useState<boolean>(() => mapLandingLastUserRegion !== null);
+  const [selectedId, setSelectedId] = useState<number | null>(
+    () => mapLandingMarkerSession.selectedId
   );
+  const [visitedIds, setVisitedIds] = useState<Set<number>>(
+    () => new Set(mapLandingMarkerSession.visitedIds)
+  );
+  const [isMapMoving, setIsMapMoving] = useState<boolean>(false);
+  const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(() => mapPreferredSatellite);
+  const isSatelliteModeRef = useRef(isSatelliteMode);
+  /** Android: bump so MapView remounts on focus when satellite is on (fixes tiles stuck on standard after leaving stack). */
+  const [mapAndroidRemountKey, setMapAndroidRemountKey] = useState(0);
+  const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false);
+  const [showExitAppModal, setShowExitAppModal] = useState(false);
 
   // Use custom hooks
   const { getCurrentLocation } = useLocation();
@@ -127,6 +117,19 @@ export default function MapLandingScreen(): React.JSX.Element {
     setSelectedId(null);
   }, [activeTab]);
 
+  useEffect(() => {
+    mapLandingMarkerSession.selectedId = selectedId;
+  }, [selectedId]);
+
+  useEffect(() => {
+    mapLandingMarkerSession.visitedIds = [...visitedIds];
+  }, [visitedIds]);
+
+  useEffect(() => {
+    isSatelliteModeRef.current = isSatelliteMode;
+    mapPreferredSatellite = isSatelliteMode;
+  }, [isSatelliteMode]);
+
   // Track component mount state and cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
@@ -136,6 +139,10 @@ export default function MapLandingScreen(): React.JSX.Element {
         clearTimeout(mapMoveTimeoutRef.current);
         mapMoveTimeoutRef.current = null;
       }
+      if (regionStateDebounceRef.current) {
+        clearTimeout(regionStateDebounceRef.current);
+        regionStateDebounceRef.current = null;
+      }
       if (markerPressTimeoutRef.current) {
         clearTimeout(markerPressTimeoutRef.current);
         markerPressTimeoutRef.current = null;
@@ -143,18 +150,62 @@ export default function MapLandingScreen(): React.JSX.Element {
     };
   }, []);
 
-  // Filter properties
+  const dismissExitAppModal = useCallback(() => {
+    setShowExitAppModal(false);
+  }, []);
+
+  const confirmExitApp = useCallback(() => {
+    setShowExitAppModal(false);
+    BackHandler.exitApp();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") {
+        return undefined;
+      }
+      const onHardwareBackPress = () => {
+        if (showExitAppModal) {
+          dismissExitAppModal();
+          return true;
+        }
+        if (isAddModalVisible) {
+          setIsAddModalVisible(false);
+          return true;
+        }
+        if (selectedId != null) {
+          setSelectedId(null);
+          return true;
+        }
+        setShowExitAppModal(true);
+        return true;
+      };
+      const sub = BackHandler.addEventListener("hardwareBackPress", onHardwareBackPress);
+      return () => sub.remove();
+    }, [
+      dismissExitAppModal,
+      isAddModalVisible,
+      selectedId,
+      showExitAppModal,
+    ])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") {
+        return undefined;
+      }
+      const id = requestAnimationFrame(() => {
+        if (!isSatelliteModeRef.current) return;
+        setMapAndroidRemountKey((k) => k + 1);
+      });
+      return () => cancelAnimationFrame(id);
+    }, [])
+  );
+
   const filteredProperties = useMemo(() => {
-    let properties = PROPERTY_DATA.filter((p) => {
-      // First check if coordinates are valid
-      if (!hasValidCoordinates(p)) {
-        return false;
-      }
-      
-      if (activeTab === "sale") {
-        return p.listingType === "sale";
-      }
-      return p.listingType === activeTab && !("isProject" in p && p.isProject);
+    let properties = filterRentSaleFromPropertyData(activeTab, {
+      requireMapCoordinates: true,
     });
 
     if (activeFilter !== "all") {
@@ -167,56 +218,28 @@ export default function MapLandingScreen(): React.JSX.Element {
     return properties;
   }, [activeTab, activeFilter, filterOptions]);
 
-  // Get only regular properties (exclude projects) for counter
-  const regularPropertiesOnly = useMemo(() => {
-    return filteredProperties.filter((p) => !("isProject" in p && p.isProject));
-  }, [filteredProperties]);
-
-  // Get project count
-  const projectCount = useMemo(() => {
-    return PROPERTY_DATA.filter(
-      (p) => "isProject" in p && p.isProject && p.listingType === "sale"
-    ).length;
-  }, []);
-
-  // Get visible properties (include projects for sale tab)
   const visibleProperties = useMemo(() => {
-    // Validate region values
-    if (
-      !isValidCoordinate(region.latitude) ||
-      !isValidLongitude(region.longitude) ||
-      !isValidCoordinate(region.latitudeDelta) ||
-      !isValidLongitude(region.longitudeDelta) ||
-      region.latitudeDelta <= 0 ||
-      region.longitudeDelta <= 0
-    ) {
-      return [];
-    }
+    if (!region || !isValidMapRegion(region)) return [];
 
     const latHalf = region.latitudeDelta / 2;
     const lngHalf = region.longitudeDelta / 2;
 
-    // For sale tab, include projects; for other tabs, exclude projects
-    const propertiesToFilter = activeTab === "sale" 
-      ? filteredProperties 
-      : regularPropertiesOnly;
-
-    return propertiesToFilter.filter(
+    return filteredProperties.filter(
       (p) =>
-        hasValidCoordinates(p) &&
+        hasValidMapCoordinates(p) &&
         p.lat >= region.latitude - latHalf &&
         p.lat <= region.latitude + latHalf &&
         p.lng >= region.longitude - lngHalf &&
         p.lng <= region.longitude + lngHalf
     );
-  }, [regularPropertiesOnly, filteredProperties, region, activeTab]);
+  }, [filteredProperties, region]);
 
   const { visibleCount, totalCount } = useMemo(() => {
     return {
       visibleCount: visibleProperties.length,
-      totalCount: regularPropertiesOnly.length,
+      totalCount: filteredProperties.length,
     };
-  }, [visibleProperties, regularPropertiesOnly]);
+  }, [visibleProperties, filteredProperties]);
 
   // Animate counter fade
   useEffect(() => {
@@ -230,31 +253,13 @@ export default function MapLandingScreen(): React.JSX.Element {
   }, [visibleCount, counterFadeAnim]);
 
   const selectedProperty = useMemo(() => {
-    // For sale tab, search in filteredProperties (includes projects); otherwise use regularPropertiesOnly
-    const propertiesToSearch = activeTab === "sale" 
-      ? filteredProperties 
-      : regularPropertiesOnly;
-    return propertiesToSearch.find((p) => p.id === selectedId) || null;
-  }, [regularPropertiesOnly, filteredProperties, selectedId, activeTab]);
+    return filteredProperties.find((p) => p.id === selectedId) || null;
+  }, [filteredProperties, selectedId]);
 
   // Handlers
   const handleTabChange = useCallback((tab: TabType) => {
     setActiveTab(tab);
-    // Reset map to user's "home" region when switching tabs
-    // Only animate if component is mounted and ref is valid
-    if (
-      isMountedRef.current &&
-      mapRef.current &&
-      isValidCoordinate(homeRegion.latitude) &&
-      isValidLongitude(homeRegion.longitude)
-    ) {
-      try {
-        mapRef.current.animateToRegion(homeRegion, 800);
-      } catch (error) {
-        console.warn("Error animating to region:", error);
-      }
-    }
-  }, [homeRegion]);
+  }, []);
 
   const handleFilterChange = useCallback((filterId: string) => {
     setActiveFilter(filterId);
@@ -288,13 +293,6 @@ export default function MapLandingScreen(): React.JSX.Element {
         }
 
         try {
-          if ("isProject" in property && property.isProject) {
-            navigation.navigate("ProjectDetails", {
-              propertyId: property.id,
-            });
-            return;
-          }
-
           setSelectedId(property.id);
           setVisitedIds((prev) => {
             const next = new Set(prev);
@@ -306,7 +304,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         }
       }, 100);
     },
-    [navigation]
+    []
   );
 
   const handleMapPress = useCallback(() => {
@@ -316,25 +314,13 @@ export default function MapLandingScreen(): React.JSX.Element {
   const handleCardPress = useCallback(() => {
     if (!selectedProperty) return;
 
-    if ("isProject" in selectedProperty && selectedProperty.isProject) {
-      navigation.navigate("ProjectDetails", {
-        propertyId: selectedProperty.id,
-      });
-      return;
-    }
-
     const params: any = {
       propertyId: selectedProperty.id,
       visiblePropertyIds: visibleProperties.map((p) => p.id),
       listingType: activeTab,
     };
 
-    // Navigate to DailyDetails for daily listings, PropertyDetails for rent/sale
-    if (selectedProperty.listingType === "daily") {
-      navigation.navigate("DailyDetails", params);
-    } else {
     navigation.navigate("PropertyDetails", params);
-    }
   }, [
     navigation,
     selectedProperty,
@@ -342,64 +328,77 @@ export default function MapLandingScreen(): React.JSX.Element {
     visibleProperties,
   ]);
 
-  const handleLocateMe = useCallback(async () => {
-    // Check if component is still mounted and map ref is valid
-    if (!isMountedRef.current || !mapRef.current) {
-      return;
+  const applyLocatedRegion = useCallback((next: LocationRegion, animate: boolean) => {
+    mapLandingLastUserRegion = next;
+    setRegion(next);
+    if (isMountedRef.current) setIsLocationReady(true);
+    if (animate && mapRef.current) {
+      try {
+        mapRef.current.animateToRegion(next, 800);
+      } catch (error) {
+        console.warn("Error animating to location:", error);
+      }
     }
+  }, []);
+
+  const handleLocateMe = useCallback(async () => {
+    if (!isMountedRef.current) return;
 
     try {
       const result = await getCurrentLocation();
-      
-      // Check if still mounted after async operation
-      if (!isMountedRef.current || !mapRef.current) {
-        return;
-      }
+      if (!isMountedRef.current) return;
 
       if (result.region) {
-        // Validate region before animating
-        if (
-          isValidCoordinate(result.region.latitude) &&
-          isValidLongitude(result.region.longitude) &&
-          isValidCoordinate(result.region.latitudeDelta) &&
-          isValidLongitude(result.region.longitudeDelta) &&
-          result.region.latitudeDelta > 0 &&
-          result.region.longitudeDelta > 0
-        ) {
-          try {
-            setHomeRegion(result.region);
-            setRegion(result.region);
-            mapRef.current.animateToRegion(result.region, 800);
-            setShowLocationError(false);
-            // Reveal map after animation so Riyadh is never visible
-            setTimeout(() => {
-              if (isMountedRef.current) setIsLocationReady(true);
-            }, 850);
-          } catch (error) {
-            console.warn("Error animating to location:", error);
-            setIsLocationReady(true);
-          }
+        if (isValidMapRegion(result.region)) {
+          applyLocatedRegion(result.region, true);
         } else {
-          setIsLocationReady(true);
+          setRegion((prev) => (prev !== null ? prev : RIYADH_REGION));
+          if (isMountedRef.current) setIsLocationReady(true);
         }
       } else if (result.error) {
-        setIsLocationReady(true);
-        setShowLocationError(true);
-        setTimeout(() => {
-          if (isMountedRef.current) setShowLocationError(false);
-        }, 2000);
+        setRegion((prev) => (prev !== null ? prev : RIYADH_REGION));
+        if (isMountedRef.current) setIsLocationReady(true);
       }
     } catch (error) {
       console.warn("Error getting current location:", error);
-      setIsLocationReady(true);
+      setRegion((prev) => (prev !== null ? prev : RIYADH_REGION));
+      if (isMountedRef.current) setIsLocationReady(true);
     }
-  }, [getCurrentLocation]);
+  }, [getCurrentLocation, applyLocatedRegion]);
 
-  // On first load, center the map on the user's current location (permission required).
+  // First cold open this session: one GPS read to set the map center (no animation — MapView uses initialRegion).
+  // After that, only the locate button fetches GPS again; pan/zoom updates `mapLandingLastUserRegion` so we do not snap back here.
   useEffect(() => {
-    handleLocateMe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (mapLandingLastUserRegion !== null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await getCurrentLocation();
+        if (cancelled || !isMountedRef.current) return;
+
+        if (result.region) {
+          if (isValidMapRegion(result.region)) {
+            applyLocatedRegion(result.region, false);
+          } else {
+            setRegion((prev) => (prev !== null ? prev : RIYADH_REGION));
+            if (isMountedRef.current) setIsLocationReady(true);
+          }
+        } else if (result.error) {
+          setRegion((prev) => (prev !== null ? prev : RIYADH_REGION));
+          if (isMountedRef.current) setIsLocationReady(true);
+        }
+      } catch (error) {
+        console.warn("Error getting current location:", error);
+        if (!cancelled && isMountedRef.current) {
+          setRegion((prev) => (prev !== null ? prev : RIYADH_REGION));
+          setIsLocationReady(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getCurrentLocation, applyLocatedRegion]);
 
   const handleRegionChange = useCallback(() => {
     setIsMapMoving(true);
@@ -408,65 +407,80 @@ export default function MapLandingScreen(): React.JSX.Element {
     }
   }, []);
 
-  const handleRegionChangeComplete = useCallback(
-    (newRegion: typeof RIYADH_REGION) => {
-      // Validate region before setting state
-      if (
-        isValidCoordinate(newRegion.latitude) &&
-        isValidLongitude(newRegion.longitude) &&
-        isValidCoordinate(newRegion.latitudeDelta) &&
-        isValidLongitude(newRegion.longitudeDelta) &&
-        newRegion.latitudeDelta > 0 &&
-        newRegion.longitudeDelta > 0
-      ) {
-        setRegion(newRegion);
+  const handleRegionChangeComplete = useCallback((newRegion: LocationRegion) => {
+    if (isValidMapRegion(newRegion)) {
+      mapLandingLastUserRegion = newRegion;
+      if (regionStateDebounceRef.current) {
+        clearTimeout(regionStateDebounceRef.current);
       }
-      
-      mapMoveTimeoutRef.current = setTimeout(() => {
-        setIsMapMoving(false);
-      }, 500);
-    },
-    []
-  );
+      regionStateDebounceRef.current = setTimeout(() => {
+        regionStateDebounceRef.current = null;
+        if (isMountedRef.current && mapLandingLastUserRegion && isValidMapRegion(mapLandingLastUserRegion)) {
+          setRegion(mapLandingLastUserRegion);
+        }
+      }, MAP_REGION_STATE_DEBOUNCE_MS);
+    }
+
+    mapMoveTimeoutRef.current = setTimeout(() => {
+      setIsMapMoving(false);
+    }, 500);
+  }, []);
 
   const handleShowList = useCallback(() => {
-    // Only include regular properties (exclude projects) for the list view
-    const regularProperties = visibleProperties.filter(
-      (p) => !("isProject" in p && p.isProject)
-    );
-    
     const params: any = {
-      properties: regularProperties,
+      properties: visibleProperties,
       listingType: activeTab,
     };
     navigation.navigate("PropertyList", params);
   }, [visibleProperties, activeTab, navigation]);
 
-  const handleProjectsPress = useCallback(() => {
-    navigation.navigate("Projects");
+  const handleAddPress = useCallback(() => {
+    if (!isLoaded) return;
+
+    if (isAuthenticated) {
+      setIsAddModalVisible(true);
+      return;
+    }
+
+    navigation.navigate("ProfileTab", { screen: "Login" });
+  }, [isAuthenticated, isLoaded, navigation]);
+
+  const closeAddModal = useCallback(() => {
+    setIsAddModalVisible(false);
+  }, []);
+
+  const handleAddAdPress = useCallback(() => {
+    setIsAddModalVisible(false);
+    requestAnimationFrame(() => {
+      navigation.navigate("AddListing");
+    });
   }, [navigation]);
 
-
-  const handleAddPress = useCallback(() => {
-    navigation.navigate("AddListing");
+  const handleSearchRequestPress = useCallback(() => {
+    setIsAddModalVisible(false);
+    requestAnimationFrame(() => {
+      navigation.navigate("SearchRequest");
+    });
   }, [navigation]);
 
   const handleToggleSatellite = useCallback(() => {
-    setIsSatelliteMode((prev) => !prev);
+    setIsSatelliteMode((prev) => {
+      const next = !prev;
+      mapPreferredSatellite = next;
+      isSatelliteModeRef.current = next;
+      return next;
+    });
   }, []);
 
   const renderMarker = useCallback(
     (p: Property) => {
       // Double-check coordinates before rendering marker
-      if (!hasValidCoordinates(p)) {
+      if (!hasValidMapCoordinates(p)) {
         return null;
       }
 
       const isSelected = selectedId === p.id;
       const isVisited = visitedIds.has(p.id);
-
-      // Use ProjectMarker for projects, PriceMarker for regular properties
-      const isProject = "isProject" in p && p.isProject;
 
       return (
         <Marker
@@ -476,16 +490,12 @@ export default function MapLandingScreen(): React.JSX.Element {
           onPress={() => handleMarkerPress(p)}
           zIndex={isSelected ? 999 : 1}
         >
-          {isProject ? (
-            <ProjectMarker project={p as any} />
-          ) : (
-            <PriceMarker
-              property={p}
-              isSelected={isSelected}
-              isVisited={isVisited}
-              listingType={activeTab}
-            />
-          )}
+          <PriceMarker
+            property={p}
+            isSelected={isSelected}
+            isVisited={isVisited}
+            listingType={activeTab}
+          />
         </Marker>
       );
     },
@@ -497,8 +507,9 @@ export default function MapLandingScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      {isScreenFocused ? (
+      {region ? (
         <MapView
+          key={Platform.OS === "android" ? `map-android-${mapAndroidRemountKey}` : "map-ios"}
           ref={mapRef}
           style={StyleSheet.absoluteFillObject}
           initialRegion={region}
@@ -515,7 +526,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         <View style={[StyleSheet.absoluteFillObject, styles.mapPlaceholder]} />
       )}
 
-      {/* Loading overlay — hides map until user's location is ready so Riyadh is never shown */}
+      {/* Loading overlay until first GPS fix (no default city as initial map center) */}
       {!isLocationReady && (
         <View style={styles.mapLoadingOverlay}>
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -530,31 +541,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         onFilterChange={handleFilterChange}
       />
 
-      {activeTab === "sale" && (
-        <ProjectsCard
-          projectCount={projectCount}
-          onPress={handleProjectsPress}
-          showBelow={false}
-        />
-      )}
-
-      {/* Commented out: "you cannot search for properties outside Saudi Arabia" message on map */}
-      {/* {showLocationError && (
-        <View
-          style={[
-            styles.errorMessageContainer,
-            isRTL && styles.errorMessageContainerRTL,
-            { bottom: hp(10) + insets.bottom },
-          ]}
-        >
-          <Ionicons name="information-circle" size={wp(4)} color={COLORS.error} />
-          <Text style={[styles.errorMessageText, isRTL && styles.errorMessageTextRTL]}>
-            {t("listings.locationError")}
-          </Text>
-        </View>
-      )} */}
-
-      {!cardVisible && !showLocationError && (
+      {!cardVisible && isLocationReady && (
         <MapBottomActions
           onShowListPress={handleShowList}
           onAddPress={handleAddPress}
@@ -568,11 +555,29 @@ export default function MapLandingScreen(): React.JSX.Element {
         />
       )}
 
+      <AddActionBottomSheet
+        visible={isAddModalVisible}
+        onClose={closeAddModal}
+        onAddAdPress={handleAddAdPress}
+        onSearchRequestPress={handleSearchRequestPress}
+      />
+
       <BottomPropertyCard
         property={selectedProperty}
         onPress={handleCardPress}
         listingType={activeTab}
         filterOptions={filterOptions}
+      />
+
+      <CancelModal
+        visible={showExitAppModal}
+        title={t("navigation.exitAppTitle")}
+        description={t("navigation.exitAppMessage")}
+        onBack={dismissExitAppModal}
+        onConfirm={confirmExitApp}
+        backText={t("common.no")}
+        confirmText={t("common.yes")}
+        alignBodyToStart
       />
     </View>
   );
@@ -587,32 +592,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 5,
-  },
-  errorMessageContainer: {
-    position: "absolute",
-    left: wp(4),
-    right: wp(4),
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fee2e2",
-    borderWidth: 1,
-    borderColor: COLORS.error,
-    borderRadius: wp(2),
-    paddingHorizontal: wp(3),
-    paddingVertical: hp(1),
-    gap: wp(2),
-    zIndex: 1000,
-  },
-  errorMessageContainerRTL: {
-    flexDirection: "row-reverse",
-  },
-  errorMessageText: {
-    flex: 1,
-    fontSize: wp(3.2),
-    color: COLORS.error,
-    fontWeight: "500",
-  },
-  errorMessageTextRTL: {
-    textAlign: "right",
   },
 });

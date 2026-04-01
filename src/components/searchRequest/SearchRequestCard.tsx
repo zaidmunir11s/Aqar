@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import {
@@ -61,12 +60,19 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       return type;
     }, [t]);
 
-    // Helper function to translate rent period
-    const translateRentPeriod = useCallback((period: string): string => {
+    const translateRentPaymentFrequency = useCallback((period: string): string => {
       if (!period) return "";
       if (period === "Yearly") return t("listings.yearly");
+      if (period === "Semi Annual") return t("listings.semiAnnual");
+      if (period === "Quarterly") return t("listings.quarterly");
       if (period === "Monthly") return t("listings.monthly");
       return period;
+    }, [t]);
+
+    const translateApartmentRentTenant = useCallback((value: string): string => {
+      if (value === "Singles") return t("listings.singles");
+      if (value === "Families") return t("listings.families");
+      return value;
     }, [t]);
 
     // Helper function to translate street width (handles "More than X" format)
@@ -96,16 +102,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       return floor; // numeric floor (3, 4, ...)
     }, [t]);
 
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    };
-
-    const getPriceRange = () => {
+    const priceRange = useMemo(() => {
       const orderData = request.orderFormData || {};
       if (orderData.fromPrice || orderData.toPrice || orderData.priceFrom || orderData.priceTo || 
           orderData.villaPriceFrom || orderData.villaPriceTo || orderData.apartmentSalePriceFrom || 
@@ -134,7 +131,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         return `${from} - ${to} ${t("listings.riyals")}`;
       }
       return null;
-    };
+    }, [request.orderFormData, t]);
 
     interface ChipData {
       label: string;
@@ -279,21 +276,59 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         });
       }
 
-      // Rent Period
-      if (orderData.rentPeriod && orderData.rentPeriod !== "ALL") {
-        const translatedPeriod = translateRentPeriod(orderData.rentPeriod);
+      const paymentFrequency =
+        orderData.rentPeriod ||
+        orderData.villaRentRentPeriod ||
+        orderData.bigFlatRentPeriod ||
+        orderData.loungeRentRentPeriod ||
+        orderData.roomRentRentPeriod ||
+        orderData.tentRentRentPeriod ||
+        orderData.chaletRentRentPeriod;
+      if (paymentFrequency && paymentFrequency !== "ALL") {
         chips.push({
-          label: t("listings.rentPeriodLabel", { period: translatedPeriod }),
+          label: t("listings.paymentFrequencyLabel", {
+            period: translateRentPaymentFrequency(paymentFrequency),
+          }),
           icon: "calendar-outline",
           iconLibrary: "Ionicons",
         });
       }
 
-      return chips;
-    }, [request.orderFormData, t, translateStreetDirection, translateVillaType, translateRentPeriod, translateStreetWidth, translateAll, translateFloor]);
+      if (orderData.apartmentRentTenant) {
+        chips.push({
+          label: t("listings.tenantTypeChip", {
+            tenant: translateApartmentRentTenant(orderData.apartmentRentTenant),
+          }),
+        });
+      }
 
-    const priceRange = getPriceRange();
+      return chips;
+    }, [
+      request.orderFormData,
+      t,
+      translateStreetDirection,
+      translateVillaType,
+      translateRentPaymentFrequency,
+      translateApartmentRentTenant,
+      translateStreetWidth,
+      translateAll,
+      translateFloor,
+    ]);
+
     const chips = getChips;
+
+    const handleDeletePress = useCallback(() => {
+      setShowDeleteModal(true);
+    }, []);
+
+    const handleDeleteConfirm = useCallback(() => {
+      setShowDeleteModal(false);
+      onDelete?.(request.id);
+    }, [onDelete, request.id]);
+
+    const handleMatchedPress = useCallback(() => {
+      onPress?.(request, matchCount);
+    }, [onPress, request, matchCount]);
 
     // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
     const rtlStyles = useMemo(
@@ -377,10 +412,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
           )}
           {onDelete && (
             <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                setShowDeleteModal(true);
-              }}
+              onPress={handleDeletePress}
               style={styles.deleteButton}
             >
               <MaterialCommunityIcons name="delete" size={wp(6)} color={COLORS.error} />
@@ -411,7 +443,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
           {matchCount > 0 ? (
             <TouchableOpacity
               style={[styles.matchedChip, rtlStyles.matchedChip]}
-              onPress={() => onPress && onPress(request, matchCount)}
+              onPress={handleMatchedPress}
               activeOpacity={0.5}
             >
               <Ionicons name="list-outline" size={wp(5.5)} color={"#fff000"} />
@@ -426,10 +458,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         <DeleteConfirmationModal
           visible={showDeleteModal}
           onCancel={() => setShowDeleteModal(false)}
-          onConfirm={() => {
-            setShowDeleteModal(false);
-            onDelete && onDelete(request.id);
-          }}
+          onConfirm={handleDeleteConfirm}
         />
       </View>
     );

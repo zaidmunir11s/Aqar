@@ -12,7 +12,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -29,11 +29,18 @@ import {
   openPhoneDialer,
   openWhatsApp,
   getDefaultImageUrl,
+  isOnlyDefaultPropertyPlaceholderImages,
   navigateToMapScreen,
   getPropertyById,
+  buildDefaultRentPaymentRows,
+  buildPropertyInfoRows,
+  buildDynamicFeatureLabels,
+  isPublishedListingProperty,
+  normalizeAdvertiserPhoneForTel,
+  normalizeAdvertiserPhoneForWhatsApp,
+  type DetailIconSpec,
 } from "../../utils";
 import {
-  InfoItem,
   FeatureItem,
   PropertyImageGallery,
   PropertyHeader,
@@ -45,11 +52,13 @@ import {
   FinancingOptionsCard,
   AverageSaleCard,
   IconButton,
+  RentPaymentsSection,
 } from "../../components";
-import type { Property } from "../../types/property";
+import type { Property, RentSaleProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
+import { getMarketingRequestCategoryTranslationKey } from "@/constants/categories";
 import { useLocalization, usePropertyDetailNavigation, useTabNavigation } from "../../hooks";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -133,30 +142,44 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     [isRTL, property?.images?.length]
   );
 
+  /** Mock catalog listings omit `advertiserPhone`; published ads (id ≥ 500000) must use stored publisher number only. */
+  const resolvedAdvertiserPhoneForContact = useMemo(() => {
+    if (!property) return "";
+    const raw = property.advertiserPhone?.trim();
+    if (raw) return raw;
+    if (property.id < 500000) return "+966123456789";
+    return "";
+  }, [property]);
+
+  const hasAdvertiserContactPhone = useMemo(
+    () => Boolean(normalizeAdvertiserPhoneForTel(resolvedAdvertiserPhoneForContact || undefined)),
+    [resolvedAdvertiserPhoneForContact]
+  );
+
   const handleCall = useCallback(() => {
-    openPhoneDialer(property?.advertiserPhone ?? "+966123456789");
-  }, [property?.advertiserPhone]);
+    const tel = normalizeAdvertiserPhoneForTel(resolvedAdvertiserPhoneForContact || undefined);
+    if (tel) openPhoneDialer(tel);
+  }, [resolvedAdvertiserPhoneForContact]);
 
   const handleWhatsApp = useCallback(() => {
-    const phone = property?.advertiserPhone ?? "966123456789";
-    openWhatsApp(phone.replace(/^\+/, ""));
-  }, [property?.advertiserPhone]);
+    const wa = normalizeAdvertiserPhoneForWhatsApp(resolvedAdvertiserPhoneForContact || undefined);
+    if (wa) openWhatsApp(wa);
+  }, [resolvedAdvertiserPhoneForContact]);
 
   const handleChat = useCallback(() => {
-    if (!property) return;
-
-    // Push Conversation in the same stack so back returns to PropertyDetails
-    const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
-    const advertiserName = property.advertiserName || "Property Owner";
-    const advertiserId = property.advertiserId || `advertiser-${property.id}`;
-
-    navigation.navigate("Conversation", {
-      propertyId: property.id,
-      advertiserName,
-      advertiserId,
-      defaultMessage,
-    });
-  }, [navigation, property, t]);
+    // Chat from property details is disabled until backend chat is wired.
+    // Keep the button visible and touchable; intentionally no navigation.
+    // if (!property) return;
+    // const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
+    // const advertiserName = property.advertiserName || "Property Owner";
+    // const advertiserId = property.advertiserId || `advertiser-${property.id}`;
+    // navigation.navigate("Conversation", {
+    //   propertyId: property.id,
+    //   advertiserName,
+    //   advertiserId,
+    //   defaultMessage,
+    // });
+  }, []);
 
   const handleShare = useCallback(() => {
     console.log("Share property");
@@ -185,16 +208,70 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       property?.images && property.images.length > 0
         ? property.images
         : [getDefaultImageUrl()];
-    navigation.navigate("ListingMedia", { images });
+    const imageCaptionsForMedia =
+      property?.images?.length && property?.imageCaptions?.length
+        ? property.images.map((_uri, idx) => (property.imageCaptions?.[idx] ?? "").trim())
+        : undefined;
+    navigation.navigate("ListingMedia", {
+      images,
+      ...(imageCaptionsForMedia ? { imageCaptions: imageCaptionsForMedia } : {}),
+      ...(property?.videoUris?.length ? { videoUris: property.videoUris } : {}),
+    });
   }, [navigation, property]);
 
   const expandDescription = useCallback(() => {
     setExpandedDescription(true);
   }, []);
 
-  const descriptionText =
-    property?.description ||
-    "شقة دور أرضي بخدمات متكاملة، مناسبة للعائلات، قريبة من المدارس والخدمات الأساسية. 5 غرف مع مكيفات، حمامين، مطبخ مجهز، الدور الثاني.";
+  const descriptionText = (property?.description ?? "").trim();
+
+  const listingIdText = useMemo(() => {
+    if (typeof property?.listingId === "number") {
+      return String(property.listingId);
+    }
+    return String(property?.id ?? "---");
+  }, [property?.id, property?.listingId]);
+
+  const createdAtText = useMemo(() => {
+    if (!property?.createdAt) return "---";
+    const createdDate = new Date(property.createdAt);
+    if (Number.isNaN(createdDate.getTime())) return "---";
+    return createdDate.toLocaleString(isRTL ? "ar-SA" : "en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, [property?.createdAt, isRTL]);
+
+  const dynamicFeatureLabels = useMemo(
+    () => buildDynamicFeatureLabels(property, t),
+    [property, t]
+  );
+
+  const isPublishedListing = useMemo(
+    () => isPublishedListingProperty(property),
+    [property]
+  );
+
+  const propertyInfoRows = useMemo(
+    () => buildPropertyInfoRows(property, t),
+    [property, t]
+  );
+
+  const propertyFeatureRows = useMemo(() => {
+    if (dynamicFeatureLabels.length > 0 || isPublishedListing) {
+      return dynamicFeatureLabels;
+    }
+    return [
+      t("listings.water"),
+      t("listings.electricity"),
+      t("listings.privateRoofFeature"),
+      t("listings.specialEntrance"),
+      t("listings.nearBusFeature"),
+    ];
+  }, [dynamicFeatureLabels, isPublishedListing, t]);
 
   const handleDescriptionTextLayout = useCallback(
     (e: { nativeEvent: { lines: unknown[] } }) => {
@@ -212,10 +289,13 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
 
   const handleCopyId = useCallback(() => {
-    console.log("Copy ID:", property?.id);
-  }, [property]);
+    console.log("Copy ID:", listingIdText);
+  }, [listingIdText]);
 
   const { navigateToProfile } = useTabNavigation();
+  const handleAdvertiserRowPress = useCallback(() => {
+    navigateToProfile("UserProfileAds");
+  }, [navigateToProfile]);
   const handleFinancingOptions = useCallback(() => {
     navigateToProfile("Login");
   }, [navigateToProfile]);
@@ -251,6 +331,22 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
   );
 
+  const propertyImages = useMemo((): string[] => {
+    if (!property) return [];
+    if (property.images && property.images.length > 0) return property.images;
+    return [getDefaultImageUrl()];
+  }, [property]);
+
+  const propertyImageCaptions = useMemo(() => {
+    if (!property?.images?.length || !property.imageCaptions?.length) return undefined;
+    return property.images.map((_uri, idx) => (property.imageCaptions?.[idx] ?? "").trim());
+  }, [property]);
+
+  const isPlaceholderGalleryOnly = useMemo(
+    () => isOnlyDefaultPropertyPlaceholderImages(propertyImages),
+    [propertyImages]
+  );
+
   if (!property) {
     return (
       <View style={styles.center}>
@@ -258,11 +354,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       </View>
     );
   }
-
-  const propertyImages =
-    property.images && property.images.length > 0
-      ? property.images
-      : [getDefaultImageUrl()];
 
   // Helper function to translate property type
   const getTranslatedTypeLabel = useCallback(
@@ -287,33 +378,92 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   // Get type label from filter options
   const getPropertyTypeLabel = useCallback(() => {
+    if (property.categoryLabel?.trim()) {
+      return property.categoryLabel.trim();
+    }
+    if (property.categoryId?.trim()) {
+      const key = getMarketingRequestCategoryTranslationKey(property.categoryId.trim());
+      if (key) {
+        return t(key);
+      }
+    }
     let filterOptions;
     if (property.listingType === "rent") filterOptions = RENT_FILTER_OPTIONS;
     else filterOptions = SALE_FILTER_OPTIONS;
 
     return getTranslatedTypeLabel(property.type, filterOptions);
-  }, [property, getTranslatedTypeLabel]);
+  }, [property, getTranslatedTypeLabel, t]);
+
+  const parseCompactPrice = useCallback((rawPrice: string): number | null => {
+    const trimmed = rawPrice.trim();
+    if (!trimmed) return null;
+    const kMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*K$/i);
+    if (kMatch) return Math.round(parseFloat(kMatch[1]) * 1000);
+    const mMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*M$/i);
+    if (mMatch) return Math.round(parseFloat(mMatch[1]) * 1000000);
+    const digits = trimmed.replace(/[^\d]/g, "");
+    if (!digits) return null;
+    return Number(digits);
+  }, []);
 
   const typeLabel = getPropertyTypeLabel();
   const listingText =
-    property.listingType === "rent"
+    (property.categoryLabel || property.categoryId)
+      ? ""
+      : property.listingType === "rent"
       ? t("listings.forRent")
       : property.listingType === "sale"
         ? t("listings.forSale")
         : "";
 
   const displayPrice = useMemo(() => {
+    const formatNumeric = (value: number) =>
+      value.toLocaleString(isRTL ? "ar-SA" : "en-US");
     if (property.listingType === "rent") {
       const rentProperty = property as any;
-      return `${rentProperty.price.replace(" K", ",000")} ${t("listings.sar")} / ${t("listings.yearly")}`;
+      const parsed = parseCompactPrice(String(rentProperty.price ?? ""));
+      if (parsed != null) {
+        return `${formatNumeric(parsed)} ${t("listings.sar")}`;
+      }
+      return `${String(rentProperty.price ?? "---")} ${t("listings.sar")}`;
     } else if (property.listingType === "sale") {
       const saleProperty = property as any;
-      return `${saleProperty.price
-        .replace(" M", ",000,000")
-        .replace(" K", ",000")} ${t("listings.sar")}`;
+      const parsed = parseCompactPrice(String(saleProperty.price ?? ""));
+      if (parsed != null) {
+        return `${formatNumeric(parsed)} ${t("listings.sar")}`;
+      }
+      return `${String(saleProperty.price ?? "---")} ${t("listings.sar")}`;
     }
     return "";
-  }, [property, t]);
+  }, [isRTL, parseCompactPrice, property, t]);
+
+  const rentPaymentRows = useMemo(() => {
+    if (property.listingType !== "rent") return [];
+    const rent = property as RentSaleProperty;
+    const schedule = rent.rentPaymentSchedule;
+    if (Array.isArray(schedule) && schedule.length > 0) {
+      return schedule;
+    }
+    const parsed = parseCompactPrice(String(rent.price ?? ""));
+    if (parsed == null) return [];
+    return buildDefaultRentPaymentRows(parsed);
+  }, [property, parseCompactPrice]);
+
+  const renderDetailIcon = useCallback((icon: DetailIconSpec | null | undefined) => {
+    if (icon == null) {
+      return null;
+    }
+    const size = wp(5);
+    const color = "#9ca3af";
+
+    if (icon.library === "MaterialCommunityIcons") {
+      return <MaterialCommunityIcons name={icon.name as any} size={size} color={color} />;
+    }
+    if (icon.library === "Feather") {
+      return <Feather name={icon.name as any} size={size} color={color} />;
+    }
+    return <Ionicons name={icon.name as any} size={size} color={color} />;
+  }, []);
 
   return (
     <>
@@ -380,19 +530,22 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           scrollEventThrottle={16}
         >
           {/* Image Gallery - now inside ScrollView so it scrolls */}
-          <PropertyImageGallery
-            images={propertyImages}
-            currentIndex={currentImageIndex}
-            onImageScroll={handleImageScroll}
-            onImageViewerOpen={openImageViewer}
-            onBackPress={handleBackPress}
-            onLikePress={toggleLike}
-            onSharePress={handleShare}
-            onFavoritePress={toggleFavorite}
-            liked={liked}
-            favorited={favorited}
-            showStickyHeader={showStickyHeader}
-          />
+          <View style={styles.publishGallerySection}>
+            <PropertyImageGallery
+              images={propertyImages}
+              imageCaptions={propertyImageCaptions}
+              currentIndex={currentImageIndex}
+              onImageScroll={handleImageScroll}
+              onImageViewerOpen={openImageViewer}
+              onBackPress={handleBackPress}
+              onLikePress={toggleLike}
+              onSharePress={handleShare}
+              onFavoritePress={toggleFavorite}
+              liked={liked}
+              favorited={favorited}
+              showStickyHeader={showStickyHeader}
+            />
+          </View>
           {/* Property Header */}
           <View style={styles.headerContainer}>
             <PropertyHeader
@@ -417,63 +570,56 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           )}
 
           {/* Property Information */}
-          <View style={styles.sectionContainer}>
+          {propertyInfoRows.length > 0 && (
+            <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
               {t("listings.propertyInformation")}
             </Text>
             <View style={styles.infoList}>
-              {[
-                { icon: "resize", label: t("listings.area"), value: `${property.area}` },
-                {
-                  icon: "bed",
-                  label: t("listings.bedrooms"),
-                  value: property.bedrooms.toString(),
-                },
-                {
-                  icon: "home",
-                  label: t("listings.livingRooms"),
-                  value: (property.livingRooms || 1).toString(),
-                },
-                {
-                  icon: "water",
-                  label: t("listings.restrooms"),
-                  value: (property.restrooms || 2).toString(),
-                },
-                {
-                  icon: "business",
-                  label: t("listings.realEstateAge"),
-                  value:
-                    property.estateAge > 0
-                      ? `${property.estateAge} ${t("listings.years")}`
-                      : t("listings.new"),
-                },
-                { icon: "pricetag", label: t("listings.type"), value: t("listings.residential") },
-              ].map((item, index) => (
-                <InfoItem
-                  key={item.label}
-                  icon={item.icon}
-                  label={item.label}
-                  value={item.value}
-                  backgroundColor={index % 2 === 0 ? "#fff" : COLORS.background}
-                />
+              {propertyInfoRows.map((item, index) => (
+                <View
+                  key={`${item.label}-${item.icon?.name ?? "no-icon"}-${index}`}
+                  style={[
+                    styles.publishAlignedInfoRow,
+                    isRTL && styles.publishAlignedRowReverse,
+                    index === propertyInfoRows.length - 1 && styles.lastListItemBorder,
+                    { backgroundColor: index % 2 === 0 ? COLORS.white : COLORS.background },
+                  ]}
+                >
+                  <View style={[styles.publishAlignedInfoLeft, isRTL && styles.publishAlignedRowReverse]}>
+                    {item.icon != null ? renderDetailIcon(item.icon) : (
+                      <View style={styles.publishAlignedIconSpacer} />
+                    )}
+                    <Text style={[styles.publishAlignedInfoLabel, isRTL && styles.sectionTitleRTL]}>
+                      {item.label}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.publishAlignedInfoValueColumn,
+                      isRTL && styles.publishAlignedInfoValueColumnRTL,
+                    ]}
+                  >
+                    <Text style={[styles.publishAlignedInfoValueText, isRTL && styles.sectionTitleRTL]}>
+                      {item.value}
+                    </Text>
+                  </View>
+                </View>
               ))}
             </View>
             <View style={styles.sectionSeparator} />
-          </View>
+            </View>
+          )}
 
           {/* Property Features */}
-          <View style={styles.sectionContainer}>
+          {propertyFeatureRows.length > 0 && (
+            <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
               {t("listings.propertyFeatures")}
             </Text>
             <View style={styles.featuresList}>
-              {[
-                { label: t("listings.water") },
-                { label: t("listings.electricity") },
-                { label: t("listings.privateRoofFeature") },
-                { label: t("listings.specialEntrance") },
-                { label: t("listings.nearBusFeature") },
-              ]
+              {propertyFeatureRows
+                .map((label) => ({ label }))
                 .reduce<Array<Array<{ label: string; index: number }>>>(
                   (rows, item, index) => {
                     const rowIndex = Math.floor(index / 2);
@@ -491,6 +637,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                     style={[
                       styles.featureRow,
                       isRTL && styles.featureRowRTL,
+                      rowIndex ===
+                        Math.ceil(propertyFeatureRows.length / 2) - 1 &&
+                        styles.lastListItemBorder,
                       {
                         backgroundColor:
                           rowIndex % 2 === 0 ? "#fff" : COLORS.background,
@@ -499,7 +648,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                   >
                     {row.map((item, itemIndex) => (
                       <FeatureItem
-                        key={item.label}
+                        key={`${item.label}-${rowIndex}-${itemIndex}`}
                         label={item.label}
                         backgroundColor="transparent"
                         showBorder={itemIndex === 0 && row.length === 2}
@@ -509,7 +658,8 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                 ))}
             </View>
             <View style={styles.sectionSeparator} />
-          </View>
+            </View>
+          )}
 
           {/* Extra / Description */}
           <View style={styles.extraSection}>
@@ -517,24 +667,28 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
               {t("listings.extra")}
             </Text>
             <View style={styles.descriptionWrapper}>
-              <Text
-                style={[styles.description, styles.descriptionMeasure]}
-                onTextLayout={handleDescriptionTextLayout}
-              >
-                {descriptionText}
-              </Text>
-              <Text
-                style={[styles.description, isRTL && styles.descriptionRTL]}
-                numberOfLines={expandedDescription ? undefined : 3}
-              >
-                {descriptionText}
-              </Text>
-              {!expandedDescription && descriptionExceedsThreeLines && (
-                <TouchableOpacity onPress={expandDescription}>
-                  <Text style={[styles.readMore, isRTL && styles.readMoreRTL]}>
-                    {t("listings.readMore")}
+              {descriptionText.length > 0 && (
+                <>
+                  <Text
+                    style={[styles.description, styles.descriptionMeasure]}
+                    onTextLayout={handleDescriptionTextLayout}
+                  >
+                    {descriptionText}
                   </Text>
-                </TouchableOpacity>
+                  <Text
+                    style={[styles.description, isRTL && styles.descriptionRTL]}
+                    numberOfLines={expandedDescription ? undefined : 3}
+                  >
+                    {descriptionText}
+                  </Text>
+                  {!expandedDescription && descriptionExceedsThreeLines && (
+                    <TouchableOpacity onPress={expandDescription}>
+                      <Text style={[styles.readMore, isRTL && styles.readMoreRTL]}>
+                        {t("listings.readMore")}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               )}
             </View>
           </View>
@@ -548,11 +702,22 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           />
           <View style={styles.sectionSeparator} />
 
+          {property.listingType === "rent" && rentPaymentRows.length > 0 && (
+            <>
+              <RentPaymentsSection rows={rentPaymentRows} />
+              <View style={styles.sectionSeparator} />
+            </>
+          )}
+
           {/* Advertiser Information */}
               <PropertyAdvertiser
+                advertiserName={property.advertiserName?.trim() ?? ""}
+                advertiserSubtitle={property.advertiserSubtitle}
+                contactActionsEnabled={hasAdvertiserContactPhone}
                 onCall={handleCall}
                 onWhatsApp={handleWhatsApp}
                 onChat={handleChat}
+                onAdvertiserRowPress={handleAdvertiserRowPress}
               />
               <View style={styles.sectionSeparator} />
 
@@ -563,7 +728,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             property={property}
             onCopyId={handleCopyId}
           />
-          <View style={styles.sectionSeparator} />
 
           {/* Report Ad */}
           <View style={styles.reportAdSection}>
@@ -590,6 +754,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             onCall={handleCall}
             onWhatsApp={handleWhatsApp}
             onChat={handleChat}
+            contactActionsEnabled={hasAdvertiserContactPhone}
           />
         </View>
       </View>
@@ -679,6 +844,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     paddingTop: hp(1),
   },
+  publishGallerySection: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+  },
   sectionContainer: {
     backgroundColor: COLORS.background,
     paddingTop: hp(2),
@@ -693,8 +863,53 @@ const styles = StyleSheet.create({
   infoList: {
     backgroundColor: COLORS.background,
   },
+  publishAlignedInfoRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(4),
+  },
+  publishAlignedInfoLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "56%",
+    gap: wp(3),
+  },
+  publishAlignedIconSpacer: {
+    width: wp(5),
+  },
+  publishAlignedInfoLabel: {
+    flexShrink: 1,
+    fontSize: wp(3.5),
+    color: COLORS.textPrimary,
+    textAlign: "left",
+  },
+  publishAlignedInfoValueColumn: {
+    width: "44%",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingLeft: wp(2),
+  },
+  publishAlignedInfoValueColumnRTL: {
+    alignItems: "flex-end",
+    paddingLeft: 0,
+    paddingRight: wp(2),
+  },
+  publishAlignedInfoValueText: {
+    fontSize: wp(3.5),
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+  publishAlignedRowReverse: {
+    flexDirection: "row-reverse",
+  },
   featuresList: {
     backgroundColor: COLORS.background,
+  },
+  lastListItemBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
   },
   featureRow: {
     flexDirection: "row",

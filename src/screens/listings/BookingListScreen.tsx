@@ -71,27 +71,33 @@ export default function BookingListScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
 
-  const listingsFilters = useAppSelector((s) => s?.listingsFilters);
+  const preservedFilter = useAppSelector((s) => s.listingsFilters.preservedFilter);
+  const preservedCityFromStore = useAppSelector((s) => s.listingsFilters.preservedCity);
+  const preservedSearchFilters = useAppSelector(
+    (s) => s.listingsFilters.preservedSearchFilters
+  );
+  const preservedDates = useAppSelector((s) => s.listingsFilters.preservedDates);
+  const preservedRegion = useAppSelector((s) => s.listingsFilters.preservedRegion);
   const { getCurrentLocation } = useLocation();
   const { t, isRTL } = useLocalization();
 
   // ─── State — initialized once from params (params take priority over Redux) ───
   const [selectedFilter, setSelectedFilter] = useState<string | null>(
-    params?.selectedFilter ?? listingsFilters?.preservedFilter ?? null
+    params?.selectedFilter ?? preservedFilter ?? null
   );
   const [selectedCity, setSelectedCity] = useState<string>(() => {
     const city =
       params?.selectedCity ||
-      (listingsFilters?.preservedCity &&
-      listingsFilters.preservedCity !== "Current Location"
-        ? listingsFilters.preservedCity
+      (preservedCityFromStore &&
+      preservedCityFromStore !== "Current Location"
+        ? preservedCityFromStore
         : "");
     return city || t("listings.city");
   });
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
     params?.searchFilters !== undefined
       ? (params.searchFilters ?? null)
-      : (listingsFilters?.preservedSearchFilters ?? null)
+      : (preservedSearchFilters ?? null)
   );
   /**
    * When non-null: restrict displayed list to these property IDs (from map viewport).
@@ -111,7 +117,7 @@ export default function BookingListScreen(): React.JSX.Element {
 
   const initialDates =
     params?.selectedDates ??
-    listingsFilters?.preservedDates ?? { startDate: null, endDate: null };
+    preservedDates ?? { startDate: null, endDate: null };
   const { selectedDates, handleDateSelect, setSelectedDates } = useCalendar(initialDates);
   const {
     modalVisible: bookingDateModalVisible,
@@ -122,13 +128,13 @@ export default function BookingListScreen(): React.JSX.Element {
   // ─── One-time location init ────────────────────────────────────────────────
   // Only fetches GPS once; saves region to Redux so DailyMap can center on it.
   useEffect(() => {
-    if (hasInitializedLocationRef.current || listingsFilters?.preservedRegion != null) return;
+    if (hasInitializedLocationRef.current || preservedRegion != null) return;
     hasInitializedLocationRef.current = true;
     getCurrentLocation().then((result) => {
       if (result.region) dispatch(setPreservedRegion(result.region));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dispatch, getCurrentLocation, preservedRegion]);
 
   // ─── Params → local state (ONLY reacts to param reference changes, not Redux) ──
   // Using individual effects per param keeps deps minimal and prevents cross-loops.
@@ -170,16 +176,16 @@ export default function BookingListScreen(): React.JSX.Element {
   // This ref mirrors the latest Redux values so the stable useFocusEffect callback
   // can read them without needing to be recreated.
   const reduxRef = useRef({
-    city: listingsFilters?.preservedCity ?? "",
-    filters: listingsFilters?.preservedSearchFilters ?? null,
-    dates: listingsFilters?.preservedDates ?? { startDate: null, endDate: null },
-    filter: listingsFilters?.preservedFilter ?? null,
+    city: preservedCityFromStore ?? "",
+    filters: preservedSearchFilters ?? null,
+    dates: preservedDates ?? { startDate: null, endDate: null },
+    filter: preservedFilter ?? null,
   });
   reduxRef.current = {
-    city: listingsFilters?.preservedCity ?? "",
-    filters: listingsFilters?.preservedSearchFilters ?? null,
-    dates: listingsFilters?.preservedDates ?? { startDate: null, endDate: null },
-    filter: listingsFilters?.preservedFilter ?? null,
+    city: preservedCityFromStore ?? "",
+    filters: preservedSearchFilters ?? null,
+    dates: preservedDates ?? { startDate: null, endDate: null },
+    filter: preservedFilter ?? null,
   };
 
   useFocusEffect(

@@ -8,13 +8,14 @@ import {
   TouchableOpacity,
   Alert,
   ViewStyle,
+  Image,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSSO, useAuth } from "@clerk/clerk-expo";
@@ -22,16 +23,26 @@ import { useAuthContext, useIsAuthenticated } from "../../context/auth-context";
 import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header, PrimaryButton, TextInput } from "../../components";
-import { COLORS } from "../../constants";
+import { COLORS, STORAGE_KEYS } from "../../constants";
 import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
 import { useLoginMutation } from "@/redux/api";
-import { getSaudiPhoneValidationError } from "../../utils/validation";
+import {
+  getPasswordValidationError,
+  getSaudiPhoneValidationError,
+} from "../../utils/validation";
+import {
+  setLoggedInPhoneNumber,
+  setLoggedInDisplayName,
+  setLoggedInProfileImageUri,
+} from "../../utils/loggedInPhoneStorage";
+import { syncAccountProfileMetaOnAuth, touchLastActiveAt } from "../../utils/accountActivityStorage";
+import type { AuthStackParamList } from "../../navigation/types";
 
-type NavigationProp = NativeStackNavigationProp<any>;
+type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
-  const { navigateToProfile, navigateToListings } = useTabNavigation();
+  const { navigateToListings } = useTabNavigation();
   const { t, isRTL } = useLocalization();
   const { isSignedIn } = useAuth();
   const { isAuthenticated, isLoaded } = useIsAuthenticated();
@@ -40,15 +51,38 @@ export default function LoginScreen(): React.JSX.Element {
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [submitAttempted, setSubmitAttempted] = useState<boolean>(false);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
+  const [cachedProfileImageUri, setCachedProfileImageUri] = useState<string | null>(null);
 
-  // Check if user is already signed in when screen loads (Clerk or backend token)
-  useEffect(() => {
-    if (isLoaded && isAuthenticated) {
-      navigateToProfile("ProfileDetail");
-    }
-  }, [isLoaded, isAuthenticated, navigateToProfile]);
+  useFocusEffect(
+    useCallback(() => {
+      if (isLoaded && isAuthenticated) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "ProfileDetail" }],
+          })
+        );
+      }
+    }, [isLoaded, isAuthenticated, navigation])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        try {
+          const uri = await AsyncStorage.getItem(STORAGE_KEYS.loggedInProfileImageUri);
+          if (active) setCachedProfileImageUri(uri && uri.length > 0 ? uri : null);
+        } catch {
+          if (active) setCachedProfileImageUri(null);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   const validatePhoneNumber = useCallback((phone: string): string => {
     const key = getSaudiPhoneValidationError(phone);
@@ -56,28 +90,12 @@ export default function LoginScreen(): React.JSX.Element {
   }, [t]);
 
   const validatePassword = useCallback((pwd: string): string => {
-    if (pwd.trim().length === 0) {
-      return t("auth.passwordRequired");
-    }
-    if (pwd.length < 8) {
-      return t("auth.invalidPassword");
-    }
-    if (!/[A-Z]/.test(pwd)) {
-      return t("auth.invalidPassword");
-    }
-    if (!/[a-z]/.test(pwd)) {
-      return t("auth.invalidPassword");
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
-      return t("auth.invalidPassword");
-    }
-    return "";
+    const key = getPasswordValidationError(pwd, "generic");
+    return key ? t(key) : "";
   }, [t]);
 
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
   const [passwordErrorShown, setPasswordErrorShown] = useState<boolean>(false);
-  const [storedPhoneError, setStoredPhoneError] = useState<string>("");
-  const [storedPasswordError, setStoredPasswordError] = useState<string>("");
   const passwordErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { keyboardHeight } = useKeyboardHeight();
 
@@ -103,7 +121,6 @@ export default function LoginScreen(): React.JSX.Element {
       // Set new timeout to hide error after 2 seconds
       passwordErrorTimeoutRef.current = setTimeout(() => {
         setPasswordErrorShown(false);
-        setStoredPasswordError("");
       }, 2000);
     }
 
@@ -126,25 +143,19 @@ export default function LoginScreen(): React.JSX.Element {
   }, []);
 
   const handleLogin = useCallback(async () => {
-    setSubmitAttempted(true);
-
     const phoneErr = validatePhoneNumber(phoneNumber);
     const pwdErr = validatePassword(password);
 
     if (phoneErr !== "") {
       setPhoneErrorShown(true);
-      setStoredPhoneError(phoneErr);
     } else {
       setPhoneErrorShown(false);
-      setStoredPhoneError("");
     }
 
     if (pwdErr !== "") {
       setPasswordErrorShown(true);
-      setStoredPasswordError(pwdErr);
     } else {
       setPasswordErrorShown(false);
-      setStoredPasswordError("");
     }
 
     if (phoneErr !== "" || pwdErr !== "") {
@@ -158,15 +169,33 @@ export default function LoginScreen(): React.JSX.Element {
       }).unwrap();
 
       if (result.data?.token) {
-        await AsyncStorage.setItem("auth_token", result.data.token);
+        await AsyncStorage.setItem(STORAGE_KEYS.authToken, result.data.token);
         if (result.data.refreshToken) {
           await AsyncStorage.setItem(
-            "refresh_token",
+            STORAGE_KEYS.refreshToken,
             result.data.refreshToken
           );
         }
-        setHasBackendSession(true);
+        await setLoggedInPhoneNumber(phoneNumber);
+        await syncAccountProfileMetaOnAuth(phoneNumber);
+        await touchLastActiveAt();
+        const u = result.data?.user;
+        const resolvedName =
+          u?.name?.trim() ||
+          [u?.firstName, u?.lastName]
+            .filter(Boolean)
+            .map((s) => String(s).trim())
+            .join(" ")
+            .trim();
+        if (resolvedName) {
+          await setLoggedInDisplayName(resolvedName);
+        }
+        if (u?.profileImageUrl?.trim()) {
+          await setLoggedInProfileImageUri(u.profileImageUrl.trim());
+          setCachedProfileImageUri(u.profileImageUrl.trim());
+        }
       }
+      setHasBackendSession(true);
 
       Alert.alert(
         t("common.success"),
@@ -175,7 +204,12 @@ export default function LoginScreen(): React.JSX.Element {
           {
             text: "OK",
             onPress: () => {
-              navigateToProfile("ProfileDetail");
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: "ProfileDetail" }],
+                })
+              );
             },
           },
         ]
@@ -191,11 +225,12 @@ export default function LoginScreen(): React.JSX.Element {
   }, [
     phoneNumber,
     password,
-    navigateToProfile,
+    navigation,
     login,
     validatePhoneNumber,
     validatePassword,
     t,
+    setHasBackendSession,
   ]);
 
   const handleCreateAccount = useCallback(() => {
@@ -210,12 +245,21 @@ export default function LoginScreen(): React.JSX.Element {
     navigateToListings();
   }, [navigateToListings]);
 
+  const resetToProfile = useCallback(() => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "ProfileDetail" }],
+      })
+    );
+  }, [navigation]);
+
   const handleGoogleLogin = useCallback(async () => {
     try {
       setIsLoadingGoogle(true);
 
       if (isSignedIn) {
-        navigateToProfile("ProfileDetail");
+        resetToProfile();
         return;
       }
 
@@ -228,10 +272,12 @@ export default function LoginScreen(): React.JSX.Element {
 
       if (createdSessionId) {
         await setActive!({ session: createdSessionId });
-        navigateToProfile("ProfileDetail");
+        resetToProfile();
       }
     } catch (err: any) {
-      console.error("OAuth error", err);
+      if (__DEV__) {
+        console.warn("Google OAuth failed:", err);
+      }
 
       if (err?.errors?.[0]?.code === "oauth_cancelled") {
         return;
@@ -243,7 +289,7 @@ export default function LoginScreen(): React.JSX.Element {
         errorMessage.includes("already signed in") ||
         errorMessage.includes("Session already exists")
       ) {
-        navigateToProfile("ProfileDetail");
+        resetToProfile();
         return;
       }
 
@@ -254,11 +300,10 @@ export default function LoginScreen(): React.JSX.Element {
     } finally {
       setIsLoadingGoogle(false);
     }
-  }, [startSSOFlow, navigateToProfile, isSignedIn]);
+  }, [startSSOFlow, resetToProfile, isSignedIn, t]);
 
   const handleAppleLogin = useCallback(() => {
-    console.log("Continue with Apple");
-    // TODO: Implement Apple login
+    // Apple sign-in is not wired yet.
   }, []);
 
   const GoogleLogo = ({ containerStyle }: { containerStyle?: ViewStyle }) => (
@@ -331,6 +376,10 @@ export default function LoginScreen(): React.JSX.Element {
     [keyboardHeight]
   );
 
+  if (isLoaded && isAuthenticated) {
+    return <View style={styles.container} />;
+  }
+
   return (
     <View style={styles.container}>
       <Header onClosePress={handleBackPress} />
@@ -344,6 +393,15 @@ export default function LoginScreen(): React.JSX.Element {
       >
         {/* Header */}
         <View style={styles.header}>
+          {cachedProfileImageUri ? (
+            <View style={styles.loginAvatarWrap}>
+              <Image
+                source={{ uri: cachedProfileImageUri }}
+                style={styles.loginAvatarImage}
+                resizeMode="cover"
+              />
+            </View>
+          ) : null}
           <Text style={[styles.title, rtlStyles.title]}>{t("auth.loginToBayt")}</Text>
           <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("auth.verifyToContinue")}</Text>
         </View>
@@ -462,6 +520,19 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: hp(5),
+  },
+  loginAvatarWrap: {
+    width: wp(22),
+    height: wp(22),
+    borderRadius: wp(11),
+    overflow: "hidden",
+    backgroundColor: "#e5e7eb",
+    marginBottom: hp(2),
+    alignSelf: "center",
+  },
+  loginAvatarImage: {
+    width: "100%",
+    height: "100%",
   },
   title: {
     fontSize: wp(6.5),

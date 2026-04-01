@@ -27,11 +27,30 @@ export interface AverageSaleCardProps {
 const AverageSaleCard = memo<AverageSaleCardProps>(({ property, onPress, variant = "default", onEditPress }) => {
   const { t, isRTL } = useLocalization();
   
+  const parseCompactPrice = (rawPrice?: string): number | null => {
+    const raw = (rawPrice ?? "").trim();
+    if (!raw) return null;
+    const compactMatch = raw.match(/^([\d.,]+)\s*([kKmM])$/);
+    if (compactMatch) {
+      const amount = Number.parseFloat(compactMatch[1].replace(/,/g, ""));
+      if (!Number.isFinite(amount)) return null;
+      const multiplier = compactMatch[2].toLowerCase() === "m" ? 1_000_000 : 1_000;
+      return Math.round(amount * multiplier);
+    }
+    const digitsOnly = raw.replace(/[^\d]/g, "");
+    if (!digitsOnly) return null;
+    const numeric = Number(digitsOnly);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
   // Calculate average price (in a real app, this would come from API)
   const saleProperty = property as RentSaleProperty;
-  const averagePrice = saleProperty.price
-    ? saleProperty.price.replace(" M", ",000,000").replace(" K", ",000")
-    : "4,810,360";
+  const averagePrice = useMemo(() => {
+    const parsed = parseCompactPrice(saleProperty.price);
+    const fallback = 4810360;
+    const numeric = parsed ?? fallback;
+    return numeric.toLocaleString(isRTL ? "ar-SA" : "en-US");
+  }, [isRTL, saleProperty.price]);
   
   // Translate the location/address
   const rawLocation = property.address || property.city || "";

@@ -8,17 +8,19 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader } from "../../components";
-import { COLORS, RIYADH_REGION } from "../../constants";
-import { useLocalization } from "../../hooks/useLocalization";
-import { openInGoogleMaps, getPropertyById } from "../../utils";
-import type { Property } from "../../types/property";
-import { useLocation } from "../../hooks";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScreenHeader } from "@/components";
+import { COLORS, RIYADH_REGION } from "@/constants";
+import { useLocalization } from "@/hooks/useLocalization";
+import { openInGoogleMaps, getPropertyById } from "@/utils";
+import type { Property } from "@/types/property";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 interface RouteParams {
-  propertyId: number;
+  propertyId?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 const isValidCoordinate = (value: number | undefined | null): boolean =>
@@ -69,10 +71,10 @@ export default function NearbyServicesScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = (route.params || {}) as RouteParams;
-  const { propertyId } = params;
+  const { propertyId, latitude: paramLatitude, longitude: paramLongitude } = params;
   const mapRef = useRef<MapView>(null);
+  const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
-  const { getCurrentLocation } = useLocation();
 
   const [isSatelliteMode, setIsSatelliteMode] = useState(false);
   const [isScreenFocused, setIsScreenFocused] = useState(true);
@@ -84,61 +86,54 @@ export default function NearbyServicesScreen(): React.JSX.Element {
     }, [])
   );
 
-  const property = useMemo<Property | undefined>(
-    () => getPropertyById(propertyId),
-    [propertyId]
-  );
+  const property = useMemo<Property | undefined>(() => {
+    if (!propertyId) return undefined;
+    return getPropertyById(propertyId);
+  }, [propertyId]);
 
-  const hasValidCoords =
+  const hasParamCoords =
+    isValidCoordinate(paramLatitude) &&
+    isValidLongitude(paramLongitude);
+
+  const hasValidPropertyCoords =
     property &&
     isValidCoordinate(property.lat) &&
     isValidLongitude(property.lng);
 
-  const latitude = hasValidCoords ? property!.lat : RIYADH_REGION.latitude;
-  const longitude = hasValidCoords ? property!.lng : RIYADH_REGION.longitude;
+  const latitude = hasParamCoords ? paramLatitude! : hasValidPropertyCoords ? property!.lat : RIYADH_REGION.latitude;
+  const longitude = hasParamCoords ? paramLongitude! : hasValidPropertyCoords ? property!.lng : RIYADH_REGION.longitude;
 
-  // Default map center should be user's current location.
-  // If the property has valid coords, we'll still show its marker, but the map starts at the user's location.
-  const [homeRegion, setHomeRegion] = useState({
-    latitude: RIYADH_REGION.latitude,
-    longitude: RIYADH_REGION.longitude,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
-  const hasCenteredOnMountRef = useRef(false);
-
-  const initialRegion = useMemo(() => homeRegion, [homeRegion]);
+  const initialRegion = useMemo(
+    () => ({
+      latitude,
+      longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }),
+    [latitude, longitude]
+  );
 
   useEffect(() => {
-    if (hasCenteredOnMountRef.current) return;
-    hasCenteredOnMountRef.current = true;
-    (async () => {
-      if (!mapRef.current) return;
-      const result = await getCurrentLocation();
-      if (result.region && mapRef.current) {
-        setHomeRegion({
-          ...result.region,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-        mapRef.current.animateToRegion(
-          {
-            ...result.region,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          },
-          800
-        );
-      }
-    })();
-  }, [getCurrentLocation]);
+    mapRef.current?.animateToRegion(
+      {
+        latitude,
+        longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      400
+    );
+  }, [latitude, longitude]);
 
-  const satelliteButtonPosition = useMemo(
-    () => ({
-      left: isRTL ? undefined : wp(4),
-      right: isRTL ? wp(4) : undefined,
-    }),
-    [isRTL]
+  const satelliteFabStyle = useMemo(
+    () => [
+      styles.satelliteButton,
+      {
+        bottom: Math.max(hp(6), insets.bottom + hp(2)),
+      },
+      isRTL ? styles.satelliteFabRTL : styles.satelliteFabLTR,
+    ],
+    [isRTL, insets.bottom]
   );
 
   const handleBackPress = () => navigation.goBack();
@@ -160,7 +155,8 @@ export default function NearbyServicesScreen(): React.JSX.Element {
             initialRegion={initialRegion}
             mapType={isSatelliteMode ? "satellite" : "standard"}
             provider={Platform.OS === "android" ? "google" : undefined}
-            showsUserLocation={true}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
             scrollEnabled={true}
             zoomEnabled={true}
             pitchEnabled={true}
@@ -178,10 +174,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
         ) : (
           <View style={[styles.map, styles.mapPlaceholder]} />
         )}
-        <TouchableOpacity
-          style={[styles.satelliteButton, satelliteButtonPosition]}
-          onPress={handleToggleSatellite}
-        >
+        <TouchableOpacity style={satelliteFabStyle} onPress={handleToggleSatellite} activeOpacity={0.85}>
           <MaterialIcons
             name="satellite-alt"
             size={wp(6.5)}
@@ -209,7 +202,6 @@ const styles = StyleSheet.create({
   },
   satelliteButton: {
     position: "absolute",
-    bottom: hp(8),
     backgroundColor: "#fff",
     padding: wp(3),
     borderRadius: wp(7.5),
@@ -224,5 +216,11 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
     }),
+  },
+  satelliteFabLTR: {
+    left: wp(4),
+  },
+  satelliteFabRTL: {
+    right: wp(4),
   },
 });

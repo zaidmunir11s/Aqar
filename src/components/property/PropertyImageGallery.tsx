@@ -7,10 +7,11 @@ import {
   FlatList,
   Image,
   Dimensions,
-  Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
   Animated,
+  ListRenderItemInfo,
+  LayoutChangeEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -19,11 +20,22 @@ import {
 } from "react-native-responsive-screen";
 import { useLocalization } from "../../hooks/useLocalization";
 import { COLORS } from "@/constants";
+import { isOnlyDefaultPropertyPlaceholderImages } from "@/utils/propertyHelpers";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+/** Slightly darker than `COLORS.background` for per-slide image captions */
+const IMAGE_CAPTION_BAND_BG = "#dde2e8";
+
+export type PropertyImageGallerySlide = {
+  uri: string;
+  caption: string;
+};
+
 export interface PropertyImageGalleryProps {
   images: string[];
+  /** Same length as `images`; captions scroll with each slide. Omit for legacy screens. */
+  imageCaptions?: string[];
   currentIndex: number;
   onImageScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onImageViewerOpen: () => void;
@@ -36,12 +48,17 @@ export interface PropertyImageGalleryProps {
   showStickyHeader?: boolean;
 }
 
+const IMAGE_AREA_H = hp(30);
+/** “See all” sits this far above the bottom edge of the image area */
+const SEE_ALL_OFFSET_FROM_IMAGE_BOTTOM = hp(7);
+
 /**
- * Property image gallery component with header overlay
+ * Horizontal image carousel; optional per-slide captions (publish preview) scroll with images.
  */
 const PropertyImageGallery = memo<PropertyImageGalleryProps>(
   ({
     images,
+    imageCaptions,
     currentIndex,
     onImageScroll,
     onImageViewerOpen,
@@ -59,38 +76,68 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
     const hideScrollBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const scrollBarOpacity = useRef(new Animated.Value(0)).current;
 
-    // Ensure we have valid images array
     const validImages = images && images.length > 0 ? images : [];
-    const scrollBarHeight = 3;
-    const scrollBarTrackWidth = SCREEN_WIDTH; // Full width for positioning
-    
-    // Calculate scroll bar width based on number of images
-    // More images = smaller width, fewer images = larger width
+    const scrollBarTrackWidth = SCREEN_WIDTH;
+
+    const plainPlaceholderOnly = useMemo(
+      () => isOnlyDefaultPropertyPlaceholderImages(validImages),
+      [validImages]
+    );
+
+    const slides: PropertyImageGallerySlide[] = useMemo(() => {
+      return validImages.map((uri, i) => ({
+        uri,
+        caption: (imageCaptions?.[i] ?? "").trim(),
+      }));
+    }, [validImages, imageCaptions]);
+
+    const showCaptionRail = useMemo(
+      () => imageCaptions != null && slides.some((s) => s.caption.length > 0),
+      [imageCaptions, slides]
+    );
+
+    const [listCrossAxisSize, setListCrossAxisSize] = useState(IMAGE_AREA_H);
+    const slideHeightsRef = useRef<number[]>([]);
+
+    useEffect(() => {
+      slideHeightsRef.current = new Array(slides.length).fill(0);
+      setListCrossAxisSize(IMAGE_AREA_H);
+    }, [slides.length, showCaptionRail]);
+
+    /** Horizontal FlatList inside a parent ScrollView often never reports useful content height via onContentSizeChange — measure slides instead. */
+    const handleSlideLayout = useCallback(
+      (index: number, e: LayoutChangeEvent) => {
+        if (!showCaptionRail) return;
+        const h = Math.ceil(e.nativeEvent.layout.height);
+        slideHeightsRef.current[index] = h;
+        const reported = slideHeightsRef.current.filter((x) => x > 0);
+        const maxSlide = reported.length > 0 ? Math.max(IMAGE_AREA_H, ...reported) : IMAGE_AREA_H;
+        setListCrossAxisSize(maxSlide);
+      },
+      [showCaptionRail]
+    );
+
+    const galleryHeight = showCaptionRail ? listCrossAxisSize : IMAGE_AREA_H;
+
     const scrollBarWidth = useMemo(() => {
-      if (validImages.length <= 1) return SCREEN_WIDTH;
-      const minWidth = SCREEN_WIDTH * 0.15; // Minimum 15% of screen
-      const maxWidth = SCREEN_WIDTH * 0.5; // Maximum 50% of screen
-      const calculatedWidth = SCREEN_WIDTH / validImages.length;
+      if (slides.length <= 1) return SCREEN_WIDTH;
+      const minWidth = SCREEN_WIDTH * 0.15;
+      const maxWidth = SCREEN_WIDTH * 0.5;
+      const calculatedWidth = SCREEN_WIDTH / slides.length;
       return Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
-    }, [validImages.length]);
+    }, [slides.length]);
 
-    // Calculate scroll bar position based on actual scroll position (RTL-aware)
     const scrollBarPosition = useMemo(() => {
-      if (validImages.length <= 1) return 0;
+      if (slides.length <= 1) return 0;
       const maxPosition = scrollBarTrackWidth - scrollBarWidth;
-      // Calculate raw index from scroll position
       const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
-      // In RTL with inverted FlatList, scroll position 0 shows last image (on right)
-      // So we need to reverse the calculation for RTL
       if (isRTL) {
-        const reversedIndex = validImages.length - 1 - rawIndex;
-        return (reversedIndex / (validImages.length - 1)) * maxPosition;
-      } else {
-        return (rawIndex / (validImages.length - 1)) * maxPosition;
+        const reversedIndex = slides.length - 1 - rawIndex;
+        return (reversedIndex / (slides.length - 1)) * maxPosition;
       }
-    }, [scrollPosition, validImages.length, isRTL, scrollBarTrackWidth, scrollBarWidth]);
+      return (rawIndex / (slides.length - 1)) * maxPosition;
+    }, [scrollPosition, slides.length, isRTL, scrollBarTrackWidth, scrollBarWidth]);
 
-    // Show/hide scroll bar with animation
     useEffect(() => {
       Animated.timing(scrollBarOpacity, {
         toValue: showScrollBar ? 1 : 0,
@@ -99,7 +146,6 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
       }).start();
     }, [showScrollBar, scrollBarOpacity]);
 
-    // Handle scroll start
     const handleScrollBegin = useCallback(() => {
       setShowScrollBar(true);
       if (hideScrollBarTimer.current) {
@@ -107,17 +153,15 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
       }
     }, []);
 
-    // Handle scroll end
     const handleScrollEnd = useCallback(() => {
       if (hideScrollBarTimer.current) {
         clearTimeout(hideScrollBarTimer.current);
       }
       hideScrollBarTimer.current = setTimeout(() => {
         setShowScrollBar(false);
-      }, 1000); // Hide after 1 second of no scrolling
+      }, 1000);
     }, []);
 
-    // Combined scroll handler
     const handleScroll = useCallback(
       (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const position = event.nativeEvent.contentOffset.x;
@@ -129,7 +173,6 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
       [onImageScroll, handleScrollBegin, handleScrollEnd]
     );
 
-    // Cleanup timer on unmount
     useEffect(() => {
       return () => {
         if (hideScrollBarTimer.current) {
@@ -138,31 +181,28 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
       };
     }, []);
 
-    const renderImage = useCallback(
-      ({ item }: { item: string }) => (
-        <View style={styles.imageWrapper}>
-          <TouchableOpacity 
-            activeOpacity={0.9} 
-            onPress={onImageViewerOpen}
-          >
-          <Image
-            source={{ uri: item }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
+    const renderSlide = useCallback(
+      ({ item, index }: ListRenderItemInfo<PropertyImageGallerySlide>) => (
+        <View style={styles.slidePage} onLayout={(e) => handleSlideLayout(index, e)}>
+          <View style={styles.imageWrapper}>
+            <TouchableOpacity activeOpacity={0.9} onPress={onImageViewerOpen}>
+              <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" />
+            </TouchableOpacity>
+          </View>
+          {showCaptionRail && item.caption.length > 0 ? (
+            <View style={[styles.captionSlot, styles.captionSlotFilled]}>
+              <Text style={[styles.captionText, isRTL && styles.captionTextRtlWriting]}>{item.caption}</Text>
+            </View>
+          ) : null}
         </View>
       ),
-      []
+      [onImageViewerOpen, showCaptionRail, isRTL, handleSlideLayout]
     );
 
-    const keyExtractor = useCallback(
-      (item: string, index: number) => index.toString(),
-      []
-    );
+    const keyExtractor = useCallback((_item: PropertyImageGallerySlide, index: number) => index.toString(), []);
 
     const getItemLayout = useCallback(
-      (data: any, index: number) => ({
+      (_data: ArrayLike<PropertyImageGallerySlide> | null | undefined, index: number) => ({
         length: SCREEN_WIDTH,
         offset: SCREEN_WIDTH * index,
         index,
@@ -170,10 +210,21 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
       []
     );
 
+    const scrollThumbTop = IMAGE_AREA_H - 3;
+    const seeAllTop = IMAGE_AREA_H - SEE_ALL_OFFSET_FROM_IMAGE_BOTTOM;
+
+    if (plainPlaceholderOnly && validImages[0]) {
+      return (
+        <View style={[styles.imageSection, styles.plainPlaceholderSection, { height: IMAGE_AREA_H }]}>
+          <Image source={{ uri: validImages[0] }} style={styles.image} resizeMode="cover" />
+        </View>
+      );
+    }
+
     return (
-      <View style={styles.imageSection}>
+      <View style={[styles.imageSection, { height: galleryHeight }]}>
         <FlatList
-          data={validImages}
+          data={slides}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -182,20 +233,28 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
           onScrollEndDrag={handleScrollEnd}
           onMomentumScrollEnd={handleScrollEnd}
           scrollEventThrottle={16}
-          renderItem={renderImage}
+          renderItem={renderSlide}
           keyExtractor={keyExtractor}
-          getItemLayout={getItemLayout}
+          getItemLayout={showCaptionRail ? undefined : getItemLayout}
           removeClippedSubviews={false}
           snapToInterval={SCREEN_WIDTH}
           decelerationRate="fast"
           snapToAlignment="start"
           inverted={isRTL}
-          disableIntervalMomentum={true}
+          disableIntervalMomentum
           bounces={false}
+          style={{ height: galleryHeight }}
+          contentContainerStyle={showCaptionRail ? styles.listContentWithCaptions : undefined}
+          {...(showCaptionRail && slides.length > 0 && slides.length <= 24
+            ? {
+                initialNumToRender: slides.length,
+                maxToRenderPerBatch: slides.length,
+                windowSize: Math.min(21, slides.length + 2),
+              }
+            : {})}
         />
 
-        {/* Scroll Bar Indicator */}
-        {validImages.length > 1 && (
+        {slides.length > 1 && (
           <Animated.View
             style={[
               styles.scrollBarContainer,
@@ -203,6 +262,7 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
               {
                 opacity: scrollBarOpacity,
                 width: scrollBarTrackWidth,
+                top: scrollThumbTop,
               },
             ]}
             pointerEvents="none"
@@ -219,16 +279,18 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
           </Animated.View>
         )}
 
-
-        {/* See All Photos Button */}
-        {validImages.length > 0 && (
+        {slides.length > 0 && (
           <TouchableOpacity
-            style={[styles.seeAllPhotosBtn, isRTL && styles.seeAllPhotosBtnRTL]}
+            style={[
+              styles.seeAllPhotosBtn,
+              isRTL && styles.seeAllPhotosBtnRTL,
+              { top: seeAllTop },
+            ]}
             onPress={onImageViewerOpen}
           >
             <Ionicons name="images" size={wp(4.5)} color="#fff" />
             <Text style={[styles.seeAllPhotosText, isRTL && styles.seeAllPhotosTextRTL]}>
-              {validImages.length} {t("listings.seeAllPhotos")}
+              {slides.length} {t("listings.seeAllPhotos")}
             </Text>
           </TouchableOpacity>
         )}
@@ -241,21 +303,50 @@ PropertyImageGallery.displayName = "PropertyImageGallery";
 
 const styles = StyleSheet.create({
   imageSection: {
-    height: hp(30),
     backgroundColor: COLORS.background,
     width: "100%",
   },
+  plainPlaceholderSection: {
+    overflow: "hidden",
+  },
+  listContentWithCaptions: {
+    alignItems: "flex-start",
+  },
+  slidePage: {
+    width: SCREEN_WIDTH,
+  },
   imageWrapper: {
     width: SCREEN_WIDTH,
-    height: hp(30),
+    height: IMAGE_AREA_H,
   },
   image: {
     width: SCREEN_WIDTH,
-    height: hp(30),
+    height: IMAGE_AREA_H,
+  },
+  captionSlot: {
+    width: SCREEN_WIDTH,
+    alignItems: "center",
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(0.5),
+  },
+  captionSlotFilled: {
+    backgroundColor: IMAGE_CAPTION_BAND_BG,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+  },
+  captionText: {
+    width: "100%",
+    fontSize: wp(3.4),
+    lineHeight: hp(2),
+    color: COLORS.textPrimary,
+    textAlign: "center",
+  },
+  captionTextRtlWriting: {
+    writingDirection: "rtl",
   },
   seeAllPhotosBtn: {
     position: "absolute",
-    bottom: hp(2),
+    zIndex: 2,
     left: wp(4),
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     paddingHorizontal: wp(4),
@@ -278,18 +369,17 @@ const styles = StyleSheet.create({
   seeAllPhotosTextRTL: {
     marginLeft: 0,
     marginRight: wp(2),
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   scrollBarContainer: {
     position: "absolute",
-    bottom: 0,
     left: 0,
     height: 3,
     justifyContent: "center",
+    zIndex: 2,
   },
-  scrollBarContainerRTL: {
-    // Keep left: 0 for consistent transform behavior
-    // The transform will handle RTL positioning
-  },
+  scrollBarContainerRTL: {},
   scrollBarThumb: {
     height: 3,
     backgroundColor: "#808080",

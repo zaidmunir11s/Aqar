@@ -1,10 +1,11 @@
 import React, { memo } from "react";
 import { View, StyleSheet, TouchableOpacity, Animated } from "react-native";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import {
+  LISTING_FORM_TOGGLE_THUMB_SIZE,
+  LISTING_FORM_TOGGLE_TRACK_HEIGHT,
+  LISTING_FORM_TOGGLE_TRACK_WIDTH,
+} from "../../constants/dimensions";
 import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ToggleSwitchProps {
@@ -26,9 +27,9 @@ const ToggleSwitch = memo<ToggleSwitchProps>(({
   trackOffColor = "#9ca3af",
   thumbOnColor = COLORS.primary,
   thumbOffColor = "#fff",
-  trackWidth = wp(10),
-  trackHeight = hp(1.6),
-  thumbSize = wp(6.5),
+  trackWidth = LISTING_FORM_TOGGLE_TRACK_WIDTH,
+  trackHeight = LISTING_FORM_TOGGLE_TRACK_HEIGHT,
+  thumbSize = LISTING_FORM_TOGGLE_THUMB_SIZE,
 }) => {
   const { isRTL } = useLocalization();
   const animatedValue = React.useRef(new Animated.Value(value ? 1 : 0)).current;

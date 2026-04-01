@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -10,63 +10,101 @@ import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PhoneCardProps {
   phoneNumber: string;
+  /** Shown above the phone line when set (e.g. first + last name). */
+  displayName?: string;
+  /** Local `file://` or remote URL; falls back to default user art when missing. */
+  avatarUri?: string | null;
   onPress?: () => void;
 }
 
 /**
- * Phone card component with user icon in background container
+ * Profile row: optional avatar, name + phone, chevron.
  */
-const PhoneCard = memo<PhoneCardProps>(({ phoneNumber, onPress }) => {
-  const { t, isRTL } = useLocalization();
+const PhoneCard = memo<PhoneCardProps>(
+  ({ phoneNumber, displayName, avatarUri, onPress }) => {
+    const { isRTL } = useLocalization();
+    const trimmedName = displayName?.trim() ?? "";
+    const trimmedUri =
+      typeof avatarUri === "string" ? avatarUri.trim() : "";
+    const [remoteAvatarFailed, setRemoteAvatarFailed] = useState(false);
 
-  const rtlStyles = useMemo(() => {
-    if (!isRTL) return {};
+    useEffect(() => {
+      setRemoteAvatarFailed(false);
+    }, [trimmedUri]);
 
-    return {
-      phoneCard: {
-        flexDirection: "row-reverse" as const,
-      },
-      phoneNumber: {
-        textAlign: "right" as const,
-      },
-      arrowIcon: {
-        marginRight: wp(2),
-        // marginLeft will stay undefined → uses base style or zero
-      },
-      phoneNumberContainer: {
-        alignSelf: "flex-end" as const,
-        paddingHorizontal: wp(4),           // usually same, but you can override if needed
-        paddingVertical: hp(1.4),
-      },
-      // phoneNumberContainer usually doesn't need much change
-    };
-  }, [isRTL]);
+    const rtlStyles = useMemo(() => {
+      if (!isRTL) return {};
 
-  return (
-    <TouchableOpacity
-      style={[styles.phoneCard, rtlStyles.phoneCard]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.iconContainer}>
-        <Image
-          source={require("../../../assets/User.png")}
-          style={styles.userImage}
-          resizeMode="contain"
+      return {
+        phoneCard: {
+          flexDirection: "row-reverse" as const,
+        },
+        textColumn: {
+          alignItems: "flex-end" as const,
+        },
+        nameRow: {
+          alignItems: "flex-end" as const,
+        },
+        displayName: {
+          textAlign: "right" as const,
+        },
+        phoneNumber: {
+          textAlign: "right" as const,
+        },
+      };
+    }, [isRTL]);
+
+    const useRemoteAvatar = trimmedUri.length > 0 && !remoteAvatarFailed;
+
+    return (
+      <TouchableOpacity
+        style={[styles.phoneCard, rtlStyles.phoneCard]}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <View style={styles.iconContainer}>
+          {useRemoteAvatar ? (
+            <Image
+              source={{ uri: trimmedUri }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+              onError={() => setRemoteAvatarFailed(true)}
+            />
+          ) : (
+            <Image
+              source={require("../../../assets/User.png")}
+              style={styles.userImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+        <View style={[styles.textColumn, rtlStyles.textColumn]}>
+          <View style={styles.textStack}>
+            <View style={[styles.nameRow, rtlStyles.nameRow]}>
+              {trimmedName.length > 0 ? (
+                <Text
+                  style={[styles.displayName, rtlStyles.displayName]}
+                  numberOfLines={1}
+                >
+                  {trimmedName}
+                </Text>
+              ) : null}
+            </View>
+            <Text style={[styles.phoneNumber, rtlStyles.phoneNumber]}>
+              {phoneNumber}
+            </Text>
+          </View>
+        </View>
+        <Ionicons
+          name={isRTL ? "chevron-back" : "chevron-forward"}
+          size={wp(5)}
+          color={COLORS.textDisabled}
+          style={styles.arrowIcon}
         />
-      </View>
-      <View style={[styles.phoneNumberContainer, rtlStyles.phoneNumberContainer]}>
-        <Text style={[styles.phoneNumber, rtlStyles.phoneNumber]}>{phoneNumber}</Text>
-      </View>
-      <Ionicons
-        name={isRTL ? "chevron-back" : "chevron-forward"}
-        size={wp(5)}
-        color={COLORS.textDisabled}
-        style={[styles.arrowIcon, rtlStyles.arrowIcon]}
-      />
-    </TouchableOpacity>
-  );
-});
+      </TouchableOpacity>
+    );
+  }
+);
 
 PhoneCard.displayName = "PhoneCard";
 
@@ -86,28 +124,50 @@ const styles = StyleSheet.create({
     height: wp(12),
     borderRadius: wp(3),
     backgroundColor: COLORS.textTertiary,
-    justifyContent: "flex-end",
+    justifyContent: "center",
     alignItems: "center",
-    marginRight: wp(3),
+    marginEnd: wp(3),
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   userImage: {
     width: "100%",
     height: "100%",
     bottom: wp(-2),
   },
-  phoneNumberContainer: {
+  textColumn: {
     flex: 1,
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    paddingBottom: wp(0.5),
+    justifyContent: "center",
+    minWidth: 0,
+  },
+  textStack: {
+    flexDirection: "column",
+    justifyContent: "center",
+    width: "100%",
+  },
+  nameRow: {
+    width: "100%",
+    minHeight: wp(5.2),
+    justifyContent: "center",
+    marginBottom: hp(0.25),
+  },
+  displayName: {
+    fontSize: wp(4.2),
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    lineHeight: wp(5.2),
   },
   phoneNumber: {
-    fontSize: wp(4),
+    fontSize: wp(3.8),
     color: COLORS.textSecondary,
     fontWeight: "400",
+    lineHeight: wp(4.8),
   },
   arrowIcon: {
-    marginLeft: wp(2),
+    marginStart: wp(2),
   },
 });
 

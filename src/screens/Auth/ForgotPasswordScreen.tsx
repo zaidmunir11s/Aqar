@@ -1,9 +1,8 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Platform,
   ScrollView,
 } from "react-native";
 import {
@@ -14,14 +13,15 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
-import { Entypo } from "@expo/vector-icons";
-import { useLocalization, useKeyboardHeight } from "../../hooks";
+import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
 import { getSaudiPhoneValidationError } from "../../utils/validation";
+import type { AuthStackParamList } from "../../navigation/types";
 
-type NavigationProp = NativeStackNavigationProp<any>;
+type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export default function ForgotPasswordScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { navigateToListings } = useTabNavigation();
   const { t, isRTL } = useLocalization();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
@@ -43,17 +43,16 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
       return;
     }
     if (!isFormValid) return;
-    console.log("Continue with phone number:", phoneNumber);
-    // TODO: Navigate to verification code screen or handle password reset
-  }, [isFormValid, phoneNumber, phoneErrorKey]);
+    navigation.navigate("VerifyPhoneNumber", { phoneNumber });
+  }, [isFormValid, navigation, phoneNumber, phoneErrorKey]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate("Listings");
+      navigateToListings();
     }
-  }, [navigation]);
+  }, [navigation, navigateToListings]);
 
   // RTL-aware styles
   const rtlStyles = useMemo(

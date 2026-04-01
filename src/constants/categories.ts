@@ -40,6 +40,36 @@ export const ALL_CATEGORIES: CategoryItem[] = [
 
 export const CATEGORY_TABS: TabType[] = ["ALL", "For Sale", "For Rent"];
 
+/** i18n paths under `listings.propertyTypes.*` for marketing-request ids (`sale-1` … `rent-13`). */
+export const MARKETING_REQUEST_CATEGORY_I18N_KEY: Record<string, string> = {
+  "sale-1": "listings.propertyTypes.villaForSale",
+  "sale-2": "listings.propertyTypes.landForSale",
+  "sale-3": "listings.propertyTypes.apartmentForSale",
+  "sale-4": "listings.propertyTypes.buildingForSale",
+  "sale-5": "listings.propertyTypes.smallHouseForSale",
+  "sale-6": "listings.propertyTypes.loungeForSale",
+  "sale-7": "listings.propertyTypes.farmForSale",
+  "sale-8": "listings.propertyTypes.storeForSale",
+  "sale-9": "listings.propertyTypes.floorForSale",
+  "rent-1": "listings.propertyTypes.apartmentForRent",
+  "rent-2": "listings.propertyTypes.villaForRent",
+  "rent-3": "listings.propertyTypes.bigFlatForRent",
+  "rent-4": "listings.propertyTypes.loungeForRent",
+  "rent-5": "listings.propertyTypes.smallHouseForRent",
+  "rent-6": "listings.propertyTypes.storeForRent",
+  "rent-7": "listings.propertyTypes.buildingForRent",
+  "rent-8": "listings.propertyTypes.landForRent",
+  "rent-9": "listings.propertyTypes.roomForRent",
+  "rent-10": "listings.propertyTypes.officeForRent",
+  "rent-11": "listings.propertyTypes.tentForRent",
+  "rent-12": "listings.propertyTypes.warehouseForRent",
+  "rent-13": "listings.propertyTypes.chaletForRent",
+};
+
+export function getMarketingRequestCategoryTranslationKey(categoryId: string): string {
+  return MARKETING_REQUEST_CATEGORY_I18N_KEY[categoryId] ?? "";
+}
+
 
 export const FOR_BOOKING_CATEGORIES: CategoryItem[] = [
   { id: "1", text: "Apartment for booking" },

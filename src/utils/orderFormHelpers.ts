@@ -18,15 +18,17 @@ export function createToggleHandler<T>(
   };
 }
 
+import type { RentPaymentFrequency, RentPaymentFrequencyChoice } from "../constants/orderFormOptions";
+
 /**
- * Creates a rent period handler
+ * Creates a rent payment-frequency handler (Yearly / Semi Annual / Quarterly / Monthly).
  */
 export function createRentPeriodHandler(
-  currentPeriod: "Yearly" | "Monthly" | null,
-  setPeriod: (period: "Yearly" | "Monthly" | null) => void,
+  currentPeriod: RentPaymentFrequency,
+  setPeriod: (period: RentPaymentFrequency) => void,
   setPayment?: (payment: string | null) => void
 ) {
-  return (period: "Yearly" | "Monthly") => {
+  return (period: RentPaymentFrequencyChoice) => {
     if (currentPeriod === period) {
       setPeriod(null);
       if (setPayment) setPayment(null);

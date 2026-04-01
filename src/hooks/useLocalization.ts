@@ -1,7 +1,11 @@
-import { useTranslation } from 'react-i18next';
-import { useAppSelector, useAppDispatch } from '../redux/hooks';
-import { setLanguage, toggleLanguage } from '../redux/slices/localizationSlice';
-import type { SupportedLanguage } from '../redux/slices/localizationSlice';
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useAppSelector, useAppDispatch } from "../redux/hooks";
+import {
+  setLanguage,
+  toggleLanguage as toggleLanguageAction,
+} from "../redux/slices/localizationSlice";
+import type { SupportedLanguage } from "../redux/slices/localizationSlice";
 
 /**
  * Custom hook for localization
@@ -11,25 +15,33 @@ import type { SupportedLanguage } from '../redux/slices/localizationSlice';
 export const useLocalization = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useAppDispatch();
-  const { language, isRTL, isInitialized } = useAppSelector(
-    (state) => state.localization
+  const language = useAppSelector((state) => state.localization.language);
+  const isRTL = useAppSelector((state) => state.localization.isRTL);
+  const isInitialized = useAppSelector(
+    (state) => state.localization.isInitialized
   );
 
-  const changeLanguage = (lang: SupportedLanguage) => {
-    dispatch(setLanguage(lang));
-  };
+  const changeLanguage = useCallback(
+    (lang: SupportedLanguage) => {
+      dispatch(setLanguage(lang));
+    },
+    [dispatch]
+  );
 
-  const toggle = () => {
-    dispatch(toggleLanguage());
-  };
+  const toggleLanguage = useCallback(() => {
+    dispatch(toggleLanguageAction());
+  }, [dispatch]);
 
-  return {
-    t, // Translation function
-    i18n, // i18n instance for advanced usage
-    language, // Current language code ('en' | 'ar')
-    isRTL, // Whether current language is RTL
-    changeLanguage, // Function to change language
-    toggleLanguage: toggle, // Function to toggle between languages
-    isInitialized, // Whether localization has been initialized
-  };
+  return useMemo(
+    () => ({
+      t,
+      i18n,
+      language,
+      isRTL,
+      changeLanguage,
+      toggleLanguage,
+      isInitialized,
+    }),
+    [t, i18n, language, isRTL, changeLanguage, toggleLanguage, isInitialized]
+  );
 };

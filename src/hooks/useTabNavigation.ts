@@ -1,6 +1,9 @@
 import { useCallback } from "react";
-import { useNavigation } from "@react-navigation/native";
-import type { NavigationProp } from "@react-navigation/native";
+import { CommonActions, useNavigation } from "@react-navigation/native";
+import type { NavigationProp, ParamListBase } from "@react-navigation/native";
+import type { AuthStackParamList, RootTabParamList } from "../navigation/types";
+
+type AuthStackScreenName = keyof AuthStackParamList;
 
 export type TabTarget =
   | "ProfileTab"
@@ -12,7 +15,7 @@ export type TabTarget =
 
 export interface UseTabNavigationReturn {
   /** Navigate to Profile tab, optionally to a specific screen */
-  navigateToProfile: (screen?: "ProfileDetail" | "Login") => void;
+  navigateToProfile: (screen?: AuthStackScreenName) => void;
   /** Navigate to Listings tab, optionally to a specific screen with params */
   navigateToListings: (
     screen?: string,
@@ -43,10 +46,10 @@ export interface UseTabNavigationReturn {
  * Provides consistent fallbacks when parent (tab navigator) is not available.
  */
 export function useTabNavigation(): UseTabNavigationReturn {
-  const navigation = useNavigation<NavigationProp<any>>();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
 
-  const getTabNavigator = useCallback(() => {
-    return navigation.getParent();
+  const getTabNavigator = useCallback((): NavigationProp<RootTabParamList> | undefined => {
+    return navigation.getParent<NavigationProp<RootTabParamList>>();
   }, [navigation]);
 
   const navigateToTab = useCallback(
@@ -54,15 +57,33 @@ export function useTabNavigation(): UseTabNavigationReturn {
       const parent = getTabNavigator();
       if (parent) {
         if (screen) {
-          (parent as any).navigate(tab, { screen, params });
+          parent.dispatch(
+            CommonActions.navigate({
+              name: tab,
+              params: { screen, params },
+            })
+          );
         } else {
-          (parent as any).navigate(tab);
+          parent.dispatch(
+            CommonActions.navigate({
+              name: tab,
+            })
+          );
         }
       } else {
         if (screen) {
-          navigation.navigate(screen as never, params as never);
+          navigation.dispatch(
+            CommonActions.navigate({
+              name: screen,
+              params,
+            })
+          );
         } else {
-          navigation.navigate(tab as never);
+          navigation.dispatch(
+            CommonActions.navigate({
+              name: tab,
+            })
+          );
         }
       }
     },
@@ -70,7 +91,7 @@ export function useTabNavigation(): UseTabNavigationReturn {
   );
 
   const navigateToProfile = useCallback(
-    (screen?: "ProfileDetail" | "Login") => {
+    (screen?: AuthStackScreenName) => {
       const target = screen ?? "ProfileDetail";
       navigateToTab("ProfileTab", target);
     },

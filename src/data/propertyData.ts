@@ -57,6 +57,19 @@ export const PROPERTY_DATA: Property[] = [
     lng: 46.71,
     type: "villa",
     listingType: "rent",
+    rentPaymentSchedule: [
+      { frequency: "yearly", primaryAmountSar: 45000 },
+      {
+        frequency: "semiAnnual",
+        primaryAmountSar: 45000,
+        installmentAmountSar: 22500,
+      },
+      {
+        frequency: "monthly",
+        primaryAmountSar: 45000,
+        installmentAmountSar: 3750,
+      },
+    ],
     verified: false,
     area: 375,
     usage: "family",

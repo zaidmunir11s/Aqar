@@ -17,6 +17,8 @@ export interface PropertyBottomBarProps {
   onWhatsApp: () => void;
   onChat: () => void;
   isDailyListing?: boolean;
+  /** When false, Call / WhatsApp are disabled (no valid number on listing). */
+  contactActionsEnabled?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
     onWhatsApp,
     onChat,
     isDailyListing = false,
+    contactActionsEnabled = true,
   }) => {
     const insets = useSafeAreaInsets();
     const { t, isRTL } = useLocalization();
@@ -79,15 +82,25 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
         {!isDailyListing && (
           <>
             <TouchableOpacity
-              style={[styles.bottomBarBtn, styles.callBtn]}
+              style={[
+                styles.bottomBarBtn,
+                styles.callBtn,
+                !contactActionsEnabled && styles.bottomBarBtnDisabled,
+              ]}
               onPress={onCall}
+              disabled={!contactActionsEnabled}
             >
               <Ionicons name="call" size={wp(5.5)} color="#0e856a" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.bottomBarBtn, styles.waBtn]}
+              style={[
+                styles.bottomBarBtn,
+                styles.waBtn,
+                !contactActionsEnabled && styles.bottomBarBtnDisabled,
+              ]}
               onPress={onWhatsApp}
+              disabled={!contactActionsEnabled}
             >
               <FontAwesome name="whatsapp" size={wp(5.5)} color="#0e856a" />
             </TouchableOpacity>

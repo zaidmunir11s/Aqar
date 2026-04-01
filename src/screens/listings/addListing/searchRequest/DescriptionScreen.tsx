@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -43,6 +43,7 @@ export default function DescriptionScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const [description, setDescription] = useState("");
   const [showCategoryError, setShowCategoryError] = useState(false);
+  const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
   const footerOffset = useRef(
     new Animated.Value(FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + 0)
@@ -72,9 +73,9 @@ export default function DescriptionScreen(): React.JSX.Element {
     [isRTL]
   );
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     navigation.goBack();
-  };
+  }, [navigation]);
 
   // Listen to keyboard show/hide events
   useEffect(() => {
@@ -107,12 +108,14 @@ export default function DescriptionScreen(): React.JSX.Element {
     };
   }, [keyboardHeight]);
 
-  const handleSubmitPress = async () => {
+  const handleSubmitPress = useCallback(async () => {
     // Always allow click, but validate
     if (!isCategorySelected) {
       setShowCategoryError(true);
-      // Hide error after 3 seconds
-      setTimeout(() => setShowCategoryError(false), 3000);
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      errorTimeoutRef.current = setTimeout(() => setShowCategoryError(false), 3000);
       return;
     }
     
@@ -131,9 +134,29 @@ export default function DescriptionScreen(): React.JSX.Element {
       // Pop NewOrder, ChooseLocation, Description so back button doesn't return to this flow
       navigation.dispatch(StackActions.pop(3));
     } catch (error) {
-      console.error("Error submitting request:", error);
+      if (__DEV__) {
+        console.warn("Error submitting request:", error);
+      }
     }
-  };
+  }, [
+    isCategorySelected,
+    addRequest,
+    params.orderFormData,
+    params.selectedLocation,
+    params.onlyAdsWithPhoto,
+    params.assistFromPartners,
+    description,
+    navigation,
+  ]);
+
+  useEffect(
+    () => () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   return (
     <View style={styles.container}>
@@ -181,25 +204,16 @@ export default function DescriptionScreen(): React.JSX.Element {
       )}
 
       {/* Footer */}
-      <Animated.View
-        style={[
-          styles.footerContainer,
-          {
-            bottom: keyboardHeight,
-          },
-        ]}
-      >
-        <ListingFooter
-          currentStep={3}
-          totalSteps={3}
-          onBackPress={handleBackPress}
-          onNextPress={handleSubmitPress}
-          backText={t("common.back")}
-          nextText={t("common.submit")}
-          showBack={true}
-          showNext={true}
-        />
-      </Animated.View>
+      <ListingFooter
+        currentStep={3}
+        totalSteps={3}
+        onBackPress={handleBackPress}
+        onNextPress={handleSubmitPress}
+        backText={t("common.back")}
+        nextText={t("common.submit")}
+        showBack={true}
+        showNext={true}
+      />
     </View>
   );
 }
@@ -258,25 +272,5 @@ const styles = StyleSheet.create({
     fontSize: wp(3.8),
     color: COLORS.error,
     fontWeight: "500",
-  },
-  footerContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    backgroundColor: COLORS.white,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: -2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
   },
 });

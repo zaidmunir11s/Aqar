@@ -118,7 +118,7 @@ export interface DetailRowProps {
  */
 export const DetailRow = memo<DetailRowProps>(
   ({ label, value, showCopy, onCopy, backgroundColor, isLast }) => {
-    const { isRTL } = useLocalization();
+    const { isRTL, t } = useLocalization();
 
     // RTL-aware styles
     const rtlStyles = useMemo(
@@ -131,12 +131,17 @@ export const DetailRow = memo<DetailRowProps>(
         },
         detailValueContainer: {
           flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-          justifyContent: "center" as "center",
+          justifyContent: "space-between" as "space-between",
         },
         detailValue: {
-          marginRight: isRTL ? 0 : wp(2),
-          marginLeft: isRTL ? wp(2) : 0,
-          textAlign: "center" as "center",
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        copyAction: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+        },
+        copyText: {
+          marginLeft: isRTL ? 0 : wp(1),
+          marginRight: isRTL ? wp(1) : 0,
         },
       }),
       [isRTL]
@@ -155,8 +160,9 @@ export const DetailRow = memo<DetailRowProps>(
         <View style={[styles.detailValueContainer, rtlStyles.detailValueContainer]}>
           <Text style={[styles.detailValue, rtlStyles.detailValue]}>{value}</Text>
           {showCopy && onCopy && (
-            <TouchableOpacity onPress={onCopy}>
-              <Ionicons name="copy-outline" size={wp(4.5)} color="#666" />
+            <TouchableOpacity onPress={onCopy} style={[styles.copyAction, rtlStyles.copyAction]}>
+              <Ionicons name="copy-outline" size={wp(4.5)} color={COLORS.textTertiary} />
+              <Text style={[styles.copyText, rtlStyles.copyText]}>{t("common.copy")}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -227,10 +233,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    justifyContent: "space-between",
   },
   detailValue: {
     fontSize: wp(3.5),
     color: COLORS.textPrimary,
     fontWeight: "600",
+    flexShrink: 1,
+  },
+  copyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  copyText: {
+    fontSize: wp(3.2),
+    color: COLORS.textTertiary,
   },
 });

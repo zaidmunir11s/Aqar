@@ -7,22 +7,27 @@ import {
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 
+/** Matches `SegmentedControl` large variant segment height (new order & listing forms). */
+export const TAB_BAR_SEGMENT_HEIGHT = hp(4.2);
+
 export interface TabBarSectionProps {
   label?: string;
   options: string[];
   selectedValue: string | null;
   onSelect: (value: string) => void;
+  /** Outer track fill; defaults to app screen background (e.g. New Order scroll area). */
   backgroundColor?: string;
 }
 
 /**
- * Reusable tab bar section with selectable tabs
+ * Reusable tab bar — same outer track, segment height, radii, separators, and selection fill as SegmentedControl (large).
  */
 const TabBarSection = memo<TabBarSectionProps>(
   ({ label, options, selectedValue, onSelect, backgroundColor }) => {
     const { isRTL, t } = useLocalization();
 
-    // RTL-aware styles
+    const trackBackground = backgroundColor ?? COLORS.background;
+
     const rtlStyles = useMemo(
       () => ({
         label: {
@@ -30,27 +35,6 @@ const TabBarSection = memo<TabBarSectionProps>(
         },
         segmentedTabBar: {
           flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-        },
-        segmentedTab: {
-          // Base border styles - will be overridden by firstSegment/lastSegment
-        },
-        firstSegment: {
-          // In LTR: first segment (left side) has left border radius
-          // In RTL: first segment in array appears on right, so needs right border radius
-          borderTopLeftRadius: isRTL ? 0 : wp(1.5),
-          borderBottomLeftRadius: isRTL ? 0 : wp(1.5),
-          borderTopRightRadius: isRTL ? wp(1.5) : 0,
-          borderBottomRightRadius: isRTL ? wp(1.5) : 0,
-        },
-        lastSegment: {
-          // In LTR: last segment (right side) has right border radius and no right border
-          // In RTL: last segment in array appears on left, so needs left border radius and no left border
-          borderTopRightRadius: isRTL ? 0 : wp(1.5),
-          borderBottomRightRadius: isRTL ? 0 : wp(1.5),
-          borderTopLeftRadius: isRTL ? wp(1.5) : 0,
-          borderBottomLeftRadius: isRTL ? wp(1.5) : 0,
-          borderRightWidth: 0,
-          borderLeftWidth: 0,
         },
         segmentedTabText: {
           textAlign: "center" as const,
@@ -61,62 +45,51 @@ const TabBarSection = memo<TabBarSectionProps>(
     );
 
     const handlePress = (option: string) => {
-      // Always call onSelect with the option value
-      // The parent component will handle the logic for toggling/unselecting
       onSelect(option);
     };
 
-    // Helper function to translate "All" / "ALL" option for LTR/RTL
     const getDisplayText = (option: string): string => {
       if (option === "All" || option === "ALL") {
         return t("listings.all");
       }
+      if (option === "Singles") return t("listings.singles");
+      if (option === "Families") return t("listings.families");
       return option;
     };
 
     return (
       <View style={styles.section}>
-        {label && <Text style={[styles.label, rtlStyles.label]}>{label}</Text>}
-        <View style={[styles.segmentedTabBar, rtlStyles.segmentedTabBar, backgroundColor && { backgroundColor }]}>
-          {options.map((option, index) => {
-            const isLast = index === options.length - 1;
-            const isFirst = index === 0;
-            
-            return (
+        {label ? <Text style={[styles.label, rtlStyles.label]}>{label}</Text> : null}
+        <View
+          style={[
+            styles.segmentedTabBar,
+            rtlStyles.segmentedTabBar,
+            { backgroundColor: trackBackground },
+          ]}
+        >
+          {options.map((option, index) => (
+            <React.Fragment key={option}>
               <TouchableOpacity
-                key={option}
                 style={[
                   styles.segmentedTab,
-                  // Apply borders between segments (not on last segment)
-                  // In LTR: add right border to all tabs except last (including first "All" tab)
-                  // In RTL: add left border to all tabs except last (including first "All" tab)
-                  !isRTL && !isLast && {
-                    borderRightWidth: 1,
-                    borderRightColor: COLORS.border,
-                  },
-                  isRTL && !isLast && {
-                    borderLeftWidth: 1,
-                    borderLeftColor: COLORS.border,
-                  },
-                  isFirst && [styles.firstSegment, rtlStyles.firstSegment],
-                  isLast && [styles.lastSegment, rtlStyles.lastSegment],
                   selectedValue === option && styles.segmentedTabActive,
                 ]}
                 onPress={() => handlePress(option)}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
               >
-              <Text
-                style={[
-                  styles.segmentedTabText,
-                  rtlStyles.segmentedTabText,
-                  selectedValue === option && styles.segmentedTabTextActive,
-                ]}
-              >
-                {getDisplayText(option)}
-              </Text>
-            </TouchableOpacity>
-            );
-          })}
+                <Text
+                  style={[
+                    styles.segmentedTabText,
+                    rtlStyles.segmentedTabText,
+                    selectedValue === option && styles.segmentedTabTextActive,
+                  ]}
+                >
+                  {getDisplayText(option)}
+                </Text>
+              </TouchableOpacity>
+              {index < options.length - 1 ? <View style={styles.separator} /> : null}
+            </React.Fragment>
+          ))}
         </View>
       </View>
     );
@@ -137,30 +110,27 @@ const styles = StyleSheet.create({
   },
   segmentedTabBar: {
     flexDirection: "row",
-    backgroundColor: COLORS.background,
     borderRadius: wp(2),
-    padding: wp(0.5),
+    padding: wp(0.45),
     borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: "stretch",
+    minHeight: TAB_BAR_SEGMENT_HEIGHT + wp(0.45) * 2,
   },
   segmentedTab: {
     flex: 1,
-    paddingVertical: hp(1.2),
+    minHeight: TAB_BAR_SEGMENT_HEIGHT,
     paddingHorizontal: wp(2),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: wp(0.5),
-    minHeight: hp(5),
+    borderRadius: wp(2),
   },
-  firstSegment: {
-    borderTopLeftRadius: wp(1.5),
-    borderBottomLeftRadius: wp(1.5),
-  },
-  lastSegment: {
-    borderTopRightRadius: wp(1.5),
-    borderBottomRightRadius: wp(1.5),
-    borderRightWidth: 0,
+  separator: {
+    width: 1,
+    alignSelf: "center",
+    height: TAB_BAR_SEGMENT_HEIGHT * 0.68,
+    backgroundColor: COLORS.border,
+    opacity: 0.9,
   },
   segmentedTabActive: {
     backgroundColor: COLORS.primary,
@@ -173,8 +143,8 @@ const styles = StyleSheet.create({
   },
   segmentedTabTextActive: {
     color: COLORS.white,
+    fontWeight: "500",
   },
 });
 
 export default TabBarSection;
-

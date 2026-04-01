@@ -11,70 +11,67 @@ export interface SegmentedControlProps {
   options: string[];
   selectedIndex: number;
   onSelect: (index: number) => void;
+  /** `large` matches the former marketing `BigSegmentedControl` (taller segments). */
+  variant?: "default" | "large";
+  /** Only applies when `variant="large"`; defaults to `hp(4.2)`. */
+  segmentHeight?: number;
 }
 
-/**
- * Reusable segmented control component for tab selection
- */
-const SegmentedControl = memo<SegmentedControlProps>(
-  ({ options, selectedIndex, onSelect }) => {
-    const { isRTL } = useLocalization();
+const LARGE_DEFAULT_HEIGHT = hp(4.2);
 
-    // RTL-aware styles
+const SegmentedControl = memo<SegmentedControlProps>(
+  ({ options, selectedIndex, onSelect, variant = "default", segmentHeight }) => {
+    const { isRTL } = useLocalization();
+    const isLarge = variant === "large";
+    const largeH = segmentHeight ?? LARGE_DEFAULT_HEIGHT;
+
     const rtlStyles = useMemo(
       () => ({
         container: {
           flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
         },
-        segment: {
-          borderRightWidth: isRTL ? 0 : 1,
-          borderLeftWidth: isRTL ? 1 : 0,
-          borderRightColor: isRTL ? "transparent" : "#e5e7eb",
-          borderLeftColor: isRTL ? "#e5e7eb" : "transparent",
-        },
-        firstSegment: {
-          borderTopLeftRadius: isRTL ? 0 : wp(1.5),
-          borderBottomLeftRadius: isRTL ? 0 : wp(1.5),
-          borderTopRightRadius: isRTL ? wp(1.5) : 0,
-          borderBottomRightRadius: isRTL ? wp(1.5) : 0,
-        },
-        lastSegment: {
-          borderTopRightRadius: isRTL ? 0 : wp(1.5),
-          borderBottomRightRadius: isRTL ? 0 : wp(1.5),
-          borderTopLeftRadius: isRTL ? wp(1.5) : 0,
-          borderBottomLeftRadius: isRTL ? wp(1.5) : 0,
-          borderRightWidth: isRTL ? 1 : 0,
-          borderLeftWidth: isRTL ? 0 : 0,
+        segmentTextDir: {
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
       [isRTL]
     );
 
     return (
-      <View style={[styles.container, rtlStyles.container]}>
+      <View
+        style={[
+          isLarge ? largeStyles.container : styles.container,
+          isLarge ? { flexDirection: isRTL ? "row-reverse" : "row" } : rtlStyles.container,
+        ]}
+      >
         {options.map((option, index) => (
-          <Pressable
-            key={index}
-            style={({ pressed }) => [
-              styles.segment,
-              rtlStyles.segment,
-              index === selectedIndex && styles.segmentActive,
-              index === 0 && [styles.firstSegment, rtlStyles.firstSegment],
-              index === options.length - 1 && [styles.lastSegment, rtlStyles.lastSegment],
-              pressed && styles.segmentPressed,
-            ]}
-            onPress={() => onSelect(index)}
-            delayLongPress={300}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                index === selectedIndex && styles.segmentTextActive,
+          <React.Fragment key={index}>
+            <Pressable
+              style={({ pressed }) => [
+                isLarge ? largeStyles.segment : styles.segment,
+                isLarge && { height: largeH },
+                index === selectedIndex &&
+                  (isLarge ? largeStyles.segmentActive : styles.segmentActive),
+                pressed && (isLarge ? largeStyles.segmentPressed : styles.segmentPressed),
               ]}
+              onPress={() => onSelect(index)}
+              delayLongPress={300}
             >
-              {option}
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  isLarge ? largeStyles.segmentText : styles.segmentText,
+                  isLarge && rtlStyles.segmentTextDir,
+                  index === selectedIndex &&
+                    (isLarge ? largeStyles.segmentTextActive : styles.segmentTextActive),
+                ]}
+              >
+                {option}
+              </Text>
+            </Pressable>
+            {index < options.length - 1 ? (
+              <View style={isLarge ? largeStyles.separator : styles.separator} />
+            ) : null}
+          </React.Fragment>
         ))}
       </View>
     );
@@ -91,6 +88,7 @@ const styles = StyleSheet.create({
     padding: wp(0.5),
     borderWidth: 1,
     borderColor: COLORS.border,
+    alignItems: "center",
   },
   segment: {
     flex: 1,
@@ -98,27 +96,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(2),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: wp(1.5),
-    borderRightWidth: 1,
-    borderRightColor: "#e5e7eb",
-  },
-  firstSegment: {
-    borderTopLeftRadius: wp(1.5),
-    borderBottomLeftRadius: wp(1.5),
-  },
-  lastSegment: {
-    borderTopRightRadius: wp(1.5),
-    borderBottomRightRadius: wp(1.5),
-    borderRightWidth: 0,
+    borderRadius: wp(1.3),
   },
   segmentActive: {
     backgroundColor: COLORS.primary,
+  },
+  separator: {
+    width: 1,
+    alignSelf: "stretch",
+    marginVertical: hp(0.65),
+    backgroundColor: COLORS.border,
   },
   segmentPressed: {
     opacity: 0.8,
   },
   segmentText: {
-    // To change tab text size, modify fontSize value below
     fontSize: wp(4),
     fontWeight: "500",
     color: COLORS.textSecondary,
@@ -126,6 +118,46 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     color: "#fff",
     fontWeight: "500",
+  },
+});
+
+const largeStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    backgroundColor: COLORS.white,
+    borderRadius: wp(2),
+    padding: wp(0.45),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "stretch",
+  },
+  segment: {
+    flex: 1,
+    paddingHorizontal: wp(2),
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: wp(2),
+  },
+  segmentActive: {
+    backgroundColor: COLORS.primary,
+  },
+  segmentPressed: {
+    opacity: 0.85,
+  },
+  separator: {
+    width: 1,
+    alignSelf: "center",
+    height: "68%",
+    backgroundColor: COLORS.border,
+    opacity: 0.9,
+  },
+  segmentText: {
+    fontSize: wp(4),
+    fontWeight: "500",
+    color: COLORS.textSecondary,
+  },
+  segmentTextActive: {
+    color: "#fff",
   },
 });
 

@@ -15,6 +15,8 @@ import { useLocalization } from "@/hooks";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 export interface ScreenHeaderProps {
   title: string;
+  /** When true, back (and right side) stay; title text is omitted. */
+  hideTitle?: boolean;
   onBackPress?: () => void;
   showRightSide?: boolean;
   rightIcon?: keyof typeof Ionicons.glyphMap;
@@ -23,12 +25,15 @@ export interface ScreenHeaderProps {
   rightComponent?: ReactNode;
   fontWeightBold?: boolean;
   fontSize?: number;
+  titleNumberOfLines?: number;
+  titleFontWeight?: "400" | "500" | "600" | "700" | "800";
   backButtonColor?: string;
 }
 
 const ScreenHeader = memo<ScreenHeaderProps>(
   ({
     title,
+    hideTitle = false,
     onBackPress,
     showRightSide = false,
     rightIcon,
@@ -37,6 +42,8 @@ const ScreenHeader = memo<ScreenHeaderProps>(
     rightComponent,
     fontWeightBold = false,
     fontSize,
+    titleNumberOfLines = 1,
+    titleFontWeight,
     backButtonColor = "#0e856a",
   }) => {
     const { isRTL } = useLocalization();
@@ -108,16 +115,21 @@ const ScreenHeader = memo<ScreenHeaderProps>(
               <Ionicons name={backIconName} size={wp(7)} color={backButtonColor} />
             </TouchableOpacity>
           )}
-          <Text
-            style={[
-              titleStyle,
-              fontWeightBold && styles.titleBold,
-              fontSize !== undefined ? { fontSize } : null,
-            ].filter(Boolean)}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
+          {hideTitle ? (
+            <View style={{ flex: 1 }} />
+          ) : (
+            <Text
+              style={[
+                titleStyle,
+                fontWeightBold && styles.titleBold,
+                titleFontWeight ? { fontWeight: titleFontWeight } : null,
+                fontSize !== undefined ? { fontSize } : null,
+              ].filter(Boolean)}
+              numberOfLines={titleNumberOfLines}
+            >
+              {title}
+            </Text>
+          )}
         </View>
         {renderRightSide()}
       </View>

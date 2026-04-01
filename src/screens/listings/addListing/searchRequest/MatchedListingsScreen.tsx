@@ -12,12 +12,7 @@ import { COLORS } from "@/constants";
 import { SearchRequestData } from "@/context/searchRequest-context";
 import { findMatchingProperties } from "@/utils/propertyMatching";
 import { getMatchedCriteria } from "@/utils/criteriaMatching";
-import { getTypeLabelFromType, formatPrice, getTranslatedPropertyTypeLabel } from "../../../../utils";
-import {
-  RENT_FILTER_OPTIONS,
-  SALE_FILTER_OPTIONS,
-  DAILY_FILTER_OPTIONS,
-} from "../../../../data/propertyData";
+import { formatPrice, getTranslatedPropertyTypeLabel } from "../../../../utils";
 import type { Property } from "../../../../types/property";
 import { useLocalization } from "../../../../hooks/useLocalization";
 
@@ -40,13 +35,10 @@ export default function MatchedListingsScreen(): React.JSX.Element {
     return findMatchingProperties(request);
   }, [request]);
 
-  const getTypeLabel = useCallback((type: string, listingType: string) => {
-    let filterOptions;
-    if (listingType === "rent") filterOptions = RENT_FILTER_OPTIONS;
-    else if (listingType === "sale") filterOptions = SALE_FILTER_OPTIONS;
-    else filterOptions = DAILY_FILTER_OPTIONS;
-    return getTypeLabelFromType(type, filterOptions);
-  }, []);
+  const matchedPropertyIds = useMemo(
+    () => matchedProperties.map((p) => p.id),
+    [matchedProperties]
+  );
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -95,33 +87,29 @@ export default function MatchedListingsScreen(): React.JSX.Element {
     const screenName = property.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
     navigation.navigate(screenName, {
       propertyId: property.id,
-      visiblePropertyIds: matchedProperties.map((p) => p.id),
+      visiblePropertyIds: matchedPropertyIds,
       listingType: property.listingType,
     });
-  }, [matchedProperties, navigation]);
+  }, [matchedPropertyIds, navigation]);
 
-  const renderPropertyCard = useCallback((property: Property) => {
+  const renderPropertyCard = useCallback(({ item }: { item: Property }) => {
     // Use translated property type label
     const title = getTranslatedPropertyTypeLabel(
-      property.type,
-      property.listingType as "rent" | "sale" | "daily",
+      item.type,
+      item.listingType as "rent" | "sale" | "daily",
       t
     ) || t("listings.property");
     
     let priceLine = "";
 
-    if (property.listingType === "daily") {
-      const dailyProperty = property as any;
+    if (item.listingType === "daily") {
+      const dailyProperty = item as any;
       const dailyPrice = dailyProperty.dailyPrice || 0;
       priceLine = `${formatPrice(dailyPrice.toString())} ${t("listings.sar")} / ${t("common.day")}`;
-    } else if (property.listingType === "rent") {
-      const rentProperty = property as any;
-      const formattedPrice = rentProperty.price
-        ? formatPrice(rentProperty.price)
-        : "0";
-      priceLine = `${formattedPrice} ${t("listings.sar")} / ${t("listings.yearly")}`;
+    } else if (item.listingType === "rent") {
+      priceLine = "";
     } else {
-      const saleProperty = property as any;
+      const saleProperty = item as any;
       const formattedPrice = saleProperty.price
         ? formatPrice(saleProperty.price)
         : "0";
@@ -129,16 +117,15 @@ export default function MatchedListingsScreen(): React.JSX.Element {
     }
 
     // Calculate matched criteria
-    const matchedCriteria = request ? getMatchedCriteria(property, request) : undefined;
+    const matchedCriteria = request ? getMatchedCriteria(item, request) : undefined;
 
     return (
       <PropertyCard
-        key={property.id}
-        property={property}
-        onPress={() => handlePropertyPress(property)}
+        property={item}
+        onPress={() => handlePropertyPress(item)}
         title={title}
         priceLine={priceLine}
-        listingType={property.listingType}
+        listingType={item.listingType}
         matchedCriteria={matchedCriteria}
       />
     );
@@ -179,7 +166,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
 
       <FlatList
         data={sortedProperties}
-        renderItem={({ item }) => renderPropertyCard(item)}
+        renderItem={renderPropertyCard}
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

@@ -4,7 +4,7 @@ import {
   TabBarSection,
   FieldWithModal,
   ToggleGroup,
-  RentPeriodTabBar,
+  RentPaymentFrequencyChips,
   PaymentChips,
 } from "./index";
 import { View, Text, StyleSheet } from "react-native";
@@ -132,9 +132,9 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
 
         case "rentPeriod":
           return (
-            <RentPeriodTabBar
+            <RentPaymentFrequencyChips
               key={index}
-              selectedPeriod={state[field.valueKey || "rentPeriod"] || null}
+              selectedFrequency={state[field.valueKey || "rentPeriod"] ?? null}
               onSelect={handlers[`handle${field.valueKey?.charAt(0).toUpperCase()}${field.valueKey?.slice(1)}Press`] || (() => {})}
             />
           );

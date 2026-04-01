@@ -1,21 +1,25 @@
-import React, {
-  memo,
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Animated,
   Pressable,
   Dimensions,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedScrollHandler,
+  withTiming,
+  interpolate,
+  interpolateColor,
+  Extrapolation,
+  runOnJS,
+  SharedValue,
+} from "react-native-reanimated";
+import { FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -35,47 +39,77 @@ export interface WheelPickerModalProps {
   initialValue?: string;
 }
 
-// Constants for picker dimensions
-const ITEM_HEIGHT = 40;
+const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 
-/**
- * Wheel picker modal with smooth scrolling for option selection
- */
+
+const PickerItem = memo(
+  ({
+    item,
+    index,
+    scrollY,
+    isRTL,
+  }: {
+    item: string;
+    index: number;
+    scrollY: SharedValue<number>;
+    isRTL: boolean;
+  }) => {
+    const animStyle = useAnimatedStyle(() => {
+      const center = index * ITEM_HEIGHT;
+      const input = [center - 2 * ITEM_HEIGHT, center - ITEM_HEIGHT, center, center + ITEM_HEIGHT, center + 2 * ITEM_HEIGHT];
+      const scale = interpolate(scrollY.value, input, [0.82, 0.9, 1.12, 0.9, 0.82], Extrapolation.CLAMP);
+      const opacity = interpolate(scrollY.value, input, [0.2, 0.45, 1, 0.45, 0.2], Extrapolation.CLAMP);
+      return { opacity, transform: [{ scale }] };
+    });
+
+    const colorStyle = useAnimatedStyle(() => {
+      const center = index * ITEM_HEIGHT;
+      const input = [center - ITEM_HEIGHT, center, center + ITEM_HEIGHT];
+      const color = interpolateColor(scrollY.value, input, [COLORS.textSecondary, COLORS.primary, COLORS.textSecondary]);
+      return { color };
+    });
+
+    return (
+      <View style={styles.itemContainer}>
+        <Animated.Text
+          style={[
+            styles.itemText,
+            isRTL ? styles.itemTextRtl : null,
+            animStyle,
+            colorStyle,
+          ]}
+        >
+          {item}
+        </Animated.Text>
+      </View>
+    );
+  }
+);
+
+PickerItem.displayName = "PickerItem";
+
 const WheelPickerModal = memo<WheelPickerModalProps>(
   ({ visible, onClose, onSelect, title, options, initialValue }) => {
     const { t, isRTL } = useLocalization();
 
-    const [selectedIndex, setSelectedIndex] = useState(() => {
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    const scrollY = useSharedValue(0);
+    const translateY = useSharedValue(SCREEN_HEIGHT);
+    const flatListRef = useRef<any>(null);
+    /** Prevents scroll/index resets while the sheet is open (avoids flicker when parent re-renders). */
+    const wasVisibleRef = useRef(false);
+
+    const indexFromProps = useMemo(() => {
       if (initialValue && options.length > 0) {
-        const index = options.findIndex((opt) => opt === initialValue);
-        return index >= 0 ? index : 0;
+        const idx = options.indexOf(initialValue);
+        return idx >= 0 ? idx : 0;
       }
       return 0;
-    });
-
-    // Sync selectedIndex when initialValue or options change (e.g. after category change)
-    useEffect(() => {
-      if (initialValue && options.length > 0) {
-        const index = options.findIndex((opt) => opt === initialValue);
-        setSelectedIndex(index >= 0 ? index : 0);
-      } else {
-        setSelectedIndex(0);
-      }
     }, [initialValue, options]);
 
-    const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-    const scrollY = useRef(new Animated.Value(0)).current;
-    const flatListRef = useRef<any>(null);
-
-    // When no initialValue: pre-select first option (index 0). When opening: use this so no stale selection.
-    const indexFromProps =
-      initialValue && options.length > 0
-        ? Math.max(0, options.findIndex((opt) => opt === initialValue))
-        : 0;
-
-    // RTL-aware styles for header only
     const headerRtlStyles = useMemo(
       () => ({
         pickerHeader: {
@@ -83,111 +117,81 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
         },
         pickerHeaderText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
           marginLeft: isRTL ? 0 : wp(2),
           marginRight: isRTL ? wp(2) : 0,
+        },
+        okButtonText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
       [isRTL]
     );
 
-    // When modal opens: sync selection from props and scroll to that index (avoids stale selectedIndex)
     useEffect(() => {
-      if (visible) {
-        const index = indexFromProps;
-        setSelectedIndex(index);
-        // Sync scrollY so scale/opacity/color show the correct item immediately
-        scrollY.setValue(index * ITEM_HEIGHT);
-
-        // Animate modal slide up
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 260,
-          useNativeDriver: true,
-        }).start();
-
-        // Scroll to the index derived from current props, not from state
-        setTimeout(() => {
-          if (flatListRef.current) {
-            flatListRef.current.scrollToIndex({
-              index,
-              animated: false,
-            });
-          }
-        }, 100);
-      } else {
-        translateY.setValue(SCREEN_HEIGHT);
+      if (!visible) {
+        wasVisibleRef.current = false;
+        translateY.value = SCREEN_HEIGHT;
+        setSelectedIndex(indexFromProps);
+        return;
       }
-    }, [visible, indexFromProps, translateY, scrollY]);
 
-    const handleClose = () => {
-      Animated.timing(translateY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => {
-        onClose();
+      if (wasVisibleRef.current) {
+        return;
+      }
+      wasVisibleRef.current = true;
+
+      const idx = indexFromProps;
+      setSelectedIndex(idx);
+      scrollY.value = idx * ITEM_HEIGHT;
+      translateY.value = withTiming(0, { duration: 260 });
+
+      requestAnimationFrame(() => {
+        flatListRef.current?.scrollToOffset({
+          offset: idx * ITEM_HEIGHT,
+          animated: false,
+        });
       });
-    };
+    }, [visible, indexFromProps, scrollY, translateY]);
+
+    const handleClose = useCallback(() => {
+      translateY.value = withTiming(SCREEN_HEIGHT, { duration: 220 });
+      setTimeout(onClose, 240);
+    }, [onClose, translateY]);
 
     const handleOk = useCallback(() => {
       onSelect(options[selectedIndex]);
       handleClose();
     }, [options, selectedIndex, onSelect, handleClose]);
 
-    const keyExtractor = useCallback(
-      (item: string, i: number) => `${item}-${i}`,
+    const updateIndex = useCallback(
+      (idx: number) => setSelectedIndex(idx),
       []
     );
 
-    const renderItem = useCallback(
-      ({ item, index }: { item: string; index: number }) => {
-        const inputRange = [
-          (index - 2) * ITEM_HEIGHT,
-          (index - 1) * ITEM_HEIGHT,
-          index * ITEM_HEIGHT,
-          (index + 1) * ITEM_HEIGHT,
-          (index + 2) * ITEM_HEIGHT,
-        ];
-
-        const scale = scrollY.interpolate({
-          inputRange,
-          outputRange: [0.85, 0.92, 1.1, 0.92, 0.85],
-          extrapolate: "clamp",
-        });
-
-        const opacity = scrollY.interpolate({
-          inputRange,
-          outputRange: [0.25, 0.5, 1, 0.5, 0.25],
-          extrapolate: "clamp",
-        });
-
-        // Color interpolation: center item gets primary color, others get textSecondary
-        const color = scrollY.interpolate({
-          inputRange,
-          outputRange: [
-            COLORS.textSecondary,
-            COLORS.textSecondary,
-            COLORS.primary,
-            COLORS.textSecondary,
-            COLORS.textSecondary,
-          ],
-          extrapolate: "clamp",
-        });
-
-        return (
-          <View style={{ height: ITEM_HEIGHT, justifyContent: "center" }}>
-            <Animated.Text
-              style={[
-                styles.itemText,
-                { opacity, transform: [{ scale }], color },
-              ]}
-            >
-              {item}
-            </Animated.Text>
-          </View>
-        );
+    const scrollHandler = useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollY.value = event.contentOffset.y;
       },
-      [scrollY]
+      onMomentumEnd: (event) => {
+        const idx = Math.round(event.contentOffset.y / ITEM_HEIGHT);
+        const clamped = Math.max(0, Math.min(idx, options.length - 1));
+        runOnJS(updateIndex)(clamped);
+      },
+    });
+
+    const sheetStyle = useAnimatedStyle(() => ({
+      transform: [{ translateY: translateY.value }],
+    }));
+
+    const keyExtractor = useCallback((item: string, i: number) => `${item}-${i}`, []);
+
+    const renderItem = useCallback(
+      ({ item, index }: { item: string; index: number }) => (
+        <PickerItem item={item} index={index} scrollY={scrollY} isRTL={isRTL} />
+      ),
+      [scrollY, isRTL]
     );
 
     const getItemLayout = useCallback(
@@ -200,18 +204,10 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
     );
 
     return (
-      <Modal
-        visible={visible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={handleClose}
-      >
+      <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={handleClose} />
-          <Animated.View
-            style={[styles.pickerContainer, { transform: [{ translateY }] }]}
-          >
-            {/* HEADER */}
+          <Animated.View style={[styles.pickerContainer, sheetStyle]}>
             <View style={[styles.pickerHeader, headerRtlStyles.pickerHeader]}>
               <TouchableOpacity onPress={handleClose} style={styles.backButton}>
                 <Ionicons
@@ -222,12 +218,13 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
               </TouchableOpacity>
               <Text style={[styles.pickerHeaderText, headerRtlStyles.pickerHeaderText]}>{title}</Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
-                <Text style={styles.okButtonText}>{t("common.confirm")}</Text>
+                <Text style={[styles.okButtonText, headerRtlStyles.okButtonText]}>
+                  {t("common.confirm")}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {/* WHEEL */}
-            <View style={styles.wheelWrapper}>
+            <View style={[styles.wheelWrapper, isRTL && styles.wheelWrapperForceLtr]}>
               <Animated.FlatList
                 ref={flatListRef}
                 data={options}
@@ -238,29 +235,12 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
                 snapToInterval={ITEM_HEIGHT}
                 decelerationRate="fast"
                 bounces={false}
-                contentContainerStyle={{
-                  paddingVertical:
-                    (ITEM_HEIGHT * VISIBLE_ITEMS) / 2 - ITEM_HEIGHT / 2,
-                }}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                  { useNativeDriver: true }
-                )}
+                contentContainerStyle={{ paddingVertical: (PICKER_HEIGHT - ITEM_HEIGHT) / 2 }}
+                onScroll={scrollHandler}
                 scrollEventThrottle={16}
-                onMomentumScrollEnd={(e) => {
-                  const index = Math.round(
-                    e.nativeEvent.contentOffset.y / ITEM_HEIGHT
-                  );
-                  const clampedIndex = Math.max(
-                    0,
-                    Math.min(index, options.length - 1)
-                  );
-                  setSelectedIndex(clampedIndex);
-                }}
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={10}
-                updateCellsBatchingPeriod={50}
-                initialNumToRender={10}
+                removeClippedSubviews={false}
+                maxToRenderPerBatch={15}
+                initialNumToRender={15}
                 windowSize={5}
               />
             </View>
@@ -326,12 +306,22 @@ const styles = StyleSheet.create({
   },
   wheelWrapper: {
     height: PICKER_HEIGHT,
-    position: "relative",
+  },
+  /** Keeps scroll offset / first item aligned when app language is RTL but layout isn’t fully mirrored. */
+  wheelWrapperForceLtr: {
+    direction: "ltr",
+  },
+  itemContainer: {
+    height: ITEM_HEIGHT,
+    justifyContent: "center",
   },
   itemText: {
     textAlign: "center",
     fontSize: wp(4.5),
     fontWeight: "600",
+  },
+  itemTextRtl: {
+    writingDirection: "rtl",
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -15,8 +15,9 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useClerk } from "@clerk/clerk-expo";
-import { COLORS } from "../../constants";
+import { useClerk, useUser } from "@clerk/clerk-expo";
+import { COLORS, STORAGE_KEYS } from "../../constants";
+import { formatSaudiPhoneForDisplay } from "../../utils/validation";
 import { useLocalization, useTabNavigation } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import {
@@ -39,8 +40,22 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const { setHasBackendSession } = useAuthContext();
   const { signOut: clerkSignOut } = useClerk();
+  const { user: clerkUser } = useUser();
+
+  const clerkDisplayName = useMemo(() => {
+    if (!clerkUser) return undefined;
+    const full = clerkUser.fullName?.trim();
+    if (full) return full;
+    const parts = [clerkUser.firstName, clerkUser.lastName]
+      .filter(Boolean)
+      .map((s) => String(s).trim());
+    return parts.length > 0 ? parts.join(" ") : undefined;
+  }, [clerkUser]);
 
   const { navigateToListings } = useTabNavigation();
+  const [profilePhoneDisplay, setProfilePhoneDisplay] = useState<string | undefined>(undefined);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | undefined>(undefined);
+  const [profileAvatarUri, setProfileAvatarUri] = useState<string | null>(null);
 
   const handleBackPress = useCallback(() => {
     const AUTH_SCREENS = ["Login", "CreateAccount", "ForgotPassword", "VerifyPhoneNumber"];
@@ -66,6 +81,35 @@ export default function ProfileDetailScreen(): React.JSX.Element {
       const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
       return () => sub.remove();
     }, [handleBackPress])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        try {
+          const [rawPhone, rawName, rawUri] = await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEYS.loggedInPhoneNumber),
+            AsyncStorage.getItem(STORAGE_KEYS.loggedInDisplayName),
+            AsyncStorage.getItem(STORAGE_KEYS.loggedInProfileImageUri),
+          ]);
+          if (!active) return;
+          setProfilePhoneDisplay(
+            rawPhone ? formatSaudiPhoneForDisplay(rawPhone) : t("profile.phoneNotOnProfile")
+          );
+          setProfileDisplayName(rawName?.trim() ? rawName.trim() : undefined);
+          setProfileAvatarUri(rawUri && rawUri.length > 0 ? rawUri : null);
+        } catch {
+          if (!active) return;
+          setProfilePhoneDisplay(t("profile.phoneNotOnProfile"));
+          setProfileDisplayName(undefined);
+          setProfileAvatarUri(null);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [t])
   );
 
   const handleWalletPress = useCallback(() => {
@@ -102,7 +146,12 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleLogoutPress = useCallback(async () => {
-    await AsyncStorage.multiRemove(["auth_token", "refresh_token"]);
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.authToken,
+      STORAGE_KEYS.refreshToken,
+      STORAGE_KEYS.loggedInPhoneNumber,
+      STORAGE_KEYS.lastActiveAtMs,
+    ]);
     setHasBackendSession(false);
     await clerkSignOut();
     // Reset Auth stack to only Login so back button cannot return to ProfileDetail
@@ -140,29 +189,39 @@ export default function ProfileDetailScreen(): React.JSX.Element {
     [t, onMyDealsPress, onRequestsPress, onMyBookingsPress]
   );
 
+  const profileHeaderRight = useMemo(
+    () => (
+      <TouchableOpacity
+        style={[styles.walletContainer, rtlStyles.walletContainer]}
+        onPress={handleWalletPress}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="wallet-outline" size={wp(5)} color={COLORS.primary} />
+        <Text style={[styles.walletText, rtlStyles.walletText]}>{t("profile.noBalance")}</Text>
+      </TouchableOpacity>
+    ),
+    [handleWalletPress, rtlStyles.walletContainer, rtlStyles.walletText, t]
+  );
+
   return (
     <View style={styles.container}>
       <ScreenHeader
         title={t("profile.title")}
         onBackPress={handleBackPress}
         fontWeightBold={true}
-        rightComponent={
-          <TouchableOpacity
-            style={[styles.walletContainer, rtlStyles.walletContainer]}
-            onPress={handleWalletPress}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="wallet-outline" size={wp(5)} color={COLORS.primary} />
-            <Text style={[styles.walletText, rtlStyles.walletText]}>{t("profile.noBalance")}</Text>
-          </TouchableOpacity>
-        }
+        rightComponent={profileHeaderRight}
         showRightSide={true}
       />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
       >
-        <PhoneCard phoneNumber="0542 932 681" onPress={handlePhonePress} />
+        <PhoneCard
+          phoneNumber={profilePhoneDisplay ?? t("common.loading")}
+          displayName={profileDisplayName ?? clerkDisplayName}
+          avatarUri={profileAvatarUri ?? clerkUser?.imageUrl ?? null}
+          onPress={handlePhonePress}
+        />
         <ActionButtons
           onFavoritesPress={handleFavoritesPress}
           onAlertsPress={handleAlertsPress}

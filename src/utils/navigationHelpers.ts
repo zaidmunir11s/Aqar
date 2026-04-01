@@ -1,5 +1,6 @@
-import type { NavigationProp } from "@react-navigation/native";
-import { CommonActions } from "@react-navigation/native";
+import { StackActions, type NavigationProp } from "@react-navigation/native";
+
+const MAP_STACK_SCREEN_NAMES = ["MapLanding", "DailyMap", "ProjectsMap"] as const;
 
 /**
  * Determines the correct map screen to navigate to based on the current navigation state
@@ -46,18 +47,51 @@ export function getMapScreenName(navigation: NavigationProp<any>): string {
 }
 
 /**
- * Navigates to the appropriate map screen based on the current navigation context
- * @param navigation - The navigation object
+ * Return to the tab’s map without resetting map UI when possible.
+ *
+ * Used by: **Property list “Show map”**, **Property details** back fallback, and **Add Listing**
+ * flows (cancel/close modals on Marketing request, broker licence, owner agent, rental category, etc.).
+ *
+ * - If the previous screen is the map → `goBack()` (map stays mounted).
+ * - If the map is still **stack index 0** (e.g. Map → AddListing → … → cancel) → `popToTop()` so we
+ *   don’t `navigate("MapLanding")` and remount (which cleared markers before session restore).
+ * - Else → `navigate` to the right map screen for the current tab / stack.
+ *
+ * Map marker selection/visited state is also persisted in `MapLandingScreen` session refs as a backup.
  */
 export function navigateToMapScreen(navigation: NavigationProp<any>): void {
-  // Get the navigation state to check which screens are available
   const state = navigation.getState();
+  const index = state?.index ?? 0;
+  const routes = state?.routes ?? [];
+
+  if (index > 0) {
+    const previous = routes[index - 1];
+    if (
+      previous &&
+      MAP_STACK_SCREEN_NAMES.includes(previous.name as (typeof MAP_STACK_SCREEN_NAMES)[number])
+    ) {
+      navigation.goBack();
+      return;
+    }
+  }
+
+  // Map → List → Details (or Map → Add → …): previous screen isn't the map, but the map is still
+  // stack index 0. Pop the whole stack so we don't `navigate(MapLanding)` and remount, which
+  // wiped marker selection/visited state.
+  const rootName = routes[0]?.name;
+  if (
+    index > 0 &&
+    rootName &&
+    MAP_STACK_SCREEN_NAMES.includes(rootName as (typeof MAP_STACK_SCREEN_NAMES)[number])
+  ) {
+    navigation.dispatch(StackActions.popToTop());
+    return;
+  }
+
   const routeNames = state?.routeNames || [];
-  const routes = state?.routes || [];
-  
-  // Check which map screen exists in the current navigator
+
   let mapScreen: string | null = null;
-  
+
   if (routeNames.includes("DailyMap")) {
     mapScreen = "DailyMap";
   } else if (routeNames.includes("ProjectsMap")) {
@@ -65,21 +99,12 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
   } else if (routeNames.includes("MapLanding")) {
     mapScreen = "MapLanding";
   } else {
-    // Fallback: use the helper function
     mapScreen = getMapScreenName(navigation);
   }
-  
+
   if (mapScreen) {
-    // If map screen is the root of the stack, use popToTop to preserve map state
-    // (visited markers, region, etc.) instead of navigate which causes a refresh
-    const firstRoute = routes[0];
-    if (firstRoute?.name === mapScreen && routes.length > 1) {
-      (navigation as unknown as { popToTop: () => void }).popToTop();
-    } else {
-      navigation.navigate(mapScreen);
-    }
+    navigation.navigate(mapScreen as never);
   } else if (navigation.canGoBack()) {
-    // If we can't determine the screen, just go back
     navigation.goBack();
   }
 }
@@ -98,7 +123,9 @@ export function navigateToListingsMapFromOtherTab(
   if (!tabNav) {
     navigation.navigate("Listings", { screen: "MapLanding" });
     return;
-  }  const state = tabNav.getState();
+  }
+
+  const state = tabNav.getState();
   const listingsRoute = state?.routes?.find(
     (r: { name: string }) => r.name === "Listings"
   );
@@ -107,20 +134,14 @@ export function navigateToListingsMapFromOtherTab(
     | undefined;
   const routes = listingsState?.routes ?? [];
   const firstRoute = routes[0];
-  const hasStackToPop = routes.length > 1;  if (hasStackToPop && firstRoute) {
-    // Navigate to Listings tab with stack state that only shows the root screen.
-    // Reusing the existing first route object preserves the MapLanding instance and its state.
-    tabNav.dispatch(
-      CommonActions.navigate({
-        name: "Listings",
-        merge: true,
-        state: {
-          routes: [firstRoute],
-          index: 0,
-        },
-      } as { name: string; merge: boolean; state: object })
-    );
-  } else {
-    tabNav.navigate("Listings", { screen: "MapLanding" });
-  }
+  const mapParams =
+    firstRoute?.name === "MapLanding" ? firstRoute.params : undefined;
+
+  // Avoid CommonActions.navigate + merged stack `state` — it often triggers
+  // "removed natively but didn't get removed from JS state" on native-stack.
+  // Nested navigate pops the Listings stack to MapLanding when that route already exists.
+  tabNav.navigate("Listings", {
+    screen: "MapLanding",
+    ...(mapParams !== undefined ? { params: mapParams } : {}),
+  });
 }

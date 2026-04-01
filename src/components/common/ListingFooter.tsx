@@ -1,10 +1,13 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Platform,
+  Keyboard,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -44,11 +47,60 @@ const ListingFooter = memo<ListingFooterProps>(
     const insets = useSafeAreaInsets();
     const { isRTL } = useLocalization();
     const progressPercentage = (currentStep / totalSteps) * 100;
+    const keyboardOffset = useRef(new Animated.Value(0)).current;
+    const windowHeightRef = useRef(Dimensions.get("window").height);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-    const containerStyle = useMemo(
-      () => [styles.container, { paddingBottom: insets.bottom + hp(1) }],
-      [insets.bottom]
-    );
+    useEffect(() => {
+      const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+      const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+      const dimensionsSub = Dimensions.addEventListener("change", ({ window }) => {
+        windowHeightRef.current = window.height;
+      });
+
+      const onShow = (event: any) => {
+        const screenY = event?.endCoordinates?.screenY;
+        const eventHeight = event?.endCoordinates?.height;
+        const overlapFromScreenY =
+          typeof screenY === "number"
+            ? Math.max(0, windowHeightRef.current - screenY)
+            : 0;
+        const overlapFromHeight =
+          typeof eventHeight === "number" ? Math.max(0, eventHeight) : 0;
+        const overlapFromMetrics = Keyboard.metrics?.()?.height ?? 0;
+        const keyboardHeight = Math.max(
+          overlapFromScreenY,
+          overlapFromHeight,
+          overlapFromMetrics
+        );
+        const compensatedHeight =
+          keyboardHeight + (Platform.OS === "android" ? insets.bottom : 0);
+        setIsKeyboardVisible(true);
+        Animated.timing(keyboardOffset, {
+          toValue: compensatedHeight,
+          duration: event?.duration ?? 250,
+          useNativeDriver: false,
+        }).start();
+      };
+
+      const onHide = (event: any) => {
+        Animated.timing(keyboardOffset, {
+          toValue: 0,
+          duration: event?.duration ?? 250,
+          useNativeDriver: false,
+        }).start(() => {
+          setIsKeyboardVisible(false);
+        });
+      };
+
+      const showSub = Keyboard.addListener(showEvent, onShow);
+      const hideSub = Keyboard.addListener(hideEvent, onHide);
+      return () => {
+        dimensionsSub.remove();
+        showSub.remove();
+        hideSub.remove();
+      };
+    }, [insets.bottom, keyboardOffset]);
 
     // RTL-aware styles
     const rtlStyles = useMemo(
@@ -64,7 +116,15 @@ const ListingFooter = memo<ListingFooterProps>(
     );
 
     return (
-      <View style={containerStyle}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            marginBottom: keyboardOffset,
+            paddingBottom: isKeyboardVisible ? hp(1) : insets.bottom + hp(1),
+          },
+        ]}
+      >
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBarBackground, rtlStyles.progressBarBackground]}>
@@ -102,7 +162,7 @@ const ListingFooter = memo<ListingFooterProps>(
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </Animated.View>
     );
   }
 );

@@ -5,7 +5,6 @@ node_modules/
 
 # Expo
 .expo/
-.vscode/
 dist/
 web-build/
 expo-env.d.ts
@@ -32,7 +31,6 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
 
 # typescript
 *.tsbuildinfo
@@ -42,3 +40,11 @@ ios/
 
 # android
 android/
+
+#cursor-rules
+.cursor/rules/
+
+#agent skills
+.agents
+skills-lock.json
+config.bat

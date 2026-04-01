@@ -11,16 +11,44 @@ import {
   Ionicons,
   FontAwesome,
   MaterialCommunityIcons,
+  Feather,
 } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { getDefaultImageUrl } from "../../utils";
+import {
+  getDefaultImageUrl,
+  formatRentPropertyCardPriceLine,
+  isPublishedListingProperty,
+  buildPropertyInfoRows,
+  pickCorePropertyInfoRowsForMapCard,
+  type DetailIconSpec,
+} from "../../utils";
 import type { Property } from "../../types/property";
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
+
+function ListCardMetaIcon({
+  spec,
+  size,
+}: {
+  spec: DetailIconSpec | null;
+  size: number;
+}): React.JSX.Element | null {
+  if (spec == null) {
+    return null;
+  }
+  const color = "#9ca3af";
+  if (spec.library === "MaterialCommunityIcons") {
+    return <MaterialCommunityIcons name={spec.name as any} size={size} color={color} />;
+  }
+  if (spec.library === "Feather") {
+    return <Feather name={spec.name as any} size={size} color={color} />;
+  }
+  return <Ionicons name={spec.name as any} size={size} color={color} />;
+}
 
 export interface PropertyCardProps {
   property: Property;
@@ -49,7 +77,14 @@ const PropertyCard = memo<PropertyCardProps>(
     listingType,
     matchedCriteria,
   }) => {
-    const { t, isRTL } = useLocalization();
+    const { t, isRTL, i18n } = useLocalization();
+
+    const resolvedPriceLine = useMemo(() => {
+      if (property.listingType === "rent") {
+        return formatRentPropertyCardPriceLine(property, t, i18n.language);
+      }
+      return priceLine;
+    }, [property, priceLine, t, i18n.language]);
     const usageLabel = property.usage === "family" 
       ? t("listings.family") 
       : t("listings.single");
@@ -57,6 +92,12 @@ const PropertyCard = memo<PropertyCardProps>(
       property.images && property.images[0]
         ? property.images[0]
         : getDefaultImageUrl();
+
+    const publishedListMetaRows = useMemo(() => {
+      if (!isPublishedListingProperty(property)) return null;
+      const rows = buildPropertyInfoRows(property, t);
+      return pickCorePropertyInfoRowsForMapCard(rows, property, t);
+    }, [property, t]);
 
     // Helper function to translate matched criteria items (property types)
     const translateMatchedItem = (item: string): string => {
@@ -148,52 +189,67 @@ const PropertyCard = memo<PropertyCardProps>(
         <View style={styles.cardContent}>
           <Text style={[styles.title, rtlStyles.title]}>{title}</Text>
 
-          <Text style={[styles.price, rtlStyles.price]}>{priceLine}</Text>
+          <Text style={[styles.price, rtlStyles.price]}>{resolvedPriceLine}</Text>
 
-          {showMetaInfo && (
-            <View style={[styles.metaRow, rtlStyles.metaRow]}>
-              {property.area != null && (
-                <View style={[styles.metaItem, rtlStyles.metaItem]}>
-                  <MaterialCommunityIcons
-                    name="arrow-expand-horizontal"
-                    size={wp(4)}
-                    color="#9ca3af"
-                  />
-                  <Text style={[styles.metaText, rtlStyles.metaText]}>
-                    {property.area} {t("listings.m2")}
-                  </Text>
-                </View>
-              )}
-              {property.bedrooms != null && (
-                <View style={[styles.metaItem, rtlStyles.metaItem]}>
-                  <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                  <Text style={[styles.metaText, rtlStyles.metaText]}>
-                    {property.bedrooms}
-                  </Text>
-                </View>
-              )}
-              {property.restrooms != null && (
-                <View style={[styles.metaItem, rtlStyles.metaItem]}>
-                  <MaterialCommunityIcons
-                    name="toilet"
-                    size={wp(4)}
-                    color="#9ca3af"
-                  />
-                  <Text style={[styles.metaText, rtlStyles.metaText]}>
-                    {property.restrooms}
-                  </Text>
-                </View>
-              )}
-              {property.usage && (
-                <View style={[styles.metaItem, rtlStyles.metaItem]}>
-                  <Ionicons name="pricetag" size={wp(4)} color="#9ca3af" />
-                  <Text style={[styles.metaText, rtlStyles.metaText]}>
-                    {t("listings.residential")}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+          {showMetaInfo &&
+            (publishedListMetaRows != null && publishedListMetaRows.length > 0 ? (
+              <View style={[styles.metaRow, rtlStyles.metaRow]}>
+                {publishedListMetaRows.map((row, idx) => (
+                  <View
+                    key={`${row.label}-${idx}`}
+                    style={[styles.metaItem, rtlStyles.metaItem]}
+                  >
+                    <ListCardMetaIcon spec={row.icon} size={wp(4)} />
+                    <Text style={[styles.metaText, rtlStyles.metaText]} numberOfLines={1}>
+                      {row.value}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={[styles.metaRow, rtlStyles.metaRow]}>
+                {property.area != null && property.area > 0 && (
+                  <View style={[styles.metaItem, rtlStyles.metaItem]}>
+                    <MaterialCommunityIcons
+                      name="arrow-expand-horizontal"
+                      size={wp(4)}
+                      color="#9ca3af"
+                    />
+                    <Text style={[styles.metaText, rtlStyles.metaText]}>
+                      {property.area} {t("listings.m2")}
+                    </Text>
+                  </View>
+                )}
+                {property.bedrooms != null && property.bedrooms > 0 && (
+                  <View style={[styles.metaItem, rtlStyles.metaItem]}>
+                    <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
+                    <Text style={[styles.metaText, rtlStyles.metaText]}>
+                      {property.bedrooms}
+                    </Text>
+                  </View>
+                )}
+                {property.restrooms != null && property.restrooms > 0 && (
+                  <View style={[styles.metaItem, rtlStyles.metaItem]}>
+                    <MaterialCommunityIcons
+                      name="toilet"
+                      size={wp(4)}
+                      color="#9ca3af"
+                    />
+                    <Text style={[styles.metaText, rtlStyles.metaText]}>
+                      {property.restrooms}
+                    </Text>
+                  </View>
+                )}
+                {!isPublishedListingProperty(property) && property.usage ? (
+                  <View style={[styles.metaItem, rtlStyles.metaItem]}>
+                    <Ionicons name="pricetag" size={wp(4)} color="#9ca3af" />
+                    <Text style={[styles.metaText, rtlStyles.metaText]}>
+                      {usageLabel}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            ))}
 
           {property.address && (
             <View style={[styles.addressRow, rtlStyles.addressRow]}>

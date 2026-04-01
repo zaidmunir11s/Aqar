@@ -49,3 +49,33 @@ export const RESIDENTIAL_COMMERCIAL_OPTIONS = ["Residential", "Commercial"];
 
 export const PAYMENT_CHIPS = ["1 Payment", "2 Payment", "4 Payment", "Monthly"];
 
+/** Stored English values for rent search / order forms (replaces legacy Yearly+Monthly rent period row). */
+export const RENT_PAYMENT_FREQUENCY_OPTIONS = [
+  "Yearly",
+  "Semi Annual",
+  "Quarterly",
+  "Monthly",
+] as const;
+
+export type RentPaymentFrequencyChoice = (typeof RENT_PAYMENT_FREQUENCY_OPTIONS)[number];
+export type RentPaymentFrequency = RentPaymentFrequencyChoice | null;
+
+/** Apartment for rent: preferred tenant segment (stored English values). */
+export const APARTMENT_RENT_TENANT_OPTIONS = ["Singles", "Families"] as const;
+export type ApartmentRentTenantChoice = (typeof APARTMENT_RENT_TENANT_OPTIONS)[number];
+export type ApartmentRentTenant = ApartmentRentTenantChoice | null;
+
+export function isRentAnnualPriceFrequency(period: RentPaymentFrequency): boolean {
+  return period === "Yearly" || period === "Semi Annual" || period === "Quarterly";
+}
+
+/** Single price row label for rent categories (after payment frequency is chosen, or generic). */
+export function getRentSearchPriceLabel(
+  period: RentPaymentFrequency,
+  t: (key: string) => string
+): string {
+  if (period == null) return t("listings.price");
+  if (period === "Monthly") return t("listings.priceMonthly");
+  return t("listings.annualPrice");
+}
+

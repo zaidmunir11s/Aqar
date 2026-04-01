@@ -2,13 +2,13 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@clerk/clerk-expo";
-
-const AUTH_TOKEN_KEY = "auth_token";
+import { STORAGE_KEYS } from "../constants";
 
 /** Notify listeners when backend session is invalidated (e.g. 401 + refresh failed). */
 const sessionExpiredListeners: (() => void)[] = [];
@@ -39,12 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    AsyncStorage.getItem(AUTH_TOKEN_KEY).then((token) => {
-      if (!cancelled) {
-        setHasBackendSession(!!token);
-        setBackendCheckDone(true);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEYS.authToken)
+      .then((token) => {
+        if (!cancelled) {
+          setHasBackendSession(!!token);
+          setBackendCheckDone(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHasBackendSession(false);
+          setBackendCheckDone(true);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -54,11 +61,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authSessionNotifier.addListener(() => setHasBackendSession(false));
   }, []);
 
-  const value: AuthContextValue = {
-    hasBackendSession,
-    isBackendCheckDone,
-    setHasBackendSession,
-  };
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      hasBackendSession,
+      isBackendCheckDone,
+      setHasBackendSession,
+    }),
+    [hasBackendSession, isBackendCheckDone]
+  );
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -87,5 +97,8 @@ export function useIsAuthenticated(): {
   const isAuthenticated = clerkLoaded && (isSignedIn || hasBackendSession);
   const isLoaded = clerkLoaded && isBackendCheckDone;
 
-  return { isAuthenticated, isLoaded };
+  return useMemo(
+    () => ({ isAuthenticated, isLoaded }),
+    [isAuthenticated, isLoaded]
+  );
 }

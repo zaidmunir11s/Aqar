@@ -23,6 +23,8 @@ export interface CancelModalProps {
   backText?: string;
   confirmText?: string;
   confirmButtonColor?: string;
+  /** When true, title/description align to the start edge (LTR left / RTL right); default keeps centered block. */
+  alignBodyToStart?: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ const CancelModal = memo<CancelModalProps>(
     backText,
     confirmText,
     confirmButtonColor,
+    alignBodyToStart = false,
   }) => {
     const { t, isRTL } = useLocalization();
     
@@ -53,12 +56,22 @@ const CancelModal = memo<CancelModalProps>(
     // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
     const rtlStyles = useMemo(
       () => ({
-        modalHeading: {
-          textAlign: (isRTL ? "right" : undefined) as "right" | undefined,
-        },
-        modalText: {
-          textAlign: (isRTL ? "right" : undefined) as "right" | undefined,
-        },
+        modalHeading: alignBodyToStart
+          ? {
+              textAlign: (isRTL ? "right" : "left") as "left" | "right",
+              alignSelf: "stretch" as const,
+            }
+          : {
+              textAlign: (isRTL ? "right" : undefined) as "right" | undefined,
+            },
+        modalText: alignBodyToStart
+          ? {
+              textAlign: (isRTL ? "right" : "left") as "left" | "right",
+              alignSelf: "stretch" as const,
+            }
+          : {
+              textAlign: (isRTL ? "right" : undefined) as "right" | undefined,
+            },
         modalButtons: isRTL
           ? {
               flexDirection: "row-reverse" as const,
@@ -66,8 +79,12 @@ const CancelModal = memo<CancelModalProps>(
             }
           : {},
       }),
-      [isRTL]
+      [isRTL, alignBodyToStart]
     );
+
+    const contentStyle = alignBodyToStart
+      ? [styles.modalContent, styles.modalContentAlignStart]
+      : styles.modalContent;
 
     return (
       <Modal
@@ -77,7 +94,7 @@ const CancelModal = memo<CancelModalProps>(
         onRequestClose={onBack}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={contentStyle}>
             {finalTitle && !description && (
               <Text style={[styles.modalText, rtlStyles.modalText]}>
                 {finalTitle}
@@ -144,6 +161,9 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
     }),
+  },
+  modalContentAlignStart: {
+    alignItems: "stretch",
   },
   modalHeading: {
     fontSize: wp(5),

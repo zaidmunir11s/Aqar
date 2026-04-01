@@ -2,20 +2,23 @@
  * useReducer for order form - replaces 80+ useState with batched updates.
  * Each dispatch batches; category reset is a single update instead of 80+ setState calls.
  */
-export type RentPeriod = "Yearly" | "Monthly" | null;
+import type { ApartmentRentTenant, RentPaymentFrequency } from "../constants/orderFormOptions";
+
+/** @deprecated Use RentPaymentFrequency */
+export type RentPeriod = RentPaymentFrequency;
 
 export interface OrderFormState {
   category: string;
   showCategoryModal: boolean;
 
   // Apartment for rent
-  rentPeriod: RentPeriod;
+  rentPeriod: RentPaymentFrequency;
   selectedPayment: string | null;
   fromPrice: string;
   toPrice: string;
   priceFrom: string;
   priceTo: string;
-  selectedPaymentType: string | null;
+  apartmentRentTenant: ApartmentRentTenant;
   selectedBedroom: string | null;
   selectedLivingRoom: string | null;
   selectedWc: string | null;
@@ -130,14 +133,14 @@ export interface OrderFormState {
   villaRentStreetWidth: string;
   villaRentStairs: boolean;
   villaRentAirConditioned: boolean;
-  villaRentRentPeriod: RentPeriod | null;
+  villaRentRentPeriod: RentPaymentFrequency;
 
   // Big flat for rent
   bigFlatPriceFrom: string;
   bigFlatPriceTo: string;
   bigFlatAreaFrom: string;
   bigFlatAreaTo: string;
-  bigFlatRentPeriod: RentPeriod | null;
+  bigFlatRentPeriod: RentPaymentFrequency;
   bigFlatCarEntrance: boolean;
   bigFlatAirConditioned: boolean;
   bigFlatInVilla: boolean;
@@ -149,7 +152,7 @@ export interface OrderFormState {
   loungeRentPriceTo: string;
   loungeRentAreaFrom: string;
   loungeRentAreaTo: string;
-  loungeRentRentPeriod: RentPeriod | null;
+  loungeRentRentPeriod: RentPaymentFrequency;
   loungeRentPool: boolean;
   footballPitch: boolean;
   volleyballCourt: boolean;
@@ -197,7 +200,7 @@ export interface OrderFormState {
   // Room for rent
   roomRentPriceFrom: string;
   roomRentPriceTo: string;
-  roomRentRentPeriod: RentPeriod | null;
+  roomRentRentPeriod: RentPaymentFrequency;
   roomRentKitchen: boolean;
 
   // Office for rent
@@ -209,7 +212,7 @@ export interface OrderFormState {
   officeRentFurnished: boolean;
 
   // Tent for rent
-  tentRentRentPeriod: RentPeriod | null;
+  tentRentRentPeriod: RentPaymentFrequency;
   tentRentPriceFrom: string;
   tentRentPriceTo: string;
 
@@ -225,7 +228,7 @@ export interface OrderFormState {
   chaletRentPriceTo: string;
   chaletRentAreaFrom: string;
   chaletRentAreaTo: string;
-  chaletRentRentPeriod: RentPeriod | null;
+  chaletRentRentPeriod: RentPaymentFrequency;
   chaletRentPool: boolean;
   chaletFootballPitch: boolean;
   chaletVolleyballCourt: boolean;
@@ -243,7 +246,7 @@ export interface OrderFormState {
 const empty = "";
 const emptyBool = false;
 const emptyNull: string | null = null;
-const emptyRentPeriod: RentPeriod | null = null;
+const emptyRentPeriod: RentPaymentFrequency = null;
 
 export const initialOrderFormState: OrderFormState = {
   category: empty,
@@ -254,7 +257,7 @@ export const initialOrderFormState: OrderFormState = {
   toPrice: empty,
   priceFrom: empty,
   priceTo: empty,
-  selectedPaymentType: emptyNull,
+  apartmentRentTenant: null,
   selectedBedroom: emptyNull,
   selectedLivingRoom: emptyNull,
   selectedWc: emptyNull,

@@ -1,12 +1,10 @@
-import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Keyboard,
   Platform,
-  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,601 +18,91 @@ import { useLocalization } from "../../../../hooks/useLocalization";
 import {
   ScreenHeader,
   ListingFooter,
-  WheelPickerModal,
   PriceInputSection,
   TabBarSection,
   ToggleRow,
   FieldWithModal,
-  RentPeriodTabBar,
-  PaymentChips,
   ToggleGroup,
 } from "../../../../components";
 import { VillaForRentSection } from "../../../../components/orderForm/sections";
+import { ApartmentForRentOrderSection } from "../../../../components/searchRequest/sections/ApartmentForRentOrderSection";
+import { VillaForSaleOrderSection } from "../../../../components/searchRequest/sections/VillaForSaleOrderSection";
+import { LandForSaleOrderSection } from "../../../../components/searchRequest/sections/LandForSaleOrderSection";
+import { ApartmentForSaleOrderSection } from "../../../../components/searchRequest/sections/ApartmentForSaleOrderSection";
+import { BuildingForSaleOrderSection } from "../../../../components/searchRequest/sections/BuildingForSaleOrderSection";
+import { BigFlatForRentOrderSection } from "../../../../components/searchRequest/sections/BigFlatForRentOrderSection";
+import { LoungeForRentOrderSection } from "../../../../components/searchRequest/sections/LoungeForRentOrderSection";
+import { SmallHouseForSaleOrderSection } from "../../../../components/searchRequest/sections/SmallHouseForSaleOrderSection";
+import { StoreForRentOrderSection } from "../../../../components/searchRequest/sections/StoreForRentOrderSection";
+import { LandForRentOrderSection } from "../../../../components/searchRequest/sections/LandForRentOrderSection";
+import { LoungeForSaleOrderSection } from "../../../../components/searchRequest/sections/LoungeForSaleOrderSection";
+import { FarmForSaleOrderSection } from "../../../../components/searchRequest/sections/FarmForSaleOrderSection";
+import { StoreForSaleOrderSection } from "../../../../components/searchRequest/sections/StoreForSaleOrderSection";
+import { FloorForSaleOrderSection } from "../../../../components/searchRequest/sections/FloorForSaleOrderSection";
+import { RoomForRentOrderSection } from "../../../../components/searchRequest/sections/RoomForRentOrderSection";
+import { OfficeForRentOrderSection } from "../../../../components/searchRequest/sections/OfficeForRentOrderSection";
+import { TentForRentOrderSection } from "../../../../components/searchRequest/sections/TentForRentOrderSection";
+import { WarehouseForRentOrderSection } from "../../../../components/searchRequest/sections/WarehouseForRentOrderSection";
+import { SmallHouseForRentOrderSection } from "../../../../components/searchRequest/sections/SmallHouseForRentOrderSection";
+import { BuildingForRentOrderSection } from "../../../../components/searchRequest/sections/BuildingForRentOrderSection";
+import { ChaletForRentOrderSection } from "../../../../components/searchRequest/sections/ChaletForRentOrderSection";
+import SearchRequestOrderModals from "../../../../components/searchRequest/SearchRequestOrderModals";
 import { COLORS } from "@/constants";
-import { ALL_CATEGORIES } from "@/constants/categories";
+import {
+} from "@/constants/categories";
 import {
   BEDROOM_OPTIONS,
   LIVING_ROOM_OPTIONS,
   WC_OPTIONS,
-  APARTMENT_OPTIONS,
-  VILLA_TYPE_OPTIONS,
-  RESIDENTIAL_COMMERCIAL_OPTIONS,
-  FLOOR_OPTIONS,
-  AGE_OPTIONS,
-  STREET_DIRECTION_OPTIONS,
-  STREET_WIDTH_OPTIONS,
-  STORES_OPTIONS,
 } from "@/constants/orderFormOptions";
+import { buildSearchRequestOrderFormData } from "@/utils/searchRequestOrderFormData";
+import { useSearchRequestOrderTranslations } from "./useSearchRequestOrderTranslations";
+import { useSearchRequestOrderContainer } from "./useSearchRequestOrderContainer";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
-// Category ID → translation key (outside component to avoid recreating every render)
-const CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
-  "sale-1": "listings.propertyTypes.villaForSale",
-  "sale-2": "listings.propertyTypes.landForSale",
-  "sale-3": "listings.propertyTypes.apartmentForSale",
-  "sale-4": "listings.propertyTypes.buildingForSale",
-  "sale-5": "listings.propertyTypes.smallHouseForSale",
-  "sale-6": "listings.propertyTypes.loungeForSale",
-  "sale-7": "listings.propertyTypes.farmForSale",
-  "sale-8": "listings.propertyTypes.storeForSale",
-  "sale-9": "listings.propertyTypes.floorForSale",
-  "rent-1": "listings.propertyTypes.apartmentForRent",
-  "rent-2": "listings.propertyTypes.villaForRent",
-  "rent-3": "listings.propertyTypes.bigFlatForRent",
-  "rent-4": "listings.propertyTypes.loungeForRent",
-  "rent-5": "listings.propertyTypes.smallHouseForRent",
-  "rent-6": "listings.propertyTypes.storeForRent",
-  "rent-7": "listings.propertyTypes.buildingForRent",
-  "rent-8": "listings.propertyTypes.landForRent",
-  "rent-9": "listings.propertyTypes.roomForRent",
-  "rent-10": "listings.propertyTypes.officeForRent",
-  "rent-11": "listings.propertyTypes.tentForRent",
-  "rent-12": "listings.propertyTypes.warehouseForRent",
-  "rent-13": "listings.propertyTypes.chaletForRent",
-};
-
-function getCategoryTranslationKey(categoryId: string): string {
-  return CATEGORY_TRANSLATION_KEYS[categoryId] || "";
-}
-
 export default function NewOrderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
-  const keyboardHeight = useRef(new Animated.Value(0)).current;
   const { t } = useLocalization();
   
   const form = useOrderForm();
 
-  // Category options with translation and mapping
-  const categoryOptions = useMemo(() => {
-    const translatedCategories = ALL_CATEGORIES.map((cat) => {
-      const translationKey = getCategoryTranslationKey(cat.id);
-      return translationKey ? t(translationKey) : cat.text;
-    });
-    return [...translatedCategories, t("listings.other")];
-  }, [t]);
-
-  // Create mapping from original to translated category names
-  const categoryTranslationMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    ALL_CATEGORIES.forEach((cat) => {
-      const translationKey = getCategoryTranslationKey(cat.id);
-      if (translationKey) {
-        map[cat.text] = t(translationKey);
-      } else {
-        map[cat.text] = cat.text;
-      }
-    });
-    map["Other"] = t("listings.other");
-    return map;
-  }, [t]);
-
-  // Get translated category value for display
-  const getTranslatedCategoryValue = useCallback((originalValue: string | null): string => {
-    if (!originalValue) return "";
-    return categoryTranslationMap[originalValue] || originalValue;
-  }, [categoryTranslationMap]);
-
-  // Helper function to translate option
-  const translateOption = useCallback((opt: string, type: "streetDirection" | "floor" | "age" | "streetWidth"): string => {
-    if (opt === "All") return t("listings.all");
-    
-    if (type === "streetDirection") {
-      if (opt === "North") return t("listings.address.north");
-      if (opt === "East") return t("listings.address.east");
-      if (opt === "West") return t("listings.address.west");
-      if (opt === "South") return t("listings.address.south");
-      if (opt === "Northeast") return t("listings.address.northeast");
-      if (opt === "Southeast") return t("listings.address.southeast");
-      if (opt === "Southwest") return t("listings.address.southwest");
-      if (opt === "Northwest") return t("listings.address.northwest");
-      if (opt === "3 Streets") return t("listings.threeStreets");
-      if (opt === "4 Streets") return t("listings.fourStreets");
-    } else if (type === "floor") {
-      if (opt === "First floor") return t("listings.firstFloor");
-      if (opt === "Second floor") return t("listings.secondFloor");
-    } else if (type === "age") {
-      if (opt.startsWith("Less than")) {
-        const years = opt.match(/\d+/)?.[0] || "";
-        return t("listings.lessThanYears", { years });
-      }
-    } else if (type === "streetWidth") {
-      if (opt.startsWith("More than")) {
-        const width = opt.match(/\d+/)?.[0] || "";
-        return t("listings.moreThan", { width });
-      }
-    }
-    return opt;
-  }, [t]);
-
-  // Translated picker options
-  const translatedStreetDirectionOptions = useMemo(
-    () => STREET_DIRECTION_OPTIONS.map((opt) => translateOption(opt, "streetDirection")),
-    [translateOption]
-  );
-
-  const translatedFloorOptions = useMemo(
-    () => FLOOR_OPTIONS.map((opt) => translateOption(opt, "floor")),
-    [translateOption]
-  );
-
-  const translatedAgeOptions = useMemo(
-    () => AGE_OPTIONS.map((opt) => translateOption(opt, "age")),
-    [translateOption]
-  );
-
-  const translatedStreetWidthOptions = useMemo(
-    () => STREET_WIDTH_OPTIONS.map((opt) => translateOption(opt, "streetWidth")),
-    [translateOption]
-  );
-
-  // Create reverse mapping for picker options (translated -> original)
-  const createReverseMap = useCallback((originalOptions: string[], translatedOptions: string[]): Record<string, string> => {
-    const map: Record<string, string> = {};
-    originalOptions.forEach((original, index) => {
-      map[translatedOptions[index]] = original;
-    });
-    return map;
-  }, []);
-
-  const streetDirectionReverseMap = useMemo(
-    () => createReverseMap(STREET_DIRECTION_OPTIONS, translatedStreetDirectionOptions),
-    [createReverseMap, translatedStreetDirectionOptions]
-  );
-
-  const floorReverseMap = useMemo(
-    () => createReverseMap(FLOOR_OPTIONS, translatedFloorOptions),
-    [createReverseMap, translatedFloorOptions]
-  );
-
-  const ageReverseMap = useMemo(
-    () => createReverseMap(AGE_OPTIONS, translatedAgeOptions),
-    [createReverseMap, translatedAgeOptions]
-  );
-
-  const streetWidthReverseMap = useMemo(
-    () => createReverseMap(STREET_WIDTH_OPTIONS, translatedStreetWidthOptions),
-    [createReverseMap, translatedStreetWidthOptions]
-  );
-
-  // Helper: get translated value for picker initialValue/display. Use originalOptions when provided so index is correct (Object.values order can be unreliable).
-  const getTranslatedInitialValue = useCallback(
-    (
-      originalValue: string | null,
-      reverseMap: Record<string, string>,
-      translatedOptions: string[],
-      originalOptions?: string[]
-    ): string => {
-      if (!originalValue) return "";
-      const originalIndex =
-        originalOptions && originalOptions.length === translatedOptions.length
-          ? originalOptions.indexOf(originalValue)
-          : Object.values(reverseMap).indexOf(originalValue);
-      return originalIndex >= 0 ? translatedOptions[originalIndex] : originalValue;
-    },
-    []
-  );
-
-  // Helper function to translate picker values for display in FieldWithModal
-  const getTranslatedPickerValue = useCallback((originalValue: string | null, type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"): string => {
-    if (!originalValue) return "";
-    
-    if (type === "floor") {
-      return getTranslatedInitialValue(originalValue, floorReverseMap, translatedFloorOptions, FLOOR_OPTIONS);
-    } else if (type === "age") {
-      return getTranslatedInitialValue(originalValue, ageReverseMap, translatedAgeOptions, AGE_OPTIONS);
-    } else if (type === "streetDirection") {
-      return getTranslatedInitialValue(originalValue, streetDirectionReverseMap, translatedStreetDirectionOptions, STREET_DIRECTION_OPTIONS);
-    } else if (type === "streetWidth") {
-      return getTranslatedInitialValue(originalValue, streetWidthReverseMap, translatedStreetWidthOptions, STREET_WIDTH_OPTIONS);
-    } else if (type === "stores") {
-      // Stores options: ["All", "1", "2", "3", "4"]
-      if (originalValue === "All") return t("listings.all");
-      return originalValue; // Numbers don't need translation
-    }
-    
-    return originalValue;
-  }, [getTranslatedInitialValue, floorReverseMap, translatedFloorOptions, ageReverseMap, translatedAgeOptions, streetDirectionReverseMap, translatedStreetDirectionOptions, streetWidthReverseMap, translatedStreetWidthOptions, t]);
-
-  // Translated tab bar options
-  const translatedVillaTypeOptions = useMemo(
-    () =>
-      VILLA_TYPE_OPTIONS.map((opt) => {
-        if (opt === "Standalone") return t("listings.standalone");
-        if (opt === "Duplex") return t("listings.duplex");
-        if (opt === "Townhouse") return t("listings.townhouse");
-        return opt;
-      }),
-    [t]
-  );
-
-  const translatedResidentialCommercialOptions = useMemo(
-    () =>
-      RESIDENTIAL_COMMERCIAL_OPTIONS.map((opt) => {
-        if (opt === "Residential") return t("listings.residential");
-        if (opt === "Commercial") return t("listings.commercial");
-        return opt;
-      }),
-    [t]
-  );
-
-  // Create reverse maps for tab bar options
-  const villaTypeReverseMap = useMemo(
-    () => createReverseMap(VILLA_TYPE_OPTIONS, translatedVillaTypeOptions),
-    [createReverseMap, translatedVillaTypeOptions]
-  );
-
-  const residentialCommercialReverseMap = useMemo(
-    () => createReverseMap(RESIDENTIAL_COMMERCIAL_OPTIONS, translatedResidentialCommercialOptions),
-    [createReverseMap, translatedResidentialCommercialOptions]
-  );
+  const {
+    categoryOptions,
+    categoryTranslationMap,
+    getTranslatedCategoryValue,
+    translatedStreetDirectionOptions,
+    translatedFloorOptions,
+    translatedAgeOptions,
+    translatedStreetWidthOptions,
+    streetDirectionReverseMap,
+    floorReverseMap,
+    ageReverseMap,
+    streetWidthReverseMap,
+    getTranslatedInitialValue,
+    getTranslatedPickerValue,
+    translatedVillaTypeOptions,
+    villaTypeReverseMap,
+    translatedResidentialCommercialOptions,
+    residentialCommercialReverseMap,
+  } = useSearchRequestOrderTranslations(t);
+  const {
+    openCategoryModal,
+    openFloorModal,
+    openAgeModal,
+    openStreetDirectionModal,
+    openStreetWidthModal,
+    openStoresModal,
+    streetDirectionModalValue,
+    streetWidthModalValue,
+  } = useSearchRequestOrderContainer({ form });
 
   const handleBackPress = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
 
-  // Stable modal openers so children don't re-render unnecessarily
-  const openCategoryModal = useCallback(() => form.setShowCategoryModal(true), []);
-  const openFloorModal = useCallback(() => form.setShowFloorModal(true), []);
-  const openAgeModal = useCallback(() => form.setShowAgeModal(true), []);
-
-  // When category is set, pre-select first option for all FieldWithModal pickers (no placeholders)
-  useEffect(() => {
-    if (!form.category) return;
-    const firstFloor = FLOOR_OPTIONS[0] ?? "";
-    const firstAge = AGE_OPTIONS[0] ?? "";
-    const firstStreetDirection = STREET_DIRECTION_OPTIONS[0] ?? "";
-    const firstStreetWidth = STREET_WIDTH_OPTIONS[0] ?? "";
-    const firstStores = STORES_OPTIONS[0] ?? "";
-
-    form.setFloor(firstFloor);
-    form.setAge(firstAge);
-    form.setStreetDirection(firstStreetDirection);
-    form.setLandStreetDirection(firstStreetDirection);
-    form.setSmallHouseStreetDirection(firstStreetDirection);
-    form.setBuildingStreetDirection(firstStreetDirection);
-    form.setVillaRentStreetDirection(firstStreetDirection);
-    form.setSmallHouseRentStreetDirection(firstStreetDirection);
-    form.setBuildingRentStreetDirection(firstStreetDirection);
-    form.setLandRentStreetDirection(firstStreetDirection);
-    form.setStreetWidth(firstStreetWidth);
-    form.setLandStreetWidth(firstStreetWidth);
-    form.setSmallHouseStreetWidth(firstStreetWidth);
-    form.setLoungeStreetWidth(firstStreetWidth);
-    form.setStoreStreetWidth(firstStreetWidth);
-    form.setVillaRentStreetWidth(firstStreetWidth);
-    form.setSmallHouseRentStreetWidth(firstStreetWidth);
-    form.setStoreRentStreetWidth(firstStreetWidth);
-    form.setBuildingRentStreetWidth(firstStreetWidth);
-    form.setLandRentStreetWidth(firstStreetWidth);
-    form.setOfficeRentStreetWidth(firstStreetWidth);
-    form.setWarehouseRentStreetWidth(firstStreetWidth);
-    form.setStores(firstStores);
-    form.setBuildingRentStores(firstStores);
-  }, [form.category]);
-
-  // Listen to keyboard show/hide events
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (event) => {
-        // Set keyboard height to position footer just above keyboard
-        Animated.timing(keyboardHeight, {
-          toValue: event.endCoordinates.height,
-          duration: event.duration || 250,
-          useNativeDriver: false, // Can't use native driver for bottom positioning
-        }).start();
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      (event) => {
-        // Reset keyboard height to 0 to bring footer back to original position
-        Animated.timing(keyboardHeight, {
-          toValue: 0,
-          duration: event.duration || 250,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, [keyboardHeight]);
-
   const handleNextPress = () => {
-    // Collect all form data - get all properties from form object
-    const orderFormData: any = {
-      category: form.category,
-      // Common fields
-      selectedBedroom: form.selectedBedroom,
-      selectedLivingRoom: form.selectedLivingRoom,
-      selectedWc: form.selectedWc,
-      floor: form.floor,
-      age: form.age,
-      nearBus: form.nearBus,
-      nearMetro: form.nearMetro,
-    };
-
-    // Category-specific fields
-    if (form.isApartmentForRent) {
-      Object.assign(orderFormData, {
-        rentPeriod: form.rentPeriod,
-        selectedPayment: form.selectedPayment,
-        fromPrice: form.fromPrice,
-        toPrice: form.toPrice,
-        priceFrom: form.priceFrom,
-        priceTo: form.priceTo,
-        selectedPaymentType: form.selectedPaymentType,
-        furnished: form.furnished,
-        carEntrance: form.carEntrance,
-        airConditioned: form.airConditioned,
-        privateRoof: form.privateRoof,
-        apartmentInVilla: form.apartmentInVilla,
-        twoEntrances: form.twoEntrances,
-        specialEntrances: form.specialEntrances,
-      });
-    } else if (form.isVillaForSale) {
-      Object.assign(orderFormData, {
-        villaPriceFrom: form.villaPriceFrom,
-        villaPriceTo: form.villaPriceTo,
-        selectedApartment: form.selectedApartment,
-        streetDirection: form.streetDirection,
-        areaFrom: form.areaFrom,
-        areaTo: form.areaTo,
-        streetWidth: form.streetWidth,
-        stairs: form.stairs,
-        selectedVillaType: form.selectedVillaType,
-        driverRoom: form.driverRoom,
-        maidRoom: form.maidRoom,
-        pool: form.pool,
-        villaFurnished: form.villaFurnished,
-        kitchen: form.kitchen,
-        villaCarEntrance: form.villaCarEntrance,
-        basement: form.basement,
-      });
-    } else if (form.isLandForSale) {
-      Object.assign(orderFormData, {
-        landPriceFrom: form.landPriceFrom,
-        landPriceTo: form.landPriceTo,
-        selectedLandType: form.selectedLandType,
-        landAreaFrom: form.landAreaFrom,
-        landAreaTo: form.landAreaTo,
-        landStreetDirection: form.landStreetDirection,
-        landStreetWidth: form.landStreetWidth,
-      });
-    } else if (form.isApartmentForSale) {
-      Object.assign(orderFormData, {
-        apartmentSalePriceFrom: form.apartmentSalePriceFrom,
-        apartmentSalePriceTo: form.apartmentSalePriceTo,
-        apartmentSaleAreaFrom: form.apartmentSaleAreaFrom,
-        apartmentSaleAreaTo: form.apartmentSaleAreaTo,
-        apartmentSaleCarEntrance: form.apartmentSaleCarEntrance,
-        apartmentSalePrivateRoof: form.apartmentSalePrivateRoof,
-        apartmentSaleInVilla: form.apartmentSaleInVilla,
-        apartmentSaleTwoEntrances: form.apartmentSaleTwoEntrances,
-        apartmentSaleSpecialEntrances: form.apartmentSaleSpecialEntrances,
-      });
-    } else if (form.isBuildingForSale) {
-      Object.assign(orderFormData, {
-        buildingPriceFrom: form.buildingPriceFrom,
-        buildingPriceTo: form.buildingPriceTo,
-        buildingApartments: form.buildingApartments,
-        selectedBuildingType: form.selectedBuildingType,
-        buildingStreetDirection: form.buildingStreetDirection,
-        stores: form.stores,
-        buildingAreaFrom: form.buildingAreaFrom,
-        buildingAreaTo: form.buildingAreaTo,
-        streetWidth: form.streetWidth,
-      });
-    } else if (form.isSmallHouseForSale) {
-      Object.assign(orderFormData, {
-        smallHousePriceFrom: form.smallHousePriceFrom,
-        smallHousePriceTo: form.smallHousePriceTo,
-        smallHouseStreetDirection: form.smallHouseStreetDirection,
-        smallHouseAreaFrom: form.smallHouseAreaFrom,
-        smallHouseAreaTo: form.smallHouseAreaTo,
-        smallHouseStreetWidth: form.smallHouseStreetWidth,
-        smallHouseFurnished: form.smallHouseFurnished,
-        tent: form.tent,
-      });
-    } else if (form.isLoungeForSale) {
-      Object.assign(orderFormData, {
-        loungePriceFrom: form.loungePriceFrom,
-        loungePriceTo: form.loungePriceTo,
-        loungeAreaFrom: form.loungeAreaFrom,
-        loungeAreaTo: form.loungeAreaTo,
-        loungeStreetWidth: form.loungeStreetWidth,
-      });
-    } else if (form.isFarmForSale) {
-      Object.assign(orderFormData, {
-        farmPriceFrom: form.farmPriceFrom,
-        farmPriceTo: form.farmPriceTo,
-        farmAreaFrom: form.farmAreaFrom,
-        farmAreaTo: form.farmAreaTo,
-      });
-    } else if (form.isStoreForSale) {
-      Object.assign(orderFormData, {
-        storePriceFrom: form.storePriceFrom,
-        storePriceTo: form.storePriceTo,
-        storeAreaFrom: form.storeAreaFrom,
-        storeAreaTo: form.storeAreaTo,
-        storeStreetWidth: form.storeStreetWidth,
-      });
-    } else if (form.isFloorForSale) {
-      Object.assign(orderFormData, {
-        floorSalePriceFrom: form.floorSalePriceFrom,
-        floorSalePriceTo: form.floorSalePriceTo,
-        floorSaleAreaFrom: form.floorSaleAreaFrom,
-        floorSaleAreaTo: form.floorSaleAreaTo,
-        floorSaleCarEntrance: form.floorSaleCarEntrance,
-      });
-    } else if (form.isVillaForRent) {
-      Object.assign(orderFormData, {
-        villaRentRentPeriod: form.villaRentRentPeriod,
-        villaRentPriceFrom: form.villaRentPriceFrom,
-        villaRentPriceTo: form.villaRentPriceTo,
-        villaRentStreetDirection: form.villaRentStreetDirection,
-        villaRentAreaFrom: form.villaRentAreaFrom,
-        villaRentAreaTo: form.villaRentAreaTo,
-        villaRentStreetWidth: form.villaRentStreetWidth,
-        villaRentStairs: form.villaRentStairs,
-        villaRentAirConditioned: form.villaRentAirConditioned,
-        selectedVillaType: form.selectedVillaType,
-        driverRoom: form.driverRoom,
-        maidRoom: form.maidRoom,
-        pool: form.pool,
-        villaFurnished: form.villaFurnished,
-        kitchen: form.kitchen,
-        villaCarEntrance: form.villaCarEntrance,
-        basement: form.basement,
-      });
-    } else if (form.isBigFlatForRent) {
-      Object.assign(orderFormData, {
-        bigFlatRentPeriod: form.bigFlatRentPeriod,
-        bigFlatPriceFrom: form.bigFlatPriceFrom,
-        bigFlatPriceTo: form.bigFlatPriceTo,
-        bigFlatAreaFrom: form.bigFlatAreaFrom,
-        bigFlatAreaTo: form.bigFlatAreaTo,
-        bigFlatCarEntrance: form.bigFlatCarEntrance,
-        bigFlatAirConditioned: form.bigFlatAirConditioned,
-        bigFlatInVilla: form.bigFlatInVilla,
-        bigFlatTwoEntrances: form.bigFlatTwoEntrances,
-        bigFlatSpecialEntrances: form.bigFlatSpecialEntrances,
-      });
-    } else if (form.isLoungeForRent) {
-      Object.assign(orderFormData, {
-        loungeRentRentPeriod: form.loungeRentRentPeriod,
-        loungeRentPriceFrom: form.loungeRentPriceFrom,
-        loungeRentPriceTo: form.loungeRentPriceTo,
-        loungeRentAreaFrom: form.loungeRentAreaFrom,
-        loungeRentAreaTo: form.loungeRentAreaTo,
-        loungeRentPool: form.loungeRentPool,
-        footballPitch: form.footballPitch,
-        volleyballCourt: form.volleyballCourt,
-        loungeRentTent: form.loungeRentTent,
-        loungeRentKitchen: form.loungeRentKitchen,
-        playground: form.playground,
-        familySection: form.familySection,
-      });
-    } else if (form.isSmallHouseForRent) {
-      Object.assign(orderFormData, {
-        smallHouseRentPriceFrom: form.smallHouseRentPriceFrom,
-        smallHouseRentPriceTo: form.smallHouseRentPriceTo,
-        smallHouseRentStreetDirection: form.smallHouseRentStreetDirection,
-        smallHouseRentAreaFrom: form.smallHouseRentAreaFrom,
-        smallHouseRentAreaTo: form.smallHouseRentAreaTo,
-        smallHouseRentStreetWidth: form.smallHouseRentStreetWidth,
-        smallHouseRentFurnished: form.smallHouseRentFurnished,
-        smallHouseRentTent: form.smallHouseRentTent,
-        smallHouseRentKitchen: form.smallHouseRentKitchen,
-      });
-    } else if (form.isStoreForRent) {
-      Object.assign(orderFormData, {
-        storeRentPriceFrom: form.storeRentPriceFrom,
-        storeRentPriceTo: form.storeRentPriceTo,
-        storeRentAreaFrom: form.storeRentAreaFrom,
-        storeRentAreaTo: form.storeRentAreaTo,
-        storeRentStreetWidth: form.storeRentStreetWidth,
-      });
-    } else if (form.isBuildingForRent) {
-      Object.assign(orderFormData, {
-        buildingRentPriceFrom: form.buildingRentPriceFrom,
-        buildingRentPriceTo: form.buildingRentPriceTo,
-        buildingRentApartments: form.buildingRentApartments,
-        selectedBuildingRentType: form.selectedBuildingRentType,
-        buildingRentStreetDirection: form.buildingRentStreetDirection,
-        buildingRentStores: form.buildingRentStores,
-        buildingRentAreaFrom: form.buildingRentAreaFrom,
-        buildingRentAreaTo: form.buildingRentAreaTo,
-        buildingRentStreetWidth: form.buildingRentStreetWidth,
-      });
-    } else if (form.isLandForRent) {
-      Object.assign(orderFormData, {
-        selectedLandRentType: form.selectedLandRentType,
-        landRentStreetDirection: form.landRentStreetDirection,
-        landRentAreaFrom: form.landRentAreaFrom,
-        landRentAreaTo: form.landRentAreaTo,
-        landRentStreetWidth: form.landRentStreetWidth,
-      });
-    } else if (form.isRoomForRent) {
-      Object.assign(orderFormData, {
-        roomRentRentPeriod: form.roomRentRentPeriod,
-        roomRentPriceFrom: form.roomRentPriceFrom,
-        roomRentPriceTo: form.roomRentPriceTo,
-        roomRentKitchen: form.roomRentKitchen,
-      });
-    } else if (form.isOfficeForRent) {
-      Object.assign(orderFormData, {
-        officeRentPriceFrom: form.officeRentPriceFrom,
-        officeRentPriceTo: form.officeRentPriceTo,
-        officeRentAreaFrom: form.officeRentAreaFrom,
-        officeRentAreaTo: form.officeRentAreaTo,
-        officeRentStreetWidth: form.officeRentStreetWidth,
-        officeRentFurnished: form.officeRentFurnished,
-      });
-    } else if (form.isTentForRent) {
-      Object.assign(orderFormData, {
-        tentRentRentPeriod: form.tentRentRentPeriod,
-        tentRentPriceFrom: form.tentRentPriceFrom,
-        tentRentPriceTo: form.tentRentPriceTo,
-        selectedPayment: form.selectedPayment,
-        familySection: form.familySection,
-      });
-    } else if (form.isWarehouseForRent) {
-      Object.assign(orderFormData, {
-        warehouseRentPriceFrom: form.warehouseRentPriceFrom,
-        warehouseRentPriceTo: form.warehouseRentPriceTo,
-        warehouseRentAreaFrom: form.warehouseRentAreaFrom,
-        warehouseRentAreaTo: form.warehouseRentAreaTo,
-        warehouseRentStreetWidth: form.warehouseRentStreetWidth,
-      });
-    } else if (form.isChaletForRent) {
-      Object.assign(orderFormData, {
-        chaletRentRentPeriod: form.chaletRentRentPeriod,
-        chaletRentPriceFrom: form.chaletRentPriceFrom,
-        chaletRentPriceTo: form.chaletRentPriceTo,
-        chaletRentAreaFrom: form.chaletRentAreaFrom,
-        chaletRentAreaTo: form.chaletRentAreaTo,
-        chaletRentPool: form.chaletRentPool,
-        chaletFootballPitch: form.chaletFootballPitch,
-        chaletVolleyballCourt: form.chaletVolleyballCourt,
-        chaletRentTent: form.chaletRentTent,
-        chaletRentKitchen: form.chaletRentKitchen,
-        chaletPlayground: form.chaletPlayground,
-        familySection: form.familySection,
-      });
-    } else if (form.isOther) {
-      Object.assign(orderFormData, {
-        otherPriceFrom: form.otherPriceFrom,
-        otherPriceTo: form.otherPriceTo,
-        otherAreaFrom: form.otherAreaFrom,
-        otherAreaTo: form.otherAreaTo,
-      });
-    }
-
+    const orderFormData = buildSearchRequestOrderFormData(form);
     navigation.navigate("ChooseLocation", { orderFormData });
   };
 
@@ -644,682 +132,348 @@ export default function NewOrderScreen(): React.JSX.Element {
 
         {/* Apartment for rent content */}
         {form.isApartmentForRent && (
-          <>
-            <RentPeriodTabBar
-              selectedPeriod={form.rentPeriod}
-              onSelect={form.handleRentPeriodPress}
-            />
-
-            {form.showYearlyContent && (
-              <>
-                <PaymentChips
-                  label={t("listings.paymentOptions")}
-                  selectedPayment={form.selectedPayment}
-                  onSelect={form.handlePaymentChipPress}
-                />
-
-                <PriceInputSection
-                  label={form.priceLabel}
-                  fromValue={form.fromPrice}
-                  toValue={form.toPrice}
-                  onFromChange={form.setFromPrice}
-                  onToChange={form.setToPrice}
-                />
-              </>
-            )}
-
-            {form.showPriceSection && (
-              <PriceInputSection
-                label={t("listings.price")}
-                fromValue={form.priceFrom}
-                toValue={form.priceTo}
-                onFromChange={form.setPriceFrom}
-                onToChange={form.setPriceTo}
-              />
-            )}
-
-            {form.showPaymentTypeTabBar && (
-              <TabBarSection
-                options={["ALL", "+1"]}
-                selectedValue={form.selectedPaymentType}
-                onSelect={form.handlePaymentTypePress}
-              />
-            )}
-
-            <TabBarSection
-              label={t("listings.bedrooms")}
-              options={BEDROOM_OPTIONS}
-              selectedValue={form.selectedBedroom}
-              onSelect={form.handleBedroomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.livingRooms")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.wc")}
-              options={WC_OPTIONS}
-              selectedValue={form.selectedWc}
-              onSelect={form.handleWcPress}
-            />
-
-            <FieldWithModal
-              label={t("listings.floor")}
-              value={getTranslatedPickerValue(form.floor, "floor")}
-              placeholder={t("listings.selectFloor")}
-              onPress={openFloorModal}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <View style={styles.section}>
-              <ToggleRow
-                label={t("listings.furnished")}
-                value={form.furnished}
-                onValueChange={form.setFurnished}
-              />
-              <ToggleRow
-                label={t("listings.carEntrance")}
-                value={form.carEntrance}
-                onValueChange={form.setCarEntrance}
-              />
-              <ToggleRow
-                label={t("listings.airConditioned")}
-                value={form.airConditioned}
-                onValueChange={form.setAirConditioned}
-              />
-              <ToggleRow
-                label={t("listings.privateRoof")}
-                value={form.privateRoof}
-                onValueChange={form.setPrivateRoof}
-              />
-              <ToggleRow
-                label={t("listings.apartmentInVilla")}
-                value={form.apartmentInVilla}
-                onValueChange={form.setApartmentInVilla}
-              />
-              <ToggleRow
-                label={t("listings.twoEntrances")}
-                value={form.twoEntrances}
-                onValueChange={form.setTwoEntrances}
-              />
-              <ToggleRow
-                label={t("listings.specialEntrances")}
-                value={form.specialEntrances}
-                onValueChange={form.setSpecialEntrances}
-              />
-            </View>
-          </>
+          <ApartmentForRentOrderSection
+            t={t}
+            rentPeriod={form.rentPeriod}
+            apartmentRentTenant={form.apartmentRentTenant}
+            selectedBedroom={form.selectedBedroom}
+            selectedLivingRoom={form.selectedLivingRoom}
+            selectedWc={form.selectedWc}
+            floor={form.floor}
+            age={form.age}
+            furnished={form.furnished}
+            carEntrance={form.carEntrance}
+            airConditioned={form.airConditioned}
+            privateRoof={form.privateRoof}
+            apartmentInVilla={form.apartmentInVilla}
+            twoEntrances={form.twoEntrances}
+            specialEntrances={form.specialEntrances}
+            fromPrice={form.fromPrice}
+            toPrice={form.toPrice}
+            priceFrom={form.priceFrom}
+            priceTo={form.priceTo}
+            showYearlyContent={form.showYearlyContent}
+            showPriceSection={form.showPriceSection}
+            priceLabel={form.priceLabel}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onRentPeriodSelect={form.handleRentPeriodPress}
+            onApartmentRentTenantSelect={form.handleApartmentRentTenantPress}
+            onFromPriceChange={form.setFromPrice}
+            onToPriceChange={form.setToPrice}
+            onPriceFromChange={form.setPriceFrom}
+            onPriceToChange={form.setPriceTo}
+            onBedroomSelect={form.handleBedroomPress}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onWcSelect={form.handleWcPress}
+            onOpenFloor={openFloorModal}
+            onOpenAge={openAgeModal}
+            onFurnishedChange={form.setFurnished}
+            onCarEntranceChange={form.setCarEntrance}
+            onAirConditionedChange={form.setAirConditioned}
+            onPrivateRoofChange={form.setPrivateRoof}
+            onApartmentInVillaChange={form.setApartmentInVilla}
+            onTwoEntrancesChange={form.setTwoEntrances}
+            onSpecialEntrancesChange={form.setSpecialEntrances}
+          />
         )}
 
         {/* Villa for sale content */}
         {form.isVillaForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.villaPriceFrom}
-              toValue={form.villaPriceTo}
-              onFromChange={form.setVillaPriceFrom}
-              onToChange={form.setVillaPriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.apartments")}
-              options={APARTMENT_OPTIONS}
-              selectedValue={form.selectedApartment}
-              onSelect={form.handleApartmentPress}
-            />
-
-            <TabBarSection
-              label={t("listings.bedrooms")}
-              options={BEDROOM_OPTIONS}
-              selectedValue={form.selectedBedroom}
-              onSelect={form.handleBedroomPress}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.streetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <TabBarSection
-              label={t("listings.livingRooms")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.wc")}
-              options={WC_OPTIONS}
-              selectedValue={form.selectedWc}
-              onSelect={form.handleWcPress}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.areaFrom}
-              toValue={form.areaTo}
-              onFromChange={form.setAreaFrom}
-              onToChange={form.setAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.streetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <View style={styles.section}>
-              <ToggleRow label={t("listings.stairs")} value={form.stairs} onValueChange={form.setStairs} />
-            </View>
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <View style={styles.section}>
-              <ToggleRow
-                label={t("listings.driverRoom")}
-                value={form.driverRoom}
-                onValueChange={form.setDriverRoom}
-              />
-              <ToggleRow label={t("listings.maidRoom")} value={form.maidRoom} onValueChange={form.setMaidRoom} />
-              <ToggleRow label={t("listings.pool")} value={form.pool} onValueChange={form.setPool} />
-              <ToggleRow
-                label={t("listings.furnished")}
-                value={form.villaFurnished}
-                onValueChange={form.setVillaFurnished}
-              />
-              <ToggleRow label={t("listings.kitchen")} value={form.kitchen} onValueChange={form.setKitchen} />
-              <ToggleRow
-                label={t("listings.carEntrance")}
-                value={form.villaCarEntrance}
-                onValueChange={form.setVillaCarEntrance}
-              />
-              <ToggleRow label={t("listings.basement")} value={form.basement} onValueChange={form.setBasement} />
-            </View>
-
-            <TabBarSection
-              label={t("listings.villaType")}
-              options={translatedVillaTypeOptions}
-              selectedValue={getTranslatedInitialValue(form.selectedVillaType, villaTypeReverseMap, translatedVillaTypeOptions)}
-              onSelect={(translatedValue: string) => {
+          <VillaForSaleOrderSection
+            t={t}
+            translatedVillaTypeOptions={translatedVillaTypeOptions}
+            selectedVillaType={getTranslatedInitialValue(form.selectedVillaType, villaTypeReverseMap, translatedVillaTypeOptions)}
+            selectedApartment={form.selectedApartment}
+            selectedBedroom={form.selectedBedroom}
+            selectedLivingRoom={form.selectedLivingRoom}
+            selectedWc={form.selectedWc}
+            streetDirection={form.streetDirection}
+            streetWidth={form.streetWidth}
+            age={form.age}
+            areaFrom={form.areaFrom}
+            areaTo={form.areaTo}
+            priceFrom={form.villaPriceFrom}
+            priceTo={form.villaPriceTo}
+            stairs={form.stairs}
+            driverRoom={form.driverRoom}
+            maidRoom={form.maidRoom}
+            pool={form.pool}
+            villaFurnished={form.villaFurnished}
+            kitchen={form.kitchen}
+            villaCarEntrance={form.villaCarEntrance}
+            basement={form.basement}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onApartmentSelect={form.handleApartmentPress}
+            onBedroomSelect={form.handleBedroomPress}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onWcSelect={form.handleWcPress}
+            onOpenStreetDirection={openStreetDirectionModal}
+            onOpenStreetWidth={openStreetWidthModal}
+            onOpenAge={openAgeModal}
+            onPriceFromChange={form.setVillaPriceFrom}
+            onPriceToChange={form.setVillaPriceTo}
+            onAreaFromChange={form.setAreaFrom}
+            onAreaToChange={form.setAreaTo}
+            onVillaTypeSelect={(translatedValue: string) => {
                 const originalValue = villaTypeReverseMap[translatedValue] || translatedValue;
                 form.handleVillaTypePress(originalValue);
               }}
-            />
-
-            <View style={styles.section}>
-              <ToggleRow label={t("listings.nearBus")} value={form.nearBus} onValueChange={form.setNearBus} />
-              <ToggleRow label={t("listings.nearMetro")} value={form.nearMetro} onValueChange={form.setNearMetro} />
-            </View>
-          </>
+            onStairsChange={form.setStairs}
+            onDriverRoomChange={form.setDriverRoom}
+            onMaidRoomChange={form.setMaidRoom}
+            onPoolChange={form.setPool}
+            onVillaFurnishedChange={form.setVillaFurnished}
+            onKitchenChange={form.setKitchen}
+            onVillaCarEntranceChange={form.setVillaCarEntrance}
+            onBasementChange={form.setBasement}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Land for sale content */}
         {form.isLandForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.landPriceFrom}
-              toValue={form.landPriceTo}
-              onFromChange={form.setLandPriceFrom}
-              onToChange={form.setLandPriceTo}
-            />
-
-            <TabBarSection
-              options={translatedResidentialCommercialOptions}
-              selectedValue={getTranslatedInitialValue(form.selectedLandType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
-              onSelect={(translatedValue: string) => {
-                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+          <LandForSaleOrderSection
+            t={t}
+            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            selectedLandType={getTranslatedInitialValue(
+              form.selectedLandType,
+              residentialCommercialReverseMap,
+              translatedResidentialCommercialOptions
+            )}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            landStreetDirection={form.landStreetDirection}
+            landStreetWidth={form.landStreetWidth}
+            landPriceFrom={form.landPriceFrom}
+            landPriceTo={form.landPriceTo}
+            landAreaFrom={form.landAreaFrom}
+            landAreaTo={form.landAreaTo}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            onLandTypeSelect={(translatedValue: string) => {
+              const originalValue =
+                residentialCommercialReverseMap[translatedValue] || translatedValue;
                 form.handleLandTypePress(originalValue);
               }}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.landStreetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.landAreaFrom}
-              toValue={form.landAreaTo}
-              onFromChange={form.setLandAreaFrom}
-              onToChange={form.setLandAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.landStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+            onOpenStreetDirection={openStreetDirectionModal}
+            onOpenStreetWidth={openStreetWidthModal}
+            onLandPriceFromChange={form.setLandPriceFrom}
+            onLandPriceToChange={form.setLandPriceTo}
+            onLandAreaFromChange={form.setLandAreaFrom}
+            onLandAreaToChange={form.setLandAreaTo}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Apartment for sale content */}
         {form.isApartmentForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.apartmentSalePriceFrom}
-              toValue={form.apartmentSalePriceTo}
-              onFromChange={form.setApartmentSalePriceFrom}
-              onToChange={form.setApartmentSalePriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.bedrooms")}
-              options={BEDROOM_OPTIONS}
-              selectedValue={form.selectedBedroom}
-              onSelect={form.handleBedroomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.livingRooms")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.wc")}
-              options={WC_OPTIONS}
-              selectedValue={form.selectedWc}
-              onSelect={form.handleWcPress}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.apartmentSaleAreaFrom}
-              toValue={form.apartmentSaleAreaTo}
-              onFromChange={form.setApartmentSaleAreaFrom}
-              onToChange={form.setApartmentSaleAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.floor")}
-              value={getTranslatedPickerValue(form.floor, "floor")}
-              placeholder={t("listings.selectFloor")}
-              onPress={openFloorModal}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.carEntrance"), value: form.apartmentSaleCarEntrance, onValueChange: form.setApartmentSaleCarEntrance },
-                { label: t("listings.privateRoof"), value: form.apartmentSalePrivateRoof, onValueChange: form.setApartmentSalePrivateRoof },
-                { label: t("listings.apartmentInVilla"), value: form.apartmentSaleInVilla, onValueChange: form.setApartmentSaleInVilla },
-                { label: t("listings.twoEntrances"), value: form.apartmentSaleTwoEntrances, onValueChange: form.setApartmentSaleTwoEntrances },
-                { label: t("listings.specialEntrances"), value: form.apartmentSaleSpecialEntrances, onValueChange: form.setApartmentSaleSpecialEntrances },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <ApartmentForSaleOrderSection
+            t={t}
+            selectedBedroom={form.selectedBedroom}
+            selectedLivingRoom={form.selectedLivingRoom}
+            selectedWc={form.selectedWc}
+            floor={form.floor}
+            age={form.age}
+            priceFrom={form.apartmentSalePriceFrom}
+            priceTo={form.apartmentSalePriceTo}
+            areaFrom={form.apartmentSaleAreaFrom}
+            areaTo={form.apartmentSaleAreaTo}
+            carEntrance={form.apartmentSaleCarEntrance}
+            privateRoof={form.apartmentSalePrivateRoof}
+            apartmentInVilla={form.apartmentSaleInVilla}
+            twoEntrances={form.apartmentSaleTwoEntrances}
+            specialEntrances={form.apartmentSaleSpecialEntrances}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onBedroomSelect={form.handleBedroomPress}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onWcSelect={form.handleWcPress}
+            onOpenFloor={openFloorModal}
+            onOpenAge={openAgeModal}
+            onPriceFromChange={form.setApartmentSalePriceFrom}
+            onPriceToChange={form.setApartmentSalePriceTo}
+            onAreaFromChange={form.setApartmentSaleAreaFrom}
+            onAreaToChange={form.setApartmentSaleAreaTo}
+            onCarEntranceChange={form.setApartmentSaleCarEntrance}
+            onPrivateRoofChange={form.setApartmentSalePrivateRoof}
+            onApartmentInVillaChange={form.setApartmentSaleInVilla}
+            onTwoEntrancesChange={form.setApartmentSaleTwoEntrances}
+            onSpecialEntrancesChange={form.setApartmentSaleSpecialEntrances}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Building for sale content */}
         {form.isBuildingForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.buildingPriceFrom}
-              toValue={form.buildingPriceTo}
-              onFromChange={form.setBuildingPriceFrom}
-              onToChange={form.setBuildingPriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.apartments")}
-              options={APARTMENT_OPTIONS}
-              selectedValue={form.buildingApartments}
-              onSelect={form.handleBuildingApartmentsPress}
-            />
-
-            <TabBarSection
-              options={translatedResidentialCommercialOptions}
-              selectedValue={getTranslatedInitialValue(form.selectedBuildingType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
-              onSelect={(translatedValue: string) => {
-                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+          <BuildingForSaleOrderSection
+            t={t}
+            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            buildingPriceFrom={form.buildingPriceFrom}
+            buildingPriceTo={form.buildingPriceTo}
+            buildingApartments={form.buildingApartments}
+            selectedBuildingType={getTranslatedInitialValue(
+              form.selectedBuildingType,
+              residentialCommercialReverseMap,
+              translatedResidentialCommercialOptions
+            )}
+            buildingStreetDirection={form.buildingStreetDirection}
+            stores={form.stores}
+            buildingAreaFrom={form.buildingAreaFrom}
+            buildingAreaTo={form.buildingAreaTo}
+            streetWidth={form.streetWidth}
+            age={form.age}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onBuildingPriceFromChange={form.setBuildingPriceFrom}
+            onBuildingPriceToChange={form.setBuildingPriceTo}
+            onBuildingApartmentsSelect={form.handleBuildingApartmentsPress}
+            onBuildingTypeSelect={(translatedValue: string) => {
+              const originalValue =
+                residentialCommercialReverseMap[translatedValue] || translatedValue;
                 form.handleBuildingTypePress(originalValue);
               }}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.buildingStreetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.stores")}
-              value={getTranslatedPickerValue(form.stores, "stores")}
-              placeholder={t("listings.selectStores")}
-              onPress={() => form.setShowStoresModal(true)}
-              backgroundColor="background"
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.buildingAreaFrom}
-              toValue={form.buildingAreaTo}
-              onFromChange={form.setBuildingAreaFrom}
-              onToChange={form.setBuildingAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.streetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+            onOpenStreetDirection={openStreetDirectionModal}
+            onOpenStores={openStoresModal}
+            onBuildingAreaFromChange={form.setBuildingAreaFrom}
+            onBuildingAreaToChange={form.setBuildingAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onOpenAge={openAgeModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Small house for sale content */}
         {form.isSmallHouseForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.smallHousePriceFrom}
-              toValue={form.smallHousePriceTo}
-              onFromChange={form.setSmallHousePriceFrom}
-              onToChange={form.setSmallHousePriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.bedrooms")}
-              options={BEDROOM_OPTIONS}
-              selectedValue={form.selectedBedroom}
-              onSelect={form.handleBedroomPress}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.smallHouseStreetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <TabBarSection
-              label={t("listings.livingRoom")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.smallHouseAreaFrom}
-              toValue={form.smallHouseAreaTo}
-              onFromChange={form.setSmallHouseAreaFrom}
-              onToChange={form.setSmallHouseAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.smallHouseStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.furnished"), value: form.smallHouseFurnished, onValueChange: form.setSmallHouseFurnished },
-                { label: t("listings.tent"), value: form.tent, onValueChange: form.setTent },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <SmallHouseForSaleOrderSection
+            t={t}
+            selectedBedroom={form.selectedBedroom}
+            selectedLivingRoom={form.selectedLivingRoom}
+            smallHouseStreetDirection={form.smallHouseStreetDirection}
+            smallHouseStreetWidth={form.smallHouseStreetWidth}
+            age={form.age}
+            smallHousePriceFrom={form.smallHousePriceFrom}
+            smallHousePriceTo={form.smallHousePriceTo}
+            smallHouseAreaFrom={form.smallHouseAreaFrom}
+            smallHouseAreaTo={form.smallHouseAreaTo}
+            smallHouseFurnished={form.smallHouseFurnished}
+            tent={form.tent}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onBedroomSelect={form.handleBedroomPress}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onOpenStreetDirection={openStreetDirectionModal}
+            onOpenStreetWidth={openStreetWidthModal}
+            onOpenAge={openAgeModal}
+            onPriceFromChange={form.setSmallHousePriceFrom}
+            onPriceToChange={form.setSmallHousePriceTo}
+            onAreaFromChange={form.setSmallHouseAreaFrom}
+            onAreaToChange={form.setSmallHouseAreaTo}
+            onFurnishedChange={form.setSmallHouseFurnished}
+            onTentChange={form.setTent}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Lounge for sale content */}
         {form.isLoungeForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.loungePriceFrom}
-              toValue={form.loungePriceTo}
-              onFromChange={form.setLoungePriceFrom}
-              onToChange={form.setLoungePriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.loungeAreaFrom}
-              toValue={form.loungeAreaTo}
-              onFromChange={form.setLoungeAreaFrom}
-              onToChange={form.setLoungeAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.loungeStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <LoungeForSaleOrderSection
+            t={t}
+            loungePriceFrom={form.loungePriceFrom}
+            loungePriceTo={form.loungePriceTo}
+            loungeAreaFrom={form.loungeAreaFrom}
+            loungeAreaTo={form.loungeAreaTo}
+            loungeStreetWidth={form.loungeStreetWidth}
+            age={form.age}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onPriceFromChange={form.setLoungePriceFrom}
+            onPriceToChange={form.setLoungePriceTo}
+            onAreaFromChange={form.setLoungeAreaFrom}
+            onAreaToChange={form.setLoungeAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onOpenAge={openAgeModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Farm for sale content */}
         {form.isFarmForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.farmPriceFrom}
-              toValue={form.farmPriceTo}
-              onFromChange={form.setFarmPriceFrom}
-              onToChange={form.setFarmPriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.farmAreaFrom}
-              toValue={form.farmAreaTo}
-              onFromChange={form.setFarmAreaFrom}
-              onToChange={form.setFarmAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <FarmForSaleOrderSection
+            t={t}
+            farmPriceFrom={form.farmPriceFrom}
+            farmPriceTo={form.farmPriceTo}
+            farmAreaFrom={form.farmAreaFrom}
+            farmAreaTo={form.farmAreaTo}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            onPriceFromChange={form.setFarmPriceFrom}
+            onPriceToChange={form.setFarmPriceTo}
+            onAreaFromChange={form.setFarmAreaFrom}
+            onAreaToChange={form.setFarmAreaTo}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Store for sale content */}
         {form.isStoreForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.storePriceFrom}
-              toValue={form.storePriceTo}
-              onFromChange={form.setStorePriceFrom}
-              onToChange={form.setStorePriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.storeAreaFrom}
-              toValue={form.storeAreaTo}
-              onFromChange={form.setStoreAreaFrom}
-              onToChange={form.setStoreAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.storeStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <StoreForSaleOrderSection
+            t={t}
+            storePriceFrom={form.storePriceFrom}
+            storePriceTo={form.storePriceTo}
+            storeAreaFrom={form.storeAreaFrom}
+            storeAreaTo={form.storeAreaTo}
+            storeStreetWidth={form.storeStreetWidth}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onPriceFromChange={form.setStorePriceFrom}
+            onPriceToChange={form.setStorePriceTo}
+            onAreaFromChange={form.setStoreAreaFrom}
+            onAreaToChange={form.setStoreAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Floor for sale content */}
         {form.isFloorForSale && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.floorSalePriceFrom}
-              toValue={form.floorSalePriceTo}
-              onFromChange={form.setFloorSalePriceFrom}
-              onToChange={form.setFloorSalePriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.livingRooms")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.floorSaleAreaFrom}
-              toValue={form.floorSaleAreaTo}
-              onFromChange={form.setFloorSaleAreaFrom}
-              onToChange={form.setFloorSaleAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.floor")}
-              value={getTranslatedPickerValue(form.floor, "floor")}
-              placeholder={t("listings.selectFloor")}
-              onPress={openFloorModal}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.carEntrance"), value: form.floorSaleCarEntrance, onValueChange: form.setFloorSaleCarEntrance },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <FloorForSaleOrderSection
+            t={t}
+            selectedLivingRoom={form.selectedLivingRoom}
+            floor={form.floor}
+            age={form.age}
+            floorSalePriceFrom={form.floorSalePriceFrom}
+            floorSalePriceTo={form.floorSalePriceTo}
+            floorSaleAreaFrom={form.floorSaleAreaFrom}
+            floorSaleAreaTo={form.floorSaleAreaTo}
+            floorSaleCarEntrance={form.floorSaleCarEntrance}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onOpenFloor={openFloorModal}
+            onOpenAge={openAgeModal}
+            onPriceFromChange={form.setFloorSalePriceFrom}
+            onPriceToChange={form.setFloorSalePriceTo}
+            onAreaFromChange={form.setFloorSaleAreaFrom}
+            onAreaToChange={form.setFloorSaleAreaTo}
+            onCarEntranceChange={form.setFloorSaleCarEntrance}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Villa for rent content */}
@@ -1327,8 +481,6 @@ export default function NewOrderScreen(): React.JSX.Element {
           <VillaForRentSection
             rentPeriod={form.villaRentRentPeriod}
             onRentPeriodChange={form.handleVillaRentRentPeriodPress}
-            selectedPayment={form.selectedPayment}
-            onPaymentChipSelect={form.handlePaymentChipPress}
             priceFrom={form.villaRentPriceFrom}
             priceTo={form.villaRentPriceTo}
             onPriceFromChange={form.setVillaRentPriceFrom}
@@ -1336,7 +488,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             selectedBedroom={form.selectedBedroom}
             onBedroomChange={form.handleBedroomPress}
             streetDirection={getTranslatedPickerValue(form.villaRentStreetDirection, "streetDirection")}
-            onStreetDirectionPress={() => form.setShowStreetDirectionModal(true)}
+            onStreetDirectionPress={openStreetDirectionModal}
             selectedLivingRoom={form.selectedLivingRoom}
             onLivingRoomChange={form.handleLivingRoomPress}
             selectedWc={form.selectedWc}
@@ -1346,7 +498,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             onAreaFromChange={form.setVillaRentAreaFrom}
             onAreaToChange={form.setVillaRentAreaTo}
             streetWidth={getTranslatedPickerValue(form.villaRentStreetWidth, "streetWidth")}
-            onStreetWidthPress={() => form.setShowStreetWidthModal(true)}
+            onStreetWidthPress={openStreetWidthModal}
             stairs={form.villaRentStairs}
             onStairsChange={form.setVillaRentStairs}
             age={getTranslatedPickerValue(form.age, "age")}
@@ -1378,599 +530,323 @@ export default function NewOrderScreen(): React.JSX.Element {
 
         {/* Big flat for rent content */}
         {form.isBigFlatForRent && (
-          <>
-            <RentPeriodTabBar
-              selectedPeriod={form.bigFlatRentPeriod}
-              onSelect={form.handleBigFlatRentPeriodPress}
-            />
-
-            {form.bigFlatRentPeriod === "Yearly" && (
-              <PaymentChips
-                label={t("listings.paymentOptions")}
-                selectedPayment={form.selectedPayment}
-                onSelect={form.handlePaymentChipPress}
-              />
-            )}
-
-            <PriceInputSection
-              label={
-                form.bigFlatRentPeriod === "Yearly"
-                  ? form.selectedPayment === "Monthly"
-                    ? t("listings.priceMonthly")
-                    : t("listings.annualPrice")
-                  : t("listings.price")
-              }
-              fromValue={form.bigFlatPriceFrom}
-              toValue={form.bigFlatPriceTo}
-              onFromChange={form.setBigFlatPriceFrom}
-              onToChange={form.setBigFlatPriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.bedrooms")}
-              options={BEDROOM_OPTIONS}
-              selectedValue={form.selectedBedroom}
-              onSelect={form.handleBedroomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.livingRooms")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <TabBarSection
-              label={t("listings.wc")}
-              options={WC_OPTIONS}
-              selectedValue={form.selectedWc}
-              onSelect={form.handleWcPress}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.bigFlatAreaFrom}
-              toValue={form.bigFlatAreaTo}
-              onFromChange={form.setBigFlatAreaFrom}
-              onToChange={form.setBigFlatAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.floor")}
-              value={getTranslatedPickerValue(form.floor, "floor")}
-              placeholder={t("listings.selectFloor")}
-              onPress={openFloorModal}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.carEntrance"), value: form.bigFlatCarEntrance, onValueChange: form.setBigFlatCarEntrance },
-                { label: t("listings.airConditioned"), value: form.bigFlatAirConditioned, onValueChange: form.setBigFlatAirConditioned },
-                { label: t("listings.apartmentInVilla"), value: form.bigFlatInVilla, onValueChange: form.setBigFlatInVilla },
-                { label: t("listings.twoEntrances"), value: form.bigFlatTwoEntrances, onValueChange: form.setBigFlatTwoEntrances },
-                { label: t("listings.specialEntrances"), value: form.bigFlatSpecialEntrances, onValueChange: form.setBigFlatSpecialEntrances },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <BigFlatForRentOrderSection
+            t={t}
+            rentPeriod={form.bigFlatRentPeriod}
+            selectedBedroom={form.selectedBedroom}
+            selectedLivingRoom={form.selectedLivingRoom}
+            selectedWc={form.selectedWc}
+            floor={form.floor}
+            age={form.age}
+            priceFrom={form.bigFlatPriceFrom}
+            priceTo={form.bigFlatPriceTo}
+            areaFrom={form.bigFlatAreaFrom}
+            areaTo={form.bigFlatAreaTo}
+            carEntrance={form.bigFlatCarEntrance}
+            airConditioned={form.bigFlatAirConditioned}
+            apartmentInVilla={form.bigFlatInVilla}
+            twoEntrances={form.bigFlatTwoEntrances}
+            specialEntrances={form.bigFlatSpecialEntrances}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onRentPeriodSelect={form.handleBigFlatRentPeriodPress}
+            onBedroomSelect={form.handleBedroomPress}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onWcSelect={form.handleWcPress}
+            onOpenFloor={openFloorModal}
+            onOpenAge={openAgeModal}
+            onPriceFromChange={form.setBigFlatPriceFrom}
+            onPriceToChange={form.setBigFlatPriceTo}
+            onAreaFromChange={form.setBigFlatAreaFrom}
+            onAreaToChange={form.setBigFlatAreaTo}
+            onCarEntranceChange={form.setBigFlatCarEntrance}
+            onAirConditionedChange={form.setBigFlatAirConditioned}
+            onApartmentInVillaChange={form.setBigFlatInVilla}
+            onTwoEntrancesChange={form.setBigFlatTwoEntrances}
+            onSpecialEntrancesChange={form.setBigFlatSpecialEntrances}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Lounge for rent content */}
         {form.isLoungeForRent && (
-          <>
-            <RentPeriodTabBar
-              selectedPeriod={form.loungeRentRentPeriod}
-              onSelect={form.handleLoungeRentRentPeriodPress}
-            />
-
-            {form.loungeRentRentPeriod === "Yearly" && (
-              <PaymentChips
-                label={t("listings.paymentOptions")}
-                selectedPayment={form.selectedPayment}
-                onSelect={form.handlePaymentChipPress}
-              />
-            )}
-
-            <PriceInputSection
-              label={
-                form.loungeRentRentPeriod === "Yearly"
-                  ? form.selectedPayment === "Monthly"
-                    ? t("listings.priceMonthly")
-                    : t("listings.annualPrice")
-                  : t("listings.price")
-              }
-              fromValue={form.loungeRentPriceFrom}
-              toValue={form.loungeRentPriceTo}
-              onFromChange={form.setLoungeRentPriceFrom}
-              onToChange={form.setLoungeRentPriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.loungeRentAreaFrom}
-              toValue={form.loungeRentAreaTo}
-              onFromChange={form.setLoungeRentAreaFrom}
-              onToChange={form.setLoungeRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.pool"), value: form.loungeRentPool, onValueChange: form.setLoungeRentPool },
-                { label: t("listings.footballPitch"), value: form.footballPitch, onValueChange: form.setFootballPitch },
-                { label: t("listings.volleyballCourt"), value: form.volleyballCourt, onValueChange: form.setVolleyballCourt },
-                { label: t("listings.tent"), value: form.loungeRentTent, onValueChange: form.setLoungeRentTent },
-                { label: t("listings.kitchen"), value: form.loungeRentKitchen, onValueChange: form.setLoungeRentKitchen },
-                { label: t("listings.playground"), value: form.playground, onValueChange: form.setPlayground },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-                { label: t("listings.familySection"), value: form.familySection, onValueChange: form.setFamilySection },
-              ]}
-            />
-          </>
+          <LoungeForRentOrderSection
+            t={t}
+            rentPeriod={form.loungeRentRentPeriod}
+            priceFrom={form.loungeRentPriceFrom}
+            priceTo={form.loungeRentPriceTo}
+            areaFrom={form.loungeRentAreaFrom}
+            areaTo={form.loungeRentAreaTo}
+            pool={form.loungeRentPool}
+            footballPitch={form.footballPitch}
+            volleyballCourt={form.volleyballCourt}
+            tent={form.loungeRentTent}
+            kitchen={form.loungeRentKitchen}
+            playground={form.playground}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            familySection={form.familySection}
+            onRentPeriodSelect={form.handleLoungeRentRentPeriodPress}
+            onPriceFromChange={form.setLoungeRentPriceFrom}
+            onPriceToChange={form.setLoungeRentPriceTo}
+            onAreaFromChange={form.setLoungeRentAreaFrom}
+            onAreaToChange={form.setLoungeRentAreaTo}
+            onPoolChange={form.setLoungeRentPool}
+            onFootballPitchChange={form.setFootballPitch}
+            onVolleyballCourtChange={form.setVolleyballCourt}
+            onTentChange={form.setLoungeRentTent}
+            onKitchenChange={form.setLoungeRentKitchen}
+            onPlaygroundChange={form.setPlayground}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+            onFamilySectionChange={form.setFamilySection}
+          />
         )}
 
         {/* Small house for rent content */}
         {form.isSmallHouseForRent && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.smallHouseRentPriceFrom}
-              toValue={form.smallHouseRentPriceTo}
-              onFromChange={form.setSmallHouseRentPriceFrom}
-              onToChange={form.setSmallHouseRentPriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.bedrooms")}
-              options={BEDROOM_OPTIONS}
-              selectedValue={form.selectedBedroom}
-              onSelect={form.handleBedroomPress}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.smallHouseRentStreetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <TabBarSection
-              label={t("listings.livingRoom")}
-              options={LIVING_ROOM_OPTIONS}
-              selectedValue={form.selectedLivingRoom}
-              onSelect={form.handleLivingRoomPress}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.smallHouseRentAreaFrom}
-              toValue={form.smallHouseRentAreaTo}
-              onFromChange={form.setSmallHouseRentAreaFrom}
-              onToChange={form.setSmallHouseRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.smallHouseRentStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.furnished"), value: form.smallHouseRentFurnished, onValueChange: form.setSmallHouseRentFurnished },
-                { label: t("listings.tent"), value: form.smallHouseRentTent, onValueChange: form.setSmallHouseRentTent },
-                { label: t("listings.kitchen"), value: form.smallHouseRentKitchen, onValueChange: form.setSmallHouseRentKitchen },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <SmallHouseForRentOrderSection
+            t={t}
+            selectedBedroom={form.selectedBedroom}
+            selectedLivingRoom={form.selectedLivingRoom}
+            smallHouseRentStreetDirection={form.smallHouseRentStreetDirection}
+            smallHouseRentStreetWidth={form.smallHouseRentStreetWidth}
+            age={form.age}
+            smallHouseRentPriceFrom={form.smallHouseRentPriceFrom}
+            smallHouseRentPriceTo={form.smallHouseRentPriceTo}
+            smallHouseRentAreaFrom={form.smallHouseRentAreaFrom}
+            smallHouseRentAreaTo={form.smallHouseRentAreaTo}
+            smallHouseRentFurnished={form.smallHouseRentFurnished}
+            smallHouseRentTent={form.smallHouseRentTent}
+            smallHouseRentKitchen={form.smallHouseRentKitchen}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onBedroomSelect={form.handleBedroomPress}
+            onLivingRoomSelect={form.handleLivingRoomPress}
+            onOpenStreetDirection={openStreetDirectionModal}
+            onOpenStreetWidth={openStreetWidthModal}
+            onOpenAge={openAgeModal}
+            onPriceFromChange={form.setSmallHouseRentPriceFrom}
+            onPriceToChange={form.setSmallHouseRentPriceTo}
+            onAreaFromChange={form.setSmallHouseRentAreaFrom}
+            onAreaToChange={form.setSmallHouseRentAreaTo}
+            onFurnishedChange={form.setSmallHouseRentFurnished}
+            onTentChange={form.setSmallHouseRentTent}
+            onKitchenChange={form.setSmallHouseRentKitchen}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Store for rent content */}
         {form.isStoreForRent && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.storeRentPriceFrom}
-              toValue={form.storeRentPriceTo}
-              onFromChange={form.setStoreRentPriceFrom}
-              onToChange={form.setStoreRentPriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.storeRentAreaFrom}
-              toValue={form.storeRentAreaTo}
-              onFromChange={form.setStoreRentAreaFrom}
-              onToChange={form.setStoreRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.storeRentStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <StoreForRentOrderSection
+            t={t}
+            storeRentPriceFrom={form.storeRentPriceFrom}
+            storeRentPriceTo={form.storeRentPriceTo}
+            storeRentAreaFrom={form.storeRentAreaFrom}
+            storeRentAreaTo={form.storeRentAreaTo}
+            storeRentStreetWidth={form.storeRentStreetWidth}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onPriceFromChange={form.setStoreRentPriceFrom}
+            onPriceToChange={form.setStoreRentPriceTo}
+            onAreaFromChange={form.setStoreRentAreaFrom}
+            onAreaToChange={form.setStoreRentAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Building for rent content */}
         {form.isBuildingForRent && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.buildingRentPriceFrom}
-              toValue={form.buildingRentPriceTo}
-              onFromChange={form.setBuildingRentPriceFrom}
-              onToChange={form.setBuildingRentPriceTo}
-            />
-
-            <TabBarSection
-              label={t("listings.apartments")}
-              options={APARTMENT_OPTIONS}
-              selectedValue={form.buildingRentApartments}
-              onSelect={form.handleBuildingRentApartmentsPress}
-            />
-
-            <TabBarSection
-              options={translatedResidentialCommercialOptions}
-              selectedValue={getTranslatedInitialValue(form.selectedBuildingRentType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
-              onSelect={(translatedValue: string) => {
-                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
+          <BuildingForRentOrderSection
+            t={t}
+            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            buildingRentPriceFrom={form.buildingRentPriceFrom}
+            buildingRentPriceTo={form.buildingRentPriceTo}
+            buildingRentApartments={form.buildingRentApartments}
+            selectedBuildingRentType={getTranslatedInitialValue(
+              form.selectedBuildingRentType,
+              residentialCommercialReverseMap,
+              translatedResidentialCommercialOptions
+            )}
+            buildingRentStreetDirection={form.buildingRentStreetDirection}
+            buildingRentStores={form.buildingRentStores}
+            buildingRentAreaFrom={form.buildingRentAreaFrom}
+            buildingRentAreaTo={form.buildingRentAreaTo}
+            buildingRentStreetWidth={form.buildingRentStreetWidth}
+            age={form.age}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onPriceFromChange={form.setBuildingRentPriceFrom}
+            onPriceToChange={form.setBuildingRentPriceTo}
+            onApartmentsSelect={form.handleBuildingRentApartmentsPress}
+            onTypeSelect={(translatedValue: string) => {
+              const originalValue =
+                residentialCommercialReverseMap[translatedValue] || translatedValue;
                 form.handleBuildingRentTypePress(originalValue);
               }}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.buildingRentStreetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.stores")}
-              value={getTranslatedPickerValue(form.buildingRentStores, "stores")}
-              placeholder={t("listings.selectStores")}
-              onPress={() => form.setShowStoresModal(true)}
-              backgroundColor="background"
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.buildingRentAreaFrom}
-              toValue={form.buildingRentAreaTo}
-              onFromChange={form.setBuildingRentAreaFrom}
-              onToChange={form.setBuildingRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.buildingRentStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <FieldWithModal
-              label={t("listings.age")}
-              value={getTranslatedPickerValue(form.age, "age")}
-              placeholder={t("listings.selectAge")}
-              onPress={openAgeModal}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+            onOpenStreetDirection={openStreetDirectionModal}
+            onOpenStores={openStoresModal}
+            onAreaFromChange={form.setBuildingRentAreaFrom}
+            onAreaToChange={form.setBuildingRentAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onOpenAge={openAgeModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Land for rent content */}
         {form.isLandForRent && (
-          <>
-            <TabBarSection
-              options={translatedResidentialCommercialOptions}
-              selectedValue={getTranslatedInitialValue(form.selectedLandRentType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
-              onSelect={(translatedValue: string) => {
+          <LandForRentOrderSection
+            t={t}
+            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            selectedLandRentType={getTranslatedInitialValue(form.selectedLandRentType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
+            landRentStreetDirection={form.landRentStreetDirection}
+            landRentAreaFrom={form.landRentAreaFrom}
+            landRentAreaTo={form.landRentAreaTo}
+            landRentStreetWidth={form.landRentStreetWidth}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onLandRentTypeSelect={(translatedValue: string) => {
                 const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
                 form.handleLandRentTypePress(originalValue);
               }}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetDirection")}
-              value={getTranslatedPickerValue(form.landRentStreetDirection, "streetDirection")}
-              placeholder={t("listings.selectStreetDirection")}
-              onPress={() => form.setShowStreetDirectionModal(true)}
-              backgroundColor="background"
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.landRentAreaFrom}
-              toValue={form.landRentAreaTo}
-              onFromChange={form.setLandRentAreaFrom}
-              onToChange={form.setLandRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.landRentStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+            onOpenStreetDirection={openStreetDirectionModal}
+            onAreaFromChange={form.setLandRentAreaFrom}
+            onAreaToChange={form.setLandRentAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Room for rent content */}
         {form.isRoomForRent && (
-          <>
-            <RentPeriodTabBar
-              selectedPeriod={form.roomRentRentPeriod}
-              onSelect={form.handleRoomRentRentPeriodPress}
-            />
-
-            {form.roomRentRentPeriod === "Yearly" && (
-              <PaymentChips
-                label={t("listings.paymentOptions")}
-                selectedPayment={form.selectedPayment}
-                onSelect={form.handlePaymentChipPress}
-              />
-            )}
-
-            <PriceInputSection
-              label={
-                form.roomRentRentPeriod === "Yearly"
-                  ? form.selectedPayment === "Monthly"
-                    ? t("listings.priceMonthly")
-                    : t("listings.annualPrice")
-                  : t("listings.price")
-              }
-              fromValue={form.roomRentPriceFrom}
-              toValue={form.roomRentPriceTo}
-              onFromChange={form.setRoomRentPriceFrom}
-              onToChange={form.setRoomRentPriceTo}
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.kitchen"), value: form.roomRentKitchen, onValueChange: form.setRoomRentKitchen },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <RoomForRentOrderSection
+            t={t}
+            roomRentRentPeriod={form.roomRentRentPeriod}
+            roomRentPriceFrom={form.roomRentPriceFrom}
+            roomRentPriceTo={form.roomRentPriceTo}
+            roomRentKitchen={form.roomRentKitchen}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            onRentPeriodSelect={form.handleRoomRentRentPeriodPress}
+            onPriceFromChange={form.setRoomRentPriceFrom}
+            onPriceToChange={form.setRoomRentPriceTo}
+            onKitchenChange={form.setRoomRentKitchen}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Office for rent content */}
         {form.isOfficeForRent && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.officeRentPriceFrom}
-              toValue={form.officeRentPriceTo}
-              onFromChange={form.setOfficeRentPriceFrom}
-              onToChange={form.setOfficeRentPriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.officeRentAreaFrom}
-              toValue={form.officeRentAreaTo}
-              onFromChange={form.setOfficeRentAreaFrom}
-              onToChange={form.setOfficeRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.officeRentStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.furnished"), value: form.officeRentFurnished, onValueChange: form.setOfficeRentFurnished },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <OfficeForRentOrderSection
+            t={t}
+            officeRentPriceFrom={form.officeRentPriceFrom}
+            officeRentPriceTo={form.officeRentPriceTo}
+            officeRentAreaFrom={form.officeRentAreaFrom}
+            officeRentAreaTo={form.officeRentAreaTo}
+            officeRentStreetWidth={form.officeRentStreetWidth}
+            officeRentFurnished={form.officeRentFurnished}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onPriceFromChange={form.setOfficeRentPriceFrom}
+            onPriceToChange={form.setOfficeRentPriceTo}
+            onAreaFromChange={form.setOfficeRentAreaFrom}
+            onAreaToChange={form.setOfficeRentAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onFurnishedChange={form.setOfficeRentFurnished}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Tent for rent content */}
         {form.isTentForRent && (
-          <>
-            <RentPeriodTabBar
-              selectedPeriod={form.tentRentRentPeriod}
-              onSelect={form.handleTentRentRentPeriodPress}
-            />
-
-            {form.tentRentRentPeriod === "Yearly" && (
-              <>
-                <PaymentChips
-                  label={t("listings.paymentOptions")}
-                  selectedPayment={form.selectedPayment}
-                  onSelect={form.handlePaymentChipPress}
-                />
-                {form.selectedPayment && form.selectedPayment !== "1 Payment" && (
-                  <PriceInputSection
-                    label={
-                      form.selectedPayment === "Monthly"
-                        ? t("listings.priceMonthly")
-                        : t("listings.annualPrice")
-                    }
-                    fromValue={form.tentRentPriceFrom}
-                    toValue={form.tentRentPriceTo}
-                    onFromChange={form.setTentRentPriceFrom}
-                    onToChange={form.setTentRentPriceTo}
-                    fromPlaceholder={t("listings.fromPrice")}
-                    toPlaceholder={t("listings.toPrice")}
-                  />
-                )}
-              </>
-            )}
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-                { label: t("listings.familySection"), value: form.familySection, onValueChange: form.setFamilySection },
-              ]}
-            />
-          </>
+          <TentForRentOrderSection
+            t={t}
+            tentRentRentPeriod={form.tentRentRentPeriod}
+            tentRentPriceFrom={form.tentRentPriceFrom}
+            tentRentPriceTo={form.tentRentPriceTo}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            familySection={form.familySection}
+            onRentPeriodSelect={form.handleTentRentRentPeriodPress}
+            onPriceFromChange={form.setTentRentPriceFrom}
+            onPriceToChange={form.setTentRentPriceTo}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+            onFamilySectionChange={form.setFamilySection}
+          />
         )}
 
         {/* Warehouse for rent content */}
         {form.isWarehouseForRent && (
-          <>
-            <PriceInputSection
-              label={t("listings.price")}
-              fromValue={form.warehouseRentPriceFrom}
-              toValue={form.warehouseRentPriceTo}
-              onFromChange={form.setWarehouseRentPriceFrom}
-              onToChange={form.setWarehouseRentPriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.warehouseRentAreaFrom}
-              toValue={form.warehouseRentAreaTo}
-              onFromChange={form.setWarehouseRentAreaFrom}
-              onToChange={form.setWarehouseRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <FieldWithModal
-              label={t("listings.streetWidth")}
-              value={getTranslatedPickerValue(form.warehouseRentStreetWidth, "streetWidth")}
-              placeholder={t("listings.selectStreetWidth")}
-              onPress={() => form.setShowStreetWidthModal(true)}
-              backgroundColor="background"
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-              ]}
-            />
-          </>
+          <WarehouseForRentOrderSection
+            t={t}
+            warehouseRentPriceFrom={form.warehouseRentPriceFrom}
+            warehouseRentPriceTo={form.warehouseRentPriceTo}
+            warehouseRentAreaFrom={form.warehouseRentAreaFrom}
+            warehouseRentAreaTo={form.warehouseRentAreaTo}
+            warehouseRentStreetWidth={form.warehouseRentStreetWidth}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            getTranslatedPickerValue={getTranslatedPickerValue}
+            onPriceFromChange={form.setWarehouseRentPriceFrom}
+            onPriceToChange={form.setWarehouseRentPriceTo}
+            onAreaFromChange={form.setWarehouseRentAreaFrom}
+            onAreaToChange={form.setWarehouseRentAreaTo}
+            onOpenStreetWidth={openStreetWidthModal}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+          />
         )}
 
         {/* Chalet for rent content */}
         {form.isChaletForRent && (
-          <>
-            <RentPeriodTabBar
-              selectedPeriod={form.chaletRentRentPeriod}
-              onSelect={form.handleChaletRentRentPeriodPress}
-            />
-
-            {form.chaletRentRentPeriod === "Yearly" && (
-              <PaymentChips
-                label={t("listings.paymentOptions")}
-                selectedPayment={form.selectedPayment}
-                onSelect={form.handlePaymentChipPress}
-              />
-            )}
-
-            <PriceInputSection
-              label={
-                form.chaletRentRentPeriod === "Yearly"
-                  ? form.selectedPayment === "Monthly"
-                    ? t("listings.priceMonthly")
-                    : t("listings.annualPrice")
-                  : t("listings.price")
-              }
-              fromValue={form.chaletRentPriceFrom}
-              toValue={form.chaletRentPriceTo}
-              onFromChange={form.setChaletRentPriceFrom}
-              onToChange={form.setChaletRentPriceTo}
-            />
-
-            <PriceInputSection
-              label={t("listings.areaM2")}
-              fromValue={form.chaletRentAreaFrom}
-              toValue={form.chaletRentAreaTo}
-              onFromChange={form.setChaletRentAreaFrom}
-              onToChange={form.setChaletRentAreaTo}
-              fromPlaceholder={t("listings.fromArea")}
-              toPlaceholder={t("listings.toArea")}
-            />
-
-            <ToggleGroup
-              toggles={[
-                { label: t("listings.pool"), value: form.chaletRentPool, onValueChange: form.setChaletRentPool },
-                { label: t("listings.footballPitch"), value: form.chaletFootballPitch, onValueChange: form.setChaletFootballPitch },
-                { label: t("listings.volleyballCourt"), value: form.chaletVolleyballCourt, onValueChange: form.setChaletVolleyballCourt },
-                { label: t("listings.tent"), value: form.chaletRentTent, onValueChange: form.setChaletRentTent },
-                { label: t("listings.kitchen"), value: form.chaletRentKitchen, onValueChange: form.setChaletRentKitchen },
-                { label: t("listings.playground"), value: form.chaletPlayground, onValueChange: form.setChaletPlayground },
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
-                { label: t("listings.familySection"), value: form.familySection, onValueChange: form.setFamilySection },
-              ]}
-            />
-          </>
+          <ChaletForRentOrderSection
+            t={t}
+            chaletRentRentPeriod={form.chaletRentRentPeriod}
+            chaletRentPriceFrom={form.chaletRentPriceFrom}
+            chaletRentPriceTo={form.chaletRentPriceTo}
+            chaletRentAreaFrom={form.chaletRentAreaFrom}
+            chaletRentAreaTo={form.chaletRentAreaTo}
+            chaletRentPool={form.chaletRentPool}
+            chaletFootballPitch={form.chaletFootballPitch}
+            chaletVolleyballCourt={form.chaletVolleyballCourt}
+            chaletRentTent={form.chaletRentTent}
+            chaletRentKitchen={form.chaletRentKitchen}
+            chaletPlayground={form.chaletPlayground}
+            nearBus={form.nearBus}
+            nearMetro={form.nearMetro}
+            familySection={form.familySection}
+            onRentPeriodSelect={form.handleChaletRentRentPeriodPress}
+            onPriceFromChange={form.setChaletRentPriceFrom}
+            onPriceToChange={form.setChaletRentPriceTo}
+            onAreaFromChange={form.setChaletRentAreaFrom}
+            onAreaToChange={form.setChaletRentAreaTo}
+            onPoolChange={form.setChaletRentPool}
+            onFootballPitchChange={form.setChaletFootballPitch}
+            onVolleyballCourtChange={form.setChaletVolleyballCourt}
+            onTentChange={form.setChaletRentTent}
+            onKitchenChange={form.setChaletRentKitchen}
+            onPlaygroundChange={form.setChaletPlayground}
+            onNearBusChange={form.setNearBus}
+            onNearMetroChange={form.setNearMetro}
+            onFamilySectionChange={form.setFamilySection}
+          />
         )}
 
         {/* Other category content */}
@@ -2005,158 +881,34 @@ export default function NewOrderScreen(): React.JSX.Element {
       </ScrollView>
 
       {/* Footer */}
-      <Animated.View
-        style={[
-          styles.footerContainer,
-          {
-            bottom: keyboardHeight,
-          },
-        ]}
-      >
-        <ListingFooter
-          currentStep={1}
-          totalSteps={3}
-          onBackPress={handleBackPress}
-          onNextPress={handleNextPress}
-          showBack={true}
-          showNext={true}
-          backText={t("common.back")}
-          nextText={t("common.next")}
-        />
-      </Animated.View>
-
-      {/* Modals */}
-      <WheelPickerModal
-        visible={form.showCategoryModal}
-        onClose={() => form.setShowCategoryModal(false)}
-        onSelect={(translatedValue: string) => {
-          // Find original value from translated value
-          const originalValue = Object.keys(categoryTranslationMap).find(
-            (key) => categoryTranslationMap[key] === translatedValue
-          ) || translatedValue;
-          form.handleCategorySelect(originalValue);
-        }}
-        title={t("listings.selectCategory")}
-        options={categoryOptions}
-        initialValue={getTranslatedCategoryValue(form.category)}
+      <ListingFooter
+        currentStep={1}
+        totalSteps={3}
+        onBackPress={handleBackPress}
+        onNextPress={handleNextPress}
+        showBack={true}
+        showNext={true}
+        backText={t("common.back")}
+        nextText={t("common.next")}
       />
 
-      <WheelPickerModal
-        key={`floor-${form.category}`}
-        visible={form.showFloorModal}
-        onClose={() => form.setShowFloorModal(false)}
-        onSelect={(translatedValue: string) => {
-          const originalValue = floorReverseMap[translatedValue] || translatedValue;
-          form.handleFloorSelect(originalValue);
-        }}
-        title={t("listings.selectFloor")}
-        options={translatedFloorOptions}
-        initialValue={getTranslatedInitialValue(form.floor, floorReverseMap, translatedFloorOptions, FLOOR_OPTIONS)}
-      />
-
-      <WheelPickerModal
-        key={`age-${form.category}`}
-        visible={form.showAgeModal}
-        onClose={() => form.setShowAgeModal(false)}
-        onSelect={(translatedValue: string) => {
-          const originalValue = ageReverseMap[translatedValue] || translatedValue;
-          form.handleAgeSelect(originalValue);
-        }}
-        title={t("listings.selectAge")}
-        options={translatedAgeOptions}
-        initialValue={getTranslatedInitialValue(form.age, ageReverseMap, translatedAgeOptions, AGE_OPTIONS)}
-      />
-
-      <WheelPickerModal
-        key={`streetDirection-${form.category}`}
-        visible={form.showStreetDirectionModal}
-        onClose={() => form.setShowStreetDirectionModal(false)}
-        onSelect={(translatedValue: string) => {
-          const originalValue = streetDirectionReverseMap[translatedValue] || translatedValue;
-          form.handleStreetDirectionSelect(originalValue);
-        }}
-        title={t("listings.selectStreetDirection")}
-        options={translatedStreetDirectionOptions}
-        initialValue={getTranslatedInitialValue(
-          form.isVillaForSale
-            ? form.streetDirection
-            : form.isLandForSale
-            ? form.landStreetDirection
-            : form.isSmallHouseForSale
-            ? form.smallHouseStreetDirection
-            : form.isBuildingForSale
-            ? form.buildingStreetDirection
-            : form.isVillaForRent
-            ? form.villaRentStreetDirection
-            : form.isSmallHouseForRent
-            ? form.smallHouseRentStreetDirection
-            : form.isBuildingForRent
-            ? form.buildingRentStreetDirection
-            : form.isLandForRent
-            ? form.landRentStreetDirection
-            : "",
-          streetDirectionReverseMap,
-          translatedStreetDirectionOptions
-        )}
-      />
-
-      <WheelPickerModal
-        key={`streetWidth-${form.category}`}
-        visible={form.showStreetWidthModal}
-        onClose={() => form.setShowStreetWidthModal(false)}
-        onSelect={(translatedValue: string) => {
-          const originalValue = streetWidthReverseMap[translatedValue] || translatedValue;
-          form.handleStreetWidthSelect(originalValue);
-        }}
-        title={t("listings.selectStreetWidth")}
-        options={translatedStreetWidthOptions}
-        initialValue={getTranslatedInitialValue(
-          form.isVillaForSale
-            ? form.streetWidth
-            : form.isLandForSale
-            ? form.landStreetWidth
-            : form.isSmallHouseForSale
-            ? form.smallHouseStreetWidth
-            : form.isBuildingForSale
-            ? form.streetWidth
-            : form.isLoungeForSale
-            ? form.loungeStreetWidth
-            : form.isStoreForSale
-            ? form.storeStreetWidth
-            : form.isVillaForRent
-            ? form.villaRentStreetWidth
-            : form.isSmallHouseForRent
-            ? form.smallHouseRentStreetWidth
-            : form.isStoreForRent
-            ? form.storeRentStreetWidth
-            : form.isBuildingForRent
-            ? form.buildingRentStreetWidth
-            : form.isLandForRent
-            ? form.landRentStreetWidth
-            : form.isOfficeForRent
-            ? form.officeRentStreetWidth
-            : form.isWarehouseForRent
-            ? form.warehouseRentStreetWidth
-            : "",
-          streetWidthReverseMap,
-          translatedStreetWidthOptions
-        )}
-      />
-
-      <WheelPickerModal
-        key={`stores-${form.category}`}
-        visible={form.showStoresModal}
-        onClose={() => form.setShowStoresModal(false)}
-        onSelect={(value: string) => {
-          if (form.isBuildingForSale) {
-            form.handleStoresSelect(value);
-          } else if (form.isBuildingForRent) {
-            form.handleBuildingRentStoresSelect(value);
-          }
-        }}
-        title={t("listings.selectStores")}
-        options={STORES_OPTIONS}
-        initialValue={form.isBuildingForSale ? form.stores : form.buildingRentStores}
+      <SearchRequestOrderModals
+        form={form}
+        t={t}
+        categoryOptions={categoryOptions}
+        translatedFloorOptions={translatedFloorOptions}
+        translatedAgeOptions={translatedAgeOptions}
+        translatedStreetDirectionOptions={translatedStreetDirectionOptions}
+        translatedStreetWidthOptions={translatedStreetWidthOptions}
+        floorReverseMap={floorReverseMap}
+        ageReverseMap={ageReverseMap}
+        streetDirectionReverseMap={streetDirectionReverseMap}
+        streetWidthReverseMap={streetWidthReverseMap}
+        categoryTranslationMap={categoryTranslationMap}
+        getTranslatedCategoryValue={getTranslatedCategoryValue}
+        getTranslatedInitialValue={getTranslatedInitialValue}
+        streetDirectionModalValue={streetDirectionModalValue}
+        streetWidthModalValue={streetWidthModalValue}
       />
     </View>
   );
@@ -2174,26 +926,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
     paddingTop: hp(2),
     paddingBottom: hp(12), // Extra padding for footer
-  },
-  footerContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    backgroundColor: COLORS.white,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: -2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
   },
   section: {
     marginBottom: hp(2.5),

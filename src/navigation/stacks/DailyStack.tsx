@@ -11,10 +11,16 @@ import BookingListScreen from "../../screens/listings/BookingListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
 import Step1LicenseScreen from "../../screens/listings/addListing/brokerListing/Step1LicenseScreen";
-import Step2AdLicenseScreen from "../../screens/listings/addListing/brokerListing/Step2AdLicenseScreen";
+import BrokerIssueAdLicenseScreen from "../../screens/listings/addListing/brokerListing/BrokerIssueAdLicenseScreen";
 import PublishLicenseAdvertisementScreen from "../../screens/listings/addListing/ownerAgentListing/PublishLicenseAdvertisementScreen";
 import DeedOwnerInformationScreen from "../../screens/listings/addListing/ownerAgentListing/DeedOwnerInformationScreen";
 import MarketingRequestPlaceholderScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestPlaceholderScreen";
+import MarketingRequestMediaScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestMediaScreen";
+import MarketingRequestVirtualTourScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestVirtualTourScreen";
+import AttachMediaScreen from "../../screens/listings/addListing/marketingRequest/AttachMediaScreen";
+import MarketingRequestAlbumsScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestAlbumsScreen";
+import MarketingRequestAlbumAssetsScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestAlbumAssetsScreen";
+import MarketingRequestAttachmentsScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestAttachmentsScreen";
 import AddRentalUnitOnboardingScreen from "../../screens/listings/addListing/rentalUnit/AddRentalUnitOnboardingScreen";
 import ChooseCategoryScreen from "../../screens/listings/addListing/rentalUnit/ChooseCategoryScreen";
 import SearchRequestScreen from "../../screens/listings/addListing/searchRequest/SearchRequestScreen";
@@ -44,10 +50,16 @@ export default function DailyStack(): React.JSX.Element {
       <Stack.Screen name="AddListing" component={AddListingScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />
       <Stack.Screen name="Licence" component={Step1LicenseScreen} />
-      <Stack.Screen name="Step2AdLicense" component={Step2AdLicenseScreen} />
+      <Stack.Screen name="BrokerIssueAdLicense" component={BrokerIssueAdLicenseScreen} />
       <Stack.Screen name="PublishLicenseAdvertisement" component={PublishLicenseAdvertisementScreen} />
       <Stack.Screen name="DeedOwnerInformation" component={DeedOwnerInformationScreen} />
       <Stack.Screen name="MarketingRequestPlaceholder" component={MarketingRequestPlaceholderScreen} />
+      <Stack.Screen name="MarketingRequestMedia" component={MarketingRequestMediaScreen} />
+      <Stack.Screen name="MarketingRequestVirtualTour" component={MarketingRequestVirtualTourScreen} />
+      <Stack.Screen name="AttachMedia" component={AttachMediaScreen} />
+      <Stack.Screen name="MarketingRequestAlbums" component={MarketingRequestAlbumsScreen} />
+      <Stack.Screen name="MarketingRequestAlbumAssets" component={MarketingRequestAlbumAssetsScreen} />
+      <Stack.Screen name="MarketingRequestAttachments" component={MarketingRequestAttachmentsScreen} />
       <Stack.Screen name="AddRentalUnitOnboarding" component={AddRentalUnitOnboardingScreen} />
       <Stack.Screen name="ChooseCategory" component={ChooseCategoryScreen} />
       <Stack.Screen name="SearchRequest" component={SearchRequestScreen} />

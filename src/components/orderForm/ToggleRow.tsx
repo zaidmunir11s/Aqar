@@ -12,12 +12,15 @@ export interface ToggleRowProps {
   label: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
+  trackWidth?: number;
+  trackHeight?: number;
+  thumbSize?: number;
 }
 
 /**
  * Reusable toggle row component
  */
-const ToggleRow = memo<ToggleRowProps>(({ label, value, onValueChange }) => {
+const ToggleRow = memo<ToggleRowProps>(({ label, value, onValueChange, trackWidth, trackHeight, thumbSize }) => {
   const { isRTL } = useLocalization();
 
   // RTL-aware styles
@@ -28,6 +31,7 @@ const ToggleRow = memo<ToggleRowProps>(({ label, value, onValueChange }) => {
       },
       toggleLabel: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
     [isRTL]
@@ -36,7 +40,7 @@ const ToggleRow = memo<ToggleRowProps>(({ label, value, onValueChange }) => {
   return (
     <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
       <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>{label}</Text>
-      <ToggleSwitch value={value} onValueChange={onValueChange} />
+      <ToggleSwitch value={value} onValueChange={onValueChange} trackWidth={trackWidth} trackHeight={trackHeight} thumbSize={thumbSize} />
     </View>
   );
 });

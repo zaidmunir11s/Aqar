@@ -371,6 +371,7 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
       virtualTourLink: params.virtualTourLink ?? "",
       selectedLocation: selectedRegion,
       locationDisplayName: locationLabel,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
   }, [
     isLocationAccurate,

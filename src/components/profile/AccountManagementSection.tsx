@@ -14,13 +14,26 @@ export interface AccountManagementSectionProps {
   onChangePasswordPress?: () => void;
   onChangePhoneNumberPress?: () => void;
   onLogoutPress?: () => void;
+  onDeleteAccountPress?: () => void;
+  showChangePassword?: boolean;
+  showChangePhoneNumber?: boolean;
+  phoneNumberMissing?: boolean;
 }
 
 /**
  * Account Management section component with header and menu items
  */
 const AccountManagementSection = memo<AccountManagementSectionProps>(
-  ({ onUpdateProfilePress, onChangePasswordPress, onChangePhoneNumberPress, onLogoutPress }) => {
+  ({
+    onUpdateProfilePress,
+    onChangePasswordPress,
+    onChangePhoneNumberPress,
+    onLogoutPress,
+    onDeleteAccountPress,
+    showChangePassword = true,
+    showChangePhoneNumber = true,
+    phoneNumberMissing = false,
+  }) => {
     const { t, isRTL } = useLocalization();
 
     // RTL-aware styles
@@ -50,36 +63,71 @@ const AccountManagementSection = memo<AccountManagementSectionProps>(
             />
           </TouchableOpacity>
 
-          <View style={styles.separator} />
-          <TouchableOpacity style={[styles.menuItem, rtlStyles.menuItem]} onPress={onChangePasswordPress} activeOpacity={0.7}>
-            <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
-              {t("profile.changePassword", { defaultValue: "Change password" })}
-            </Text>
-            <Ionicons
-              name={isRTL ? "chevron-back" : "chevron-forward"}
-              size={wp(5)}
-              color={COLORS.textDisabled}
-              style={[styles.chevron, rtlStyles.chevron]}
-            />
-          </TouchableOpacity>
+          {showChangePassword ? (
+            <>
+              <View style={styles.separator} />
+              <TouchableOpacity
+                style={[styles.menuItem, rtlStyles.menuItem]}
+                onPress={onChangePasswordPress}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
+                  {t("profile.changePassword", { defaultValue: "Change password" })}
+                </Text>
+                <Ionicons
+                  name={isRTL ? "chevron-back" : "chevron-forward"}
+                  size={wp(5)}
+                  color={COLORS.textDisabled}
+                  style={[styles.chevron, rtlStyles.chevron]}
+                />
+              </TouchableOpacity>
+            </>
+          ) : null}
 
-          <View style={styles.separator} />
-          <TouchableOpacity style={[styles.menuItem, rtlStyles.menuItem]} onPress={onChangePhoneNumberPress} activeOpacity={0.7}>
-            <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
-              {t("profile.changePhoneNumber", { defaultValue: "Change phone number" })}
-            </Text>
-            <Ionicons
-              name={isRTL ? "chevron-back" : "chevron-forward"}
-              size={wp(5)}
-              color={COLORS.textDisabled}
-              style={[styles.chevron, rtlStyles.chevron]}
-            />
-          </TouchableOpacity>
+          {showChangePhoneNumber ? (
+            <>
+              <View style={styles.separator} />
+              <TouchableOpacity
+                style={[styles.menuItem, rtlStyles.menuItem]}
+                onPress={onChangePhoneNumberPress}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
+                  {phoneNumberMissing
+                    ? t("profile.addPhoneNumber", { defaultValue: "Add phone number" })
+                    : t("profile.changePhoneNumber", { defaultValue: "Change phone number" })}
+                </Text>
+                <Ionicons
+                  name={isRTL ? "chevron-back" : "chevron-forward"}
+                  size={wp(5)}
+                  color={COLORS.textDisabled}
+                  style={[styles.chevron, rtlStyles.chevron]}
+                />
+              </TouchableOpacity>
+            </>
+          ) : null}
 
           <View style={styles.separator} />
           <TouchableOpacity style={[styles.menuItem, rtlStyles.menuItem]} onPress={onLogoutPress} activeOpacity={0.7}>
             <Text style={[styles.logoutText, rtlStyles.logoutText]}>
               {t("auth.logout", { defaultValue: "Log out" })}
+            </Text>
+            <Ionicons
+              name={isRTL ? "chevron-back" : "chevron-forward"}
+              size={wp(5)}
+              color={COLORS.textDisabled}
+              style={[styles.chevron, rtlStyles.chevron]}
+            />
+          </TouchableOpacity>
+
+          <View style={styles.separator} />
+          <TouchableOpacity
+            style={[styles.menuItem, rtlStyles.menuItem]}
+            onPress={onDeleteAccountPress}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.deleteText, rtlStyles.menuItemText]}>
+              {t("profile.deleteAccount", { defaultValue: "Delete account" })}
             </Text>
             <Ionicons
               name={isRTL ? "chevron-back" : "chevron-forward"}
@@ -132,6 +180,11 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   logoutText: {
+    fontSize: wp(4),
+    fontWeight: "500",
+    color: "#c13234",
+  },
+  deleteText: {
     fontSize: wp(4),
     fontWeight: "500",
     color: "#c13234",

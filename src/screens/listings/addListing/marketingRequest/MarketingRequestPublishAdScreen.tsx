@@ -9,8 +9,9 @@ import {
   NativeScrollEvent,
   LayoutChangeEvent,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -18,7 +19,7 @@ import MapView, { Marker } from "react-native-maps";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenHeader, PropertyImageGallery } from "@/components";
-import { COLORS, STORAGE_KEYS } from "@/constants";
+import { COLORS } from "@/constants";
 import { useLocalization } from "@/hooks/useLocalization";
 import {
   getDefaultImageUrl,
@@ -26,7 +27,16 @@ import {
   isOnlyDefaultPropertyPlaceholderImages,
 } from "@/utils";
 import type { UserRentPaymentPublishInput } from "@/utils/rentPayments";
-import { addPublishedListingFromMarketingRequest } from "@/utils/publishedListingsStore";
+import { useCreateListingMutation } from "@/redux/api";
+import { buildCreateListingBodyFromMarketing } from "@/utils/marketingListingPayload";
+import { mapApiListingToProperty } from "@/utils/apiListingMapper";
+import { registerApiListingProperties } from "@/utils/propertyLookup";
+import { useIsAuthenticated } from "@/context/auth-context";
+import { useSupabase } from "@/hooks/useSupabase";
+import {
+  uploadListingMediaToSupabase,
+  type UploadedListingMedia,
+} from "@/utils/uploadListingImagesToSupabase";
 import { PropertyDetailsDisplayItem } from "@/components/marketingRequestPropertyDetails/shared/CategoryFormProps";
 import { getMarketingRequestCategoryTranslationKey } from "@/constants/categories";
 import type { PropertyDetailItem } from "@/types/property";
@@ -44,6 +54,7 @@ type RouteParams = {
   }>;
   /** From choose-location: geocoded or modal area/city string */
   locationDisplayName?: string;
+  virtualTourLink?: string;
   selectedLocation?: {
     latitude: number;
     longitude: number;
@@ -60,6 +71,13 @@ type RouteParams = {
   propertyDetailsItems?: PropertyDetailsDisplayItem[];
   pricingDetailsItems?: PropertyDetailsDisplayItem[];
   rentPaymentOptions?: UserRentPaymentPublishInput;
+  deed?: {
+    deedType: "ELECTRONIC" | "OTHER";
+    deedNumber?: string;
+    ownerIdNumber?: string;
+    ownerBirthDate?: string;
+    ownerPhone?: string;
+  };
 };
 
 const normalizeNumericDisplay = (value?: string): string => {
@@ -102,6 +120,11 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const { t, isRTL, i18n } = useLocalization();
+  const { isAuthenticated } = useIsAuthenticated();
+  const { supabase } = useSupabase();
+  const [createListing, { isLoading: isCreatingListing }] =
+    useCreateListingMutation();
+  const [isPublishing, setIsPublishing] = useState(false);
   const insets = useSafeAreaInsets();
   const params = (route.params as RouteParams | undefined) ?? {};
   const selectedCategory = params.selectedCategory ?? "";
@@ -319,47 +342,97 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
   );
 
   const handlePublishAd = useCallback(async () => {
-    const commissionText = headerCommissionText ? headerCommissionText.trim() : undefined;
-    const [publisherDisplayName, publisherPhoneDigits] = await Promise.all([
-      AsyncStorage.getItem(STORAGE_KEYS.loggedInDisplayName),
-      AsyncStorage.getItem(STORAGE_KEYS.loggedInPhoneNumber),
-    ]);
-    const created = addPublishedListingFromMarketingRequest({
-      selectedCategory,
-      categoryLabel,
-      commissionText,
-      attachments: params.attachments,
-      locationDisplayName: locationLabel,
-      selectedLocation: params.selectedLocation
-        ? {
-            latitude: params.selectedLocation.latitude,
-            longitude: params.selectedLocation.longitude,
-          }
-        : undefined,
-      area: params.area,
-      price: params.price,
-      description: params.description,
-      detailsItems: orderedInfoItems,
-      rentPaymentOptions: params.rentPaymentOptions,
-      publisherDisplayName: publisherDisplayName?.trim() || undefined,
-      publisherPhoneDigits: publisherPhoneDigits?.trim() || undefined,
-    });
+    if (!isAuthenticated) {
+      Alert.alert(
+        t("common.error"),
+        t("auth.loginRequired") ?? "Please log in to publish a listing."
+      );
+      return;
+    }
 
-    const listingType: "rent" | "sale" = created.listingType === "rent" ? "rent" : "sale";
-    navigation.navigate("MapLanding", { listingType });
+    try {
+      setIsPublishing(true);
+      let media: UploadedListingMedia[] | undefined;
+      const attachmentItems = (params.attachments ?? []).filter(
+        (a) => a.uri?.trim()
+      );
+      if (attachmentItems.length > 0) {
+        try {
+          media = await uploadListingMediaToSupabase(
+            supabase,
+            attachmentItems.map((a, i) => ({
+              assetId: a.id,
+              uri: a.uri.trim(),
+              order: i,
+              mediaType: a.mediaType,
+            }))
+          );
+        } catch (upErr) {
+          Alert.alert(
+            t("common.error"),
+            upErr instanceof Error
+              ? upErr.message
+              : "Upload failed. Create the Storage bucket and policies (see .env.example)."
+          );
+          return;
+        }
+      }
+
+      const body = buildCreateListingBodyFromMarketing({
+        selectedCategory,
+        categoryLabel: categoryLabel.trim(),
+        area: params.area,
+        price: params.price,
+        description: params.description,
+        detailsItems: orderedInfoItems,
+        selectedLocation: params.selectedLocation
+          ? {
+              latitude: params.selectedLocation.latitude,
+              longitude: params.selectedLocation.longitude,
+            }
+          : undefined,
+        locationDisplayName: params.locationDisplayName,
+        virtualTourLink: params.virtualTourLink,
+        hasCommission: params.hasCommission,
+        commissionType: params.commissionType,
+        commissionValue: params.commissionValue,
+        meterPrice: params.meterPrice,
+        propertyDetailsItems: params.propertyDetailsItems,
+        pricingDetailsItems: params.pricingDetailsItems,
+        rentPaymentOptions: params.rentPaymentOptions,
+        attachmentsMeta: params.attachments?.map((a) => ({
+          id: a.id,
+          mediaType: a.mediaType,
+          note: a.note,
+        })),
+        ...(media?.length ? { media } : {}),
+        ...(params.deed ? { deed: params.deed } : {}),
+      });
+      const created = await createListing(body).unwrap();
+      registerApiListingProperties([mapApiListingToProperty(created)]);
+      const listingType: "rent" | "sale" =
+        created.listingType === "RENT" ? "rent" : "sale";
+      navigation.navigate("MapLanding", { listingType });
+    } catch (e: unknown) {
+      const err = e as { data?: { message?: string } };
+      Alert.alert(
+        t("common.error"),
+        err?.data?.message ??
+          "Could not publish listing. Please try again."
+      );
+    } finally {
+      setIsPublishing(false);
+    }
   }, [
+    isAuthenticated,
+    supabase,
     selectedCategory,
     categoryLabel,
-    headerCommissionText,
-    params.attachments,
-    locationLabel,
-    params.selectedLocation,
-    params.area,
-    params.price,
-    params.description,
+    params,
     orderedInfoItems,
-    params.rentPaymentOptions,
     navigation,
+    createListing,
+    t,
   ]);
 
   const renderDetailIcon = useCallback((icon?: string | null) => {
@@ -610,8 +683,17 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       </ScrollView>
 
       <View style={[styles.singleActionFooter, { paddingBottom: Math.max(hp(1), insets.bottom) }]}>
-        <TouchableOpacity style={styles.publishButton} activeOpacity={0.85} onPress={handlePublishAd}>
-          <Text style={styles.publishButtonText}>{t("listings.publishAd")}</Text>
+        <TouchableOpacity
+          style={[styles.publishButton, (isCreatingListing || isPublishing) && styles.publishButtonDisabled]}
+          activeOpacity={0.85}
+          onPress={handlePublishAd}
+          disabled={isCreatingListing || isPublishing}
+        >
+          {isCreatingListing || isPublishing ? (
+            <ActivityIndicator color={COLORS.white} />
+          ) : (
+            <Text style={styles.publishButtonText}>{t("listings.publishAd")}</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -827,6 +909,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
+  },
+  publishButtonDisabled: {
+    opacity: 0.75,
   },
   publishButtonText: {
     fontSize: wp(4.1),

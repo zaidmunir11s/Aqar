@@ -1,5 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../constants";
+import { secureGet, secureSet } from "./secureStore";
+import { backendRequest } from "./backendApi";
 
 export type AccountProfileMeta = {
   phoneDigits: string;
@@ -14,7 +15,7 @@ function normalizePhone(d: string): string {
 export async function syncAccountProfileMetaOnAuth(phoneDigits: string): Promise<void> {
   const d = normalizePhone(phoneDigits);
   if (d.length === 0) return;
-  const raw = await AsyncStorage.getItem(STORAGE_KEYS.accountProfileMeta);
+  const raw = await secureGet(STORAGE_KEYS.accountProfileMeta);
   let existing: AccountProfileMeta | null = null;
   if (raw) {
     try {
@@ -30,11 +31,12 @@ export async function syncAccountProfileMetaOnAuth(phoneDigits: string): Promise
     return;
   }
   const next: AccountProfileMeta = { phoneDigits: d, createdAtMs: Date.now() };
-  await AsyncStorage.setItem(STORAGE_KEYS.accountProfileMeta, JSON.stringify(next));
+  await secureSet(STORAGE_KEYS.accountProfileMeta, JSON.stringify(next));
+  await backendRequest("/me/activity/touch", { method: "POST" });
 }
 
 export async function getAccountProfileMeta(): Promise<AccountProfileMeta | null> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEYS.accountProfileMeta);
+  const raw = await secureGet(STORAGE_KEYS.accountProfileMeta);
   if (!raw) return null;
   try {
     const p = JSON.parse(raw) as AccountProfileMeta;
@@ -48,11 +50,13 @@ export async function getAccountProfileMeta(): Promise<AccountProfileMeta | null
 }
 
 export async function touchLastActiveAt(): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEYS.lastActiveAtMs, String(Date.now()));
+  const next = Date.now();
+  await secureSet(STORAGE_KEYS.lastActiveAtMs, String(next));
+  await backendRequest("/me/activity/touch", { method: "POST" });
 }
 
 export async function getLastActiveAtMs(): Promise<number | null> {
-  const v = await AsyncStorage.getItem(STORAGE_KEYS.lastActiveAtMs);
+  const v = await secureGet(STORAGE_KEYS.lastActiveAtMs);
   if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;

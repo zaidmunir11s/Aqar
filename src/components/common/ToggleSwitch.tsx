@@ -48,12 +48,14 @@ const ToggleSwitch = memo<ToggleSwitchProps>(({
     outputRange: [trackOffColor, trackOnColor],
   });
 
-  // Dynamic thumb translation - reverse direction in RTL
+  // Dynamic thumb translation
   const thumbTranslateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: isRTL 
-      ? [0, trackWidth - thumbSize] // RTL: moves from left to right
-      : [trackWidth - thumbSize, 0], // LTR: moves from right to left
+    // LTR: OFF (0) on the left, ON (1) on the right.
+    // RTL: mirrored.
+    outputRange: isRTL
+      ? [trackWidth - thumbSize, 0]
+      : [0, trackWidth - thumbSize],
   });
 
   // Thumb color animation

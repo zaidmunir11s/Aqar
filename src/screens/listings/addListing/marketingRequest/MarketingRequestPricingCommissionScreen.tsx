@@ -522,6 +522,7 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
       virtualTourLink: params.virtualTourLink ?? "",
       selectedLocation: params.selectedLocation,
       locationDisplayName: params.locationDisplayName,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
       propertyDetailsItems: params.propertyDetailsItems ?? [],
       pricingDetailsItems: pricingDetailsForPublish,
       area: normalizeNumericInput(area),

@@ -21,7 +21,7 @@ import {
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OtpInput, type OtpInputRef } from "react-native-otp-entry";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureSet } from "@/utils/secureStore";
 import { Header, PrimaryButton, TextInput as CustomTextInput } from "../../components";
 import { COLORS, STORAGE_KEYS } from "../../constants";
 import {
@@ -139,12 +139,9 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
           otp: trimmedOtp,
         }).unwrap();
         if (result.data?.token) {
-          await AsyncStorage.setItem(STORAGE_KEYS.authToken, result.data.token);
+          await secureSet(STORAGE_KEYS.authToken, result.data.token);
           if (result.data.refreshToken) {
-            await AsyncStorage.setItem(
-              STORAGE_KEYS.refreshToken,
-              result.data.refreshToken
-            );
+            await secureSet(STORAGE_KEYS.refreshToken, result.data.refreshToken);
           }
           await setLoggedInPhoneNumber(phoneNumber);
           await syncAccountProfileMetaOnAuth(phoneNumber);

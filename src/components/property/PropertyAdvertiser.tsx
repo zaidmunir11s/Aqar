@@ -4,7 +4,6 @@ import {
   Ionicons,
   FontAwesome,
   MaterialCommunityIcons,
-  MaterialIcons,
 } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -24,7 +23,6 @@ export interface PropertyAdvertiserProps {
   contactActionsEnabled?: boolean;
   onCall: () => void;
   onWhatsApp: () => void;
-  onChat: () => void;
   /** When set, the name row (with chevron) is tappable — e.g. open profile ads. */
   onAdvertiserRowPress?: () => void;
 }
@@ -39,7 +37,6 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
     contactActionsEnabled = true,
     onCall,
     onWhatsApp,
-    onChat,
     onAdvertiserRowPress,
   }) => {
     const { t, isRTL } = useLocalization();
@@ -165,28 +162,10 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
                   {t("listings.wa")}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.contactBtn, styles.chatBtn, isRTL && styles.contactBtnRTL]}
-                onPress={onChat}
-                activeOpacity={0.7}
-              >
-                <MaterialIcons name="chat" size={wp(5)} color="#6a7681" />
-                <Text
-                  style={[styles.contactBtnText, rtlStyles.contactBtnText, { color: "#6a7681" }]}
-                >
-                  {t("listings.chat")}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        <View style={[styles.warningBox, rtlStyles.warningBox]}>
-          <Ionicons name="warning" size={wp(5)} color="#3b82f6" />
-          <Text style={[styles.warningText, rtlStyles.warningText]}>
-            {t("listings.fraudWarning")}
-          </Text>
-        </View>
       </View>
     );
   }
@@ -279,20 +258,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: wp(2),
   },
-  warningBox: {
-    flexDirection: "row",
-    backgroundColor: COLORS.background,
-    padding: wp(3),
-    borderRadius: wp(2),
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: wp(3),
-    color: COLORS.textSecondary,
-  },
+  // warningBox / warningText removed (private messages not implemented)
 });
 
 export default PropertyAdvertiser;

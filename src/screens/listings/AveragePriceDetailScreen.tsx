@@ -1,11 +1,10 @@
-import React, { useCallback, useState, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Text } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { View, StyleSheet, ScrollView, Text, ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   AverageCard,
   AverageSaleCard,
   AveragePriceChart,
-  TabBarSection,
   type ChartDataPoint,
 } from "../../components";
 import ScreenHeader from "../../components/common/ScreenHeader";
@@ -16,54 +15,62 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "@/constants/colors";
+import { useGetPublicListingsQuery } from "@/redux/api";
 
-const CHART_START_YEAR = 2019;
-const CHART_END_YEAR = 2024;
+const INSIGHTS_DAYS = 90;
 
-/**
- * Chart data for 6 Months view: 12 points (2 per year), recent first.
- * Labels: "Second half" / "First half" on first line, year on second line.
- */
-function buildChartData6Months(t: (key: string) => string): ChartDataPoint[] {
-  const firstHalf = t("listings.firstHalf");
-  const secondHalf = t("listings.secondHalf");
-  const data: ChartDataPoint[] = [];
-  const basePrices = [
-    74500, 72000, 69500, 67910, 65000, 60000, 58000, 56591, 54800, 52000, 50200, 48500,
-  ];
-  let idx = 0;
-  for (let year = CHART_END_YEAR; year >= CHART_START_YEAR; year--) {
-    data.push({ period: `${secondHalf}\n${year}`, value: basePrices[idx++] ?? 0 });
-    data.push({ period: `${firstHalf}\n${year}`, value: basePrices[idx++] ?? 0 });
-  }
-  return data;
+const UI_TO_PRISMA_PROPERTY_TYPE: Record<string, string> = {
+  apartment: "APARTMENT",
+  land: "LAND",
+  building: "BUILDING",
+  villa: "VILLA",
+  office: "COMMERCIAL",
+  small_house: "HOUSE",
+  lounge: "LOUNGE",
+  farm: "FARM",
+  store: "STORE",
+  floor: "FLOOR",
+  other: "OTHER",
+};
+
+function median(values: number[]): number | null {
+  const v = values.filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  if (v.length === 0) return null;
+  const mid = Math.floor(v.length / 2);
+  if (v.length % 2 === 0) return (v[mid - 1] + v[mid]) / 2;
+  return v[mid];
 }
 
-/**
- * Chart data for Yearly view: one point per year (2024 → 2019), label = year only.
- */
-function buildChartDataYearly(): ChartDataPoint[] {
-  const yearlyPrices = [73250, 67750, 57295, 52400, 49350, 48500];
-  const data: ChartDataPoint[] = [];
-  let idx = 0;
-  for (let year = CHART_END_YEAR; year >= CHART_START_YEAR; year--) {
-    data.push({ period: String(year), value: yearlyPrices[idx++] ?? 0 });
-  }
-  return data;
+function average(values: number[]): number | null {
+  const v = values.filter((n) => Number.isFinite(n));
+  if (v.length === 0) return null;
+  const sum = v.reduce((a, b) => a + b, 0);
+  return sum / v.length;
 }
 
-export type AverageIndexPeriod = "yearly" | "6months" | "3months" | "monthly";
+function startOfWeek(d: Date): Date {
+  const out = new Date(d);
+  out.setHours(0, 0, 0, 0);
+  const day = out.getDay(); // 0=Sun
+  const diff = (day + 6) % 7; // Mon=0
+  out.setDate(out.getDate() - diff);
+  return out;
+}
 
-const PERIOD_OPTIONS: { key: AverageIndexPeriod; labelKey: string }[] = [
-  { key: "yearly", labelKey: "listings.yearly" },
-  { key: "6months", labelKey: "listings.sixMonths" },
-  { key: "3months", labelKey: "listings.threeMonths" },
-  { key: "monthly", labelKey: "listings.monthly" },
-];
+function formatWeekLabel(weekStart: Date): string {
+  // e.g. "Apr 15"
+  return weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 export interface AveragePriceDetailParams {
   property: Property;
   averageType: "rent" | "sale";
+  filters?: {
+    city?: string;
+    minArea?: number;
+    maxArea?: number;
+    bedrooms?: number;
+  };
 }
 
 export default function AveragePriceDetailScreen(): React.JSX.Element {
@@ -71,30 +78,7 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
   const route = useRoute();
   const { t, isRTL } = useLocalization();
   const params = route.params as AveragePriceDetailParams;
-  const { property, averageType } = params ?? {};
-
-  const [selectedPeriod, setSelectedPeriod] = useState<AverageIndexPeriod>("6months");
-
-  const chartData = useMemo(() => {
-    switch (selectedPeriod) {
-      case "yearly":
-        return buildChartDataYearly();
-      case "6months":
-        return buildChartData6Months(t);
-      case "3months":
-      case "monthly":
-      default:
-        return buildChartData6Months(t);
-    }
-  }, [selectedPeriod, t]);
-  const periodTabOptions = useMemo(
-    () => PERIOD_OPTIONS.map((p) => t(p.labelKey)),
-    [t]
-  );
-  const selectedPeriodValue = useMemo(
-    () => t(PERIOD_OPTIONS.find((p) => p.key === selectedPeriod)!.labelKey),
-    [t, selectedPeriod]
-  );
+  const { property, averageType, filters } = params ?? {};
 
   const handleBackPress = useCallback(() => {
     navigation.goBack();
@@ -106,10 +90,78 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
     );
   }, [navigation]);
 
-  const handlePeriodSelect = useCallback((value: string) => {
-    const index = periodTabOptions.indexOf(value);
-    if (index >= 0) setSelectedPeriod(PERIOD_OPTIONS[index].key);
-  }, [periodTabOptions]);
+  const prismaPropertyType = useMemo(() => {
+    const key = String((property as any)?.type ?? "").trim();
+    return UI_TO_PRISMA_PROPERTY_TYPE[key] ?? undefined;
+  }, [property]);
+
+  const { data: publicListingsData, isLoading } = useGetPublicListingsQuery(
+    {
+      page: 1,
+      limit: 200,
+      listingType: averageType === "rent" ? "RENT" : "SALE",
+      ...(prismaPropertyType ? { propertyType: prismaPropertyType } : {}),
+      ...(filters?.city?.trim() ? { city: filters.city.trim() } : {}),
+      ...(typeof filters?.bedrooms === "number" ? { bedrooms: filters.bedrooms } : {}),
+      ...(typeof filters?.minArea === "number" ? { minArea: filters.minArea } : {}),
+      ...(typeof filters?.maxArea === "number" ? { maxArea: filters.maxArea } : {}),
+    },
+    { skip: !property || !averageType }
+  );
+
+  const insights = useMemo(() => {
+    const rows = publicListingsData?.listings ?? [];
+    const now = Date.now();
+    const minTs = now - INSIGHTS_DAYS * 24 * 60 * 60 * 1000;
+
+    const parsed = rows
+      .map((r) => {
+        const created = r.createdAt ? Date.parse(String(r.createdAt)) : NaN;
+        return {
+          createdAtMs: Number.isFinite(created) ? created : 0,
+          price: Number(r.price),
+          area: Number(r.area),
+        };
+      })
+      .filter((r) => r.createdAtMs >= minTs && Number.isFinite(r.price) && r.price > 0);
+
+    const prices = parsed.map((r) => r.price);
+    const pricePerSqm = parsed
+      .map((r) => (Number.isFinite(r.area) && r.area > 0 ? r.price / r.area : NaN))
+      .filter((n) => Number.isFinite(n) && n > 0);
+
+    const medPrice = median(prices);
+    const avgPrice = average(prices);
+    const minPrice = prices.length ? Math.min(...prices) : null;
+    const maxPrice = prices.length ? Math.max(...prices) : null;
+    const medPpsm = median(pricePerSqm);
+
+    const weekly = new Map<number, number[]>();
+    for (const r of parsed) {
+      const w = startOfWeek(new Date(r.createdAtMs)).getTime();
+      const list = weekly.get(w) ?? [];
+      list.push(r.price);
+      weekly.set(w, list);
+    }
+
+    const chart: ChartDataPoint[] = Array.from(weekly.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([weekStartMs, list]) => ({
+        period: formatWeekLabel(new Date(weekStartMs)),
+        value: Math.round(median(list) ?? 0),
+      }))
+      .filter((p) => p.value > 0);
+
+    return {
+      sampleSize: parsed.length,
+      medianPrice: medPrice != null ? Math.round(medPrice) : null,
+      avgPrice: avgPrice != null ? Math.round(avgPrice) : null,
+      minPrice: minPrice != null ? Math.round(minPrice) : null,
+      maxPrice: maxPrice != null ? Math.round(maxPrice) : null,
+      medianPricePerSqm: medPpsm != null ? Math.round(medPpsm) : null,
+      chart,
+    };
+  }, [publicListingsData]);
 
   if (!property || !averageType) {
     return (
@@ -121,6 +173,11 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
       </View>
     );
   }
+
+  const formatSar = (n: number | null) =>
+    n == null ? "---" : `${n.toLocaleString()} ${t("listings.sar")}`;
+  const formatSarPerSqm = (n: number | null) =>
+    n == null ? "---" : `${n.toLocaleString()} ${t("listings.sar")}/m²`;
 
   return (
     <View style={styles.container}>
@@ -149,72 +206,100 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
           )}
         </View>
         <View style={styles.section}>
-          <TabBarSection
-            label={t("listings.viewAveragePriceIndexForEach")}
-            options={periodTabOptions}
-            selectedValue={selectedPeriodValue}
-            onSelect={handlePeriodSelect}
-            backgroundColor="#fff"
-          />
-          <AveragePriceChart
-            data={chartData}
-            periodMode={selectedPeriod === "yearly" ? "yearly" : "halfYear"}
-            containerStyle={styles.chartContainer}
-          />
           <Text
             style={[
               styles.priceTableTitle,
               { textAlign: isRTL ? "right" : "left" },
             ]}
           >
-            {t("listings.priceTable")}
+            {t("listings.viewAveragePriceIndexForEach")}
           </Text>
-          <View style={styles.priceTableCard}>
-            {chartData.map((item, index) => {
-              const periodLabel = item.period.replace(/\n/g, " ");
-              const priceText = `${item.value.toLocaleString()} ${t("listings.sar")}`;
-              const labelSlot = (
-                <View
-                  style={[
-                    styles.priceTableLabelSlot,
-                    {
-                      alignItems: isRTL ? "flex-end" : "flex-start",
-                    },
-                  ]}
-                >
-                  <Text style={styles.priceTablePeriod}>{periodLabel}</Text>
-                </View>
-              );
-              return (
-                <View
-                  key={`${item.period}-${index}`}
-                  style={styles.priceTableRow}
-                >
-                  {isRTL ? (
-                    <>
-                      <View style={styles.priceTableSpacer} />
-                      <Text style={styles.priceTablePrice}>{priceText}</Text>
-                      {labelSlot}
-                    </>
-                  ) : (
-                    <>
-                      {labelSlot}
-                      <Text style={styles.priceTablePrice}>{priceText}</Text>
-                      <View style={styles.priceTableSpacer} />
-                    </>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-          <Text
-            style={[
-              styles.chartDataSource,
-              { textAlign: isRTL ? "right" : "left" },
-            ]}
-          >
-            {t("listings.chartDataSource")}
+
+          <Text style={[styles.chartDataSource, { textAlign: isRTL ? "right" : "left" }]}>
+            {`${t("listings.latest")}: ${INSIGHTS_DAYS} ${t("listings.days") ?? "days"} · ${t("listings.property")}: ${prismaPropertyType ?? "---"}`}
           </Text>
+
+          {isLoading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator />
+            </View>
+          ) : (
+            <>
+              <View style={styles.metricsCard}>
+                {[
+                  { label: "# Listings", value: String(insights.sampleSize) },
+                  { label: "Median", value: formatSar(insights.medianPrice) },
+                  { label: "Average", value: formatSar(insights.avgPrice) },
+                  {
+                    label: "Min/Max",
+                    value:
+                      insights.minPrice != null && insights.maxPrice != null
+                        ? `${formatSar(insights.minPrice)} / ${formatSar(insights.maxPrice)}`
+                        : "---",
+                  },
+                  { label: "Median SAR/m²", value: formatSarPerSqm(insights.medianPricePerSqm) },
+                ].map((m) => (
+                  <View key={m.label} style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>{m.label}</Text>
+                    <Text style={styles.metricValue}>{m.value}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <AveragePriceChart
+                data={insights.chart}
+                periodMode="halfYear"
+                containerStyle={styles.chartContainer}
+              />
+
+              <Text
+                style={[
+                  styles.priceTableTitle,
+                  { textAlign: isRTL ? "right" : "left" },
+                ]}
+              >
+                {t("listings.priceTable")}
+              </Text>
+
+              <View style={styles.priceTableCard}>
+                {insights.chart.map((item, index) => {
+                  const priceText = `${item.value.toLocaleString()} ${t("listings.sar")}`;
+                  const labelSlot = (
+                    <View
+                      style={[
+                        styles.priceTableLabelSlot,
+                        {
+                          alignItems: isRTL ? "flex-end" : "flex-start",
+                        },
+                      ]}
+                    >
+                      <Text style={styles.priceTablePeriod}>{item.period}</Text>
+                    </View>
+                  );
+                  return (
+                    <View
+                      key={`${item.period}-${index}`}
+                      style={styles.priceTableRow}
+                    >
+                      {isRTL ? (
+                        <>
+                          <View style={styles.priceTableSpacer} />
+                          <Text style={styles.priceTablePrice}>{priceText}</Text>
+                          {labelSlot}
+                        </>
+                      ) : (
+                        <>
+                          {labelSlot}
+                          <Text style={styles.priceTablePrice}>{priceText}</Text>
+                          <View style={styles.priceTableSpacer} />
+                        </>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -242,6 +327,11 @@ const styles = StyleSheet.create({
   chartContainer: {
     marginTop: hp(1),
   },
+  loadingBox: {
+    paddingVertical: hp(4),
+    alignItems: "center",
+    justifyContent: "center",
+  },
   chartDataSource: {
     marginTop: hp(1.5),
     fontSize: wp(3.5),
@@ -261,6 +351,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  metricsCard: {
+    marginTop: hp(1),
+    backgroundColor: COLORS.white,
+    borderRadius: wp(2),
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(4),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  metricRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: hp(0.9),
+  },
+  metricLabel: {
+    flex: 1,
+    fontSize: wp(3.7),
+    color: COLORS.textSecondary,
+  },
+  metricValue: {
+    fontSize: wp(3.8),
+    fontWeight: "700",
+    color: COLORS.textPrimary,
   },
   priceTableRow: {
     flexDirection: "row",

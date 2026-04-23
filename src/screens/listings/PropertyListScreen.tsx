@@ -44,8 +44,12 @@ import type { SearchFilterState } from "../../components/map/SearchFilterModal";
 import { COLORS } from "../../constants";
 import type { Property, ProjectProperty, RentSaleProperty } from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useLocation } from "../../hooks/useLocation";
 import { useAppSelector, useAppDispatch } from "../../redux/hooks";
 import { setPreservedFilter } from "../../redux/slices/listingsFiltersSlice";
+import { useGetPublicListingsQuery } from "@/redux/api";
+import { mapApiListingToProperty } from "@/utils/apiListingMapper";
+import { registerApiListingProperties } from "@/utils/propertyLookup";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -67,20 +71,45 @@ export default function PropertyListScreen(): React.JSX.Element {
   );
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
+  const { getCurrentLocation } = useLocation();
+  const [nearestRegion, setNearestRegion] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [nearestLocationError, setNearestLocationError] = useState<string>("");
+  const [isResolvingNearest, setIsResolvingNearest] = useState(false);
 
   const listingType = params?.listingType || "rent";
+
+  const { data: publicListingsData } = useGetPublicListingsQuery({
+    page: 1,
+    limit: 200,
+    listingType: listingType === "sale" ? "SALE" : "RENT",
+  });
+
+  const apiListingProperties = useMemo(() => {
+    const rows = publicListingsData?.listings ?? [];
+    return rows.map(mapApiListingToProperty);
+  }, [publicListingsData]);
+
+  useEffect(() => {
+    if (apiListingProperties.length > 0) {
+      registerApiListingProperties(apiListingProperties);
+    }
+  }, [apiListingProperties]);
+
   const properties = useMemo(() => {
     if (params?.properties) {
       return params.properties;
     }
-    if (listingType === "sale") {
-      return filterRentSaleFromPropertyData("sale");
-    }
-    if (listingType === "rent") {
-      return filterRentSaleFromPropertyData("rent");
+    const tab = listingType === "sale" ? "sale" : "rent";
+    if (listingType === "sale" || listingType === "rent") {
+      return filterRentSaleFromPropertyData(tab, {
+        extraProperties: apiListingProperties,
+      });
     }
     return [];
-  }, [params?.properties, listingType]);
+  }, [params?.properties, listingType, apiListingProperties]);
 
   const [selectedFilter, setSelectedFilter] = useState<string | null>(
     params?.selectedFilter ?? preservedFilter ?? null
@@ -151,6 +180,9 @@ export default function PropertyListScreen(): React.JSX.Element {
         propertyId: item.id,
         visiblePropertyIds: properties.map((p) => p.id),
         listingType,
+        ...(item.serverListingId
+          ? { listingId: item.serverListingId }
+          : {}),
       });
     },
     [properties, listingType, navigation]
@@ -161,12 +193,55 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleFilterValueChange = useCallback(
-    (value: string | null) => {
-      setSelectedFilter(value);
-      dispatch(setPreservedFilter(value));
+    async (value: string | null) => {
+      if (value !== "nearest") {
+        setNearestLocationError("");
+        setIsResolvingNearest(false);
+        setSelectedFilter(value);
+        dispatch(setPreservedFilter(value));
+        return;
+      }
+
+      // Nearest must be based on user location. If we can't resolve location,
+      // we do NOT apply a fallback sort.
+      setNearestLocationError("");
+      setIsResolvingNearest(true);
+      let loc: Awaited<ReturnType<typeof getCurrentLocation>> | null = null;
+      try {
+        loc = await Promise.race([
+          getCurrentLocation(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+        ]);
+      } finally {
+        setIsResolvingNearest(false);
+      }
+
+      if (!loc?.region) {
+        setNearestRegion(null);
+        setSelectedFilter(null);
+        dispatch(setPreservedFilter(null));
+        setNearestLocationError(
+          loc?.error ||
+            (t("errors.networkError") ?? "Unable to get your location. Please try again.")
+        );
+        return;
+      }
+
+      setNearestRegion({ latitude: loc.region.latitude, longitude: loc.region.longitude });
+      setSelectedFilter("nearest");
+      dispatch(setPreservedFilter("nearest"));
     },
-    [dispatch]
+    [dispatch, getCurrentLocation, t]
   );
+
+  // If state restores with "nearest" selected (e.g., preserved filter),
+  // resolve location before applying the sort.
+  useEffect(() => {
+    if (selectedFilter !== "nearest") return;
+    if (nearestRegion) return;
+    if (isResolvingNearest) return;
+    void handleFilterValueChange("nearest");
+  }, [handleFilterValueChange, isResolvingNearest, nearestRegion, selectedFilter]);
 
   const filterTabOptions = useMemo(
     () => [
@@ -196,6 +271,13 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, []);
 
   const closeProjectSearchModal = useCallback(() => setProjectSearchModalVisible(false), []);
+
+  const getCreatedAtMs = useCallback((property: Property) => {
+    const raw = (property as any)?.createdAt;
+    if (typeof raw !== "string" || !raw.trim()) return null;
+    const ms = new Date(raw).getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }, []);
 
   const getNumericPrice = useCallback((property: Property) => {
     const rentSaleProperty = property as any;
@@ -244,6 +326,31 @@ export default function PropertyListScreen(): React.JSX.Element {
     return properties;
   }, [listingType, properties, activeProjectFilter, projectSelectedCity, projectSelectedPropertyType]);
 
+  // Nearest filter location resolution is handled in handleFilterValueChange.
+
+  const distanceKm = useCallback(
+    (p: Property) => {
+      if (!nearestRegion) return null;
+      const lat = (p as any)?.lat;
+      const lng = (p as any)?.lng;
+      if (typeof lat !== "number" || typeof lng !== "number") return null;
+
+      const toRad = (x: number) => (x * Math.PI) / 180;
+      const R = 6371;
+      const dLat = toRad(lat - nearestRegion.latitude);
+      const dLng = toRad(lng - nearestRegion.longitude);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(nearestRegion.latitude)) *
+          Math.cos(toRad(lat)) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    },
+    [nearestRegion]
+  );
+
   // Sort properties based on selected filter (sort the filtered list, not the full source)
   const sortedProperties = useMemo(() => {
     if (!selectedFilter) return filteredProperties;
@@ -252,8 +359,15 @@ export default function PropertyListScreen(): React.JSX.Element {
 
     switch (selectedFilter) {
       case "latest":
-        // Sort by ID descending (assuming higher ID = newer)
-        return sorted.sort((a, b) => (b.id || 0) - (a.id || 0));
+        // Prefer API createdAt when present; otherwise fall back to id.
+        return sorted.sort((a, b) => {
+          const am = getCreatedAtMs(a);
+          const bm = getCreatedAtMs(b);
+          if (am != null && bm != null) return bm - am;
+          if (am != null) return -1;
+          if (bm != null) return 1;
+          return (b.id || 0) - (a.id || 0);
+        });
 
       case "price":
         // Sort by price ascending
@@ -264,14 +378,21 @@ export default function PropertyListScreen(): React.JSX.Element {
         });
 
       case "nearest":
-        // For nearest, we'd need user location - for now, keep original order
-        // TODO: Implement location-based sorting when user location is available
-        return sorted;
+        // Sort by distance from user's current location.
+        if (!nearestRegion) return [];
+        return sorted.sort((a, b) => {
+          const da = distanceKm(a);
+          const db = distanceKm(b);
+          if (da == null && db == null) return 0;
+          if (da == null) return 1;
+          if (db == null) return -1;
+          return da - db;
+        });
 
       default:
         return sorted;
     }
-  }, [filteredProperties, selectedFilter, getNumericPrice]);
+  }, [filteredProperties, selectedFilter, getNumericPrice, getCreatedAtMs, nearestRegion, distanceKm]);
 
   const PropertyListItem = React.memo<{
     item: Property;
@@ -355,7 +476,11 @@ export default function PropertyListScreen(): React.JSX.Element {
     [listingType, handlePropertyPress, getTypeLabel]
   );
 
-  const keyExtractor = useCallback((item: Property) => item.id.toString(), []);
+  const keyExtractor = useCallback(
+    (item: Property) =>
+      item.serverListingId ? `api-${item.serverListingId}` : item.id.toString(),
+    []
+  );
 
   const handleScrollBegin = useCallback(() => {
     setIsScrolling(true);
@@ -450,12 +575,26 @@ export default function PropertyListScreen(): React.JSX.Element {
       )}
 
       {!isProjectsListing && (
-        <FilterTabs
-          options={filterTabOptions}
-          selectedValue={selectedFilter}
-          onValueChange={handleFilterValueChange}
-          containerStyle={styles.filterContainer}
-        />
+        <>
+          <FilterTabs
+            options={filterTabOptions}
+            selectedValue={selectedFilter}
+            onValueChange={handleFilterValueChange}
+            containerStyle={styles.filterContainer}
+          />
+          {isResolvingNearest && (
+            <View style={styles.nearestBanner}>
+              <Text style={styles.nearestBannerText}>
+                {t("common.loading")} {t("listings.nearest")}
+              </Text>
+            </View>
+          )}
+          {!!nearestLocationError && (
+            <View style={styles.nearestBannerError}>
+              <Text style={styles.nearestBannerText}>{nearestLocationError}</Text>
+            </View>
+          )}
+        </>
       )}
 
       <FlatList
@@ -506,6 +645,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  nearestBanner: {
+    marginTop: -hp(0.5),
+    marginHorizontal: wp(4),
+    marginBottom: hp(1),
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(3),
+    borderRadius: 12,
+    backgroundColor: "#f3f4f6",
+  },
+  nearestBannerError: {
+    marginTop: -hp(0.5),
+    marginHorizontal: wp(4),
+    marginBottom: hp(1),
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(3),
+    borderRadius: 12,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  nearestBannerText: {
+    color: "#374151",
+    fontSize: wp(3.7),
+    textAlign: "center",
+    fontWeight: "600",
   },
   searchButtonContainer: {
     width: wp(10),

@@ -109,6 +109,7 @@ export interface DetailRowProps {
   value: string;
   showCopy?: boolean;
   onCopy?: () => void;
+  copyLabel?: string;
   backgroundColor?: string;
   isLast?: boolean;
 }
@@ -117,7 +118,7 @@ export interface DetailRowProps {
  * Detail row component
  */
 export const DetailRow = memo<DetailRowProps>(
-  ({ label, value, showCopy, onCopy, backgroundColor, isLast }) => {
+  ({ label, value, showCopy, onCopy, copyLabel, backgroundColor, isLast }) => {
     const { isRTL, t } = useLocalization();
 
     // RTL-aware styles
@@ -162,7 +163,9 @@ export const DetailRow = memo<DetailRowProps>(
           {showCopy && onCopy && (
             <TouchableOpacity onPress={onCopy} style={[styles.copyAction, rtlStyles.copyAction]}>
               <Ionicons name="copy-outline" size={wp(4.5)} color={COLORS.textTertiary} />
-              <Text style={[styles.copyText, rtlStyles.copyText]}>{t("common.copy")}</Text>
+              <Text style={[styles.copyText, rtlStyles.copyText]}>
+                {copyLabel?.trim() ? copyLabel.trim() : t("common.copy")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>

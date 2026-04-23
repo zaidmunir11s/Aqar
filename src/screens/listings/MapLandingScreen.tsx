@@ -11,7 +11,6 @@ import {
   Animated,
   Platform,
   StatusBar,
-  ActivityIndicator,
   BackHandler,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
@@ -27,6 +26,11 @@ import {
   filterRentSaleFromPropertyData,
   hasValidMapCoordinates,
 } from "@/utils/listingPropertyFilters";
+import { useGetPublicListingsQuery } from "@/redux/api";
+import {
+  mapApiListingToProperty,
+} from "@/utils/apiListingMapper";
+import { registerApiListingProperties } from "@/utils/propertyLookup";
 import {
   PriceMarker,
   BottomPropertyCard,
@@ -79,8 +83,12 @@ export default function MapLandingScreen(): React.JSX.Element {
   const initialTab = params?.listingType === "sale" ? "sale" : "rent";
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [region, setRegion] = useState<LocationRegion | null>(() => mapLandingLastUserRegion);
-  const [isLocationReady, setIsLocationReady] = useState<boolean>(() => mapLandingLastUserRegion !== null);
+  // Always render the map immediately with a safe default region.
+  // GPS can take time on cold start (and may require permissions), so we should not block the UI.
+  const [region, setRegion] = useState<LocationRegion | null>(
+    () => mapLandingLastUserRegion ?? RIYADH_REGION
+  );
+  const [isLocationReady, setIsLocationReady] = useState<boolean>(true);
   const [selectedId, setSelectedId] = useState<number | null>(
     () => mapLandingMarkerSession.selectedId
   );
@@ -97,6 +105,23 @@ export default function MapLandingScreen(): React.JSX.Element {
 
   // Use custom hooks
   const { getCurrentLocation } = useLocation();
+
+  const { data: publicListingsData } = useGetPublicListingsQuery({
+    page: 1,
+    limit: 200,
+    listingType: activeTab === "sale" ? "SALE" : "RENT",
+  });
+
+  const apiListingProperties = useMemo(() => {
+    const rows = publicListingsData?.listings ?? [];
+    return rows.map(mapApiListingToProperty);
+  }, [publicListingsData]);
+
+  useEffect(() => {
+    if (apiListingProperties.length > 0) {
+      registerApiListingProperties(apiListingProperties);
+    }
+  }, [apiListingProperties]);
 
   // Get filter options based on active tab
   const filterOptions = useMemo(() => {
@@ -206,6 +231,7 @@ export default function MapLandingScreen(): React.JSX.Element {
   const filteredProperties = useMemo(() => {
     let properties = filterRentSaleFromPropertyData(activeTab, {
       requireMapCoordinates: true,
+      extraProperties: apiListingProperties,
     });
 
     if (activeFilter !== "all") {
@@ -216,7 +242,7 @@ export default function MapLandingScreen(): React.JSX.Element {
     }
 
     return properties;
-  }, [activeTab, activeFilter, filterOptions]);
+  }, [activeTab, activeFilter, filterOptions, apiListingProperties]);
 
   const visibleProperties = useMemo(() => {
     if (!region || !isValidMapRegion(region)) return [];
@@ -318,6 +344,9 @@ export default function MapLandingScreen(): React.JSX.Element {
       propertyId: selectedProperty.id,
       visiblePropertyIds: visibleProperties.map((p) => p.id),
       listingType: activeTab,
+      ...(selectedProperty.serverListingId
+        ? { listingId: selectedProperty.serverListingId }
+        : {}),
     };
 
     navigation.navigate("PropertyDetails", params);
@@ -427,12 +456,11 @@ export default function MapLandingScreen(): React.JSX.Element {
   }, []);
 
   const handleShowList = useCallback(() => {
-    const params: any = {
-      properties: visibleProperties,
-      listingType: activeTab,
-    };
-    navigation.navigate("PropertyList", params);
-  }, [visibleProperties, activeTab, navigation]);
+    // Do not pass `properties` from the map viewport.
+    // The list screen should fetch from the backend and apply the same tab filters,
+    // otherwise you’ll only see what’s currently visible in the map region.
+    navigation.navigate("PropertyList", { listingType: activeTab });
+  }, [activeTab, navigation]);
 
   const handleAddPress = useCallback(() => {
     if (!isLoaded) return;
@@ -526,12 +554,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         <View style={[StyleSheet.absoluteFillObject, styles.mapPlaceholder]} />
       )}
 
-      {/* Loading overlay until first GPS fix (no default city as initial map center) */}
-      {!isLocationReady && (
-        <View style={styles.mapLoadingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      )}
+      {/* Map is always visible; avoid blocking on GPS fix. */}
 
       <MapTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -541,7 +564,7 @@ export default function MapLandingScreen(): React.JSX.Element {
         onFilterChange={handleFilterChange}
       />
 
-      {!cardVisible && isLocationReady && (
+      {!cardVisible && (
         <MapBottomActions
           onShowListPress={handleShowList}
           onAddPress={handleAddPress}

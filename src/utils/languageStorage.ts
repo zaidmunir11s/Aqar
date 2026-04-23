@@ -1,8 +1,26 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 import type { SupportedLanguage } from '../redux/slices/localizationSlice';
+import { STORAGE_KEYS } from '@/constants/storage';
+import { backendRequest } from './backendApi';
+import { secureGet } from '@/utils/secureStore';
 
-const LANGUAGE_STORAGE_KEY = '@app_language';
+const SETTINGS_FETCH_TIMEOUT_MS = 5000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(id);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(id);
+        reject(e);
+      },
+    );
+  });
+}
 
 /**
  * Get device locale and determine initial language
@@ -13,41 +31,53 @@ export const getDeviceLanguage = (): SupportedLanguage => {
 };
 
 /**
- * Load saved language preference from AsyncStorage
- * Returns null if no preference is saved (first time install)
+ * Load saved language from the backend (`GET /api/me/settings`).
+ * Skips the network call when there is no session (guest / new install).
+ * On failure or timeout, returns null so the app can fall back to English.
  */
 export const loadSavedLanguage = async (): Promise<SupportedLanguage | null> => {
+  const token = await secureGet(STORAGE_KEYS.authToken);
+  if (!token) {
+    return null;
+  }
+
   try {
-    const savedLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
-    if (savedLanguage === 'en' || savedLanguage === 'ar') {
-      return savedLanguage as SupportedLanguage;
-    }
+    const res = await withTimeout(
+      backendRequest<{ success: boolean; data: { settings: { language?: string } } }>(
+        '/me/settings',
+      ),
+      SETTINGS_FETCH_TIMEOUT_MS,
+    );
+    const savedLanguage = res.data?.settings?.language;
+    if (savedLanguage === 'en' || savedLanguage === 'ar') return savedLanguage;
     return null;
   } catch (error) {
-    console.error('Error loading saved language:', error);
+    if (__DEV__) {
+      console.warn('Using default language (en); could not load saved preference:', error);
+    }
     return null;
   }
 };
 
 /**
- * Save language preference to AsyncStorage
+ * Save language preference to Supabase (`public.user_settings`).
+ * No-op if user is not signed in.
  */
 export const saveLanguage = async (language: SupportedLanguage): Promise<void> => {
   try {
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    await backendRequest("/me/settings", { method: "PATCH", body: { language } });
   } catch (error) {
     console.error('Error saving language:', error);
   }
 };
 
 /**
- * Get initial language: saved preference or device language
+ * Get initial language: saved preference from API when signed in, otherwise English.
  */
 export const getInitialLanguage = async (): Promise<SupportedLanguage> => {
   const savedLanguage = await loadSavedLanguage();
   if (savedLanguage) {
     return savedLanguage;
   }
-  // First time install - use device language
-  return getDeviceLanguage();
+  return 'en';
 };

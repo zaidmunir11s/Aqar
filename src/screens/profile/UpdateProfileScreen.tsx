@@ -11,6 +11,7 @@ import {
   Keyboard,
   Animated,
   Alert,
+  ActivityIndicator,
   TextStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -22,20 +23,26 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
-import { ScreenHeader, TextInput, CancelModal, SingleButtonFooter } from "../../components";
+import { ScreenHeader, TextInput, SingleButtonFooter } from "../../components";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useGetMeQuery, useUpdateMeMutation } from "@/redux/api/userApi";
+import { useUser } from "@clerk/clerk-expo";
+import { uploadListingMediaToSupabase } from "@/utils/uploadListingImagesToSupabase";
+import { supabase } from "@/utils/supabaseSingleton";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function UpdateProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const { user: clerkUser } = useUser();
+  const { data: meData } = useGetMeQuery();
+  const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [bio, setBio] = useState<string>("");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   // Check for pending image picker results (in case app restarted during cropping)
@@ -53,6 +60,27 @@ export default function UpdateProfileScreen(): React.JSX.Element {
     };
     checkPendingResult();
   }, []);
+
+  // Auto-populate from backend user (preferred) with Clerk fallback.
+  useEffect(() => {
+    const me = meData?.user;
+    const nextName =
+      me && (me.firstName || me.lastName)
+        ? `${me.firstName ?? ""} ${me.lastName ?? ""}`.trim()
+        : (clerkUser?.fullName?.trim() ||
+            [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ").trim() ||
+            "");
+    const nextEmail =
+      (me?.email ?? clerkUser?.primaryEmailAddress?.emailAddress ?? "").trim();
+    const nextBio = (me as any)?.bio ?? "";
+    const nextProfileImage =
+      (me?.profileImage ?? clerkUser?.imageUrl ?? null) || null;
+
+    setName((prev) => (prev.trim().length ? prev : nextName));
+    setEmail((prev) => (prev.trim().length ? prev : nextEmail));
+    setBio((prev) => (prev.trim().length ? prev : String(nextBio ?? "")));
+    setProfileImage((prev) => (prev ? prev : nextProfileImage));
+  }, [clerkUser, meData]);
 
   // Listen to keyboard show/hide events
   useEffect(() => {
@@ -119,24 +147,53 @@ export default function UpdateProfileScreen(): React.JSX.Element {
     }
   }, []);
 
-  const handleSave = useCallback(() => {
-    console.log("Save profile:", { name, email, bio });
-    // TODO: Implement save functionality
-  }, [name, email, bio]);
+  const handleSave = useCallback(async () => {
+    if (isSaving) return;
+    const full = name.trim();
+    if (!full) {
+      Alert.alert(t("common.error", { defaultValue: "Error" }), t("profile.nameRequired", { defaultValue: "Name is required" }));
+      return;
+    }
 
-  const handleDeleteAccount = useCallback(() => {
-    setShowDeleteModal(true);
-  }, []);
+    let profileImageUrl: string | null = profileImage;
+    try {
+      if (profileImageUrl && !profileImageUrl.startsWith("http://") && !profileImageUrl.startsWith("https://")) {
+        const uploaded = await uploadListingMediaToSupabase(
+          supabase,
+          [{ uri: profileImageUrl, order: 0, mediaType: "photo" }],
+          { prefix: "profiles" }
+        );
+        profileImageUrl = uploaded[0]?.url ?? null;
+      }
+    } catch (e: any) {
+      Alert.alert(
+        t("common.error", { defaultValue: "Error" }),
+        e?.message || t("profile.profileImageUploadFailed", { defaultValue: "Failed to upload profile image." })
+      );
+      return;
+    }
 
-  const handleDeleteCancel = useCallback(() => {
-    setShowDeleteModal(false);
-  }, []);
+    const parts = full.split(/\s+/).filter(Boolean);
+    const firstName = parts[0] ?? full;
+    const lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
 
-  const handleDeleteConfirm = useCallback(() => {
-    setShowDeleteModal(false);
-    console.log("Delete account");
-    // TODO: Implement delete account functionality
-  }, []);
+    try {
+      await updateMe({
+        firstName,
+        lastName,
+        email: email.trim() || null,
+        profileImage: profileImageUrl,
+        bio: bio.trim() || null,
+      }).unwrap();
+      Alert.alert(t("common.success", { defaultValue: "Success" }), t("profile.profileUpdated", { defaultValue: "Profile updated" }));
+      navigation.goBack();
+    } catch (e: any) {
+      Alert.alert(
+        t("common.error", { defaultValue: "Error" }),
+        e?.message || t("profile.updateFailed", { defaultValue: "Failed to update profile." })
+      );
+    }
+  }, [name, profileImage, updateMe, email, bio, t, navigation, isSaving]);
   const rtlStyles = useMemo(
     () => ({
       profilePictureSection: { flexDirection: isRTL ? "row-reverse" : "row" },
@@ -232,15 +289,6 @@ export default function UpdateProfileScreen(): React.JSX.Element {
               containerStyle={styles.inputContainer}
             />
           </View>
-
-          {/* Delete Account Button */}
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeleteAccount}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.deleteButtonText}>{t("profile.deleteAccount", { defaultValue: "Delete Account" })}</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
       
@@ -249,19 +297,10 @@ export default function UpdateProfileScreen(): React.JSX.Element {
           fixed={false}
           label={t("profile.save", { defaultValue: "Save" })}
           onPress={handleSave}
+          disabled={isSaving}
+          icon={isSaving ? <ActivityIndicator color={COLORS.white} /> : undefined}
         />
       </Animated.View>
-
-      <CancelModal
-        visible={showDeleteModal}
-        title={t("profile.deleteAccount", { defaultValue: "Delete Account" })}
-        description={t("profile.deleteAccountConfirm", { defaultValue: "Are you sure you want to delete your account?" })}
-        onBack={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        backText={t("common.no", { defaultValue: "NO" })}
-        confirmText={t("common.yes", { defaultValue: "Yes" })}
-        confirmButtonColor={"#c13234"}
-      />
     </View>
   );
 }
@@ -324,20 +363,6 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 0,
-  },
-  deleteButton: {
-    backgroundColor: "#c13234",
-    borderRadius: wp(2),
-    height: hp(5),
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: hp(2),
-    marginBottom: hp(2),
-  },
-  deleteButtonText: {
-    fontSize: wp(4.5),
-    fontWeight: "600",
-    color: COLORS.white,
   },
   footerWrapper: {
     position: "absolute",

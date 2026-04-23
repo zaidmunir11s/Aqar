@@ -292,6 +292,20 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
 
   const handleShowStatsPress = useCallback(() => {
     if (!propertyForNavigation || !canShowStats) return;
+    const areaRange = selectedArea?.trim() ?? "";
+    let minArea: number | undefined;
+    let maxArea: number | undefined;
+    if (showAreaField && areaRange) {
+      if (areaRange.endsWith("+")) {
+        const n = parseInt(areaRange.replace("+", ""), 10);
+        if (Number.isFinite(n) && n > 0) minArea = n;
+      } else {
+        const [a, b] = areaRange.split("-").map((x) => parseInt(x, 10));
+        if (Number.isFinite(a) && a > 0) minArea = a;
+        if (Number.isFinite(b) && b > 0) maxArea = b;
+      }
+    }
+    const bedrooms = showRoomsField ? (parseInt(rooms, 10) || undefined) : undefined;
     const state = navigation.getState();
     const routes = state?.routes ?? [];
     const cameFromAveragePriceDetail =
@@ -306,14 +320,26 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       nav.navigate("AveragePriceDetail", {
         property: propertyForNavigation,
         averageType: tab,
+        filters: {
+          city: selectedCity,
+          ...(minArea != null ? { minArea } : {}),
+          ...(maxArea != null ? { maxArea } : {}),
+          ...(bedrooms != null ? { bedrooms } : {}),
+        },
       });
     } else {
       nav.replace("AveragePriceDetail", {
         property: propertyForNavigation,
         averageType: tab,
+        filters: {
+          city: selectedCity,
+          ...(minArea != null ? { minArea } : {}),
+          ...(maxArea != null ? { maxArea } : {}),
+          ...(bedrooms != null ? { bedrooms } : {}),
+        },
       });
     }
-  }, [navigation, propertyForNavigation, canShowStats, tab]);
+  }, [navigation, propertyForNavigation, canShowStats, tab, selectedArea, showAreaField, rooms, showRoomsField, selectedCity]);
 
   const handleAreaPress = useCallback(() => {
     setAreaModalVisible(true);

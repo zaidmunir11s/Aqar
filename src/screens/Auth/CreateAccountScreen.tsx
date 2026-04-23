@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureSet } from "@/utils/secureStore";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS, STORAGE_KEYS } from "../../constants";
 import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
@@ -127,12 +127,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
       await setLoggedInProfileImageUri(profileImage || null);
 
       if (result.data?.token) {
-        await AsyncStorage.setItem(STORAGE_KEYS.authToken, result.data.token);
+        await secureSet(STORAGE_KEYS.authToken, result.data.token);
         if (result.data.refreshToken) {
-          await AsyncStorage.setItem(
-            STORAGE_KEYS.refreshToken,
-            result.data.refreshToken
-          );
+          await secureSet(STORAGE_KEYS.refreshToken, result.data.refreshToken);
         }
         await setLoggedInPhoneNumber(phoneNumber);
         await syncAccountProfileMetaOnAuth(phoneNumber);

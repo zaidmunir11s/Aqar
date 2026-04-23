@@ -132,6 +132,7 @@ export default function MarketingRequestAlbumAssetsScreen(): React.JSX.Element {
       selectedCategory: params.selectedCategory,
       attachments: merged,
       virtualTourLink: params.virtualTourLink,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
   }, [navigation, params.attachments, params.selectedCategory, params.virtualTourLink, selectedAssets]);
 

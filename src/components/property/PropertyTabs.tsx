@@ -22,13 +22,14 @@ export interface PropertyTabsProps {
   onTabChange: (tabId: TabType) => void;
   property: Property;
   onCopyId?: () => void;
+  copyIdLabel?: string;
 }
 
 /**
  * Property tabs component with tab content
  */
 const PropertyTabs = memo<PropertyTabsProps>(
-  ({ activeTab, onTabChange, property, onCopyId }) => {
+  ({ activeTab, onTabChange, property, onCopyId, copyIdLabel }) => {
     const { t, isRTL } = useLocalization();
     const tabScrollViewRef = useRef<ScrollView>(null);
     const [nowTs, setNowTs] = React.useState<number>(Date.now());
@@ -134,13 +135,14 @@ const PropertyTabs = memo<PropertyTabsProps>(
               value={detail.value}
               showCopy={detail.showCopy}
               onCopy={onCopyId}
+              copyLabel={detail.showCopy ? copyIdLabel : undefined}
               backgroundColor={index % 2 === 0 ? COLORS.white : COLORS.background}
               isLast={index === mainDetails.length - 1}
             />
           ))}
         </View>
       );
-    }, [property, onCopyId, t, formatAbsoluteDate, formatRelativeUpdated]);
+    }, [property, onCopyId, t, formatAbsoluteDate, formatRelativeUpdated, copyIdLabel]);
 
     const renderAdditionalTabContent = useCallback(() => {
       const additionalDetails = [

@@ -10,8 +10,10 @@ import ContactHostScreen from "../../screens/listings/ContactHostScreen";
 import ReserveScreen from "../../screens/listings/ReserveScreen";
 import PropertyListScreen from "../../screens/listings/PropertyListScreen";
 import AddListingScreen from "../../screens/listings/AddListingScreen";
+import TodayAdsScreen from "../../screens/listings/TodayAdsScreen";
 import ProjectDetailsScreen from "../../screens/projects/ProjectDetailsScreen";
 import DeveloperProfileScreen from "../../screens/projects/DeveloperProfileScreen";
+import UserProfileAdsScreen from "../../screens/profile/UserProfileAdsScreen";
 import Step1LicenseScreen from "../../screens/listings/addListing/brokerListing/Step1LicenseScreen";
 import BrokerIssueAdLicenseScreen from "../../screens/listings/addListing/brokerListing/BrokerIssueAdLicenseScreen";
 import BrokerGetFreeLicenseScreen from "../../screens/listings/addListing/brokerListing/BrokerGetFreeLicenseScreen";
@@ -64,10 +66,12 @@ export default function ListingsStack(): React.JSX.Element {
       <Stack.Screen name="AveragePriceDetail" component={AveragePriceDetailScreen} />
       <Stack.Screen name="AqarResidentialStats" component={AqarResidentialStatsScreen} />
       <Stack.Screen name="Conversation" component={ConversationScreen} />
+      <Stack.Screen name="UserProfileAds" component={UserProfileAdsScreen} />
       <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
       <Stack.Screen name="ContactHost" component={ContactHostScreen} />
       <Stack.Screen name="Reserve" component={ReserveScreen} />
       <Stack.Screen name="PropertyList" component={PropertyListScreen} />
+      <Stack.Screen name="TodayAds" component={TodayAdsScreen} />
       <Stack.Screen name="AddListing" component={AddListingScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />
       <Stack.Screen name="DeveloperProfile" component={DeveloperProfileScreen} />

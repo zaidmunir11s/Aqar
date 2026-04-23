@@ -93,7 +93,11 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
   };
   const handleNextPress = () => {
     if (!canProceed) return;
-    if (__DEV__) console.log("Next step");
+    const selectedCategory =
+      adType === "Sale" ? "sale-1" : adType === "Rent" ? "rent-1" : undefined;
+    navigation.navigate("MarketingRequestPlaceholder", {
+      ...(selectedCategory ? { selectedCategory } : {}),
+    });
   };
   const handleFooterBackPress = () => {
     setShowCancelModal(true);

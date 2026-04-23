@@ -18,7 +18,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../../constants";
 import { TabBarSection, ToggleRow } from "../orderForm";
 import { ToggleSwitch } from "../common";
-import { PROPERTY_DATA } from "../../data/propertyData";
 import { BEDROOM_OPTIONS, LIVING_ROOM_OPTIONS, WC_OPTIONS, VILLA_TYPE_OPTIONS } from "../../constants/orderFormOptions";
 import type { Property } from "../../types/property";
 import type { SearchFilterState } from "../../types/searchFilters";

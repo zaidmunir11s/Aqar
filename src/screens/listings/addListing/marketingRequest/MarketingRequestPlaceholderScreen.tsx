@@ -61,6 +61,13 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
       note?: string;
     }>;
     virtualTourLink?: string;
+    deed?: {
+      deedType: "ELECTRONIC" | "OTHER";
+      deedNumber?: string;
+      ownerIdNumber?: string;
+      ownerBirthDate?: string;
+      ownerPhone?: string;
+    };
   };
 
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -113,15 +120,17 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
   const handleNextPress = () => {
     if (!selectedCategory) return;
     const hasDraftData = (params.attachments?.length ?? 0) > 0 || !!params.virtualTourLink;
+    const deedParam = params.deed ? { deed: params.deed } : {};
     if (hasDraftData) {
       navigation.navigate("MarketingRequestAttachments", {
         selectedCategory,
         attachments: params.attachments ?? [],
         virtualTourLink: params.virtualTourLink ?? "",
+        ...deedParam,
       });
       return;
     }
-    navigation.navigate("MarketingRequestMedia", { selectedCategory });
+    navigation.navigate("MarketingRequestMedia", { selectedCategory, ...deedParam });
   };
 
   /* ------------------ */

@@ -6,17 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Linking,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   ScreenHeader,
-  SocialMediaIcon,
   LanguageConverter,
 } from "../../components";
 import { COLORS } from "@/constants/colors";
@@ -47,14 +47,14 @@ export default function ServicesScreen(): React.JSX.Element {
       iconLib: "Ionicons" as const,
       accent: "#0e856a",
     },
-    {
-      id: "2",
-      title: t("services.commission"),
-      subtitle: t("services.commissionSubtitle"),
-      icon: "hand-coin-outline",
-      iconLib: "MaterialCommunityIcons" as const,
-      accent: "#3b82f6",
-    },
+    // {
+    //   id: "2",
+    //   title: t("services.commission"),
+    //   subtitle: t("services.commissionSubtitle"),
+    //   icon: "hand-coin-outline",
+    //   iconLib: "MaterialCommunityIcons" as const,
+    //   accent: "#3b82f6",
+    // },
     {
       id: "5",
       title: t("services.todayAds"),
@@ -62,63 +62,24 @@ export default function ServicesScreen(): React.JSX.Element {
       iconLib: "Ionicons" as const,
       accent: "#8b5cf6",
     },
-    {
-      id: "10",
-      title: t("services.baytBlog"),
-      icon: "book",
-      iconLib: "Ionicons" as const,
-      accent: "#f59e0b",
-    },
-    {
-      id: "11",
-      title: t("services.legalDocuments"),
-      icon: "document-text",
-      iconLib: "Ionicons" as const,
-      accent: "#10b981",
-    },
+    // {
+    //   id: "10",
+    //   title: t("services.baytBlog"),
+    //   icon: "book",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#f59e0b",
+    // },
+    // {
+    //   id: "11",
+    //   title: t("services.legalDocuments"),
+    //   icon: "document-text",
+    //   iconLib: "Ionicons" as const,
+    //   accent: "#10b981",
+    // },
   ];
 
-  const socialMediaItems: Array<{
-    name: string;
-    icon: string;
-    library: "Ionicons" | "FontAwesome5";
-    bgColor: string | null;
-    iconColor: string;
-    platform: string;
-  }> = [
-    {
-      name: "share",
-      icon: "share-social",
-      library: "Ionicons",
-      bgColor: null,
-      iconColor: "#10b981",
-      platform: "share",
-    },
-    {
-      name: "snapchat",
-      icon: "snapchat-ghost",
-      library: "FontAwesome5",
-      bgColor: "#FFFC00",
-      iconColor: "#000",
-      platform: "snapchat",
-    },
-    {
-      name: "x",
-      icon: "times",
-      library: "FontAwesome5",
-      bgColor: "#000",
-      iconColor: "#fff",
-      platform: "x",
-    },
-    {
-      name: "instagram",
-      icon: "instagram",
-      library: "FontAwesome5",
-      bgColor: "#E4405F",
-      iconColor: "#fff",
-      platform: "instagram",
-    },
-  ];
+  // Social media icons are currently not wired (URLs/share content TBD).
+  // const socialMediaItems = [ ... ];
 
   const renderIcon = (iconName: string, iconLib: string, size: number, color: string) => {
     if (iconLib === "MaterialCommunityIcons") {
@@ -169,7 +130,16 @@ export default function ServicesScreen(): React.JSX.Element {
               style={styles.serviceTile}
               activeOpacity={0.8}
               onPress={() => {
-                if (__DEV__) console.log("Service pressed:", service.title);
+                if (service.id === "5") {
+                  navigation.navigate("Listings", { screen: "TodayAds" } as any);
+                  return;
+                }
+                if (service.id === "1") {
+                  Linking.openURL("mailto:sorini@palmlab.com?subject=Aqark%20Syria%20Support").catch(
+                    () => null
+                  );
+                  return;
+                }
               }}
             >
               <View style={[styles.tileIconWrapper, { backgroundColor: service.accent + "15" }]}>
@@ -187,32 +157,25 @@ export default function ServicesScreen(): React.JSX.Element {
           ))}
         </View>
 
-        {/* Social Media Section */}
+        {/*
+        Social section is not wired yet (URLs/share content TBD).
         <View style={rtlStyles.socialSection}>
           <Text style={rtlStyles.socialTitle}>{t("services.followUs")}</Text>
           <View style={rtlStyles.socialGrid}>
             {socialMediaItems.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.7}
-                onPress={() => {
-                  if (__DEV__) console.log("Open", item.platform);
-                }}
-              >
+              <TouchableOpacity key={index} activeOpacity={0.7}>
                 <SocialMediaIcon
                   name={item.name}
                   icon={item.icon}
                   library={item.library}
                   bgColor={item.bgColor}
                   iconColor={item.iconColor}
-                  onPress={() => {
-                    if (__DEV__) console.log("Open", item.platform);
-                  }}
                 />
               </TouchableOpacity>
             ))}
           </View>
         </View>
+        */}
 
         {/* Footer */}
         <View style={styles.footer}>

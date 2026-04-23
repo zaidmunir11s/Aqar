@@ -21,11 +21,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSSO, useAuth } from "@clerk/clerk-expo";
 import { useAuthContext, useIsAuthenticated } from "../../context/auth-context";
 import * as Linking from "expo-linking";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureGet, secureSet } from "@/utils/secureStore";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS, STORAGE_KEYS } from "../../constants";
 import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
 import { useLoginMutation } from "@/redux/api";
+import { API_CONFIG } from "@/constants/api";
 import {
   getPasswordValidationError,
   getSaudiPhoneValidationError,
@@ -44,7 +45,7 @@ export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { navigateToListings } = useTabNavigation();
   const { t, isRTL } = useLocalization();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const { isAuthenticated, isLoaded } = useIsAuthenticated();
   const { setHasBackendSession } = useAuthContext();
   const { startSSOFlow } = useSSO();
@@ -53,6 +54,15 @@ export default function LoginScreen(): React.JSX.Element {
   const [password, setPassword] = useState<string>("");
   const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
   const [cachedProfileImageUri, setCachedProfileImageUri] = useState<string | null>(null);
+  const resolvedAvatarUri = useMemo(() => {
+    const raw = (cachedProfileImageUri ?? "").trim();
+    if (!raw) return null;
+    // Avoid showing a broken placeholder for invalid URIs
+    if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("file://")) {
+      return raw;
+    }
+    return null;
+  }, [cachedProfileImageUri]);
 
   useFocusEffect(
     useCallback(() => {
@@ -72,7 +82,7 @@ export default function LoginScreen(): React.JSX.Element {
       let active = true;
       (async () => {
         try {
-          const uri = await AsyncStorage.getItem(STORAGE_KEYS.loggedInProfileImageUri);
+          const uri = await secureGet(STORAGE_KEYS.loggedInProfileImageUri);
           if (active) setCachedProfileImageUri(uri && uri.length > 0 ? uri : null);
         } catch {
           if (active) setCachedProfileImageUri(null);
@@ -169,12 +179,9 @@ export default function LoginScreen(): React.JSX.Element {
       }).unwrap();
 
       if (result.data?.token) {
-        await AsyncStorage.setItem(STORAGE_KEYS.authToken, result.data.token);
+        await secureSet(STORAGE_KEYS.authToken, result.data.token);
         if (result.data.refreshToken) {
-          await AsyncStorage.setItem(
-            STORAGE_KEYS.refreshToken,
-            result.data.refreshToken
-          );
+          await secureSet(STORAGE_KEYS.refreshToken, result.data.refreshToken);
         }
         await setLoggedInPhoneNumber(phoneNumber);
         await syncAccountProfileMetaOnAuth(phoneNumber);
@@ -272,6 +279,49 @@ export default function LoginScreen(): React.JSX.Element {
 
       if (createdSessionId) {
         await setActive!({ session: createdSessionId });
+        // Exchange Clerk session token for backend JWT so backend APIs can store the user in DB.
+        const clerkToken =
+          (await getToken({ template: "aqar-backend" }).catch(() => null)) ??
+          (await getToken().catch(() => null));
+        if (!clerkToken) {
+          Alert.alert(
+            t("auth.loginError"),
+            "Signed in with Google, but could not retrieve a Clerk token for backend login."
+          );
+          resetToProfile();
+          return;
+        }
+
+        const res = await fetch(`${API_CONFIG.BASE_URL}/api/auth/oauth`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${clerkToken}` },
+        });
+        const json = await res.json().catch(() => null);
+        const backendToken = json?.data?.token;
+        if (!res.ok || !backendToken) {
+          const serverMessage =
+            (typeof json?.message === "string" && json.message) ||
+            (typeof json?.error === "string" && json.error) ||
+            (typeof json?.data?.message === "string" && json.data.message) ||
+            (typeof json?.data?.error === "string" && json.data.error) ||
+            (typeof json?.data?.details === "string" && json.data.details) ||
+            "";
+          Alert.alert(
+            t("auth.loginError"),
+            [
+              "Signed in with Google, but backend session could not be created.",
+              serverMessage ? `Server: ${serverMessage}` : null,
+              "Check EXPO_PUBLIC_API_BASE_URL and Clerk JWT template (audience: aqar-backend).",
+            ]
+              .filter(Boolean)
+              .join("\n")
+          );
+          resetToProfile();
+          return;
+        }
+
+        await secureSet(STORAGE_KEYS.authToken, backendToken);
+        setHasBackendSession(true);
         resetToProfile();
       }
     } catch (err: any) {
@@ -300,7 +350,7 @@ export default function LoginScreen(): React.JSX.Element {
     } finally {
       setIsLoadingGoogle(false);
     }
-  }, [startSSOFlow, resetToProfile, isSignedIn, t]);
+  }, [getToken, resetToProfile, setHasBackendSession, startSSOFlow, isSignedIn, t]);
 
   const handleAppleLogin = useCallback(() => {
     // Apple sign-in is not wired yet.
@@ -393,12 +443,13 @@ export default function LoginScreen(): React.JSX.Element {
       >
         {/* Header */}
         <View style={styles.header}>
-          {cachedProfileImageUri ? (
+          {resolvedAvatarUri ? (
             <View style={styles.loginAvatarWrap}>
               <Image
-                source={{ uri: cachedProfileImageUri }}
+                source={{ uri: resolvedAvatarUri }}
                 style={styles.loginAvatarImage}
                 resizeMode="cover"
+                onError={() => setCachedProfileImageUri(null)}
               />
             </View>
           ) : null}

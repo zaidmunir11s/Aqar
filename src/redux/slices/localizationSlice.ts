@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import i18n from '../../i18n/config';
-import { getInitialLanguage, saveLanguage, getDeviceLanguage } from '../../utils/languageStorage';
+import { getInitialLanguage, saveLanguage } from '../../utils/languageStorage';
 
 export type SupportedLanguage = 'en' | 'ar';
 
@@ -20,16 +20,12 @@ export const initializeLanguage = createAsyncThunk(
   }
 );
 
-// Initialize based on device language
-const initialDeviceLanguage = getDeviceLanguage();
-const initialIsRTL = initialDeviceLanguage === 'ar';
-
 // Note: I18nManager auto-flipping is disabled in config.ts
 // Components handle RTL manually through styles
 
 const initialState: LocalizationState = {
-  language: initialDeviceLanguage, // Fallback initial state
-  isRTL: initialIsRTL,
+  language: 'en',
+  isRTL: false,
   isInitialized: false,
   isLoading: true,
 };
@@ -80,13 +76,11 @@ const localizationSlice = createSlice({
         }
       })
       .addCase(initializeLanguage.rejected, (state) => {
-        // Fallback to device language on error
-        const fallbackLanguage = getDeviceLanguage();
-        state.language = fallbackLanguage;
-        state.isRTL = fallbackLanguage === 'ar';
+        state.language = 'en';
+        state.isRTL = false;
         state.isInitialized = true;
         state.isLoading = false;
-        i18n.changeLanguage(fallbackLanguage);
+        i18n.changeLanguage('en');
         // Don't auto-flip I18nManager - components handle RTL manually
       });
   },

@@ -11,7 +11,12 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Share,
+  Alert,
+  Modal,
+  TextInput as RNTextInput,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -20,11 +25,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  PROPERTY_DATA,
-  RENT_FILTER_OPTIONS,
-  SALE_FILTER_OPTIONS,
-} from "../../data/propertyData";
+import { RENT_FILTER_OPTIONS, SALE_FILTER_OPTIONS } from "../../data/propertyData";
 import {
   openPhoneDialer,
   openWhatsApp,
@@ -49,7 +50,6 @@ import {
   PropertyTabs,
   PropertyBottomBar,
   AverageCard,
-  FinancingOptionsCard,
   AverageSaleCard,
   IconButton,
   RentPaymentsSection,
@@ -60,6 +60,16 @@ import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
 import { getMarketingRequestCategoryTranslationKey } from "@/constants/categories";
 import { useLocalization, usePropertyDetailNavigation, useTabNavigation } from "../../hooks";
+import {
+  useGetPublicListingByIdQuery,
+  useGetMyFavoritesQuery,
+  useAddFavoriteMutation,
+  useRemoveFavoriteMutation,
+  useReportListingMutation,
+} from "@/redux/api";
+import { mapApiListingToProperty } from "@/utils/apiListingMapper";
+import { registerApiListingProperties } from "@/utils/propertyLookup";
+import { useIsAuthenticated } from "@/context/auth-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -67,6 +77,8 @@ type NavigationProp = NativeStackNavigationProp<any>;
 
 interface RouteParams {
   propertyId: number;
+  /** Backend listing UUID — loads fresh detail from API when set. */
+  listingId?: string;
   selectedDates?: CalendarDates;
   visiblePropertyIds?: number[];
   listingType?: string;
@@ -77,6 +89,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const params = route.params as RouteParams;
   const {
     propertyId,
+    listingId,
     selectedDates: passedDates,
     visiblePropertyIds = [],
     listingType: passedListingType,
@@ -84,6 +97,34 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
+  const { isAuthenticated } = useIsAuthenticated();
+
+  const { data: listingDto } = useGetPublicListingByIdQuery(listingId!, {
+    skip: !listingId,
+  });
+
+  const {
+    data: favoritesData,
+    refetch: refetchFavorites,
+    isFetching: isFetchingFavorites,
+  } = useGetMyFavoritesQuery(undefined, {
+    skip: !isAuthenticated,
+    refetchOnMountOrArgChange: true,
+  });
+
+  const [addFavorite] = useAddFavoriteMutation();
+  const [removeFavorite] = useRemoveFavoriteMutation();
+
+  const propertyFromApi = useMemo(() => {
+    if (!listingDto) return undefined;
+    return mapApiListingToProperty(listingDto);
+  }, [listingDto]);
+
+  useEffect(() => {
+    if (propertyFromApi) {
+      registerApiListingProperties([propertyFromApi]);
+    }
+  }, [propertyFromApi]);
 
   const stickyHeaderHeight =
     insets.top + (Platform.OS === "ios" ? hp(8) : hp(7));
@@ -97,14 +138,36 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const [liked, setLiked] = useState<boolean>(false);
   const [favorited, setFavorited] = useState<boolean>(false);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
+  const [copiedId, setCopiedId] = useState<boolean>(false);
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState<string>("");
+  const [reportDetails, setReportDetails] = useState<string>("");
+  const [reportListing, { isLoading: isReporting }] = useReportListingMutation();
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-200)).current; // Start fully off-screen (hidden)
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const property = useMemo(
-    () => getPropertyById(propertyId),
-    [propertyId]
-  );
+  const property = useMemo(() => {
+    if (propertyFromApi) return propertyFromApi;
+    return getPropertyById(propertyId);
+  }, [propertyFromApi, propertyId]);
+
+  useEffect(() => {
+    if (!property?.serverListingId || !favoritesData?.favorites) return;
+    const ids = new Set(
+      favoritesData.favorites.map((f) => f.listingId)
+    );
+    setFavorited(ids.has(property.serverListingId));
+  }, [property?.serverListingId, favoritesData]);
+
+  // Ensure favorite state is restored after app relaunch / returning to screen.
+  // RTK Query cache is in-memory; after reload we must refetch.
+  useEffect(() => {
+    if (!isAuthenticated || !property?.serverListingId) return;
+    // Avoid spamming when the query is already in flight.
+    if (isFetchingFavorites) return;
+    refetchFavorites();
+  }, [isAuthenticated, property?.serverListingId]);
 
   useEffect(() => {
     setExpandedDescription(false);
@@ -147,6 +210,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     if (!property) return "";
     const raw = property.advertiserPhone?.trim();
     if (raw) return raw;
+    if (property.serverListingId) return "";
     if (property.id < 500000) return "+966123456789";
     return "";
   }, [property]);
@@ -158,32 +222,143 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   const handleCall = useCallback(() => {
     const tel = normalizeAdvertiserPhoneForTel(resolvedAdvertiserPhoneForContact || undefined);
-    if (tel) openPhoneDialer(tel);
+    if (!tel) return;
+    openPhoneDialer(tel).catch((e: any) => {
+      Alert.alert(
+        t("common.error"),
+        e?.message || t("common.somethingWentWrong") || "Something went wrong."
+      );
+    });
   }, [resolvedAdvertiserPhoneForContact]);
 
   const handleWhatsApp = useCallback(() => {
     const wa = normalizeAdvertiserPhoneForWhatsApp(resolvedAdvertiserPhoneForContact || undefined);
-    if (wa) openWhatsApp(wa);
+    if (!wa) return;
+    openWhatsApp(wa).catch((e: any) => {
+      Alert.alert(
+        t("common.error"),
+        e?.message || t("common.somethingWentWrong") || "Something went wrong."
+      );
+    });
   }, [resolvedAdvertiserPhoneForContact]);
 
-  const handleChat = useCallback(() => {
-    // Chat from property details is disabled until backend chat is wired.
-    // Keep the button visible and touchable; intentionally no navigation.
-    // if (!property) return;
-    // const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
-    // const advertiserName = property.advertiserName || "Property Owner";
-    // const advertiserId = property.advertiserId || `advertiser-${property.id}`;
-    // navigation.navigate("Conversation", {
-    //   propertyId: property.id,
-    //   advertiserName,
-    //   advertiserId,
-    //   defaultMessage,
-    // });
+  const handleShare = useCallback(async () => {
+    if (!property) return;
+
+    const title =
+      (property.categoryLabel?.trim() || property.address?.trim() || t("listings.property")) ??
+      "Listing";
+
+    const locationParts = [
+      property.city?.trim() ? property.city.trim() : null,
+      (property.listingMetadata as any)?.locationDisplayName?.trim
+        ? (property.listingMetadata as any)?.locationDisplayName.trim()
+        : null,
+    ].filter(Boolean) as string[];
+    const locationLine = locationParts.length ? locationParts[0] : "";
+
+    const advertiserName = property.advertiserName?.trim() || "";
+    const contactPhone = resolvedAdvertiserPhoneForContact?.trim() || "";
+
+    const rentSale =
+      property.listingType !== "daily" && "price" in property
+        ? (property as RentSaleProperty)
+        : undefined;
+    const priceRaw = rentSale?.price ? String(rentSale.price).trim() : "";
+
+    const facts: string[] = [];
+    if (Number.isFinite(property.bedrooms) && property.bedrooms > 0) {
+      facts.push(`${t("listings.bedrooms")}: ${property.bedrooms}`);
+    }
+    if (Number.isFinite(property.restrooms) && property.restrooms > 0) {
+      facts.push(`${t("listings.bathrooms")}: ${property.restrooms}`);
+    }
+    if (Number.isFinite(property.area) && property.area > 0) {
+      facts.push(`${t("listings.area")}: ${property.area}`);
+    }
+
+    const listingTypeLabel =
+      property.listingType === "sale"
+        ? t("listings.forSale")
+        : property.listingType === "rent"
+          ? t("listings.forRent")
+          : t("listings.property");
+
+    const description = (property.description ?? "").trim();
+
+    const lines: string[] = [];
+    lines.push(`${title} • ${listingTypeLabel}`);
+    if (priceRaw) {
+      lines.push(`${t("listings.price")}: ${priceRaw} ${t("listings.sar")}`);
+    }
+    if (locationLine) {
+      lines.push(`${t("listings.location") ?? "Location"}: ${locationLine}`);
+    }
+    if (facts.length) {
+      lines.push(facts.join(" · "));
+    }
+    if (advertiserName || contactPhone) {
+      lines.push("");
+      lines.push(t("listings.advertiserInformation") ?? "Advertiser");
+      if (advertiserName) lines.push(`${t("profile.name")}: ${advertiserName}`);
+      if (contactPhone) lines.push(`${t("profile.phoneNumber")}: ${contactPhone}`);
+    }
+    if (description) {
+      lines.push("");
+      lines.push(description);
+    }
+
+    const message = lines.join("\n");
+    try {
+      await Share.share({ message, title });
+    } catch {
+      // dismissed
+    }
+  }, [property, resolvedAdvertiserPhoneForContact, t]);
+
+  const openReportModal = useCallback(() => {
+    setReportReason("");
+    setReportDetails("");
+    setIsReportModalVisible(true);
   }, []);
 
-  const handleShare = useCallback(() => {
-    console.log("Share property");
-  }, []);
+  const closeReportModal = useCallback(() => {
+    if (isReporting) return;
+    setIsReportModalVisible(false);
+  }, [isReporting]);
+
+  const submitReport = useCallback(async () => {
+    const sid = property?.serverListingId;
+    if (!sid) {
+      Alert.alert(t("common.error"), "Listing ID is missing.");
+      return;
+    }
+    const reason = reportReason.trim();
+    if (!reason) {
+      Alert.alert(
+        t("common.error"),
+        t("listings.reportAdReasonRequired") ?? "Please choose a reason."
+      );
+      return;
+    }
+    try {
+      await reportListing({
+        listingId: sid,
+        reason,
+        details: reportDetails.trim() || null,
+      }).unwrap();
+      setIsReportModalVisible(false);
+      Alert.alert(
+        t("common.success"),
+        t("listings.reportSubmitted") ?? "Report submitted."
+      );
+    } catch (e: any) {
+      Alert.alert(
+        t("common.error"),
+        e?.data?.message || e?.message || "Could not submit report."
+      );
+    }
+  }, [property?.serverListingId, reportReason, reportDetails, reportListing, t]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -195,13 +370,44 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     }
   }, [navigation]);
 
+  // Like feature removed (keep state for legacy/local listings only if needed elsewhere).
   const toggleLike = useCallback(() => {
     setLiked((prev) => !prev);
   }, []);
 
-  const toggleFavorite = useCallback(() => {
-    setFavorited((prev) => !prev);
-  }, []);
+  const toggleFavorite = useCallback(async () => {
+    if (!property?.serverListingId) {
+      setFavorited((prev) => !prev);
+      return;
+    }
+    if (!isAuthenticated) {
+      Alert.alert(
+        t("common.error"),
+        t("auth.loginRequired") ?? "Please log in to save favorites."
+      );
+      return;
+    }
+    const sid = property.serverListingId;
+    const next = !favorited;
+    setFavorited(next);
+    try {
+      if (!next) {
+        await removeFavorite({ listingId: sid }).unwrap();
+      } else {
+        await addFavorite({ listingId: sid }).unwrap();
+      }
+    } catch {
+      // rollback on failure
+      setFavorited(!next);
+    }
+  }, [
+    property?.serverListingId,
+    isAuthenticated,
+    favorited,
+    addFavorite,
+    removeFavorite,
+    t,
+  ]);
 
   const openImageViewer = useCallback(() => {
     const images =
@@ -226,11 +432,14 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const descriptionText = (property?.description ?? "").trim();
 
   const listingIdText = useMemo(() => {
+    if (property?.serverListingId) {
+      return property.serverListingId;
+    }
     if (typeof property?.listingId === "number") {
       return String(property.listingId);
     }
     return String(property?.id ?? "---");
-  }, [property?.id, property?.listingId]);
+  }, [property?.id, property?.listingId, property?.serverListingId]);
 
   const createdAtText = useMemo(() => {
     if (!property?.createdAt) return "---";
@@ -261,6 +470,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   );
 
   const propertyFeatureRows = useMemo(() => {
+    if (property?.serverListingId) {
+      return dynamicFeatureLabels;
+    }
     if (dynamicFeatureLabels.length > 0 || isPublishedListing) {
       return dynamicFeatureLabels;
     }
@@ -271,7 +483,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       t("listings.specialEntrance"),
       t("listings.nearBusFeature"),
     ];
-  }, [dynamicFeatureLabels, isPublishedListing, t]);
+  }, [property?.serverListingId, dynamicFeatureLabels, isPublishedListing, t]);
 
   const handleDescriptionTextLayout = useCallback(
     (e: { nativeEvent: { lines: unknown[] } }) => {
@@ -288,17 +500,29 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
 
 
-  const handleCopyId = useCallback(() => {
-    console.log("Copy ID:", listingIdText);
-  }, [listingIdText]);
+  const handleCopyId = useCallback(async () => {
+    try {
+      await Clipboard.setStringAsync(listingIdText);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 1500);
+    } catch {
+      Alert.alert(t("common.error"), "Could not copy to clipboard.");
+    }
+  }, [listingIdText, t]);
 
-  const { navigateToProfile } = useTabNavigation();
   const handleAdvertiserRowPress = useCallback(() => {
-    navigateToProfile("UserProfileAds");
-  }, [navigateToProfile]);
-  const handleFinancingOptions = useCallback(() => {
-    navigateToProfile("Login");
-  }, [navigateToProfile]);
+    const advertiserId = property?.advertiserId;
+    if (!advertiserId) {
+      navigation.navigate("UserProfileAds");
+      return;
+    }
+    navigation.navigate("UserProfileAds", {
+      userId: String(advertiserId),
+      userName: property?.advertiserName ?? "",
+    });
+  }, [navigation, property?.advertiserId, property?.advertiserName]);
+  const { navigateToProfile } = useTabNavigation();
+  // Financing options are disabled (feature not implemented yet).
 
   const handleAverageCardPress = useCallback(() => {
     if (!property) return;
@@ -485,13 +709,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           </IconButton>
           <View style={styles.headerIconsSpacer} />  
           <View style={[styles.headerIconsRight, isRTL && styles.headerIconsRightRTL]}>
-            <IconButton onPress={toggleLike}>
-              <Ionicons
-                name={liked ? "thumbs-up" : "thumbs-up-outline"}
-                size={wp(5.5)}
-                color={COLORS.backButton}
-              />
-            </IconButton>
             <IconButton onPress={handleShare}>
               <Ionicons
                 name="share-social-outline"
@@ -564,7 +781,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           {/* Financing Options Card and Average Sale Card - Only for Sale */}
           {property.listingType === "sale" && (
             <>
-              <FinancingOptionsCard onPress={handleFinancingOptions} />
               <AverageSaleCard property={property} onPress={handleAverageCardPress} />
             </>
           )}
@@ -716,7 +932,6 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                 contactActionsEnabled={hasAdvertiserContactPhone}
                 onCall={handleCall}
                 onWhatsApp={handleWhatsApp}
-                onChat={handleChat}
                 onAdvertiserRowPress={handleAdvertiserRowPress}
               />
               <View style={styles.sectionSeparator} />
@@ -727,11 +942,17 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             onTabChange={handleTabPress}
             property={property}
             onCopyId={handleCopyId}
+            copyIdLabel={copiedId ? (t("common.copied") ?? "Copied") : undefined}
           />
 
           {/* Report Ad */}
           <View style={styles.reportAdSection}>
-            <TouchableOpacity style={[styles.reportAd, isRTL && styles.reportAdRTL]}>
+            <TouchableOpacity
+              style={[styles.reportAd, isRTL && styles.reportAdRTL]}
+              activeOpacity={0.85}
+              onPress={openReportModal}
+              disabled={!property?.serverListingId}
+            >
               <Ionicons name="flag" size={wp(5.5)} color={COLORS.error} />
               <Text style={[styles.reportAdText, isRTL && styles.reportAdTextRTL]}>
                 {t("listings.reportAd")}
@@ -753,11 +974,96 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             onNextPress={handleNextProperty}
             onCall={handleCall}
             onWhatsApp={handleWhatsApp}
-            onChat={handleChat}
             contactActionsEnabled={hasAdvertiserContactPhone}
           />
         </View>
       </View>
+
+      <Modal
+        visible={isReportModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeReportModal}
+      >
+        <View style={styles.reportModalBackdrop}>
+          <View style={styles.reportModalCard}>
+            <Text style={[styles.reportModalTitle, isRTL && styles.reportModalTitleRTL]}>
+              {t("listings.reportAd")}
+            </Text>
+
+            <Text style={[styles.reportModalLabel, isRTL && styles.reportModalTitleRTL]}>
+              {t("listings.reason") ?? "Reason"}
+            </Text>
+            <View style={styles.reportReasons}>
+              {[
+                t("listings.reportReasonSpam") ?? "Spam",
+                t("listings.reportReasonFraud") ?? "Fraud / scam",
+                t("listings.reportReasonInaccurate") ?? "Inaccurate information",
+                t("listings.reportReasonOther") ?? "Other",
+              ].map((label) => (
+                <TouchableOpacity
+                  key={label}
+                  style={[
+                    styles.reportReasonChip,
+                    reportReason === label && styles.reportReasonChipActive,
+                  ]}
+                  onPress={() => setReportReason(label)}
+                  activeOpacity={0.8}
+                  disabled={isReporting}
+                >
+                  <Text
+                    style={[
+                      styles.reportReasonChipText,
+                      reportReason === label && styles.reportReasonChipTextActive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.reportModalLabel, isRTL && styles.reportModalTitleRTL]}>
+              {t("listings.detailsOptional") ?? "Details (optional)"}
+            </Text>
+            <RNTextInput
+              value={reportDetails}
+              onChangeText={setReportDetails}
+              editable={!isReporting}
+              placeholder={t("listings.addMoreDetails") ?? "Add more details"}
+              multiline
+              style={[styles.reportDetailsInput, isRTL && styles.reportDetailsInputRTL]}
+            />
+
+            <View style={[styles.reportModalActions, isRTL && styles.reportModalActionsRTL]}>
+              <TouchableOpacity
+                style={[styles.reportModalBtn, styles.reportModalCancel]}
+                onPress={closeReportModal}
+                disabled={isReporting}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.reportModalCancelText}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.reportModalBtn,
+                  styles.reportModalSubmit,
+                  isReporting && styles.reportModalBtnDisabled,
+                ]}
+                onPress={submitReport}
+                disabled={isReporting}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.reportModalSubmitText}>
+                  {isReporting ? (t("common.loading") ?? "Loading...") : (t("listings.submitReport") ?? "Submit")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -964,5 +1270,102 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     marginLeft: wp(2),
     fontWeight: "600",
+  },
+  reportModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    paddingHorizontal: wp(5),
+  },
+  reportModalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: wp(3),
+    padding: wp(4),
+  },
+  reportModalTitle: {
+    fontSize: wp(4.8),
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    marginBottom: hp(1.2),
+  },
+  reportModalTitleRTL: {
+    textAlign: "right",
+  },
+  reportModalLabel: {
+    fontSize: wp(3.6),
+    color: COLORS.textSecondary,
+    marginTop: hp(1),
+    marginBottom: hp(0.8),
+  },
+  reportReasons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: wp(2),
+  },
+  reportReasonChip: {
+    paddingVertical: hp(0.8),
+    paddingHorizontal: wp(3),
+    borderRadius: wp(10),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.background,
+  },
+  reportReasonChipActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: "rgba(14,133,106,0.10)",
+  },
+  reportReasonChipText: {
+    fontSize: wp(3.4),
+    color: COLORS.textPrimary,
+    fontWeight: "600",
+  },
+  reportReasonChipTextActive: {
+    color: COLORS.primary,
+  },
+  reportDetailsInput: {
+    minHeight: hp(10),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: wp(2),
+    padding: wp(3),
+    backgroundColor: COLORS.background,
+    textAlignVertical: "top",
+  },
+  reportDetailsInputRTL: {
+    textAlign: "right",
+  },
+  reportModalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: wp(3),
+    marginTop: hp(2),
+  },
+  reportModalActionsRTL: {
+    flexDirection: "row-reverse",
+    justifyContent: "flex-start",
+  },
+  reportModalBtn: {
+    paddingVertical: hp(1.2),
+    paddingHorizontal: wp(4),
+    borderRadius: wp(2),
+  },
+  reportModalBtnDisabled: {
+    opacity: 0.6,
+  },
+  reportModalCancel: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  reportModalCancelText: {
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  reportModalSubmit: {
+    backgroundColor: COLORS.primary,
+  },
+  reportModalSubmitText: {
+    fontWeight: "800",
+    color: COLORS.white,
   },
 });

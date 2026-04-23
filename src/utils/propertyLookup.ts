@@ -1,16 +1,38 @@
 import type { Property } from "../types/property";
-import { PROPERTY_DATA } from "../data/propertyData";
 import { getPublishedListings } from "./publishedListingsStore";
 
 let propertyByIdMap: Map<number, Property> | null = null;
 
+const apiListingById = new Map<number, Property>();
+const apiListingByServerId = new Map<string, Property>();
+
 function buildPropertyMap(): Map<number, Property> {
   if (propertyByIdMap) return propertyByIdMap;
   propertyByIdMap = new Map();
-  for (const p of PROPERTY_DATA) {
-    propertyByIdMap.set(p.id, p);
-  }
   return propertyByIdMap;
+}
+
+/**
+ * Register listings returned from the API so detail screens can resolve by id or server UUID.
+ */
+export function registerApiListingProperties(properties: Property[]): void {
+  for (const p of properties) {
+    apiListingById.set(p.id, p);
+    if (p.serverListingId) {
+      apiListingByServerId.set(p.serverListingId, p);
+    }
+  }
+}
+
+export function clearApiListingProperties(): void {
+  apiListingById.clear();
+  apiListingByServerId.clear();
+}
+
+export function getPropertyByServerListingId(
+  serverId: string
+): Property | undefined {
+  return apiListingByServerId.get(serverId);
 }
 
 /**
@@ -19,5 +41,7 @@ function buildPropertyMap(): Map<number, Property> {
 export function getPropertyById(id: number): Property | undefined {
   const published = getPublishedListings().find((p) => p.id === id);
   if (published) return published;
+  const fromApi = apiListingById.get(id);
+  if (fromApi) return fromApi;
   return buildPropertyMap().get(id);
 }

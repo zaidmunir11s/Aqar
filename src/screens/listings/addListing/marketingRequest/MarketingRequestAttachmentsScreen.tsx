@@ -69,8 +69,9 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
         note,
       })),
       virtualTourLink,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     }),
-    [attachments, selectedCategory, virtualTourLink]
+    [attachments, params, selectedCategory, virtualTourLink]
   );
 
   const mergeAttachments = useCallback(
@@ -160,6 +161,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
         note,
       })),
       virtualTourLink,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
   }, [attachments, navigation, selectedCategory, virtualTourLink]);
 
@@ -201,6 +203,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
             note,
           })),
           virtualTourLink,
+          ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
         });
         return;
       }
@@ -215,6 +218,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
             note,
           })),
           virtualTourLink,
+          ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
         });
         return;
       }

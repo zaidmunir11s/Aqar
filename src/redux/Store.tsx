@@ -1,6 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { baseApi } from './api/baseApi';
+import './api/listingApi';
+import './api/favoritesApi';
+import './api/userApi';
 import localizationReducer from './slices/localizationSlice';
 import listingsFiltersReducer from './slices/listingsFiltersSlice';
 

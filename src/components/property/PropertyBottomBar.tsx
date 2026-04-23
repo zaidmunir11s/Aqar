@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
-import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -15,7 +15,6 @@ export interface PropertyBottomBarProps {
   onNextPress: () => void;
   onCall: () => void;
   onWhatsApp: () => void;
-  onChat: () => void;
   isDailyListing?: boolean;
   /** When false, Call / WhatsApp are disabled (no valid number on listing). */
   contactActionsEnabled?: boolean;
@@ -32,7 +31,6 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
     onNextPress,
     onCall,
     onWhatsApp,
-    onChat,
     isDailyListing = false,
     contactActionsEnabled = true,
   }) => {
@@ -44,13 +42,6 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
       () => ({
         bottomBar: {
           flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-        },
-        chatBtnWithText: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-        },
-        chatButtonText: {
-          marginLeft: isRTL ? 0 : wp(2),
-          marginRight: isRTL ? wp(2) : 0,
         },
       }),
       [isRTL]
@@ -108,16 +99,6 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
         )}
 
         <TouchableOpacity
-          style={[styles.bottomBarBtn, styles.chatBtnBottom, isDailyListing && [styles.chatBtnWithText, rtlStyles.chatBtnWithText]]}
-          onPress={onChat}
-        >
-          <MaterialIcons name="chat" size={wp(5.5)} color="#3b82f6" />
-          {isDailyListing && (
-            <Text style={[styles.chatButtonText, rtlStyles.chatButtonText]}>{t("listings.contactAdvertiser")}</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={[
             styles.bottomBarBtn,
             !canGoNext && styles.bottomBarBtnDisabled,
@@ -173,24 +154,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderColor: "#0e856a",
     borderWidth: 2,
-  },
-  chatBtnBottom: {
-    width: wp(18),
-    backgroundColor: "#fff",
-    borderColor: "#3b82f6",
-    borderWidth: 2,
-  },
-  chatBtnWithText: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: wp(3),
-    flex: 1,
-    marginHorizontal: wp(2),
-  },
-  chatButtonText: {
-    fontSize: wp(4),
-    color: "#3b82f6",
-    fontWeight: "600",
   },
 });
 

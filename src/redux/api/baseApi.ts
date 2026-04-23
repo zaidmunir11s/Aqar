@@ -4,15 +4,15 @@ import {
     BaseQueryFn,
   } from "@reduxjs/toolkit/query/react";
   import type { FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_CONFIG } from "../../constants/api";
 import { STORAGE_KEYS } from "../../constants";
 import { authSessionNotifier } from "../../context/auth-context";
+import { secureGet, secureMultiRemove } from "@/utils/secureStore";
   
   const baseQuery = fetchBaseQuery({
     baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: async (headers) => {
-      const token = await AsyncStorage.getItem(STORAGE_KEYS.authToken);
+      const token = await secureGet(STORAGE_KEYS.authToken);
   
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -41,10 +41,14 @@ import { authSessionNotifier } from "../../context/auth-context";
         // Backend does not expose a refresh endpoint in this project.
         // On auth failure, clear tokens and route through the existing
         // "session expired" flow.
-        await AsyncStorage.multiRemove([
+        await secureMultiRemove([
           STORAGE_KEYS.authToken,
           STORAGE_KEYS.refreshToken,
           STORAGE_KEYS.loggedInPhoneNumber,
+          STORAGE_KEYS.loggedInDisplayName,
+          STORAGE_KEYS.loggedInProfileImageUri,
+          STORAGE_KEYS.accountProfileMeta,
+          STORAGE_KEYS.lastActiveAtMs,
         ]);
         authSessionNotifier.notifySessionExpired();
       }

@@ -58,6 +58,8 @@ export interface ProjectDetails {
 
 export interface BaseProperty {
   id: number;
+  /** Backend listing UUID when loaded from API (for refetch / favorites). */
+  serverListingId?: string;
   /** Human-facing sequence number for published listings. */
   listingId?: number;
   /** ISO timestamp when listing was created. */
@@ -68,6 +70,8 @@ export interface BaseProperty {
   categoryId?: string;
   commissionText?: string;
   videoUris?: string[];
+  /** Extra fields from API `Listing.metadata` (marketing flow, etc.). */
+  listingMetadata?: Record<string, unknown>;
   detailsItems?: PropertyDetailItem[];
   lat: number;
   lng: number;

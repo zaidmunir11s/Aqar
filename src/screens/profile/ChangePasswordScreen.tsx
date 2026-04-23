@@ -10,6 +10,8 @@ import {
   Keyboard,
   Animated,
   TextStyle,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,12 +22,15 @@ import {
 import { COLORS } from "../../constants";
 import { ScreenHeader, TextInput, SingleButtonFooter } from "../../components";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useChangeMyPasswordMutation, useGetMeQuery } from "@/redux/api/userApi";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function ChangePasswordScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
+  const { data: meData } = useGetMeQuery();
+  const [changePassword, { isLoading }] = useChangeMyPasswordMutation();
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -123,10 +128,27 @@ export default function ChangePasswordScreen(): React.JSX.Element {
       return;
     }
 
-    // All validations passed
-    console.log("Change password:", { oldPassword, newPassword });
-    // TODO: Implement change password functionality
-  }, [oldPassword, newPassword, confirmPassword]);
+    if (!meData?.user?.hasPassword) {
+      Alert.alert(
+        t("common.error", { defaultValue: "Error" }),
+        t("profile.passwordNotSet", { defaultValue: "This account does not have a password (SSO sign-in)." })
+      );
+      return;
+    }
+
+    changePassword({ oldPassword, newPassword })
+      .unwrap()
+      .then(() => {
+        Alert.alert(t("common.success", { defaultValue: "Success" }), t("profile.passwordUpdated", { defaultValue: "Password updated" }));
+        navigation.goBack();
+      })
+      .catch((e: any) => {
+        Alert.alert(
+          t("common.error", { defaultValue: "Error" }),
+          e?.message || t("profile.passwordUpdateFailed", { defaultValue: "Failed to update password." })
+        );
+      });
+  }, [oldPassword, newPassword, confirmPassword, changePassword, navigation, t, meData]);
 
   return (
     <View style={styles.container}>
@@ -204,7 +226,8 @@ export default function ChangePasswordScreen(): React.JSX.Element {
           fixed={false}
           label={t("profile.save", { defaultValue: "Save" })}
           onPress={handleSave}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoading}
+          icon={isLoading ? <ActivityIndicator color={COLORS.white} /> : undefined}
         />
       </Animated.View>
     </View>

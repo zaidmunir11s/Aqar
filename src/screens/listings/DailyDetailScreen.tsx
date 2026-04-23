@@ -590,7 +590,6 @@ export default function DailyDetailScreen(): React.JSX.Element {
             onNextPress={handleNextProperty}
             onCall={() => {}}
             onWhatsApp={() => {}}
-            onChat={handleChat}
             isDailyListing={true}
           />
         </View>

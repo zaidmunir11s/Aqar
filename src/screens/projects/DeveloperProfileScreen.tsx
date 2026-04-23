@@ -120,11 +120,6 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
     // TODO: share developer profile
   }, []);
 
-  const handleCall = useCallback(() => {
-    const phone = developerProjects[0]?.advertiserPhone ?? "+966123456789";
-    openPhoneDialer(phone);
-  }, [developerProjects]);
-
   // Projects by this developer with valid coordinates
   const developerProjects = useMemo(() => {
     const name = developerName.trim().toLowerCase();
@@ -134,6 +129,11 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
         isProjectProperty(p) && hasValidCoordinates(p) && (p.developerName?.trim().toLowerCase() === name)
     );
   }, [developerName]);
+
+  const handleCall = useCallback(() => {
+    const phone = developerProjects[0]?.advertiserPhone ?? "+966123456789";
+    openPhoneDialer(phone);
+  }, [developerProjects]);
 
   // Map region: fit developer projects or default to Riyadh
   const mapRegion = useMemo(() => {

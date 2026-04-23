@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   BackHandler,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
@@ -14,24 +15,26 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useClerk, useUser } from "@clerk/clerk-expo";
 import { COLORS, STORAGE_KEYS } from "../../constants";
 import { formatSaudiPhoneForDisplay } from "../../utils/validation";
 import { useLocalization, useTabNavigation } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
+import { secureGet, secureMultiRemove } from "@/utils/secureStore";
+import { backendRequest } from "@/utils/backendApi";
+import { useGetMeQuery } from "@/redux/api/userApi";
 import {
   ScreenHeader,
   PhoneCard,
-  ActionButtons,
-  AqarCard,
-  ActivityItem,
+  // ActionButtons,
+  // AqarCard,
+  // ActivityItem,
   AddButton,
-  MenuList,
-  ClientsSection,
+  // MenuList,
+  // ClientsSection,
   AccountManagementSection,
 } from "../../components";
-import type { MenuItem } from "../../components/profile/MenuList";
+// import type { MenuItem } from "../../components/profile/MenuList";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -53,6 +56,7 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   }, [clerkUser]);
 
   const { navigateToListings } = useTabNavigation();
+  const { data: meData } = useGetMeQuery();
   const [profilePhoneDisplay, setProfilePhoneDisplay] = useState<string | undefined>(undefined);
   const [profileDisplayName, setProfileDisplayName] = useState<string | undefined>(undefined);
   const [profileAvatarUri, setProfileAvatarUri] = useState<string | null>(null);
@@ -89,13 +93,20 @@ export default function ProfileDetailScreen(): React.JSX.Element {
       (async () => {
         try {
           const [rawPhone, rawName, rawUri] = await Promise.all([
-            AsyncStorage.getItem(STORAGE_KEYS.loggedInPhoneNumber),
-            AsyncStorage.getItem(STORAGE_KEYS.loggedInDisplayName),
-            AsyncStorage.getItem(STORAGE_KEYS.loggedInProfileImageUri),
+            secureGet(STORAGE_KEYS.loggedInPhoneNumber),
+            secureGet(STORAGE_KEYS.loggedInDisplayName),
+            secureGet(STORAGE_KEYS.loggedInProfileImageUri),
           ]);
           if (!active) return;
+          // Prefer backend phone number when present (stays consistent across devices).
+          const backendPhoneDigits = meData?.user?.phoneNumber
+            ? String(meData.user.phoneNumber).replace(/\D/g, "")
+            : "";
+          const effectivePhone = backendPhoneDigits || (rawPhone ?? "");
           setProfilePhoneDisplay(
-            rawPhone ? formatSaudiPhoneForDisplay(rawPhone) : t("profile.phoneNotOnProfile")
+            effectivePhone
+              ? formatSaudiPhoneForDisplay(effectivePhone)
+              : t("profile.phoneNotOnProfile")
           );
           setProfileDisplayName(rawName?.trim() ? rawName.trim() : undefined);
           setProfileAvatarUri(rawUri && rawUri.length > 0 ? rawUri : null);
@@ -109,29 +120,25 @@ export default function ProfileDetailScreen(): React.JSX.Element {
       return () => {
         active = false;
       };
-    }, [t])
+    }, [t, meData?.user?.phoneNumber])
   );
-
-  const handleWalletPress = useCallback(() => {
-    // TODO: Navigate to wallet screen
-  }, []);
 
   const handlePhonePress = useCallback(() => {
     navigation.navigate("UserProfileAds");
   }, [navigation]);
 
-  const handleFavoritesPress = useCallback(() => {}, []);
-  const handleAlertsPress = useCallback(() => {}, []);
-  const handleAqarPress = useCallback(() => {}, []);
-  const handleActivityPress = useCallback(() => {}, []);
+  // const handleFavoritesPress = useCallback(() => {}, []);
+  // const handleAlertsPress = useCallback(() => {}, []);
+  // const handleAqarPress = useCallback(() => {}, []);
+  // const handleActivityPress = useCallback(() => {}, []);
 
   const handleAddPress = useCallback(() => {
     navigateToListings("AddListing");
   }, [navigateToListings]);
 
-  const handleMyClientsPress = useCallback(() => {
-    // TODO: Navigate to My Clients
-  }, []);
+  // const handleMyClientsPress = useCallback(() => {
+  //   // TODO: Navigate to My Clients
+  // }, []);
 
   const handleUpdateProfilePress = useCallback(() => {
     navigation.navigate("UpdateProfile");
@@ -146,10 +153,13 @@ export default function ProfileDetailScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleLogoutPress = useCallback(async () => {
-    await AsyncStorage.multiRemove([
+    await secureMultiRemove([
       STORAGE_KEYS.authToken,
       STORAGE_KEYS.refreshToken,
       STORAGE_KEYS.loggedInPhoneNumber,
+      STORAGE_KEYS.loggedInDisplayName,
+      STORAGE_KEYS.loggedInProfileImageUri,
+      STORAGE_KEYS.accountProfileMeta,
       STORAGE_KEYS.lastActiveAtMs,
     ]);
     setHasBackendSession(false);
@@ -163,45 +173,77 @@ export default function ProfileDetailScreen(): React.JSX.Element {
     );
   }, [navigation, setHasBackendSession, clerkSignOut]);
 
-  // RTL-aware styles (only apply RTL-specific changes, preserve LTR styling)
-  const rtlStyles = useMemo(
-    () => ({
-      walletContainer: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      walletText: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-    }),
-    [isRTL]
-  );
+  const handleDeleteAccountPress = useCallback(() => {
+    Alert.alert(
+      t("profile.deleteAccount", { defaultValue: "Delete account" }),
+      t("profile.deleteAccountConfirm", {
+        defaultValue:
+          "This will permanently delete your account and all associated data. This action cannot be undone.",
+      }),
+      [
+        { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+        {
+          text: t("profile.deleteAccount", { defaultValue: "Delete account" }),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await backendRequest("/account/me", { method: "DELETE" });
+            } catch (e: any) {
+              Alert.alert(
+                t("common.error", { defaultValue: "Error" }),
+                e?.message ||
+                  t("profile.deleteAccountFailed", { defaultValue: "Failed to delete account." })
+              );
+              return;
+            }
 
-  const onMyDealsPress = useCallback(() => {}, []);
-  const onRequestsPress = useCallback(() => {}, []);
-  const onMyBookingsPress = useCallback(() => {}, []);
+            await secureMultiRemove([
+              STORAGE_KEYS.authToken,
+              STORAGE_KEYS.refreshToken,
+              STORAGE_KEYS.loggedInPhoneNumber,
+              STORAGE_KEYS.loggedInDisplayName,
+              STORAGE_KEYS.loggedInProfileImageUri,
+              STORAGE_KEYS.accountProfileMeta,
+              STORAGE_KEYS.lastActiveAtMs,
+            ]);
+            setHasBackendSession(false);
+            await clerkSignOut().catch(() => null);
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+              })
+            );
+          },
+        },
+      ]
+    );
+  }, [t, navigation, setHasBackendSession, clerkSignOut]);
 
-  const menuItems: MenuItem[] = useMemo(
-    () => [
-      { title: t("profile.myDeals"), subtitle: t("profile.verifyDeals"), onPress: onMyDealsPress },
-      { title: t("listings.requests"), subtitle: t("profile.getAlertsForOffers"), onPress: onRequestsPress },
-      { title: t("profile.myBookings"), subtitle: t("profile.bookingHistory"), onPress: onMyBookingsPress },
-    ],
-    [t, onMyDealsPress, onRequestsPress, onMyBookingsPress]
-  );
+  // (wallet/balance UI removed)
 
-  const profileHeaderRight = useMemo(
-    () => (
-      <TouchableOpacity
-        style={[styles.walletContainer, rtlStyles.walletContainer]}
-        onPress={handleWalletPress}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="wallet-outline" size={wp(5)} color={COLORS.primary} />
-        <Text style={[styles.walletText, rtlStyles.walletText]}>{t("profile.noBalance")}</Text>
-      </TouchableOpacity>
-    ),
-    [handleWalletPress, rtlStyles.walletContainer, rtlStyles.walletText, t]
-  );
+  // NOTE: The following Profile sections are currently not wired to real screens/APIs.
+  // Keep commented out until we implement them end-to-end:
+  // - Favorites / Alerts shortcuts
+  // - Aqar card
+  // - Activity section
+  // - Deals / Requests / Bookings menu
+  // - Clients section
+  //
+  // const onMyDealsPress = useCallback(() => {}, []);
+  // const onRequestsPress = useCallback(() => {}, []);
+  // const onMyBookingsPress = useCallback(() => {}, []);
+  //
+  // const menuItems: MenuItem[] = useMemo(
+  //   () => [
+  //     { title: t("profile.myDeals"), subtitle: t("profile.verifyDeals"), onPress: onMyDealsPress },
+  //     { title: t("listings.requests"), subtitle: t("profile.getAlertsForOffers"), onPress: onRequestsPress },
+  //     { title: t("profile.myBookings"), subtitle: t("profile.bookingHistory"), onPress: onMyBookingsPress },
+  //   ],
+  //   [t, onMyDealsPress, onRequestsPress, onMyBookingsPress]
+  // );
+
+  const profileHeaderRight = null;
 
   return (
     <View style={styles.container}>
@@ -210,7 +252,7 @@ export default function ProfileDetailScreen(): React.JSX.Element {
         onBackPress={handleBackPress}
         fontWeightBold={true}
         rightComponent={profileHeaderRight}
-        showRightSide={true}
+        showRightSide={false}
       />
       <ScrollView
         style={styles.scrollView}
@@ -222,20 +264,30 @@ export default function ProfileDetailScreen(): React.JSX.Element {
           avatarUri={profileAvatarUri ?? clerkUser?.imageUrl ?? null}
           onPress={handlePhonePress}
         />
+        {/*
         <ActionButtons
           onFavoritesPress={handleFavoritesPress}
           onAlertsPress={handleAlertsPress}
         />
         <AqarCard onPress={handleAqarPress} />
         <ActivityItem onPress={handleActivityPress} />
+        */}
+        <Text style={styles.sectionTitle}>{t("listings.addNewListing")}</Text>
         <AddButton onPress={handleAddPress} />
+        {/*
         <MenuList items={menuItems} />
         <ClientsSection onMyClientsPress={handleMyClientsPress} />
+        */}
         <AccountManagementSection
           onUpdateProfilePress={handleUpdateProfilePress}
           onChangePasswordPress={handleChangePasswordPress}
           onChangePhoneNumberPress={handleChangePhoneNumberPress}
           onLogoutPress={handleLogoutPress}
+          onDeleteAccountPress={handleDeleteAccountPress}
+          showChangePassword={!!meData?.user?.hasPassword}
+          // Allow SSO users to add a phone number when missing.
+          showChangePhoneNumber={true}
+          phoneNumberMissing={!meData?.user?.phoneNumber}
         />
       </ScrollView>
     </View>
@@ -253,14 +305,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: wp(4),
   },
-  walletContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: wp(2),
-  },
-  walletText: {
-    fontSize: wp(3.8),
-    color: COLORS.primary,
-    fontWeight: "500",
+  sectionTitle: {
+    marginTop: hp(1.2),
+    marginBottom: hp(1),
+    fontSize: wp(4.2),
+    fontWeight: "700",
+    color: "#111827",
   },
 });

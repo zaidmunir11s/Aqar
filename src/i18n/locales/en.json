@@ -24,6 +24,7 @@
     "submit": "Submit",
     "retry": "Retry",
     "ok": "OK",
+    "copied": "Copied",
     "later": "Later",
     "day": "Day",
     "deleteRequestConfirm": "Are you sure you want to delete this request?",
@@ -108,7 +109,9 @@
     "verify": "Verify",
     "verifying": "Verifying...",
     "verifiedSuccessfully": "Phone verified successfully",
-    "failedToVerify": "Failed to verify. Please try again."
+    "failedToVerify": "Failed to verify. Please try again.",
+    "loginRequiredTitle": "Login required",
+    "loginRequiredMessage": "Please login to continue."
   },
   "navigation": {
     "home": "Home",
@@ -651,6 +654,16 @@
     "readMore": "Read more",
     "publishCommissionLine": "+ Commission ({{value}})",
     "reportAd": "Report Ad",
+    "reason": "Reason",
+    "detailsOptional": "Details (optional)",
+    "addMoreDetails": "Add more details",
+    "submitReport": "Submit",
+    "reportSubmitted": "Report submitted",
+    "reportAdReasonRequired": "Please choose a reason.",
+    "reportReasonSpam": "Spam",
+    "reportReasonFraud": "Fraud / scam",
+    "reportReasonInaccurate": "Inaccurate information",
+    "reportReasonOther": "Other",
     "listingMedia": "Listing media",
     "images": "Images",
     "locationDataUnavailable": "Location data unavailable",
@@ -928,7 +941,24 @@
     "archivedAdsWithCount": "Archived Ads ({{count}})",
     "noAdsFound": "No ads found",
     "deals": "Deals",
-    "ads": "Ads"
+    "ads": "Ads",
+    "hideAdvertiserAction": "Hide advertiser",
+    "hideAdvertiserConfirm": "You will no longer see ads from this advertiser. Continue?",
+    "hideAdvertiserSuccess": "Advertiser hidden successfully.",
+    "reportAdvertiserAction": "Report advertiser",
+    "reportAdvertiserTitle": "Report advertiser",
+    "reportAdvertiserSubtitle": "Select a reason for reporting this advertiser.",
+    "reportAdvertiserSuccess": "Thanks. Your report was submitted.",
+    "reportReasonRequired": "Please select a reason.",
+    "reportDetailsOptional": "Details (optional)",
+    "reportDetailsPlaceholder": "Add any details that can help us review this report...",
+    "reportReasons": {
+      "spam": "Spam",
+      "fraud": "Fraud",
+      "harassment": "Harassment",
+      "inappropriate": "Inappropriate content",
+      "other": "Other"
+    }
   },
   "chat": {
     "title": "Chat",

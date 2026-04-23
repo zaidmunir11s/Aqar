@@ -24,6 +24,7 @@
     "submit": "إرسال",
     "retry": "إعادة المحاولة",
     "ok": "موافق",
+    "copied": "تم النسخ",
     "later": "لاحقاً",
     "day": "يوم",
     "deleteRequestConfirm": "هل أنت متأكد أنك تريد حذف هذا الطلب؟",
@@ -108,7 +109,9 @@
     "verify": "تحقق",
     "verifying": "جاري التحقق...",
     "verifiedSuccessfully": "تم التحقق من رقم الهاتف بنجاح",
-    "failedToVerify": "فشل التحقق. يرجى المحاولة مرة أخرى."
+    "failedToVerify": "فشل التحقق. يرجى المحاولة مرة أخرى.",
+    "loginRequiredTitle": "تسجيل الدخول مطلوب",
+    "loginRequiredMessage": "يرجى تسجيل الدخول للمتابعة."
   },
   "navigation": {
     "home": "الرئيسية",
@@ -651,6 +654,16 @@
     "readMore": "اقرأ المزيد",
     "publishCommissionLine": "+ عمولة ({{value}})",
     "reportAd": "الإبلاغ عن الإعلان",
+    "reason": "السبب",
+    "detailsOptional": "تفاصيل (اختياري)",
+    "addMoreDetails": "أضف تفاصيل أكثر",
+    "submitReport": "إرسال",
+    "reportSubmitted": "تم إرسال البلاغ",
+    "reportAdReasonRequired": "يرجى اختيار السبب.",
+    "reportReasonSpam": "إعلان مزعج",
+    "reportReasonFraud": "احتيال / نصب",
+    "reportReasonInaccurate": "معلومات غير دقيقة",
+    "reportReasonOther": "أخرى",
     "listingMedia": "وسائط الإعلان",
     "images": "الصور",
     "locationDataUnavailable": "بيانات الموقع غير متاحة",
@@ -928,7 +941,24 @@
     "archivedAdsWithCount": "الإعلانات المؤرشفة ({{count}})",
     "noAdsFound": "لا توجد إعلانات",
     "deals": "الصفقات",
-    "ads": "الإعلانات"
+    "ads": "الإعلانات",
+    "hideAdvertiserAction": "إخفاء المعلن",
+    "hideAdvertiserConfirm": "لن ترى إعلانات هذا المعلن بعد الآن. هل تريد المتابعة؟",
+    "hideAdvertiserSuccess": "تم إخفاء المعلن بنجاح.",
+    "reportAdvertiserAction": "الإبلاغ عن المعلن",
+    "reportAdvertiserTitle": "الإبلاغ عن المعلن",
+    "reportAdvertiserSubtitle": "اختر سبب الإبلاغ عن هذا المعلن.",
+    "reportAdvertiserSuccess": "شكرًا لك. تم إرسال بلاغك.",
+    "reportReasonRequired": "يرجى اختيار سبب.",
+    "reportDetailsOptional": "تفاصيل (اختياري)",
+    "reportDetailsPlaceholder": "أضف أي تفاصيل تساعدنا على مراجعة هذا البلاغ...",
+    "reportReasons": {
+      "spam": "رسائل مزعجة",
+      "fraud": "احتيال",
+      "harassment": "مضايقة",
+      "inappropriate": "محتوى غير لائق",
+      "other": "أخرى"
+    }
   },
   "chat": {
     "title": "المحادثات",

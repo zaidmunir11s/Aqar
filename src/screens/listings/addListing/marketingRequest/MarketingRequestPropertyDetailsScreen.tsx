@@ -125,6 +125,7 @@ export default function MarketingRequestPropertyDetailsScreen(): React.JSX.Eleme
             selectedLocation: params.selectedLocation,
             locationDisplayName: params.locationDisplayName,
             propertyDetailsItems,
+            ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
           });
         }}
         nextDisabled={submitAttempted && !isFormValid}

@@ -114,6 +114,7 @@ export default function MarketingRequestVirtualTourScreen(): React.JSX.Element {
       selectedCategory: params.selectedCategory,
       attachments: params.attachments ?? [],
       virtualTourLink: trimmedLink,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
   }, [canSave, navigation, params.attachments, params.selectedCategory, trimmedLink]);
 

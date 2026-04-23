@@ -503,10 +503,21 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     setTouched(allFields);
 
     if (validateAllTabs()) {
-      console.log("Next step");
-      // Navigate to next step
+      const digitsOnly = (v: string): string => v.replace(/\D/g, "");
+      const deed =
+        deedOwnerType === "electronic"
+          ? {
+              deedType: "ELECTRONIC" as const,
+              deedNumber: digitsOnly(fields.deedNumber),
+              ownerIdNumber: digitsOnly(fields.ownerIdNumber || fields.ownerId),
+              ownerBirthDate: fields.ownerBirthdate,
+              ownerPhone: digitsOnly(fields.ownerPhone),
+            }
+          : { deedType: "OTHER" as const };
+
+      navigation.navigate("MarketingRequestPlaceholder", { deed });
     }
-  }, [validateAllTabs]);
+  }, [deedOwnerType, fields, navigation, validateAllTabs]);
 
   const handleFooterBackPress = useCallback(() => {
     navigation.dispatch(StackActions.pop(2));

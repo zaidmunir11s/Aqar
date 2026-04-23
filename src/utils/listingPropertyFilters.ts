@@ -1,4 +1,3 @@
-import { PROPERTY_DATA } from "@/data/propertyData";
 import type { Property } from "@/types/property";
 import { isValidLatitude, isValidLongitude } from "@/utils/geoValidation";
 import { getPublishedListings } from "@/utils/publishedListingsStore";
@@ -20,13 +19,17 @@ export function propertyMatchesRentSaleTab(p: Property, tab: "rent" | "sale"): b
 export type RentSaleFilterOptions = {
   /** When true (map), drop items without coordinates. */
   requireMapCoordinates?: boolean;
+  /** Merged after local published listings (e.g. API `ACTIVE` listings). */
+  extraProperties?: Property[];
 };
 
 export function filterRentSaleFromPropertyData(
   tab: "rent" | "sale",
   options?: RentSaleFilterOptions
 ): Property[] {
-  const allListings = [...getPublishedListings(), ...PROPERTY_DATA];
+  const extra = options?.extraProperties ?? [];
+  // Rent/sale data source is backend API + locally-published (in-app) listings only.
+  const allListings = [...extra, ...getPublishedListings()];
   return allListings.filter((p) => {
     if (options?.requireMapCoordinates && !hasValidMapCoordinates(p)) {
       return false;

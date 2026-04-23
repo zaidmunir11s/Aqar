@@ -57,6 +57,7 @@ export default function AttachMediaScreen(): React.JSX.Element {
       selectedCategory: params.selectedCategory,
       attachments: params.attachments ?? [],
       virtualTourLink: params.virtualTourLink,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
   }, [navigation, params.attachments, params.selectedCategory, params.virtualTourLink]);
 
@@ -66,6 +67,7 @@ export default function AttachMediaScreen(): React.JSX.Element {
       selectedCategory: params.selectedCategory,
       attachments: params.attachments ?? [],
       virtualTourLink: params.virtualTourLink,
+      ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
   }, [navigation, params.attachments, params.selectedCategory, params.virtualTourLink]);
 

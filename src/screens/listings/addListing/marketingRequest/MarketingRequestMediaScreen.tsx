@@ -279,6 +279,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleNextPress = useCallback(() => {
+    const deedParam = (params as any)?.deed ? { deed: (params as any).deed } : {};
     navigation.navigate("MarketingRequestChooseLocation", {
       selectedCategory: params.selectedCategory,
       attachments: existingAttachments.map(({ id, uri, mediaType, note }) => ({
@@ -288,6 +289,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
         note: note ?? "",
       })),
       virtualTourLink: existingVirtualTourLink ?? "",
+      ...deedParam,
     });
   }, [existingAttachments, existingVirtualTourLink, navigation, params.selectedCategory]);
 
@@ -300,10 +302,12 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
           uri: asset.uri,
           mediaType: asset.type === "video" ? "video" : "photo",
         }));
+        const deedParam = (params as any)?.deed ? { deed: (params as any).deed } : {};
         navigation.navigate("MarketingRequestAttachments", {
           selectedCategory: params.selectedCategory,
           attachments: [...existingAttachments, ...mapped],
           virtualTourLink: existingVirtualTourLink,
+          ...deedParam,
         });
       };
 
@@ -315,6 +319,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
             selectedCategory: params.selectedCategory,
             attachments: existingAttachments,
             virtualTourLink: existingVirtualTourLink,
+            ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
           });
           return;
         }
@@ -346,6 +351,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
             selectedCategory: params.selectedCategory,
             attachments: existingAttachments,
             virtualTourLink: existingVirtualTourLink,
+            ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
           });
           return;
         }

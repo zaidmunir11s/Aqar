@@ -15,13 +15,12 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../../constants";
 import { useLocation } from "../../hooks";
 import LocationSearchModal from "./LocationSearchModal";
 import { useLocalization } from "../../hooks/useLocalization";
+import { backendRequest } from "@/utils/backendApi";
 
-const LAST_LOCATIONS_KEY = "@city_modal_last_locations";
 const MAX_LAST_LOCATIONS = 5;
 
 export interface CityModalProps {
@@ -198,13 +197,13 @@ export default function CityModal({
 
   const loadLastLocations = async () => {
     try {
-      const stored = await AsyncStorage.getItem(LAST_LOCATIONS_KEY);
-      if (stored) {
-        const locations = JSON.parse(stored);
-        setLastLocations(Array.isArray(locations) ? locations : []);
-      }
+      const res = await backendRequest<{ success: boolean; data: { locations: any[] } }>(
+        `/me/recent-locations?limit=${MAX_LAST_LOCATIONS}`
+      );
+      setLastLocations((res.data.locations ?? []).map((r: any) => String(r.city)));
     } catch (error) {
       console.error("Error loading last locations:", error);
+      setLastLocations([]);
     }
   };
 
@@ -212,12 +211,16 @@ export default function CityModal({
     if (!city || city.trim() === "") return;
     
     try {
+      await backendRequest("/me/recent-locations", {
+        method: "POST",
+        body: { city: city.trim() },
+      });
+
       const updated = [city, ...lastLocations.filter((loc) => loc !== city)].slice(
         0,
         MAX_LAST_LOCATIONS
       );
       setLastLocations(updated);
-      await AsyncStorage.setItem(LAST_LOCATIONS_KEY, JSON.stringify(updated));
     } catch (error) {
       console.error("Error saving location:", error);
     }

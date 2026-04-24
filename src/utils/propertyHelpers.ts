@@ -115,8 +115,22 @@ export function getTypeLabelFromType(
  */
 export function formatPrice(price: string | undefined): string {
   if (!price) return "0";
-  const priceStr = String(price);
-  return priceStr.replace(" M", ",000,000").replace(" K", ",000");
+  const trimmed = String(price).trim();
+  const kMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*K$/i);
+  if (kMatch) {
+    const n = Math.round(parseFloat(kMatch[1]) * 1000);
+    return Number.isFinite(n) ? n.toLocaleString("en-US") : "0";
+  }
+  const mMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*M$/i);
+  if (mMatch) {
+    const n = Math.round(parseFloat(mMatch[1]) * 1_000_000);
+    return Number.isFinite(n) ? n.toLocaleString("en-US") : "0";
+  }
+
+  const digits = trimmed.replace(/[^\d]/g, "");
+  if (!digits) return "0";
+  const n = Number(digits);
+  return Number.isFinite(n) ? n.toLocaleString("en-US") : "0";
 }
 
 /**

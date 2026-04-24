@@ -33,7 +33,6 @@ type AttachmentItem = {
 type RouteParams = {
   selectedCategory?: string;
   attachments?: AttachmentItem[];
-  virtualTourLink?: string;
   locationDisplayName?: string;
   selectedLocation?: {
     latitude: number;
@@ -463,7 +462,7 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
   const nextDisabled = submitAttempted && hasAnyBlockingInvalid;
 
-  /** Property information on publish: meter / farm total / virtual tour only (no rent installments or commission rows). */
+  /** Property information on publish: meter / farm total only (no rent installments or commission rows). */
   const pricingDetailsForPublish = useMemo((): PropertyDetailsDisplayItem[] => {
     const loc = i18n.language?.startsWith("ar") ? "ar-SA" : "en-US";
     const items: PropertyDetailsDisplayItem[] = [];
@@ -482,11 +481,8 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
       if (m) items.push({ type: "value", label: t("listings.pricePerMeter"), value: m });
     }
 
-    const vt = (params.virtualTourLink ?? "").trim();
-    if (vt) items.push({ type: "value", label: t("listings.virtualTourLink"), value: vt });
-
     return items;
-  }, [hasMeterPriceField, i18n.language, isMeterPriceCategory, meterPrice, params.virtualTourLink, price, t]);
+  }, [hasMeterPriceField, i18n.language, isMeterPriceCategory, meterPrice, price, t]);
 
   const handleNextPress = () => {
     setSubmitAttempted(true);
@@ -519,7 +515,6 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
     navigation.navigate("MarketingRequestPublishAd", {
       selectedCategory,
       attachments: params.attachments ?? [],
-      virtualTourLink: params.virtualTourLink ?? "",
       selectedLocation: params.selectedLocation,
       locationDisplayName: params.locationDisplayName,
       ...((params as any)?.deed ? { deed: (params as any).deed } : {}),

@@ -31,6 +31,7 @@ import {
   mapApiListingToProperty,
 } from "@/utils/apiListingMapper";
 import { registerApiListingProperties } from "@/utils/propertyLookup";
+import { loadVisitedListingIdsSet, markListingVisited } from "@/utils/visitedListingsStorage";
 import {
   PriceMarker,
   BottomPropertyCard,
@@ -149,6 +150,26 @@ export default function MapLandingScreen(): React.JSX.Element {
   useEffect(() => {
     mapLandingMarkerSession.visitedIds = [...visitedIds];
   }, [visitedIds]);
+
+  // Persist visited markers for at least one day (prevents "new" confusion).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const stored = await loadVisitedListingIdsSet(oneDayMs);
+      if (cancelled) return;
+      if (stored.size > 0) {
+        setVisitedIds((prev) => {
+          const merged = new Set<number>(prev);
+          for (const id of stored) merged.add(id);
+          return merged;
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     isSatelliteModeRef.current = isSatelliteMode;
@@ -325,6 +346,8 @@ export default function MapLandingScreen(): React.JSX.Element {
             next.add(property.id);
             return next;
           });
+          // Fire-and-forget persistence (1 day retention on load)
+          markListingVisited(property.id).catch(() => {});
         } catch (error) {
           console.warn("Error handling marker press:", error);
         }
@@ -456,11 +479,13 @@ export default function MapLandingScreen(): React.JSX.Element {
   }, []);
 
   const handleShowList = useCallback(() => {
-    // Do not pass `properties` from the map viewport.
-    // The list screen should fetch from the backend and apply the same tab filters,
-    // otherwise you’ll only see what’s currently visible in the map region.
-    navigation.navigate("PropertyList", { listingType: activeTab });
-  }, [activeTab, navigation]);
+    // Show List should reflect exactly what is visible on the map viewport.
+    // We pass visible IDs (not full objects) so the list still uses fresh backend data.
+    navigation.navigate("PropertyList", {
+      listingType: activeTab,
+      visiblePropertyIds: visibleProperties.map((p) => p.id),
+    });
+  }, [activeTab, navigation, visibleProperties]);
 
   const handleAddPress = useCallback(() => {
     if (!isLoaded) return;

@@ -1,5 +1,4 @@
 import { Property } from "../types/property";
-import { PROPERTY_DATA } from "../data/propertyData";
 import { SearchRequestData } from "@/context/searchRequest-context";
 import { getSelectedFeatures } from "./featureMapping";
 
@@ -56,6 +55,16 @@ function mapCategoryToType(category: string): string | null {
   return categoryMap[category] || null;
 }
 
+export function getListingTypeFromCategory(
+  category: string
+): "rent" | "sale" | null {
+  return getListingType(category);
+}
+
+export function getPropertyTypeFromCategory(category: string): string | null {
+  return mapCategoryToType(category);
+}
+
 /**
  * Extract listing type from category
  */
@@ -79,7 +88,7 @@ function parsePrice(priceStr: string): number {
 /**
  * Check if property matches the search criteria
  */
-function matchesCriteria(property: Property, request: SearchRequestData): boolean {
+export function matchesCriteria(property: Property, request: SearchRequestData): boolean {
   const orderData = request.orderFormData || {};
   
   // Check listing type
@@ -196,10 +205,10 @@ function matchesCriteria(property: Property, request: SearchRequestData): boolea
 /**
  * Find matching properties for a search request
  */
-export function findMatchingProperties(request: SearchRequestData): Property[] {
-  if (!request.category) {
-    return [];
-  }
-
-  return PROPERTY_DATA.filter((property) => matchesCriteria(property, request));
+export function findMatchingPropertiesFromList(
+  properties: Property[],
+  request: SearchRequestData
+): Property[] {
+  if (!request?.category) return [];
+  return properties.filter((property) => matchesCriteria(property, request));
 }

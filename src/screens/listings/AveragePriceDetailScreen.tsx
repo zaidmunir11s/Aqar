@@ -16,6 +16,7 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "@/constants/colors";
 import { useGetPublicListingsQuery } from "@/redux/api";
+import { parseBackendDateMs } from "@/utils/dateParsing";
 
 const INSIGHTS_DAYS = 90;
 
@@ -48,18 +49,14 @@ function average(values: number[]): number | null {
   return sum / v.length;
 }
 
-function startOfWeek(d: Date): Date {
+function startOfDay(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
-  const day = out.getDay(); // 0=Sun
-  const diff = (day + 6) % 7; // Mon=0
-  out.setDate(out.getDate() - diff);
   return out;
 }
 
-function formatWeekLabel(weekStart: Date): string {
-  // e.g. "Apr 15"
-  return weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatDayLabel(dayStart: Date): string {
+  return dayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export interface AveragePriceDetailParams {
@@ -79,6 +76,27 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const params = route.params as AveragePriceDetailParams;
   const { property, averageType, filters } = params ?? {};
+
+  const formatCompactSar = useCallback(
+    (n: number | null): string => {
+      if (n == null) return "---";
+      if (!Number.isFinite(n)) return "---";
+      const abs = Math.abs(n);
+      const loc = isRTL ? "ar-SA" : "en-US";
+      const thousand = t("listings.thousand") || "K";
+      const million = t("listings.million") || "M";
+      const billion = t("listings.billion") || "B";
+
+      const fmt = (value: number, suffix: string) =>
+        `${value.toLocaleString(loc, { maximumFractionDigits: 1 })} ${suffix} ${t("listings.sar")}`;
+
+      if (abs >= 1_000_000_000) return fmt(n / 1_000_000_000, billion);
+      if (abs >= 1_000_000) return fmt(n / 1_000_000, million);
+      if (abs >= 1_000) return fmt(n / 1_000, thousand);
+      return `${Math.round(n).toLocaleString(loc)} ${t("listings.sar")}`;
+    },
+    [isRTL, t]
+  );
 
   const handleBackPress = useCallback(() => {
     navigation.goBack();
@@ -116,9 +134,9 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
 
     const parsed = rows
       .map((r) => {
-        const created = r.createdAt ? Date.parse(String(r.createdAt)) : NaN;
+        const created = parseBackendDateMs(r.createdAt);
         return {
-          createdAtMs: Number.isFinite(created) ? created : 0,
+          createdAtMs: created ?? 0,
           price: Number(r.price),
           area: Number(r.area),
         };
@@ -136,18 +154,18 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
     const maxPrice = prices.length ? Math.max(...prices) : null;
     const medPpsm = median(pricePerSqm);
 
-    const weekly = new Map<number, number[]>();
+    const daily = new Map<number, number[]>();
     for (const r of parsed) {
-      const w = startOfWeek(new Date(r.createdAtMs)).getTime();
-      const list = weekly.get(w) ?? [];
+      const d = startOfDay(new Date(r.createdAtMs)).getTime();
+      const list = daily.get(d) ?? [];
       list.push(r.price);
-      weekly.set(w, list);
+      daily.set(d, list);
     }
 
-    const chart: ChartDataPoint[] = Array.from(weekly.entries())
+    const chart: ChartDataPoint[] = Array.from(daily.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(([weekStartMs, list]) => ({
-        period: formatWeekLabel(new Date(weekStartMs)),
+      .map(([dayStartMs, list]) => ({
+        period: formatDayLabel(new Date(dayStartMs)),
         value: Math.round(median(list) ?? 0),
       }))
       .filter((p) => p.value > 0);
@@ -167,22 +185,21 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
     return (
       <View style={styles.container}>
         <ScreenHeader
-          title={t("listings.residentialRealEstateIndicators")}
+          title={t("listings.aqarResidentialStats")}
           onBackPress={handleBackPress}
         />
       </View>
     );
   }
 
-  const formatSar = (n: number | null) =>
-    n == null ? "---" : `${n.toLocaleString()} ${t("listings.sar")}`;
+  const formatSar = (n: number | null) => formatCompactSar(n);
   const formatSarPerSqm = (n: number | null) =>
-    n == null ? "---" : `${n.toLocaleString()} ${t("listings.sar")}/m²`;
+    n == null ? "---" : `${Math.round(n).toLocaleString(isRTL ? "ar-SA" : "en-US")} ${t("listings.sar")}/m²`;
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title={t("listings.residentialRealEstateIndicators")}
+        title={t("listings.aqarResidentialStats")}
         onBackPress={handleBackPress}
       />
       <ScrollView
@@ -202,6 +219,8 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
               property={property}
               variant="detail"
               onEditPress={handleEditPress}
+              minArea={filters?.minArea}
+              maxArea={filters?.maxArea}
             />
           )}
         </View>
@@ -216,7 +235,9 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
           </Text>
 
           <Text style={[styles.chartDataSource, { textAlign: isRTL ? "right" : "left" }]}>
-            {`${t("listings.latest")}: ${INSIGHTS_DAYS} ${t("listings.days") ?? "days"} · ${t("listings.property")}: ${prismaPropertyType ?? "---"}`}
+            {`${t("listings.latest")}: ${INSIGHTS_DAYS} ${t("listings.days") ?? "days"} · ${t("listings.city")}: ${
+              filters?.city?.trim() ? filters.city.trim() : "---"
+            } · ${t("listings.property")}: ${prismaPropertyType ?? "---"}`}
           </Text>
 
           {isLoading ? (
@@ -227,7 +248,10 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
             <>
               <View style={styles.metricsCard}>
                 {[
-                  { label: "# Listings", value: String(insights.sampleSize) },
+                  {
+                    label: t("listings.listings", { defaultValue: "Listings" }),
+                    value: String(insights.sampleSize),
+                  },
                   { label: "Median", value: formatSar(insights.medianPrice) },
                   { label: "Average", value: formatSar(insights.avgPrice) },
                   {
@@ -263,7 +287,7 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
 
               <View style={styles.priceTableCard}>
                 {insights.chart.map((item, index) => {
-                  const priceText = `${item.value.toLocaleString()} ${t("listings.sar")}`;
+                  const priceText = formatCompactSar(item.value);
                   const labelSlot = (
                     <View
                       style={[

@@ -16,6 +16,7 @@ export interface PriceInputSectionProps {
   onToChange: (value: string) => void;
   fromPlaceholder?: string;
   toPlaceholder?: string;
+  helperText?: string;
 }
 
 /**
@@ -30,6 +31,7 @@ const PriceInputSection = memo<PriceInputSectionProps>(
     onToChange,
     fromPlaceholder,
     toPlaceholder,
+    helperText,
   }) => {
     const { t, isRTL } = useLocalization();
     
@@ -74,6 +76,9 @@ const PriceInputSection = memo<PriceInputSectionProps>(
             showFocusStates={true}
           />
         </View>
+        {helperText?.trim() ? (
+          <Text style={[styles.helperText, rtlStyles.label]}>{helperText.trim()}</Text>
+        ) : null}
       </View>
     );
   }
@@ -112,6 +117,11 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     color: COLORS.textSecondary,
     fontWeight: "500",
+  },
+  helperText: {
+    marginTop: hp(0.8),
+    fontSize: wp(3.4),
+    color: COLORS.textSecondary,
   },
 });
 

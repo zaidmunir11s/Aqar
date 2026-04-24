@@ -9,6 +9,8 @@ import {
   buildRentPaymentScheduleFromPublishForm,
   type UserRentPaymentPublishInput,
 } from "./rentPayments";
+import { STORAGE_KEYS } from "@/constants/storage";
+import { secureGet, secureSet } from "@/utils/secureStore";
 
 type MarketingAttachment = {
   id: string;
@@ -41,6 +43,17 @@ type MarketingPublishInput = {
 
 let publishedListings: Property[] = [];
 let publishedSequence = 0;
+let didInitSequence = false;
+
+async function initPublishedSequenceOnce(): Promise<void> {
+  if (didInitSequence) return;
+  didInitSequence = true;
+  const raw = await secureGet(STORAGE_KEYS.localPublishedSequenceV1);
+  const n = raw ? Number(raw) : NaN;
+  if (Number.isFinite(n) && n >= 0) {
+    publishedSequence = Math.floor(n);
+  }
+}
 
 function inferListingType(category?: string): ListingType {
   const normalized = (category ?? "").toLowerCase();
@@ -87,7 +100,10 @@ function inferPropertyType(category?: string): PropertyType {
 }
 
 function nextPublishedSequence(): number {
+  // Best-effort init; no need to await for UI-only sequence.
+  void initPublishedSequenceOnce();
   publishedSequence += 1;
+  secureSet(STORAGE_KEYS.localPublishedSequenceV1, String(publishedSequence)).catch(() => {});
   return publishedSequence;
 }
 

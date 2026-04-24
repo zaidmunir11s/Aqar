@@ -72,6 +72,8 @@ export interface BaseProperty {
   videoUris?: string[];
   /** Extra fields from API `Listing.metadata` (marketing flow, etc.). */
   listingMetadata?: Record<string, unknown>;
+  /** Backend listing status when loaded from API (e.g. ACTIVE/PENDING/ARCHIVED). */
+  listingStatus?: string;
   detailsItems?: PropertyDetailItem[];
   lat: number;
   lng: number;

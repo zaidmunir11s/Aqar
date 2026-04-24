@@ -245,15 +245,19 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const handleShare = useCallback(async () => {
     if (!property) return;
 
+    const metaLocation = String(
+      (property.listingMetadata as any)?.locationDisplayName ?? ""
+    ).trim();
     const title =
-      (property.categoryLabel?.trim() || property.address?.trim() || t("listings.property")) ??
-      "Listing";
+      (metaLocation ||
+        property.address?.trim() ||
+        property.city?.trim() ||
+        property.categoryLabel?.trim() ||
+        t("listings.property")) ?? "Listing";
 
     const locationParts = [
+      metaLocation || null,
       property.city?.trim() ? property.city.trim() : null,
-      (property.listingMetadata as any)?.locationDisplayName?.trim
-        ? (property.listingMetadata as any)?.locationDisplayName.trim()
-        : null,
     ].filter(Boolean) as string[];
     const locationLine = locationParts.length ? locationParts[0] : "";
 
@@ -1102,6 +1106,9 @@ const styles = StyleSheet.create({
   reportAdTextRTL: {
     marginLeft: 0,
     marginRight: wp(2),
+  },
+  rowReverse: {
+    flexDirection: "row-reverse",
   },
   headerIcons: {
     position: "absolute",

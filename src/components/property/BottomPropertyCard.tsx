@@ -21,6 +21,7 @@ import {
   formatRentPropertyCardPriceLine,
   buildPropertyInfoRows,
   pickCorePropertyInfoRowsForMapCard,
+  formatPrice,
   type DetailIconSpec,
   type PropertyDetailInfoRow,
 } from "../../utils";
@@ -225,10 +226,9 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
     } else {
       title = `${typeLabel} ${t("listings.forSale")}`;
       const saleProperty = property as any;
-      priceLine = saleProperty.price
-        .replace(" M", ",000,000")
-        .replace(" K", "000");
-      priceLine = `${priceLine} ${t("listings.sar")}`;
+      const raw = String(saleProperty?.price ?? "").trim();
+      const formatted = raw ? formatPrice(raw) : "0";
+      priceLine = `${formatted} ${t("listings.sar")}`;
     }
 
     const imageUrl =

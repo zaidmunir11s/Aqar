@@ -103,11 +103,6 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
         title: t("listings.recordVideo"),
         icon: "videocam",
       },
-      {
-        id: "virtual-tour",
-        title: t("listings.addVirtualTour"),
-        icon: "images",
-      },
     ],
     [t]
   );
@@ -346,15 +341,6 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
           return;
         }
 
-        if (id === "virtual-tour") {
-          navigation.navigate("MarketingRequestVirtualTour", {
-            selectedCategory: params.selectedCategory,
-            attachments: existingAttachments,
-            virtualTourLink: existingVirtualTourLink,
-            ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
-          });
-          return;
-        }
       } catch {
         showWarningAnimated();
       }

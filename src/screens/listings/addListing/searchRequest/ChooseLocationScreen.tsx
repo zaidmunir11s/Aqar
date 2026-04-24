@@ -53,6 +53,17 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const { getCurrentLocation } = useLocation();
 
+  const DEFAULT_REGION: Region = useMemo(
+    () => ({
+      // Same safe default as main listings map (Riyadh)
+      latitude: 24.7136,
+      longitude: 46.6753,
+      latitudeDelta: 0.08,
+      longitudeDelta: 0.08,
+    }),
+    []
+  );
+
   const initialSelectedLocation =
     params.orderFormData?.selectedLocation &&
     isValidCoordinate(params.orderFormData.selectedLocation.latitude) &&
@@ -67,7 +78,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
     longitude: number;
-  } | null>(initialSelectedLocation);
+  } | null>(initialSelectedLocation ?? { latitude: DEFAULT_REGION.latitude, longitude: DEFAULT_REGION.longitude });
   const [mapInitialRegion, setMapInitialRegion] = useState<Region | null>(
     initialSelectedLocation
       ? {
@@ -76,7 +87,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
           latitudeDelta: 0.08,
           longitudeDelta: 0.08,
         }
-      : null
+      : DEFAULT_REGION
   );
   const [isResolvingInitialLocation, setIsResolvingInitialLocation] = useState(
     !initialSelectedLocation
@@ -122,6 +133,12 @@ export default function ChooseLocationScreen(): React.JSX.Element {
             latitude: result.region.latitude,
             longitude: result.region.longitude,
           });
+          // Avoid a jump: animate if map is already rendered.
+          try {
+            mapRef.current?.animateToRegion(result.region, 700);
+          } catch {
+            // ignore
+          }
           return;
         }
       } finally {
@@ -192,27 +209,27 @@ export default function ChooseLocationScreen(): React.JSX.Element {
 
         {/* Interactive Map */}
         <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={mapInitialRegion ?? DEFAULT_REGION}
+            onRegionChangeComplete={handleRegionChangeComplete}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
+            showsCompass={false}
+            toolbarEnabled={false}
+            mapType="standard"
+            scrollEnabled={true}
+            zoomEnabled={true}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          />
           {isResolvingInitialLocation ? (
-            <View style={styles.mapLoadingPlaceholder}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
+            <View style={styles.mapResolvingBadge} pointerEvents="none">
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.mapResolvingText}>{t("common.loading")}</Text>
             </View>
-          ) : (
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              initialRegion={mapInitialRegion ?? undefined}
-              onRegionChangeComplete={handleRegionChangeComplete}
-              showsUserLocation={false}
-              showsMyLocationButton={false}
-              showsCompass={false}
-              toolbarEnabled={false}
-              mapType="standard"
-              scrollEnabled={true}
-              zoomEnabled={true}
-              pitchEnabled={false}
-              rotateEnabled={false}
-            />
-          )}
+          ) : null}
           {/* Fixed Center Marker - Always at center of viewport */}
           <View style={styles.centerMarkerContainer} pointerEvents="none">
             <MaterialIcons
@@ -299,6 +316,25 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  mapResolvingBadge: {
+    position: "absolute",
+    top: hp(1),
+    left: wp(3),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: wp(2),
+    paddingVertical: hp(0.6),
+    paddingHorizontal: wp(3),
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+  },
+  mapResolvingText: {
+    fontSize: wp(3.2),
+    color: COLORS.textSecondary,
+    fontWeight: "600",
   },
   mapLoadingPlaceholder: {
     flex: 1,

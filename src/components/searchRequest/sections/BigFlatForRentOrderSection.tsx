@@ -28,6 +28,7 @@ interface Props {
   priceTo: string;
   areaFrom: string;
   areaTo: string;
+  areaRangeHint?: string;
   carEntrance: boolean; airConditioned: boolean; apartmentInVilla: boolean; twoEntrances: boolean; specialEntrances: boolean; nearBus: boolean; nearMetro: boolean;
   getTranslatedPickerValue: (v: string | null, type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores") => string;
   onRentPeriodSelect: (v: RentPaymentFrequencyChoice) => void;
@@ -44,7 +45,16 @@ function Comp(p: Props): React.JSX.Element {
     <TabBarSection label={p.t("listings.bedrooms")} options={BEDROOM_OPTIONS} selectedValue={p.selectedBedroom} onSelect={p.onBedroomSelect} />
     <TabBarSection label={p.t("listings.livingRooms")} options={LIVING_ROOM_OPTIONS} selectedValue={p.selectedLivingRoom} onSelect={p.onLivingRoomSelect} />
     <TabBarSection label={p.t("listings.wc")} options={WC_OPTIONS} selectedValue={p.selectedWc} onSelect={p.onWcSelect} />
-    <PriceInputSection label={p.t("listings.areaM2")} fromValue={p.areaFrom} toValue={p.areaTo} onFromChange={p.onAreaFromChange} onToChange={p.onAreaToChange} fromPlaceholder={p.t("listings.fromArea")} toPlaceholder={p.t("listings.toArea")} />
+    <PriceInputSection
+      label={p.t("listings.areaM2")}
+      fromValue={p.areaFrom}
+      toValue={p.areaTo}
+      onFromChange={p.onAreaFromChange}
+      onToChange={p.onAreaToChange}
+      fromPlaceholder={p.t("listings.fromArea")}
+      toPlaceholder={p.t("listings.toArea")}
+      helperText={p.areaRangeHint}
+    />
     <FieldWithModal label={p.t("listings.floor")} value={p.getTranslatedPickerValue(p.floor, "floor")} placeholder={p.t("listings.selectFloor")} onPress={p.onOpenFloor} backgroundColor="background" />
     <FieldWithModal label={p.t("listings.age")} value={p.getTranslatedPickerValue(p.age, "age")} placeholder={p.t("listings.selectAge")} onPress={p.onOpenAge} backgroundColor="background" />
     <ToggleGroup toggles={[

@@ -12,6 +12,9 @@ import { ChartNoAxesColumn } from "lucide-react-native";
 
 export interface AverageSaleCardProps {
   property: Property;
+  /** Optional filter range shown in label, when available. */
+  minArea?: number;
+  maxArea?: number;
   /** When provided, card is pressable and navigates (e.g. to average detail screen). */
   onPress?: () => void;
   /** 'detail' shows Edit text (no price, no arrow) and uses onEditPress. */
@@ -24,7 +27,8 @@ export interface AverageSaleCardProps {
  * Average sale card component for sale listings
  * Shows average villa for sale area and price in location
  */
-const AverageSaleCard = memo<AverageSaleCardProps>(({ property, onPress, variant = "default", onEditPress }) => {
+const AverageSaleCard = memo<AverageSaleCardProps>(
+  ({ property, minArea, maxArea, onPress, variant = "default", onEditPress }) => {
   const { t, isRTL } = useLocalization();
   
   const parseCompactPrice = (rawPrice?: string): number | null => {
@@ -59,8 +63,13 @@ const AverageSaleCard = memo<AverageSaleCardProps>(({ property, onPress, variant
     [rawLocation, t]
   );
   
-  const minArea = 275;
-  const maxArea = 400;
+  const hasAreaRange =
+    typeof minArea === "number" &&
+    Number.isFinite(minArea) &&
+    typeof maxArea === "number" &&
+    Number.isFinite(maxArea) &&
+    minArea > 0 &&
+    maxArea > 0;
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -95,7 +104,16 @@ const AverageSaleCard = memo<AverageSaleCardProps>(({ property, onPress, variant
       </View>
       <View style={styles.content}>
         <Text style={[styles.label, rtlStyles.label, isDetail && styles.labelBold]}>
-          {t("listings.averageForSale", { minArea, maxArea, location: translatedLocation })}
+          {hasAreaRange
+            ? t("listings.averageForSale", {
+                minArea,
+                maxArea,
+                location: translatedLocation,
+              })
+            : t("listings.averageForSaleNoRange", {
+                defaultValue: "Average Villa for sale in {{location}}",
+                location: translatedLocation,
+              })}
         </Text>
         {!isDetail && (
           <Text style={[styles.price, rtlStyles.price]}>{averagePrice} {t("listings.sar")}</Text>
@@ -110,7 +128,8 @@ const AverageSaleCard = memo<AverageSaleCardProps>(({ property, onPress, variant
       )}
     </Wrapper>
   );
-});
+  }
+);
 
 AverageSaleCard.displayName = "AverageSaleCard";
 

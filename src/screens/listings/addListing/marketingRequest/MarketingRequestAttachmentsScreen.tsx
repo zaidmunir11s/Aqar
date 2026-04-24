@@ -192,24 +192,9 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
   );
 
   const handleActionIconPress = useCallback(
-    async (action: "attach" | "camera" | "video" | "tour") => {
+    async (action: "attach" | "camera" | "video") => {
       if (action === "attach") {
         navigation.navigate("AttachMedia", {
-          selectedCategory,
-          attachments: attachments.map(({ id, uri, mediaType, note }) => ({
-            id,
-            uri,
-            mediaType,
-            note,
-          })),
-          virtualTourLink,
-          ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
-        });
-        return;
-      }
-
-      if (action === "tour") {
-        navigation.navigate("MarketingRequestVirtualTour", {
           selectedCategory,
           attachments: attachments.map(({ id, uri, mediaType, note }) => ({
             id,
@@ -329,7 +314,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
             <TouchableOpacity
               style={styles.iconButton}
               activeOpacity={0.75}
-              onPress={() => handleActionIconPress("tour")}
+              onPress={() => {}}
             >
               <Ionicons name="images" size={wp(5.5)} color={COLORS.textTertiary} />
             </TouchableOpacity>

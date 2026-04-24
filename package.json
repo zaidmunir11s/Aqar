@@ -2,6 +2,7 @@
   "name": "aqark-syria",
   "license": "MIT",
   "version": "1.0.0",
+  "packageManager": "yarn@1.22.22",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

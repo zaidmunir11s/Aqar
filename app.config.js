@@ -21,6 +21,14 @@ const appJson = require("./app.json");
 module.exports = {
   expo: {
     ...appJson.expo,
+    owner: "zaidmunir_2",
+    extra: {
+      ...(appJson.expo.extra || {}),
+      eas: {
+        ...((appJson.expo.extra && appJson.expo.extra.eas) || {}),
+        projectId: "096e7c99-604e-4e14-a083-91257ca48a5e",
+      },
+    },
     plugins: [...(appJson.expo.plugins || []), withAndroidLargeHeap],
   },
 };

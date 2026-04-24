@@ -38,6 +38,8 @@ import {
   useGetMyListingsQuery,
   useGetPublicUserByIdQuery,
   useGetPublicUserListingsQuery,
+  useUpdateListingMutation,
+  useDeleteListingMutation,
 } from "@/redux/api";
 import { useHideAdvertiserMutation, useReportAdvertiserMutation } from "@/redux/api/userApi";
 import { mapApiListingToProperty } from "@/utils/apiListingMapper";
@@ -74,10 +76,13 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   const { data: myListingsData } = useGetMyListingsQuery(undefined, {
     skip: !isAuthenticated,
   });
+  const [updateListing, { isLoading: isUpdatingListing }] = useUpdateListingMutation();
+  const [deleteListing, { isLoading: isDeletingListing }] = useDeleteListingMutation();
 
   // When opened from a listing (advertiser row), we want to show that user's profile + ads,
   // even if the viewer isn't authenticated (or /me hasn't loaded yet).
   const isViewingOtherUser = Boolean(profileUserId) && profileUserId !== meData?.user?.id;
+  const isViewingMyProfile = !isViewingOtherUser;
 
   const [hideAdvertiser, { isLoading: isHidingAdvertiser }] = useHideAdvertiserMutation();
   const [reportAdvertiser, { isLoading: isReportingAdvertiser }] = useReportAdvertiserMutation();
@@ -218,8 +223,17 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
 
   const { current, archived } = useMemo(() => {
     const local = getUserProfilePublishedAds(userPhoneDigits || null);
-    const mergedCurrent = [...apiMyProperties, ...local.current];
-    return { current: mergedCurrent, archived: local.archived };
+    const apiArchived = apiMyProperties.filter(
+      (p) => String((p as any)?.listingStatus ?? "").toUpperCase() === "ARCHIVED"
+    );
+    const apiCurrent = apiMyProperties.filter(
+      (p) => String((p as any)?.listingStatus ?? "").toUpperCase() !== "ARCHIVED"
+    );
+
+    return {
+      current: [...apiCurrent, ...local.current],
+      archived: [...apiArchived, ...local.archived],
+    };
   }, [userPhoneDigits, listTick, apiMyProperties]);
 
   const baseList = adsTab === "current" ? current : archived;
@@ -333,6 +347,61 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
     openMoreMenu();
   }, [profileUserId]);
 
+  const [manageModal, setManageModal] = useState<{
+    visible: boolean;
+    listingServerId: string | null;
+    isArchived: boolean;
+  }>({ visible: false, listingServerId: null, isArchived: false });
+
+  const closeManageModal = useCallback(() => {
+    if (isUpdatingListing || isDeletingListing) return;
+    setManageModal({ visible: false, listingServerId: null, isArchived: false });
+  }, [isDeletingListing, isUpdatingListing]);
+
+  const openManageModal = useCallback((item: Property) => {
+    const sid = String((item as any)?.serverListingId ?? "").trim();
+    if (!sid) return;
+    const status = String((item as any)?.listingStatus ?? "").toUpperCase();
+    setManageModal({
+      visible: true,
+      listingServerId: sid,
+      isArchived: status === "ARCHIVED",
+    });
+  }, []);
+
+  const archiveOrUnarchive = useCallback(async () => {
+    const sid = manageModal.listingServerId;
+    if (!sid) return;
+    try {
+      await updateListing({
+        id: sid,
+        body: { status: manageModal.isArchived ? "ACTIVE" : "ARCHIVED" },
+      }).unwrap();
+      closeManageModal();
+      showFeedback(
+        t("common.done"),
+        manageModal.isArchived
+          ? (t("profile.unhideListingSuccess") ?? "Listing is now visible.")
+          : (t("profile.hideListingSuccess") ?? "Listing hidden from public."),
+        "success"
+      );
+    } catch {
+      showFeedback(t("common.error"), t("errors.generic"), "error");
+    }
+  }, [closeManageModal, manageModal.isArchived, manageModal.listingServerId, showFeedback, t, updateListing]);
+
+  const confirmDelete = useCallback(async () => {
+    const sid = manageModal.listingServerId;
+    if (!sid) return;
+    try {
+      await deleteListing({ id: sid }).unwrap();
+      closeManageModal();
+      showFeedback(t("common.done"), t("profile.deleteListingSuccess") ?? "Listing deleted.", "success");
+    } catch {
+      showFeedback(t("common.error"), t("errors.generic"), "error");
+    }
+  }, [closeManageModal, deleteListing, manageModal.listingServerId, showFeedback, t]);
+
   const moreButtonRef = useRef<View>(null);
   const [moreMenu, setMoreMenu] = useState<{ visible: boolean; x: number; y: number }>({
     visible: false,
@@ -378,17 +447,32 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
       );
       return (
         <View style={styles.cardRow}>
-          <PropertyCard
-            property={item}
-            onPress={() => handlePropertyPress(item)}
-            title={title || t("listings.property")}
-            priceLine={priceLine || t("listings.priceNotAvailable")}
-            listingType={listingTypeForCard}
-          />
+          <View style={styles.cardWithMenu}>
+            <PropertyCard
+              property={item}
+              onPress={() => handlePropertyPress(item)}
+              title={title || t("listings.property")}
+              priceLine={priceLine || t("listings.priceNotAvailable")}
+              listingType={listingTypeForCard}
+            />
+
+            {isViewingMyProfile && Boolean(item.serverListingId) ? (
+              <TouchableOpacity
+                style={styles.cardMenuButton}
+                onPress={() => openManageModal(item)}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={styles.cardMenuButtonCircle}>
+                  <Ionicons name="ellipsis-vertical" size={wp(5)} color={COLORS.primary} />
+                </View>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
       );
     },
-    [t, i18n.language, handlePropertyPress]
+    [t, i18n.language, handlePropertyPress, isViewingMyProfile, openManageModal]
   );
 
   const keyExtractor = useCallback((item: Property) => String(item.id), []);
@@ -470,16 +554,18 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
             >
               <Ionicons name="share-social" size={wp(6)} color={COLORS.primary} />
             </TouchableOpacity>
-            <View ref={moreButtonRef} collapsable={false}>
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={openMoreMenu}
-                activeOpacity={0.7}
-                disabled={isHidingAdvertiser || isReportingAdvertiser}
-              >
-                <Ionicons name="ellipsis-vertical" size={wp(6)} color={COLORS.primary} />
-              </TouchableOpacity>
-            </View>
+            {isViewingOtherUser ? (
+              <View ref={moreButtonRef} collapsable={false}>
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={openMoreMenu}
+                  activeOpacity={0.7}
+                  disabled={isHidingAdvertiser || isReportingAdvertiser}
+                >
+                  <Ionicons name="ellipsis-vertical" size={wp(6)} color={COLORS.primary} />
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         }
         showRightSide={true}
@@ -504,7 +590,7 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
             >
               <Text style={styles.popoverItemText}>{t("profile.reportAdvertiserAction")}</Text>
             </Pressable>
-            <View style={styles.popoverDivider} />
+            <View style={styles.manageDivider} />
             <Pressable
               style={styles.popoverItem}
               onPress={() => {
@@ -694,6 +780,78 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Manage my listing modal */}
+      <Modal
+        visible={manageModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeManageModal}
+      >
+        <Pressable style={styles.reportBackdrop} onPress={closeManageModal}>
+          <Pressable style={styles.reportCard} onPress={() => {}}>
+            <View style={styles.reportHeaderRow}>
+              <Text style={styles.reportTitle}>
+                {t("profile.manageListingTitle", { defaultValue: "Manage listing" })}
+              </Text>
+              <Pressable style={styles.reportCloseButton} onPress={closeManageModal}>
+                <Ionicons name="close" size={wp(6)} color="#6b7280" />
+              </Pressable>
+            </View>
+            <Text style={styles.reportSubtitle}>
+              {manageModal.isArchived
+                ? t("profile.unhideListingConfirm", { defaultValue: "Make this listing visible again?" })
+                : t("profile.hideListingConfirm", { defaultValue: "Hide this listing from the public feed?" })}
+            </Text>
+
+            <View style={styles.reportActionsRow}>
+              <Pressable
+                style={styles.reportCancelButton}
+                onPress={closeManageModal}
+                disabled={isUpdatingListing || isDeletingListing}
+              >
+                <Text style={styles.reportCancelText}>{t("common.cancel")}</Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.reportSubmitButton,
+                  (isUpdatingListing || isDeletingListing) && styles.reportSubmitButtonDisabled,
+                ]}
+                onPress={archiveOrUnarchive}
+                disabled={isUpdatingListing || isDeletingListing}
+              >
+                <Text style={styles.reportSubmitText}>
+                  {isUpdatingListing
+                    ? t("common.loading")
+                    : manageModal.isArchived
+                      ? t("profile.unhideListingAction", { defaultValue: "Unhide" })
+                      : t("profile.hideListingAction", { defaultValue: "Hide" })}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.manageDivider} />
+
+            <Pressable
+              style={[
+                styles.deleteListingButton,
+                (isUpdatingListing || isDeletingListing) && styles.deleteListingButtonDisabled,
+              ]}
+              onPress={confirmDelete}
+              disabled={isUpdatingListing || isDeletingListing}
+            >
+              <Ionicons name="trash-outline" size={wp(5)} color="#fff" />
+              <Text style={styles.deleteListingButtonText}>
+                {isDeletingListing
+                  ? t("common.loading")
+                  : t("profile.deleteListingAction", { defaultValue: "Delete listing" })}
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <FlatList
         data={filteredAds}
         keyExtractor={keyExtractor}
@@ -746,7 +904,7 @@ const styles = StyleSheet.create({
   },
   popoverItemText: {
     fontSize: wp(4),
-    color: COLORS.text,
+    color: COLORS.textPrimary,
   },
   popoverItemTextDanger: {
     color: "#dc2626",
@@ -755,6 +913,12 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: "#e5e7eb",
     marginHorizontal: wp(3),
+  },
+  manageDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#e5e7eb",
+    marginTop: hp(1.6),
+    marginBottom: hp(1.2),
   },
   reportBackdrop: {
     flex: 1,
@@ -775,7 +939,7 @@ const styles = StyleSheet.create({
   reportTitle: {
     fontSize: wp(4.6),
     fontWeight: "700",
-    color: COLORS.text,
+    color: COLORS.textPrimary,
     flex: 1,
   },
   reportCloseButton: {
@@ -807,7 +971,7 @@ const styles = StyleSheet.create({
   },
   reportReasonChipText: {
     fontSize: wp(3.5),
-    color: COLORS.text,
+    color: COLORS.textPrimary,
   },
   reportReasonChipTextSelected: {
     color: COLORS.primary,
@@ -816,7 +980,7 @@ const styles = StyleSheet.create({
   reportDetailsLabel: {
     marginTop: hp(2),
     fontSize: wp(3.6),
-    color: COLORS.text,
+    color: COLORS.textPrimary,
     fontWeight: "600",
   },
   reportDetailsInput: {
@@ -828,7 +992,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(3),
     paddingVertical: hp(1.2),
     fontSize: wp(3.7),
-    color: COLORS.text,
+    color: COLORS.textPrimary,
   },
   reportActionsRow: {
     flexDirection: "row",
@@ -846,6 +1010,24 @@ const styles = StyleSheet.create({
     color: "#111827",
     fontSize: wp(3.7),
     fontWeight: "600",
+  },
+  deleteListingButton: {
+    marginTop: hp(1),
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: wp(2.2),
+    paddingVertical: hp(1.35),
+    borderRadius: 12,
+    backgroundColor: "#dc2626",
+  },
+  deleteListingButtonDisabled: {
+    opacity: 0.55,
+  },
+  deleteListingButtonText: {
+    color: "#fff",
+    fontSize: wp(3.7),
+    fontWeight: "800",
   },
   reportSubmitButton: {
     paddingVertical: hp(1.2),
@@ -892,7 +1074,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: wp(4.4),
     fontWeight: "700",
-    color: COLORS.text,
+    color: COLORS.textPrimary,
   },
   feedbackCloseButton: {
     padding: wp(1),
@@ -970,6 +1152,24 @@ const styles = StyleSheet.create({
   cardRow: {
     width: "100%",
     marginBottom: hp(0.65),
+  },
+  cardWithMenu: {
+    position: "relative",
+  },
+  cardMenuButton: {
+    position: "absolute",
+    top: hp(1),
+    right: wp(2.2),
+  },
+  cardMenuButtonCircle: {
+    width: wp(9.5),
+    height: wp(9.5),
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyText: {
     marginTop: hp(3),

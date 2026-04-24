@@ -195,8 +195,9 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
     [selectedDistrict, t]
   );
 
-  const showDirectionDistrict =
-    selectedCity.length > 0 && selectedPropertyType !== null;
+  // Direction/District filtering is not supported by our backend listing query today.
+  // Keep the UI focused on filters we can apply reliably (city, property type, rooms, area).
+  const showDirectionDistrict = false;
 
   const handleDirectionPress = useCallback(() => {
     setDirectionModalVisible(true);
@@ -252,8 +253,6 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       lands: "land",
     };
     const addressParts = [selectedCity];
-    if (selectedDirection) addressParts.push(t(`listings.${selectedDirection}`));
-    if (selectedDistrict) addressParts.push(t(`listings.${selectedDistrict}`));
     const areaNum = showAreaField && selectedArea
       ? parseInt(selectedArea.split("-")[0] ?? "0", 10) || 200
       : 0;
@@ -279,8 +278,6 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
   }, [
     selectedPropertyType,
     selectedCity,
-    selectedDirection,
-    selectedDistrict,
     tab,
     showAreaField,
     selectedArea,

@@ -11,6 +11,7 @@ interface Props {
   t: T;
   rentPeriod: RentPaymentFrequency;
   priceFrom: string; priceTo: string; areaFrom: string; areaTo: string;
+  areaRangeHint?: string;
   pool: boolean; footballPitch: boolean; volleyballCourt: boolean; tent: boolean; kitchen: boolean; playground: boolean; nearBus: boolean; nearMetro: boolean; familySection: boolean;
   onRentPeriodSelect: (v: RentPaymentFrequencyChoice) => void;
   onPriceFromChange: (v: string) => void; onPriceToChange: (v: string) => void; onAreaFromChange: (v: string) => void; onAreaToChange: (v: string) => void;
@@ -20,7 +21,16 @@ function Comp(p: Props): React.JSX.Element {
   return <>
     <RentPaymentFrequencyChips selectedFrequency={p.rentPeriod} onSelect={p.onRentPeriodSelect} />
     <PriceInputSection label={getRentSearchPriceLabel(p.rentPeriod, p.t)} fromValue={p.priceFrom} toValue={p.priceTo} onFromChange={p.onPriceFromChange} onToChange={p.onPriceToChange} />
-    <PriceInputSection label={p.t("listings.areaM2")} fromValue={p.areaFrom} toValue={p.areaTo} onFromChange={p.onAreaFromChange} onToChange={p.onAreaToChange} fromPlaceholder={p.t("listings.fromArea")} toPlaceholder={p.t("listings.toArea")} />
+    <PriceInputSection
+      label={p.t("listings.areaM2")}
+      fromValue={p.areaFrom}
+      toValue={p.areaTo}
+      onFromChange={p.onAreaFromChange}
+      onToChange={p.onAreaToChange}
+      fromPlaceholder={p.t("listings.fromArea")}
+      toPlaceholder={p.t("listings.toArea")}
+      helperText={p.areaRangeHint}
+    />
     <ToggleGroup toggles={[
       { label: p.t("listings.pool"), value: p.pool, onValueChange: p.onPoolChange },
       { label: p.t("listings.footballPitch"), value: p.footballPitch, onValueChange: p.onFootballPitchChange },

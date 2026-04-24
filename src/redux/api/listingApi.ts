@@ -62,6 +62,20 @@ export type CreateListingRequest = {
   };
 };
 
+export type UpdateListingRequest = {
+  id: string;
+  body: Partial<{
+    title: string;
+    description: string;
+    price: number;
+    bedrooms: number;
+    bathrooms: number;
+    area: number;
+    city: string;
+    status: "PENDING" | "ACTIVE" | "REJECTED" | "ARCHIVED";
+  }>;
+};
+
 type SuccessEnvelope<T> = {
   success?: boolean;
   message?: string;
@@ -155,6 +169,38 @@ export const listingApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Property", id: "LIST" }, { type: "Property", id: "MINE" }],
     }),
 
+    updateListing: builder.mutation<ApiListingDto, UpdateListingRequest>({
+      query: ({ id, body }) => ({
+        url: `/api/listings/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (response: SuccessEnvelope<ApiListingDto>) => {
+        const row = response?.data;
+        if (!row) {
+          throw new Error("Invalid update listing response");
+        }
+        return row;
+      },
+      invalidatesTags: (_res, _err, arg) => [
+        { type: "Property", id: arg.id },
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "MINE" },
+      ],
+    }),
+
+    deleteListing: builder.mutation<void, { id: string }>({
+      query: ({ id }) => ({
+        url: `/api/listings/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_res, _err, arg) => [
+        { type: "Property", id: arg.id },
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "MINE" },
+      ],
+    }),
+
     reportListing: builder.mutation<void, { listingId: string; reason: string; details?: string | null }>({
       query: ({ listingId, reason, details }) => ({
         url: `/api/listings/${listingId}/report`,
@@ -173,5 +219,7 @@ export const {
   useGetMyListingsQuery,
   useGetNearestListingsQuery,
   useCreateListingMutation,
+  useUpdateListingMutation,
+  useDeleteListingMutation,
   useReportListingMutation,
 } = listingApi;

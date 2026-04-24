@@ -21,7 +21,6 @@ import PublishLicenseAdvertisementScreen from "../../screens/listings/addListing
 import DeedOwnerInformationScreen from "../../screens/listings/addListing/ownerAgentListing/DeedOwnerInformationScreen";
 import MarketingRequestPlaceholderScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestPlaceholderScreen";
 import MarketingRequestMediaScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestMediaScreen";
-import MarketingRequestVirtualTourScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestVirtualTourScreen";
 import AttachMediaScreen from "../../screens/listings/addListing/marketingRequest/AttachMediaScreen";
 import MarketingRequestAlbumsScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestAlbumsScreen";
 import MarketingRequestAlbumAssetsScreen from "../../screens/listings/addListing/marketingRequest/MarketingRequestAlbumAssetsScreen";
@@ -82,7 +81,6 @@ export default function ListingsStack(): React.JSX.Element {
       <Stack.Screen name="DeedOwnerInformation" component={DeedOwnerInformationScreen} />
       <Stack.Screen name="MarketingRequestPlaceholder" component={MarketingRequestPlaceholderScreen} />
       <Stack.Screen name="MarketingRequestMedia" component={MarketingRequestMediaScreen} />
-      <Stack.Screen name="MarketingRequestVirtualTour" component={MarketingRequestVirtualTourScreen} />
       <Stack.Screen name="AttachMedia" component={AttachMediaScreen} />
       <Stack.Screen name="MarketingRequestAlbums" component={MarketingRequestAlbumsScreen} />
       <Stack.Screen name="MarketingRequestAlbumAssets" component={MarketingRequestAlbumAssetsScreen} />

@@ -24,7 +24,6 @@ export const ROUTES_TO_HIDE_TAB_BAR: readonly string[] = [
   "DeedOwnerInformation",
   "MarketingRequestPlaceholder",
   "MarketingRequestMedia",
-  "MarketingRequestVirtualTour",
   "AttachMedia",
   "MarketingRequestAlbums",
   "MarketingRequestAlbumAssets",

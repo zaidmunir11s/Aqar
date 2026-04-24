@@ -2,10 +2,12 @@ import type { Property, PropertyType, ListingType } from "@/types/property";
 import type { PropertyDetailItem, RentPaymentScheduleRow } from "@/types/property";
 import type { UserRentPaymentPublishInput } from "@/utils/rentPayments";
 import { buildRentPaymentScheduleFromPublishForm } from "@/utils/rentPayments";
+import { parseBackendDateMs } from "@/utils/dateParsing";
 
 /** Backend Prisma-style listing row (public or mine). */
 export type ApiListingDto = {
   id: string;
+  listingNumber?: number;
   title: string;
   description: string | null;
   price: number;
@@ -161,6 +163,10 @@ export function mapApiListingToProperty(row: ApiListingDto): Property {
     .map((m) => m.url);
 
   const numericId = uuidToStablePropertyNumericId(row.id);
+  const createdAtMs = parseBackendDateMs(row.createdAt);
+  const updatedAtMs = parseBackendDateMs(row.updatedAt);
+  const createdAtIso = createdAtMs != null ? new Date(createdAtMs).toISOString() : undefined;
+  const updatedAtIso = updatedAtMs != null ? new Date(updatedAtMs).toISOString() : undefined;
 
   const advertiserName = row.owner
     ? `${row.owner.firstName} ${row.owner.lastName}`.trim()
@@ -172,13 +178,19 @@ export function mapApiListingToProperty(row: ApiListingDto): Property {
   const detailsItemsFromMeta = readPublishDetailRows(metadata);
   const extraFields = readExtraFields(metadata);
   const rentPaymentSchedule = readRentPaymentSchedule(metadata);
+  const locationDisplayName =
+    metadata && typeof (metadata as any).locationDisplayName === "string"
+      ? String((metadata as any).locationDisplayName).trim()
+      : "";
 
   return {
     id: numericId,
     serverListingId: row.id,
-    listingId: numericId,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    ...(typeof row.listingNumber === "number" && row.listingNumber > 0
+      ? { listingId: row.listingNumber }
+      : {}),
+    ...(createdAtIso ? { createdAt: createdAtIso } : {}),
+    ...(updatedAtIso ? { updatedAt: updatedAtIso } : {}),
     lat: row.latitude,
     lng: row.longitude,
     type,
@@ -190,12 +202,13 @@ export function mapApiListingToProperty(row: ApiListingDto): Property {
     livingRooms: extraFields.livingRooms ?? 0,
     restrooms: extraFields.restroomsListed ?? row.bathrooms,
     estateAge: extraFields.estateAgeYears ?? 0,
-    address: row.title?.trim() || row.city?.trim() || "",
+    address: locationDisplayName || row.title?.trim() || row.city?.trim() || "",
     city: row.city?.trim() || "",
     images: images.length > 0 ? images : [],
     ...(imageCaptionsFromMeta.length > 0 ? { imageCaptions: imageCaptionsFromMeta } : {}),
     ...(videoUris.length > 0 ? { videoUris } : {}),
     ...(metadata ? { listingMetadata: metadata as Record<string, unknown> } : {}),
+    ...(row.status ? { listingStatus: String(row.status) } : {}),
     ...(detailsItemsFromMeta ? { detailsItems: detailsItemsFromMeta } : {}),
     description: row.description?.trim() || undefined,
     price: compactSarPrice(row.price),

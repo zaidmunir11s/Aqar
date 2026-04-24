@@ -18,9 +18,15 @@ import {
   STREET_WIDTH_OPTIONS,
 } from "../../constants/orderFormOptions";
 import { SearchRequestData } from "@/context/searchRequest-context";
-import { findMatchingProperties } from "@/utils/propertyMatching";
+import {
+  findMatchingPropertiesFromList,
+  getListingTypeFromCategory,
+  getPropertyTypeFromCategory,
+} from "@/utils/propertyMatching";
 import { DeleteConfirmationModal } from "../common";
 import { useLocalization } from "../../hooks/useLocalization";
+import { useGetPublicListingsQuery } from "@/redux/api";
+import { mapApiListingToProperty } from "@/utils/apiListingMapper";
 
 export interface SearchRequestCardProps {
   request: SearchRequestData;
@@ -32,8 +38,36 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
   ({ request, onDelete, onPress }) => {
     const { t, isRTL } = useLocalization();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const matchedProperties = useMemo(() => findMatchingProperties(request), [request]);
-    const matchCount = matchedProperties.length;
+
+    const listingType = useMemo(() => {
+      const lt = request?.category ? getListingTypeFromCategory(request.category) : null;
+      return lt;
+    }, [request?.category]);
+    const propertyType = useMemo(() => {
+      const pt = request?.category ? getPropertyTypeFromCategory(request.category) : null;
+      return pt;
+    }, [request?.category]);
+
+    const { data: publicListingsData } = useGetPublicListingsQuery(
+      listingType
+        ? {
+            page: 1,
+            limit: 200,
+            listingType: listingType === "sale" ? "SALE" : "RENT",
+            ...(propertyType ? { propertyType } : {}),
+          }
+        : { page: 1, limit: 200 }
+    );
+
+    const candidateProperties = useMemo(() => {
+      const rows = publicListingsData?.listings ?? [];
+      return rows.map(mapApiListingToProperty);
+    }, [publicListingsData]);
+
+    const matchCount = useMemo(() => {
+      if (!request) return 0;
+      return findMatchingPropertiesFromList(candidateProperties, request).length;
+    }, [candidateProperties, request]);
 
     // Helper function to translate street direction
     const translateStreetDirection = useCallback((direction: string): string => {

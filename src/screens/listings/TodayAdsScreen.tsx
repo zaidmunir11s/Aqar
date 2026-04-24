@@ -11,6 +11,8 @@ import { useGetPublicListingsQuery } from "@/redux/api";
 import { mapApiListingToProperty } from "@/utils/apiListingMapper";
 import { registerApiListingProperties } from "@/utils/propertyLookup";
 import { COLORS } from "@/constants";
+import { getTranslatedPropertyTypeLabel } from "@/utils";
+import { formatPrice } from "@/utils/propertyHelpers";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -81,7 +83,30 @@ export default function TodayAdsScreen(): React.JSX.Element {
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <TouchableOpacity activeOpacity={0.9} onPress={() => handlePropertyPress(item)}>
-            <PropertyCard property={item} />
+            <PropertyCard
+              property={item}
+              onPress={() => handlePropertyPress(item)}
+              title={
+                String(
+                  (item as any)?.listingMetadata?.locationDisplayName ??
+                    item.address ??
+                    item.city ??
+                    ""
+                ).trim() ||
+                getTranslatedPropertyTypeLabel(
+                  item.type,
+                  item.listingType as "rent" | "sale" | "daily",
+                  t
+                ) ||
+                t("listings.property")
+              }
+              priceLine={
+                item.listingType === "sale"
+                  ? `${formatPrice((item as any)?.price)} ${t("listings.sar")}`
+                  : ""
+              }
+              listingType={item.listingType}
+            />
           </TouchableOpacity>
         )}
         ListEmptyComponent={

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -58,6 +58,12 @@ import {
 import { buildSearchRequestOrderFormData } from "@/utils/searchRequestOrderFormData";
 import { useSearchRequestOrderTranslations } from "./useSearchRequestOrderTranslations";
 import { useSearchRequestOrderContainer } from "./useSearchRequestOrderContainer";
+import { useGetPublicListingsQuery } from "@/redux/api";
+import { mapApiListingToProperty } from "@/utils/apiListingMapper";
+import {
+  getListingTypeFromCategory,
+  getPropertyTypeFromCategory,
+} from "@/utils/propertyMatching";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -66,6 +72,38 @@ export default function NewOrderScreen(): React.JSX.Element {
   const { t } = useLocalization();
   
   const form = useOrderForm();
+  const selectedCategory = String((form as any)?.selectedCategory ?? "");
+
+  const listingType = useMemo(
+    () => (selectedCategory ? getListingTypeFromCategory(selectedCategory) : null),
+    [selectedCategory]
+  );
+  const propertyType = useMemo(
+    () => (selectedCategory ? getPropertyTypeFromCategory(selectedCategory) : null),
+    [selectedCategory]
+  );
+
+  const { data: publicListingsData } = useGetPublicListingsQuery(
+    listingType
+      ? {
+          page: 1,
+          limit: 200,
+          listingType: listingType === "sale" ? "SALE" : "RENT",
+          ...(propertyType ? { propertyType } : {}),
+        }
+      : { page: 1, limit: 200 }
+  );
+
+  const areaRangeHint = useMemo(() => {
+    const rows = publicListingsData?.listings ?? [];
+    const props = rows.map(mapApiListingToProperty);
+    const areas = props.map((p) => p.area).filter((a) => typeof a === "number" && a > 0);
+    if (areas.length < 2) return "";
+    const min = Math.floor(Math.min(...areas));
+    const max = Math.ceil(Math.max(...areas));
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0) return "";
+    return `${t("listings.areaM2")}: ${min} - ${max}`;
+  }, [publicListingsData, t]);
 
   const {
     categoryOptions,
@@ -192,6 +230,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             age={form.age}
             areaFrom={form.areaFrom}
             areaTo={form.areaTo}
+            areaRangeHint={areaRangeHint}
             priceFrom={form.villaPriceFrom}
             priceTo={form.villaPriceTo}
             stairs={form.stairs}
@@ -281,6 +320,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             priceTo={form.apartmentSalePriceTo}
             areaFrom={form.apartmentSaleAreaFrom}
             areaTo={form.apartmentSaleAreaTo}
+            areaRangeHint={areaRangeHint}
             carEntrance={form.apartmentSaleCarEntrance}
             privateRoof={form.apartmentSalePrivateRoof}
             apartmentInVilla={form.apartmentSaleInVilla}
@@ -542,6 +582,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             priceTo={form.bigFlatPriceTo}
             areaFrom={form.bigFlatAreaFrom}
             areaTo={form.bigFlatAreaTo}
+            areaRangeHint={areaRangeHint}
             carEntrance={form.bigFlatCarEntrance}
             airConditioned={form.bigFlatAirConditioned}
             apartmentInVilla={form.bigFlatInVilla}
@@ -579,6 +620,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             priceTo={form.loungeRentPriceTo}
             areaFrom={form.loungeRentAreaFrom}
             areaTo={form.loungeRentAreaTo}
+            areaRangeHint={areaRangeHint}
             pool={form.loungeRentPool}
             footballPitch={form.footballPitch}
             volleyballCourt={form.volleyballCourt}
@@ -649,6 +691,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             storeRentPriceTo={form.storeRentPriceTo}
             storeRentAreaFrom={form.storeRentAreaFrom}
             storeRentAreaTo={form.storeRentAreaTo}
+            areaRangeHint={areaRangeHint}
             storeRentStreetWidth={form.storeRentStreetWidth}
             nearBus={form.nearBus}
             nearMetro={form.nearMetro}
@@ -713,6 +756,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             landRentStreetDirection={form.landRentStreetDirection}
             landRentAreaFrom={form.landRentAreaFrom}
             landRentAreaTo={form.landRentAreaTo}
+            areaRangeHint={areaRangeHint}
             landRentStreetWidth={form.landRentStreetWidth}
             nearBus={form.nearBus}
             nearMetro={form.nearMetro}
@@ -757,6 +801,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             officeRentPriceTo={form.officeRentPriceTo}
             officeRentAreaFrom={form.officeRentAreaFrom}
             officeRentAreaTo={form.officeRentAreaTo}
+            areaRangeHint={areaRangeHint}
             officeRentStreetWidth={form.officeRentStreetWidth}
             officeRentFurnished={form.officeRentFurnished}
             nearBus={form.nearBus}
@@ -800,6 +845,7 @@ export default function NewOrderScreen(): React.JSX.Element {
             warehouseRentPriceTo={form.warehouseRentPriceTo}
             warehouseRentAreaFrom={form.warehouseRentAreaFrom}
             warehouseRentAreaTo={form.warehouseRentAreaTo}
+            areaRangeHint={areaRangeHint}
             warehouseRentStreetWidth={form.warehouseRentStreetWidth}
             nearBus={form.nearBus}
             nearMetro={form.nearMetro}

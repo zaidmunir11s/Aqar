@@ -59,6 +59,8 @@ interface RouteParams {
   selectedFilter?: string | null;
   selectedCity?: string;
   searchFilters?: SearchFilterState | null;
+  /** IDs of markers currently visible on the map viewport */
+  visiblePropertyIds?: number[];
 }
 
 export default function PropertyListScreen(): React.JSX.Element {
@@ -110,6 +112,13 @@ export default function PropertyListScreen(): React.JSX.Element {
     }
     return [];
   }, [params?.properties, listingType, apiListingProperties]);
+
+  const visiblePropertyIds = params?.visiblePropertyIds ?? null;
+  const viewportRestrictedProperties = useMemo(() => {
+    if (visiblePropertyIds === null) return properties;
+    const set = new Set(visiblePropertyIds);
+    return properties.filter((p) => set.has(p.id));
+  }, [properties, visiblePropertyIds]);
 
   const [selectedFilter, setSelectedFilter] = useState<string | null>(
     params?.selectedFilter ?? preservedFilter ?? null
@@ -178,7 +187,8 @@ export default function PropertyListScreen(): React.JSX.Element {
       }
       navigation.navigate("PropertyDetails", {
         propertyId: item.id,
-        visiblePropertyIds: properties.map((p) => p.id),
+        // Critical: keep swipe navigation restricted to the exact list user is viewing.
+        visiblePropertyIds: sortedProperties.map((p) => p.id),
         listingType,
         ...(item.serverListingId
           ? { listingId: item.serverListingId }
@@ -323,8 +333,14 @@ export default function PropertyListScreen(): React.JSX.Element {
       
       return filtered;
     }
-    return properties;
-  }, [listingType, properties, activeProjectFilter, projectSelectedCity, projectSelectedPropertyType]);
+    return viewportRestrictedProperties;
+  }, [
+    listingType,
+    viewportRestrictedProperties,
+    activeProjectFilter,
+    projectSelectedCity,
+    projectSelectedPropertyType,
+  ]);
 
   // Nearest filter location resolution is handled in handleFilterValueChange.
 
@@ -409,13 +425,16 @@ export default function PropertyListScreen(): React.JSX.Element {
         let title = "";
         const published = isPublishedListingProperty(item);
         const categoryTitle = item.categoryLabel?.trim();
+        // Show-list cards: title should be property type first.
+        // Location is already rendered as a separate row inside `PropertyCard` via `property.address`.
+        const titleCore = typeLabel;
 
         if (listingType === "rent") {
-          const core = published && categoryTitle ? categoryTitle : typeLabel;
+          const core = published && categoryTitle ? categoryTitle : titleCore;
           title = ensurePropertyCardListingSuffix(core, "rent", t);
           priceLine = "";
         } else {
-          const core = published && categoryTitle ? categoryTitle : typeLabel;
+          const core = published && categoryTitle ? categoryTitle : titleCore;
           title = ensurePropertyCardListingSuffix(core, "sale", t);
           const saleProperty = item as RentSaleProperty;
           const rawPrice = saleProperty?.price?.trim();

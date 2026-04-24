@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -10,11 +10,19 @@ import {
 import { PropertyCard, ScreenHeader, FilterTabs } from "../../../../components";
 import { COLORS } from "@/constants";
 import { SearchRequestData } from "@/context/searchRequest-context";
-import { findMatchingProperties } from "@/utils/propertyMatching";
+import {
+  findMatchingPropertiesFromList,
+  getListingTypeFromCategory,
+  getPropertyTypeFromCategory,
+} from "@/utils/propertyMatching";
 import { getMatchedCriteria } from "@/utils/criteriaMatching";
 import { formatPrice, getTranslatedPropertyTypeLabel } from "../../../../utils";
 import type { Property } from "../../../../types/property";
 import { useLocalization } from "../../../../hooks/useLocalization";
+import { useGetPublicListingsQuery } from "@/redux/api";
+import { mapApiListingToProperty } from "@/utils/apiListingMapper";
+import { registerApiListingProperties } from "@/utils/propertyLookup";
+import { parseBackendDateMs } from "@/utils/dateParsing";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -30,10 +38,42 @@ export default function MatchedListingsScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
+  const listingType = useMemo(() => {
+    const lt = request?.category ? getListingTypeFromCategory(request.category) : null;
+    return lt;
+  }, [request?.category]);
+
+  const propertyType = useMemo(() => {
+    const pt = request?.category ? getPropertyTypeFromCategory(request.category) : null;
+    return pt;
+  }, [request?.category]);
+
+  const { data: publicListingsData } = useGetPublicListingsQuery(
+    listingType
+      ? {
+          page: 1,
+          limit: 200,
+          listingType: listingType === "sale" ? "SALE" : "RENT",
+          ...(propertyType ? { propertyType } : {}),
+        }
+      : { page: 1, limit: 200 }
+  );
+
+  const candidateProperties = useMemo(() => {
+    const rows = publicListingsData?.listings ?? [];
+    return rows.map(mapApiListingToProperty);
+  }, [publicListingsData]);
+
+  useEffect(() => {
+    if (candidateProperties.length > 0) {
+      registerApiListingProperties(candidateProperties);
+    }
+  }, [candidateProperties]);
+
   const matchedProperties = useMemo(() => {
     if (!request) return [];
-    return findMatchingProperties(request);
-  }, [request]);
+    return findMatchingPropertiesFromList(candidateProperties, request);
+  }, [candidateProperties, request]);
 
   const matchedPropertyIds = useMemo(
     () => matchedProperties.map((p) => p.id),
@@ -68,7 +108,12 @@ export default function MatchedListingsScreen(): React.JSX.Element {
 
     switch (selectedFilter) {
       case "latest":
-        return sorted.sort((a, b) => (b.id || 0) - (a.id || 0));
+        return sorted.sort((a, b) => {
+          const am = parseBackendDateMs((a as any).createdAt) ?? 0;
+          const bm = parseBackendDateMs((b as any).createdAt) ?? 0;
+          if (Number.isFinite(am) && Number.isFinite(bm)) return bm - am;
+          return (b.id || 0) - (a.id || 0);
+        });
       case "price":
         return sorted.sort((a, b) => {
           const priceA = getNumericPrice(a);

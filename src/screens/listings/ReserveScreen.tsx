@@ -1,4 +1,10 @@
-import React, { useMemo, useCallback, useState, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -10,7 +16,11 @@ import {
   Keyboard,
   Animated,
 } from "react-native";
-import { Ionicons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -46,8 +56,10 @@ export default function ReserveScreen(): React.JSX.Element {
 
   // Move footer above keyboard and allow scroll when keyboard is visible
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
     const showSub = Keyboard.addListener(showEvent, (event) => {
       const h = event.endCoordinates.height;
       setKeyboardHeightPx(h);
@@ -73,7 +85,7 @@ export default function ReserveScreen(): React.JSX.Element {
 
   const property = useMemo(
     () => getPropertyById(propertyId) as DailyProperty | undefined,
-    [propertyId]
+    [propertyId],
   );
 
   const handleBackPress = useCallback(() => {
@@ -91,62 +103,69 @@ export default function ReserveScreen(): React.JSX.Element {
   // Function to get translated property type label
   const getPropertyTypeLabel = useCallback(() => {
     if (!property) return "";
-    
+
     const type = property.type?.toLowerCase() || "";
-    
+
     // Map property types to translation keys
     const typeMap: Record<string, string> = {
-      "apartment": "apartmentForBooking",
-      "villa": "villaForBooking",
-      "studio": "studioForBooking",
-      "chalet": "chaletForBooking",
-      "lounge": "chaletForBooking",
-      "tent": "tentForBooking",
-      "farm": "farmForBooking",
-      "hall": "hallForBooking",
+      apartment: "apartmentForBooking",
+      villa: "villaForBooking",
+      studio: "studioForBooking",
+      chalet: "chaletForBooking",
+      lounge: "chaletForBooking",
+      tent: "tentForBooking",
+      farm: "farmForBooking",
+      hall: "hallForBooking",
     };
-    
+
     const translationKey = typeMap[type];
     if (translationKey) {
       return t(`listings.propertyTypes.${translationKey}`);
     }
-    
+
     // Fallback: try direct translation
     const directKey = `listings.propertyTypes.${type}`;
     const translated = t(directKey, { defaultValue: "" });
     if (translated && translated !== directKey) {
       return translated;
     }
-    
+
     // Final fallback: use the label from DAILY_FILTER_OPTIONS or property type
-    return DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)?.label || property.type;
+    return (
+      DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)?.label ||
+      property.type
+    );
   }, [property, t]);
 
   // Format dates for display (keep numbers as Western numerals, not Arabic-Indic)
   const formattedCheckIn = useMemo(() => {
     if (!selectedDates?.startDate) return t("listings.notSelected");
     const date = new Date(selectedDates.startDate);
-    const formatted = date.toLocaleDateString(isRTL ? "ar-SA" : "en-US", { 
-      month: "short", 
-      day: "numeric", 
-      year: "numeric" 
+    const formatted = date.toLocaleDateString(isRTL ? "ar-SA" : "en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
     // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9) if needed
     const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
-    return formatted.replace(/[٠-٩]/g, (d) => arabicIndic.indexOf(d).toString());
+    return formatted.replace(/[٠-٩]/g, (d) =>
+      arabicIndic.indexOf(d).toString(),
+    );
   }, [selectedDates?.startDate, t, isRTL]);
 
   const formattedCheckOut = useMemo(() => {
     if (!selectedDates?.endDate) return t("listings.notSelected");
     const date = new Date(selectedDates.endDate);
-    const formatted = date.toLocaleDateString(isRTL ? "ar-SA" : "en-US", { 
-      month: "short", 
-      day: "numeric", 
-      year: "numeric" 
+    const formatted = date.toLocaleDateString(isRTL ? "ar-SA" : "en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
     // Convert Arabic-Indic numerals (٠-٩) to Western numerals (0-9) if needed
     const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
-    return formatted.replace(/[٠-٩]/g, (d) => arabicIndic.indexOf(d).toString());
+    return formatted.replace(/[٠-٩]/g, (d) =>
+      arabicIndic.indexOf(d).toString(),
+    );
   }, [selectedDates?.endDate, t, isRTL]);
 
   // Calculate nights
@@ -213,7 +232,7 @@ export default function ReserveScreen(): React.JSX.Element {
         justifyContent: "center" as const,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Calculate total price based on selected dates
@@ -239,9 +258,14 @@ export default function ReserveScreen(): React.JSX.Element {
   if (!property) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title={t("listings.reservationSummary")} onBackPress={handleBackPress} />
+        <ScreenHeader
+          title={t("listings.reservationSummary")}
+          onBackPress={handleBackPress}
+        />
         <View style={[styles.center, rtlStyles.center]}>
-          <Text style={rtlStyles.ruleLabel}>{t("listings.propertyNotFound")}</Text>
+          <Text style={rtlStyles.ruleLabel}>
+            {t("listings.propertyNotFound")}
+          </Text>
         </View>
       </View>
     );
@@ -249,8 +273,11 @@ export default function ReserveScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title={t("listings.reservationSummary")} onBackPress={handleBackPress} />
-      
+      <ScreenHeader
+        title={t("listings.reservationSummary")}
+        onBackPress={handleBackPress}
+      />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -266,7 +293,13 @@ export default function ReserveScreen(): React.JSX.Element {
           <View style={styles.bookingCard}>
             {/* Booking Type on top */}
             <View style={styles.priceContainer}>
-              <Text style={[styles.bottomPrice, styles.bookingTypeText, rtlStyles.bookingTypeText]}>
+              <Text
+                style={[
+                  styles.bottomPrice,
+                  styles.bookingTypeText,
+                  rtlStyles.bookingTypeText,
+                ]}
+              >
                 {property.bookingType === "daily"
                   ? t("listings.daily")
                   : property.bookingType === "monthly"
@@ -294,29 +327,48 @@ export default function ReserveScreen(): React.JSX.Element {
                 </Text>
 
                 <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
-                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
+                  <View
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                  >
                     <MaterialCommunityIcons
                       name="arrow-expand-horizontal"
                       size={wp(4)}
                       color="#9ca3af"
                     />
-                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>{property.area} {t("listings.m2")}</Text>
+                    <Text
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
+                      {property.area} {t("listings.m2")}
+                    </Text>
                   </View>
-                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
+                  <View
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                  >
                     <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
+                    <Text
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
                       {property.bedrooms}
                     </Text>
                   </View>
-                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
+                  <View
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                  >
                     <Ionicons name="person" size={wp(4)} color="#9ca3af" />
-                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
-                      {property.usage === "family" ? t("listings.family") : t("listings.single")}
+                    <Text
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
+                      {property.usage === "family"
+                        ? t("listings.family")
+                        : t("listings.single")}
                     </Text>
                   </View>
                 </View>
 
-                <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.bottomAddress]}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.bottomAddress, rtlStyles.bottomAddress]}
+                >
                   {translateAddress(property.address, t)}
                 </Text>
               </View>
@@ -328,34 +380,68 @@ export default function ReserveScreen(): React.JSX.Element {
         <View style={styles.reservationSection}>
           <View style={styles.rulesList}>
             <View style={styles.firstRow}>
-              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#fff" }]}>
-                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.checkInDate")}</Text>
-                </View>
-                <View style={styles.ruleValueContainer}>
-                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{formattedCheckIn}</Text>
-                </View>
-              </View>
-            </View>
-            <View>
-              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
-                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.checkOutDate")}</Text>
-                </View>
-                <View style={styles.ruleValueContainer}>
-                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{formattedCheckOut}</Text>
-                </View>
-              </View>
-            </View>
-            <View>
-              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#fff" }]}>
-                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.nights")}</Text>
+              <View
+                style={[
+                  styles.ruleRow,
+                  rtlStyles.ruleRow,
+                  { backgroundColor: "#fff" },
+                ]}
+              >
+                <View
+                  style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}
+                >
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                    {t("listings.checkInDate")}
+                  </Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
                   <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
-                    {nights > 0 
-                      ? nights === 1 
+                    {formattedCheckIn}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View>
+              <View
+                style={[
+                  styles.ruleRow,
+                  rtlStyles.ruleRow,
+                  { backgroundColor: "#ebf1f1" },
+                ]}
+              >
+                <View
+                  style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}
+                >
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                    {t("listings.checkOutDate")}
+                  </Text>
+                </View>
+                <View style={styles.ruleValueContainer}>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
+                    {formattedCheckOut}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View>
+              <View
+                style={[
+                  styles.ruleRow,
+                  rtlStyles.ruleRow,
+                  { backgroundColor: "#fff" },
+                ]}
+              >
+                <View
+                  style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}
+                >
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                    {t("listings.nights")}
+                  </Text>
+                </View>
+                <View style={styles.ruleValueContainer}>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
+                    {nights > 0
+                      ? nights === 1
                         ? `1 ${t("listings.night")}`
                         : `${nights} ${t("listings.nights")}`
                       : `0 ${t("listings.nights")}`}
@@ -364,33 +450,75 @@ export default function ReserveScreen(): React.JSX.Element {
               </View>
             </View>
             <View>
-              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
-                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.cancellationPossibility")}</Text>
+              <View
+                style={[
+                  styles.ruleRow,
+                  rtlStyles.ruleRow,
+                  { backgroundColor: "#ebf1f1" },
+                ]}
+              >
+                <View
+                  style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}
+                >
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                    {t("listings.cancellationPossibility")}
+                  </Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{t("listings.nonrefundable")}</Text>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
+                    {t("listings.nonrefundable")}
+                  </Text>
                 </View>
               </View>
             </View>
             <View>
-              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#fff" }]}>
-                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.insuranceAmount")}</Text>
+              <View
+                style={[
+                  styles.ruleRow,
+                  rtlStyles.ruleRow,
+                  { backgroundColor: "#fff" },
+                ]}
+              >
+                <View
+                  style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}
+                >
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                    {t("listings.insuranceAmount")}
+                  </Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>0 {t("listings.riyals")}</Text>
+                  <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
+                    0 {t("listings.riyals")}
+                  </Text>
                 </View>
               </View>
             </View>
             <View style={styles.lastRow}>
-              <View style={[styles.ruleRow, rtlStyles.ruleRow, { backgroundColor: "#ebf1f1" }]}>
-                <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{t("listings.totalPrice")}</Text>
+              <View
+                style={[
+                  styles.ruleRow,
+                  rtlStyles.ruleRow,
+                  { backgroundColor: "#ebf1f1" },
+                ]}
+              >
+                <View
+                  style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}
+                >
+                  <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                    {t("listings.totalPrice")}
+                  </Text>
                 </View>
                 <View style={styles.ruleValueContainer}>
-                  <Text style={[styles.ruleValue, styles.totalPriceValue, rtlStyles.ruleValue]}>
-                    {totalPrice > 0 ? `${totalPrice} ${t("listings.sar")}` : `0 ${t("listings.sar")}`}
+                  <Text
+                    style={[
+                      styles.ruleValue,
+                      styles.totalPriceValue,
+                      rtlStyles.ruleValue,
+                    ]}
+                  >
+                    {totalPrice > 0
+                      ? `${totalPrice} ${t("listings.sar")}`
+                      : `0 ${t("listings.sar")}`}
                   </Text>
                 </View>
               </View>
@@ -602,4 +730,3 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 });
-

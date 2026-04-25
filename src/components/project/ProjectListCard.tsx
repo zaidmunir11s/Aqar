@@ -13,7 +13,10 @@ import {
 } from "react-native-responsive-screen";
 import { getTypeLabelFromType, getDefaultImageUrl } from "../../utils";
 import type { ProjectProperty, FilterOption } from "../../types/property";
-import { SALE_FILTER_OPTIONS, RENT_FILTER_OPTIONS } from "../../data/propertyData";
+import {
+  SALE_FILTER_OPTIONS,
+  RENT_FILTER_OPTIONS,
+} from "../../data/propertyData";
 import { COLORS } from "@/constants/colors";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
@@ -37,7 +40,14 @@ export interface ProjectListCardProps {
  * Project list card component for projects list view
  */
 const ProjectListCard = memo<ProjectListCardProps>(
-  ({ project, onPress, filterOptions, hideTypeTags = false, availableBadgeVariant = "default", hideDeveloperLogo = false }) => {
+  ({
+    project,
+    onPress,
+    filterOptions,
+    hideTypeTags = false,
+    availableBadgeVariant = "default",
+    hideDeveloperLogo = false,
+  }) => {
     const { t, isRTL } = useLocalization();
     const [imageError, setImageError] = useState(false);
     const [logoError, setLogoError] = useState(false);
@@ -47,20 +57,20 @@ const ProjectListCard = memo<ProjectListCardProps>(
       (type: string, filterOptions: FilterOption[]): string => {
         const opt = filterOptions.find((o) => o.type === type);
         if (!opt) return type;
-        
+
         // Try to find translation in propertyTypes
         const translationKey = `listings.propertyTypes.${type}`;
         const translated = t(translationKey);
-        
+
         // If translation exists and is different from the key, use it
         if (translated && translated !== translationKey) {
           return translated;
         }
-        
+
         // Fallback to filter option label
         return opt.label;
       },
-      [t]
+      [t],
     );
 
     const imageUrl =
@@ -82,34 +92,37 @@ const ProjectListCard = memo<ProjectListCardProps>(
 
     const translatedAddress = useMemo(
       () => translateAddress(project.address, t),
-      [project.address, t]
+      [project.address, t],
     );
 
     // Helper function to translate status
-    const translateStatus = useCallback((status: string): string => {
-      if (!status) return status;
-      const lowerStatus = status.toLowerCase().trim();
-      
-      if (lowerStatus === "available") {
-        return t("projects.status.available");
-      } else if (lowerStatus === "ready") {
-        return t("projects.status.ready");
-      } else if (lowerStatus === "under construction") {
-        return t("projects.status.underConstruction");
-      }
-      
-      // Fallback to original if no match
-      return status;
-    }, [t]);
+    const translateStatus = useCallback(
+      (status: string): string => {
+        if (!status) return status;
+        const lowerStatus = status.toLowerCase().trim();
+
+        if (lowerStatus === "available") {
+          return t("projects.status.available");
+        } else if (lowerStatus === "ready") {
+          return t("projects.status.ready");
+        } else if (lowerStatus === "under construction") {
+          return t("projects.status.underConstruction");
+        }
+
+        // Fallback to original if no match
+        return status;
+      },
+      [t],
+    );
 
     const translatedAvailableStatus = useMemo(
       () => translateStatus(project.projectDetails.availableStatus),
-      [project.projectDetails.availableStatus, translateStatus]
+      [project.projectDetails.availableStatus, translateStatus],
     );
 
     const translatedReadyStatus = useMemo(
       () => translateStatus(project.projectDetails.readyStatus),
-      [project.projectDetails.readyStatus, translateStatus]
+      [project.projectDetails.readyStatus, translateStatus],
     );
 
     // RTL-aware styles
@@ -118,7 +131,9 @@ const ProjectListCard = memo<ProjectListCardProps>(
         statusBadgesContainer: {
           left: isRTL ? undefined : wp(4),
           right: isRTL ? wp(4) : undefined,
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         priceContainer: {
           left: isRTL ? undefined : wp(4),
@@ -128,7 +143,9 @@ const ProjectListCard = memo<ProjectListCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         nameRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         projectName: {
           marginRight: isRTL ? 0 : wp(3),
@@ -136,13 +153,15 @@ const ProjectListCard = memo<ProjectListCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         typeTagsContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         location: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -161,27 +180,32 @@ const ProjectListCard = memo<ProjectListCardProps>(
           />
 
           {/* Status Badges - Top Left */}
-          <View style={[styles.statusBadgesContainer, rtlStyles.statusBadgesContainer]}>
+          <View
+            style={[
+              styles.statusBadgesContainer,
+              rtlStyles.statusBadgesContainer,
+            ]}
+          >
             <View
               style={[
                 styles.statusBadge,
                 styles.availableBadge,
-                availableBadgeVariant === "orange" && styles.availableBadgeOrange,
+                availableBadgeVariant === "orange" &&
+                  styles.availableBadgeOrange,
               ]}
             >
               <Text
                 style={[
                   styles.availableBadgeText,
-                  availableBadgeVariant === "orange" && styles.availableBadgeTextOrange,
+                  availableBadgeVariant === "orange" &&
+                    styles.availableBadgeTextOrange,
                 ]}
               >
                 {translatedAvailableStatus}
               </Text>
             </View>
             <View style={[styles.statusBadge, styles.readyBadge]}>
-              <Text style={styles.readyBadgeText}>
-                {translatedReadyStatus}
-              </Text>
+              <Text style={styles.readyBadgeText}>{translatedReadyStatus}</Text>
             </View>
           </View>
 
@@ -197,29 +221,37 @@ const ProjectListCard = memo<ProjectListCardProps>(
         <View style={styles.contentSection}>
           {/* Project Name and Logo Row */}
           <View style={[styles.nameRow, rtlStyles.nameRow]}>
-            <Text style={[styles.projectName, rtlStyles.projectName]} numberOfLines={1}>
+            <Text
+              style={[styles.projectName, rtlStyles.projectName]}
+              numberOfLines={1}
+            >
               {project.projectNameArabic || project.projectName}
             </Text>
-            {!hideDeveloperLogo && project.developerLogo && project.developerLogo.trim() !== "" && !logoError && (
-              <View style={styles.logoContainer}>
-                <Image
-                  source={{ uri: project.developerLogo }}
-                  style={styles.developerLogo}
-                  resizeMode="cover"
-                  onError={() => {
-                    setLogoError(true);
-                  }}
-                  onLoad={() => {
-                    setLogoError(false);
-                  }}
-                />
-              </View>
-            )}
+            {!hideDeveloperLogo &&
+              project.developerLogo &&
+              project.developerLogo.trim() !== "" &&
+              !logoError && (
+                <View style={styles.logoContainer}>
+                  <Image
+                    source={{ uri: project.developerLogo }}
+                    style={styles.developerLogo}
+                    resizeMode="cover"
+                    onError={() => {
+                      setLogoError(true);
+                    }}
+                    onLoad={() => {
+                      setLogoError(false);
+                    }}
+                  />
+                </View>
+              )}
           </View>
 
           {/* Type Tags - hidden when hideTypeTags (e.g. developer profile section) */}
           {!hideTypeTags && (
-            <View style={[styles.typeTagsContainer, rtlStyles.typeTagsContainer]}>
+            <View
+              style={[styles.typeTagsContainer, rtlStyles.typeTagsContainer]}
+            >
               {typeLabels.map((label, index) => (
                 <View key={index} style={styles.typeTag}>
                   <Text style={styles.typeTagText}>{label}</Text>
@@ -230,14 +262,17 @@ const ProjectListCard = memo<ProjectListCardProps>(
 
           {/* Location */}
           {project.address && (
-            <Text style={[styles.location, rtlStyles.location]} numberOfLines={2}>
+            <Text
+              style={[styles.location, rtlStyles.location]}
+              numberOfLines={2}
+            >
               {translatedAddress}
             </Text>
           )}
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ProjectListCard.displayName = "ProjectListCard";
@@ -380,4 +415,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProjectListCard;
-

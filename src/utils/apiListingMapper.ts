@@ -1,5 +1,10 @@
-import type { Property, PropertyType, ListingType } from "@/types/property";
-import type { PropertyDetailItem, RentPaymentScheduleRow } from "@/types/property";
+import type {
+  Property,
+  PropertyType,
+  ListingType,
+  PropertyDetailItem,
+  RentPaymentScheduleRow,
+} from "@/types/property";
 import type { UserRentPaymentPublishInput } from "@/utils/rentPayments";
 import { buildRentPaymentScheduleFromPublishForm } from "@/utils/rentPayments";
 import { parseBackendDateMs } from "@/utils/dateParsing";
@@ -55,7 +60,9 @@ function readAttachmentPhotoCaptionsInOrder(metadata: unknown): string[] {
     .map((r) => String(r?.note ?? "").trim());
 }
 
-function readPublishDetailRows(metadata: unknown): PropertyDetailItem[] | undefined {
+function readPublishDetailRows(
+  metadata: unknown,
+): PropertyDetailItem[] | undefined {
   if (!metadata || typeof metadata !== "object") return undefined;
   const rows = (metadata as any).publishDetailRows as unknown;
   if (!Array.isArray(rows)) return undefined;
@@ -83,15 +90,24 @@ function readExtraFields(metadata: unknown): {
   if (!metadata || typeof metadata !== "object") return {};
   const e = (metadata as any).extraFields;
   if (!e || typeof e !== "object") return {};
-  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  const n = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? v : undefined;
   return {
-    ...(n((e as any).livingRooms) != null ? { livingRooms: n((e as any).livingRooms) } : {}),
-    ...(n((e as any).restroomsListed) != null ? { restroomsListed: n((e as any).restroomsListed) } : {}),
-    ...(n((e as any).estateAgeYears) != null ? { estateAgeYears: n((e as any).estateAgeYears) } : {}),
+    ...(n((e as any).livingRooms) != null
+      ? { livingRooms: n((e as any).livingRooms) }
+      : {}),
+    ...(n((e as any).restroomsListed) != null
+      ? { restroomsListed: n((e as any).restroomsListed) }
+      : {}),
+    ...(n((e as any).estateAgeYears) != null
+      ? { estateAgeYears: n((e as any).estateAgeYears) }
+      : {}),
   };
 }
 
-function readRentPaymentSchedule(metadata: unknown): RentPaymentScheduleRow[] | undefined {
+function readRentPaymentSchedule(
+  metadata: unknown,
+): RentPaymentScheduleRow[] | undefined {
   if (!metadata || typeof metadata !== "object") return undefined;
   const raw = (metadata as any).rentPaymentOptions as unknown;
   if (!raw || typeof raw !== "object") return undefined;
@@ -147,10 +163,8 @@ function compactSarPrice(n: number): string {
 }
 
 export function mapApiListingToProperty(row: ApiListingDto): Property {
-  const listingType: ListingType =
-    row.listingType === "RENT" ? "rent" : "sale";
-  const type =
-    PRISMA_TO_UI_TYPE[row.propertyType] ?? "other";
+  const listingType: ListingType = row.listingType === "RENT" ? "rent" : "sale";
+  const type = PRISMA_TO_UI_TYPE[row.propertyType] ?? "other";
   const sortedMedia =
     row.media && row.media.length > 0
       ? [...row.media].sort((a, b) => a.order - b.order)
@@ -165,15 +179,18 @@ export function mapApiListingToProperty(row: ApiListingDto): Property {
   const numericId = uuidToStablePropertyNumericId(row.id);
   const createdAtMs = parseBackendDateMs(row.createdAt);
   const updatedAtMs = parseBackendDateMs(row.updatedAt);
-  const createdAtIso = createdAtMs != null ? new Date(createdAtMs).toISOString() : undefined;
-  const updatedAtIso = updatedAtMs != null ? new Date(updatedAtMs).toISOString() : undefined;
+  const createdAtIso =
+    createdAtMs != null ? new Date(createdAtMs).toISOString() : undefined;
+  const updatedAtIso =
+    updatedAtMs != null ? new Date(updatedAtMs).toISOString() : undefined;
 
   const advertiserName = row.owner
     ? `${row.owner.firstName} ${row.owner.lastName}`.trim()
     : undefined;
   const advertiserPhone = row.owner?.phoneNumber ?? undefined;
 
-  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : null;
+  const metadata =
+    row.metadata && typeof row.metadata === "object" ? row.metadata : null;
   const imageCaptionsFromMeta = readAttachmentPhotoCaptionsInOrder(metadata);
   const detailsItemsFromMeta = readPublishDetailRows(metadata);
   const extraFields = readExtraFields(metadata);
@@ -205,14 +222,20 @@ export function mapApiListingToProperty(row: ApiListingDto): Property {
     address: locationDisplayName || row.title?.trim() || row.city?.trim() || "",
     city: row.city?.trim() || "",
     images: images.length > 0 ? images : [],
-    ...(imageCaptionsFromMeta.length > 0 ? { imageCaptions: imageCaptionsFromMeta } : {}),
+    ...(imageCaptionsFromMeta.length > 0
+      ? { imageCaptions: imageCaptionsFromMeta }
+      : {}),
     ...(videoUris.length > 0 ? { videoUris } : {}),
-    ...(metadata ? { listingMetadata: metadata as Record<string, unknown> } : {}),
+    ...(metadata
+      ? { listingMetadata: metadata as Record<string, unknown> }
+      : {}),
     ...(row.status ? { listingStatus: String(row.status) } : {}),
     ...(detailsItemsFromMeta ? { detailsItems: detailsItemsFromMeta } : {}),
     description: row.description?.trim() || undefined,
     price: compactSarPrice(row.price),
-    ...(listingType === "rent" && rentPaymentSchedule ? { rentPaymentSchedule } : {}),
+    ...(listingType === "rent" && rentPaymentSchedule
+      ? { rentPaymentSchedule }
+      : {}),
     advertiserName,
     advertiserId: row.owner?.id,
     ...(advertiserPhone ? { advertiserPhone } : {}),

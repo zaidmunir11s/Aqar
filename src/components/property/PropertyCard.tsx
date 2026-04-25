@@ -42,7 +42,13 @@ function ListCardMetaIcon({
   }
   const color = "#9ca3af";
   if (spec.library === "MaterialCommunityIcons") {
-    return <MaterialCommunityIcons name={spec.name as any} size={size} color={color} />;
+    return (
+      <MaterialCommunityIcons
+        name={spec.name as any}
+        size={size}
+        color={color}
+      />
+    );
   }
   if (spec.library === "Feather") {
     return <Feather name={spec.name as any} size={size} color={color} />;
@@ -85,9 +91,8 @@ const PropertyCard = memo<PropertyCardProps>(
       }
       return priceLine;
     }, [property, priceLine, t, i18n.language]);
-    const usageLabel = property.usage === "family" 
-      ? t("listings.family") 
-      : t("listings.single");
+    const usageLabel =
+      property.usage === "family" ? t("listings.family") : t("listings.single");
     const imageUrl =
       property.images && property.images[0]
         ? property.images[0]
@@ -103,23 +108,23 @@ const PropertyCard = memo<PropertyCardProps>(
     const translateMatchedItem = (item: string): string => {
       // Normalize the item to match translation key format (lowercase, underscores)
       const normalizedType = item.toLowerCase().replace(/\s+/g, "_");
-      
+
       // Try to find translation in propertyTypes
       const translationKey = `listings.propertyTypes.${normalizedType}`;
       const translated = t(translationKey);
-      
+
       // If translation exists and is different from the key, use it
       if (translated && translated !== translationKey) {
         return translated;
       }
-      
+
       // Try with original lowercase format
       const altKey = `listings.propertyTypes.${item.toLowerCase()}`;
       const altTranslated = t(altKey);
       if (altTranslated && altTranslated !== altKey) {
         return altTranslated;
       }
-      
+
       // Fallback to original item
       return item;
     };
@@ -128,17 +133,23 @@ const PropertyCard = memo<PropertyCardProps>(
     const rtlStyles = useMemo(
       () => ({
         card: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         imageContainer: {
           marginRight: isRTL ? 0 : wp(3),
           marginLeft: isRTL ? wp(3) : 0,
         },
         metaRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         metaItem: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
           marginRight: isRTL ? 0 : wp(4),
           marginLeft: isRTL ? wp(4) : 0,
         },
@@ -147,7 +158,9 @@ const PropertyCard = memo<PropertyCardProps>(
           marginRight: isRTL ? wp(1) : 0,
         },
         addressRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         address: {
           marginLeft: isRTL ? 0 : wp(1),
@@ -155,10 +168,14 @@ const PropertyCard = memo<PropertyCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         matchedItemsContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         matchedBadge: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         title: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -167,7 +184,7 @@ const PropertyCard = memo<PropertyCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -189,10 +206,13 @@ const PropertyCard = memo<PropertyCardProps>(
         <View style={styles.cardContent}>
           <Text style={[styles.title, rtlStyles.title]}>{title}</Text>
 
-          <Text style={[styles.price, rtlStyles.price]}>{resolvedPriceLine}</Text>
+          <Text style={[styles.price, rtlStyles.price]}>
+            {resolvedPriceLine}
+          </Text>
 
           {showMetaInfo &&
-            (publishedListMetaRows != null && publishedListMetaRows.length > 0 ? (
+            (publishedListMetaRows != null &&
+            publishedListMetaRows.length > 0 ? (
               <View style={[styles.metaRow, rtlStyles.metaRow]}>
                 {publishedListMetaRows.map((row, idx) => (
                   <View
@@ -200,7 +220,10 @@ const PropertyCard = memo<PropertyCardProps>(
                     style={[styles.metaItem, rtlStyles.metaItem]}
                   >
                     <ListCardMetaIcon spec={row.icon} size={wp(4)} />
-                    <Text style={[styles.metaText, rtlStyles.metaText]} numberOfLines={1}>
+                    <Text
+                      style={[styles.metaText, rtlStyles.metaText]}
+                      numberOfLines={1}
+                    >
                       {row.value}
                     </Text>
                   </View>
@@ -258,7 +281,10 @@ const PropertyCard = memo<PropertyCardProps>(
                 size={wp(4)}
                 color={COLORS.showListCardLocation}
               />
-              <Text numberOfLines={1} style={[styles.address, rtlStyles.address]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.address, rtlStyles.address]}
+              >
                 {translateAddress(property.address, t)}
               </Text>
             </View>
@@ -267,15 +293,25 @@ const PropertyCard = memo<PropertyCardProps>(
           {/* Matched Criteria */}
           {matchedCriteria && matchedCriteria.matchedItems.length > 0 && (
             <View style={styles.criteriaContainer}>
-              <View style={[styles.matchedItemsContainer, rtlStyles.matchedItemsContainer]}>
+              <View
+                style={[
+                  styles.matchedItemsContainer,
+                  rtlStyles.matchedItemsContainer,
+                ]}
+              >
                 {matchedCriteria.matchedItems.map((item, index) => (
-                  <View key={index} style={[styles.matchedBadge, rtlStyles.matchedBadge]}>
+                  <View
+                    key={index}
+                    style={[styles.matchedBadge, rtlStyles.matchedBadge]}
+                  >
                     <Ionicons
                       name="checkmark-circle"
                       size={wp(3)}
                       color={COLORS.primary}
                     />
-                    <Text style={styles.matchedBadgeText}>{translateMatchedItem(item)}</Text>
+                    <Text style={styles.matchedBadgeText}>
+                      {translateMatchedItem(item)}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -284,7 +320,7 @@ const PropertyCard = memo<PropertyCardProps>(
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 PropertyCard.displayName = "PropertyCard";

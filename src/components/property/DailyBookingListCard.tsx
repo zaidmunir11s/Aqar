@@ -20,7 +20,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { getDefaultImageUrl, getTypeLabelFromType, translateAddress } from "../../utils";
+import {
+  getDefaultImageUrl,
+  getTypeLabelFromType,
+  translateAddress,
+} from "../../utils";
 import type { Property } from "../../types/property";
 import { COLORS } from "../../constants";
 import { DAILY_FILTER_OPTIONS } from "../../data/propertyData";
@@ -54,7 +58,7 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
         const clampedIndex = Math.max(0, Math.min(index, images.length - 1));
         setCurrentImageIndex(clampedIndex);
       },
-      [images.length]
+      [images.length],
     );
 
     const handlePrevImage = useCallback(() => {
@@ -82,40 +86,43 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
     const renderImage = useCallback(
       ({ item }: { item: string }) => (
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
+          <Image
+            source={{ uri: item }}
+            style={styles.image}
+            resizeMode="cover"
+          />
         </View>
       ),
-      []
+      [],
     );
 
     const keyExtractor = useCallback(
       (item: string, index: number) => index.toString(),
-      []
+      [],
     );
 
-    const getItemLayout = useCallback(
-      (data: any, index: number) => {
-        const imageWidth = SCREEN_WIDTH - wp(8); // Account for container margins
-        return {
-          length: imageWidth,
-          offset: imageWidth * index,
-          index,
-        };
-      },
-      []
-    );
+    const getItemLayout = useCallback((data: any, index: number) => {
+      const imageWidth = SCREEN_WIDTH - wp(8); // Account for container margins
+      return {
+        length: imageWidth,
+        offset: imageWidth * index,
+        index,
+      };
+    }, []);
 
     const typeLabel =
-      getTypeLabelFromType(property.type, DAILY_FILTER_OPTIONS) || t("listings.property");
+      getTypeLabelFromType(property.type, DAILY_FILTER_OPTIONS) ||
+      t("listings.property");
 
     const translatedAddress = useMemo(
       () => translateAddress(property.address || "", t),
-      [property.address, t]
+      [property.address, t],
     );
 
     const locationParts =
       translatedAddress?.split(",").map((part: string) => part.trim()) || [];
-    let propertyName = translatedAddress || `${typeLabel} ${t("listings.property")}`;
+    let propertyName =
+      translatedAddress || `${typeLabel} ${t("listings.property")}`;
     if (locationParts.length > 0 && locationParts[0]) {
       propertyName = locationParts[0];
     }
@@ -130,16 +137,22 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
     const rtlStyles = useMemo(
       () => ({
         priceSection: {
-          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+          alignItems: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-start"
+            | "flex-end",
         },
         price: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         detailsSection: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         detailItem: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
           marginLeft: isRTL ? wp(4) : 0,
           marginRight: isRTL ? 0 : wp(4),
         },
@@ -149,13 +162,17 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         locationSection: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         locationText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         dotsContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         leftArrow: {
           left: isRTL ? undefined : wp(1),
@@ -166,7 +183,7 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
           left: isRTL ? wp(1) : undefined,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -190,7 +207,7 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
             decelerationRate="fast"
             snapToAlignment="start"
           />
-          
+
           {/* Overlay for navigation - only responds to press, not scroll */}
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
@@ -200,30 +217,38 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
 
           {images.length > 1 && (
             <TouchableOpacity
-              style={[styles.arrowButton, styles.leftArrow, rtlStyles.leftArrow]}
+              style={[
+                styles.arrowButton,
+                styles.leftArrow,
+                rtlStyles.leftArrow,
+              ]}
               onPress={handlePrevImage}
               activeOpacity={0.7}
               disabled={currentImageIndex === 0}
             >
-              <Ionicons 
-                name={isRTL ? "chevron-forward" : "chevron-back"} 
-                size={wp(4.5)} 
-                color="#333" 
+              <Ionicons
+                name={isRTL ? "chevron-forward" : "chevron-back"}
+                size={wp(4.5)}
+                color="#333"
               />
             </TouchableOpacity>
           )}
 
           {images.length > 1 && (
             <TouchableOpacity
-              style={[styles.arrowButton, styles.rightArrow, rtlStyles.rightArrow]}
+              style={[
+                styles.arrowButton,
+                styles.rightArrow,
+                rtlStyles.rightArrow,
+              ]}
               onPress={handleNextImage}
               activeOpacity={0.7}
               disabled={currentImageIndex === images.length - 1}
             >
-              <Ionicons 
-                name={isRTL ? "chevron-back" : "chevron-forward"} 
-                size={wp(4.5)} 
-                color="#333" 
+              <Ionicons
+                name={isRTL ? "chevron-back" : "chevron-forward"}
+                size={wp(4.5)}
+                color="#333"
               />
             </TouchableOpacity>
           )}
@@ -291,14 +316,17 @@ const DailyBookingListCard = memo<DailyBookingListCardProps>(
           </View>
 
           <View style={[styles.locationSection, rtlStyles.locationSection]}>
-            <Text style={[styles.locationText, rtlStyles.locationText]} numberOfLines={1}>
+            <Text
+              style={[styles.locationText, rtlStyles.locationText]}
+              numberOfLines={1}
+            >
               {locationText}
             </Text>
           </View>
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 DailyBookingListCard.displayName = "DailyBookingListCard";

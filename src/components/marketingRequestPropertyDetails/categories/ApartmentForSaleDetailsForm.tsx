@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import ToggleRow from "../../orderForm/ToggleRow";
 import OptionChips from "../shared/OptionChips";
 import SliderWithInput from "../shared/SliderWithInput";
@@ -69,25 +72,100 @@ export default function ApartmentForSaleDetailsForm({
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "bed", label: t("listings.bedrooms"), value: bedrooms },
-      { type: "value", icon: "home", label: t("listings.livingRooms"), value: livingRooms },
-      { type: "value", icon: "navigate", label: t("listings.streetDirection"), value: getDirectionLabel(streetDirection, t) },
-      { type: "value", icon: "water", label: t("listings.restrooms"), value: wc },
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
-      { type: "value", icon: "business", label: t("listings.floor"), value: floorValue || (floorOptions[0] ?? "") },
-      { type: "value", icon: "time", label: t("listings.realEstateAge"), value: formatRealEstateAgeLabel(ageLessThan, t) },
-      { type: "toggle", label: t("listings.furnished"), enabled: toggles.furnished },
-      { type: "toggle", label: t("listings.kitchen"), enabled: toggles.kitchen },
-      { type: "toggle", label: t("listings.extraUnit"), enabled: toggles.extraUnit },
-      { type: "toggle", label: t("listings.carEntrance"), enabled: toggles.carEntrance },
+      {
+        type: "value",
+        icon: "bed",
+        label: t("listings.bedrooms"),
+        value: bedrooms,
+      },
+      {
+        type: "value",
+        icon: "home",
+        label: t("listings.livingRooms"),
+        value: livingRooms,
+      },
+      {
+        type: "value",
+        icon: "navigate",
+        label: t("listings.streetDirection"),
+        value: getDirectionLabel(streetDirection, t),
+      },
+      {
+        type: "value",
+        icon: "water",
+        label: t("listings.restrooms"),
+        value: wc,
+      },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
+      {
+        type: "value",
+        icon: "business",
+        label: t("listings.floor"),
+        value: floorValue || (floorOptions[0] ?? ""),
+      },
+      {
+        type: "value",
+        icon: "time",
+        label: t("listings.realEstateAge"),
+        value: formatRealEstateAgeLabel(ageLessThan, t),
+      },
+      {
+        type: "toggle",
+        label: t("listings.furnished"),
+        enabled: toggles.furnished,
+      },
+      {
+        type: "toggle",
+        label: t("listings.kitchen"),
+        enabled: toggles.kitchen,
+      },
+      {
+        type: "toggle",
+        label: t("listings.extraUnit"),
+        enabled: toggles.extraUnit,
+      },
+      {
+        type: "toggle",
+        label: t("listings.carEntrance"),
+        enabled: toggles.carEntrance,
+      },
       { type: "toggle", label: t("listings.lift"), enabled: toggles.lift },
       { type: "toggle", label: t("listings.water"), enabled: toggles.water },
-      { type: "toggle", label: t("listings.electricity"), enabled: toggles.electricity },
-      { type: "toggle", label: t("listings.privateRoof"), enabled: toggles.privateRoof },
-      { type: "toggle", label: t("listings.apartmentInVilla"), enabled: toggles.apartmentInVilla },
-      { type: "toggle", label: t("listings.twoEntrances"), enabled: toggles.twoEntrances },
-      { type: "toggle", label: t("listings.specialEntrance"), enabled: toggles.specialEntrance },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: toggles.drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: toggles.electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.privateRoof"),
+        enabled: toggles.privateRoof,
+      },
+      {
+        type: "toggle",
+        label: t("listings.apartmentInVilla"),
+        enabled: toggles.apartmentInVilla,
+      },
+      {
+        type: "toggle",
+        label: t("listings.twoEntrances"),
+        enabled: toggles.twoEntrances,
+      },
+      {
+        type: "toggle",
+        label: t("listings.specialEntrance"),
+        enabled: toggles.specialEntrance,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: toggles.drainageAvailability,
+      },
     ]);
   }, [
     ageLessThan,
@@ -116,14 +194,28 @@ export default function ApartmentForSaleDetailsForm({
 
   return (
     <>
-      <OptionChips label={t("listings.bedrooms")} options={BEDROOM_OPTIONS} selectedValue={bedrooms} onSelect={setBedrooms} />
-      <OptionChips label={t("listings.livingRooms")} options={LIVING_ROOM_OPTIONS} selectedValue={livingRooms} onSelect={setLivingRooms} />
+      <OptionChips
+        label={t("listings.bedrooms")}
+        options={BEDROOM_OPTIONS}
+        selectedValue={bedrooms}
+        onSelect={setBedrooms}
+      />
+      <OptionChips
+        label={t("listings.livingRooms")}
+        options={LIVING_ROOM_OPTIONS}
+        selectedValue={livingRooms}
+        onSelect={setLivingRooms}
+      />
       <OptionChips
         label={t("listings.streetDirection")}
-        options={STREET_DIRECTION_OPTIONS.map((opt) => getDirectionLabel(opt, t))}
+        options={STREET_DIRECTION_OPTIONS.map((opt) =>
+          getDirectionLabel(opt, t),
+        )}
         selectedValue={getDirectionLabel(streetDirection, t)}
         onSelect={(value) => {
-          const original = STREET_DIRECTION_OPTIONS.find((opt) => getDirectionLabel(opt, t) === value);
+          const original = STREET_DIRECTION_OPTIONS.find(
+            (opt) => getDirectionLabel(opt, t) === value,
+          );
           setStreetDirection(original ?? "Not Defined");
         }}
         scrollable
@@ -133,9 +225,19 @@ export default function ApartmentForSaleDetailsForm({
             : undefined
         }
       />
-      <OptionChips label={t("listings.wc")} options={WC_OPTIONS} selectedValue={wc} onSelect={setWc} />
+      <OptionChips
+        label={t("listings.wc")}
+        options={WC_OPTIONS}
+        selectedValue={wc}
+        onSelect={setWc}
+      />
 
-      <SliderWithInput label={t("listings.streetWidth")} value={streetWidth} onChangeValue={setStreetWidth} max={100} />
+      <SliderWithInput
+        label={t("listings.streetWidth")}
+        value={streetWidth}
+        onChangeValue={setStreetWidth}
+        max={100}
+      />
 
       <InlineWheelPickerField
         label={t("listings.floor")}
@@ -181,7 +283,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.carEntrance")}
         value={toggles.carEntrance}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, carEntrance: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, carEntrance: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -205,7 +309,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.electricity")}
         value={toggles.electricity}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, electricity: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, electricity: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -213,7 +319,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.privateRoof")}
         value={toggles.privateRoof}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, privateRoof: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, privateRoof: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -221,7 +329,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.apartmentInVilla")}
         value={toggles.apartmentInVilla}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, apartmentInVilla: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, apartmentInVilla: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -229,7 +339,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.twoEntrances")}
         value={toggles.twoEntrances}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, twoEntrances: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, twoEntrances: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -237,7 +349,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.specialEntrance")}
         value={toggles.specialEntrance}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, specialEntrance: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, specialEntrance: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -245,7 +359,9 @@ export default function ApartmentForSaleDetailsForm({
       <ToggleRow
         label={t("listings.drainageAvailability")}
         value={toggles.drainageAvailability}
-        onValueChange={(v) => setToggles((prev) => ({ ...prev, drainageAvailability: v }))}
+        onValueChange={(v) =>
+          setToggles((prev) => ({ ...prev, drainageAvailability: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -258,4 +374,3 @@ const styles = StyleSheet.create({
   // currently unused; kept for future category extensions
   container: { backgroundColor: COLORS.background },
 });
-

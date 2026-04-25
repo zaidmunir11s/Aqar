@@ -266,4 +266,3 @@ export function buildSearchRequestOrderFormData(form: any): any {
 
   return orderFormData;
 }
-

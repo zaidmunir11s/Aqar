@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  widthPercentageToDP as wp,
-} from "react-native-responsive-screen";
+import { widthPercentageToDP as wp } from "react-native-responsive-screen";
 import {
   ScreenHeader,
   ListingFooter,
@@ -64,12 +62,16 @@ export default function MarketingRequestPropertyDetailsScreen(): React.JSX.Eleme
   const selectedCategory = params.selectedCategory ?? "";
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [isFormValid, setIsFormValid] = useState(true);
-  const [propertyDetailsItems, setPropertyDetailsItems] = useState<PropertyDetailsDisplayItem[]>([]);
+  const [propertyDetailsItems, setPropertyDetailsItems] = useState<
+    PropertyDetailsDisplayItem[]
+  >([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     setSubmitAttempted(false);
-    setIsFormValid(!CATEGORIES_REQUIRING_STREET_DIRECTION.has(selectedCategory));
+    setIsFormValid(
+      !CATEGORIES_REQUIRING_STREET_DIRECTION.has(selectedCategory),
+    );
     setPropertyDetailsItems([]);
   }, [selectedCategory]);
 
@@ -87,7 +89,10 @@ export default function MarketingRequestPropertyDetailsScreen(): React.JSX.Eleme
         onBackPress={() => navigation.goBack()}
         showRightSide
         rightComponent={
-          <TouchableOpacity onPress={handleClosePress} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={handleClosePress}
+            style={styles.closeButton}
+          >
             <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
           </TouchableOpacity>
         }

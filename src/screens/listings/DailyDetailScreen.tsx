@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -20,10 +26,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  PROPERTY_DATA,
-  DAILY_FILTER_OPTIONS,
-} from "../../data/propertyData";
+import { PROPERTY_DATA, DAILY_FILTER_OPTIONS } from "../../data/propertyData";
 import {
   calculateDays,
   getDefaultImageUrl,
@@ -43,7 +46,11 @@ import {
   IconButton,
   UnitRules,
 } from "../../components";
-import { useCalendar, usePropertyDetailNavigation, useTabNavigation } from "../../hooks";
+import {
+  useCalendar,
+  usePropertyDetailNavigation,
+  useTabNavigation,
+} from "../../hooks";
 import type { Property, DailyProperty } from "../../types/property";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
@@ -97,7 +104,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
   const property = useMemo(
     () => getPropertyById(propertyId) as DailyProperty | undefined,
-    [propertyId]
+    [propertyId],
   );
 
   useEffect(() => {
@@ -127,12 +134,11 @@ export default function DailyDetailScreen(): React.JSX.Element {
       const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
       // When RTL is active and gallery is inverted, adjust index calculation
       const imagesLength = property?.images?.length || 1;
-      const index = isRTL && imagesLength > 0
-        ? imagesLength - 1 - rawIndex
-        : rawIndex;
+      const index =
+        isRTL && imagesLength > 0 ? imagesLength - 1 - rawIndex : rawIndex;
       setCurrentImageIndex(index);
     },
-    [isRTL, property?.images?.length]
+    [isRTL, property?.images?.length],
   );
 
   const { navigateToChat } = useTabNavigation();
@@ -141,7 +147,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
     if (!property) return;
 
     // Navigate directly to Conversation (standardized with PropertyDetailsScreen)
-    const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
+    const defaultMessage = t("listings.inRegardOfAdNumber", {
+      id: property.id,
+    });
     const advertiserName = property.advertiserName || "Property Owner";
     const advertiserId = property.advertiserId || `advertiser-${property.id}`;
 
@@ -198,7 +206,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
         setDescriptionExceedsThreeLines(true);
       }
     },
-    []
+    [],
   );
 
   const handleTabPress = useCallback((tab: TabType) => {
@@ -215,7 +223,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
   const handleReserve = useCallback(() => {
     if (!property) return;
-    
+
     navigation.navigate("Reserve", {
       propertyId: property.id,
       selectedDates: selectedDates,
@@ -246,7 +254,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
+    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight],
   );
 
   // RTL-aware styles
@@ -281,7 +289,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
         alignItems: "center" as const,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   if (!property) {
@@ -304,13 +312,13 @@ export default function DailyDetailScreen(): React.JSX.Element {
     if (option) {
       // Map property types to translation keys
       const typeTranslationMap: { [key: string]: string } = {
-        "apartment": "apartmentForBooking",
-        "villa": "villaForBooking",
-        "studio": "studioForBooking",
-        "chalet": "chaletForBooking",
-        "tent": "tentForBooking",
-        "farm": "farmForBooking",
-        "hall": "hallForBooking",
+        apartment: "apartmentForBooking",
+        villa: "villaForBooking",
+        studio: "studioForBooking",
+        chalet: "chaletForBooking",
+        tent: "tentForBooking",
+        farm: "farmForBooking",
+        hall: "hallForBooking",
       };
       const translationKey = typeTranslationMap[property.type];
       if (translationKey) {
@@ -329,7 +337,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
     if (selectedDates.startDate && selectedDates.endDate) {
       const days = calculateDays(
         selectedDates.startDate,
-        selectedDates.endDate
+        selectedDates.endDate,
       );
       return `${(dailyProperty.dailyPrice || 0) * days} ${t("listings.sar")}`;
     } else {
@@ -349,9 +357,13 @@ export default function DailyDetailScreen(): React.JSX.Element {
           ]}
         >
           <IconButton onPress={handleBackPress}>
-            <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={wp(6)} color={COLORS.backButton} />
+            <Ionicons
+              name={isRTL ? "arrow-forward" : "arrow-back"}
+              size={wp(6)}
+              color={COLORS.backButton}
+            />
           </IconButton>
-          <View style={styles.headerIconsSpacer} />  
+          <View style={styles.headerIconsSpacer} />
           <View style={[styles.headerIconsRight, rtlStyles.headerIconsRight]}>
             <IconButton onPress={toggleLike}>
               <Ionicons
@@ -411,7 +423,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
             favorited={favorited}
             showStickyHeader={showStickyHeader}
           />
-          
+
           {/* Property Header */}
           <View style={styles.headerContainer}>
             <PropertyHeader
@@ -426,10 +438,16 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Property Information */}
           <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.propertyInformation")}</Text>
+            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+              {t("listings.propertyInformation")}
+            </Text>
             <View style={styles.infoList}>
               {[
-                { icon: "resize", label: t("listings.area"), value: `${property.area}` },
+                {
+                  icon: "resize",
+                  label: t("listings.area"),
+                  value: `${property.area}`,
+                },
                 {
                   icon: "bed",
                   label: t("listings.bedrooms"),
@@ -453,7 +471,11 @@ export default function DailyDetailScreen(): React.JSX.Element {
                       ? `${property.estateAge} ${t("listings.years")}`
                       : t("listings.new"),
                 },
-                { icon: "pricetag", label: t("listings.type"), value: t("listings.residential") },
+                {
+                  icon: "pricetag",
+                  label: t("listings.type"),
+                  value: t("listings.residential"),
+                },
               ].map((item, index) => (
                 <InfoItem
                   key={item.label}
@@ -469,7 +491,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Property Features */}
           <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.propertyFeatures")}</Text>
+            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+              {t("listings.propertyFeatures")}
+            </Text>
             <View style={styles.featuresList}>
               {[
                 { label: t("listings.water") },
@@ -478,7 +502,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
                 { label: t("listings.specialEntrance") },
                 { label: t("listings.nearBusFeature") },
               ]
-                .reduce<Array<Array<{ label: string; index: number }>>>(
+                .reduce<{ label: string; index: number }[][]>(
                   (rows, item, index) => {
                     const rowIndex = Math.floor(index / 2);
                     if (!rows[rowIndex]) {
@@ -487,7 +511,7 @@ export default function DailyDetailScreen(): React.JSX.Element {
                     rows[rowIndex].push({ ...item, index });
                     return rows;
                   },
-                  []
+                  [],
                 )
                 .map((row, rowIndex) => (
                   <View
@@ -517,7 +541,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
 
           {/* Extra / Description */}
           <View style={styles.extraSection}>
-            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.extra")}</Text>
+            <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+              {t("listings.extra")}
+            </Text>
             <View style={styles.descriptionWrapper}>
               <Text
                 style={[styles.description, styles.descriptionMeasure]}
@@ -533,7 +559,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
               </Text>
               {!expandedDescription && descriptionExceedsThreeLines && (
                 <TouchableOpacity onPress={expandDescription}>
-                  <Text style={[styles.readMore, rtlStyles.readMore]}>{t("listings.readMore")}</Text>
+                  <Text style={[styles.readMore, rtlStyles.readMore]}>
+                    {t("listings.readMore")}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -547,7 +575,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
           {/* Location Map */}
           <PropertyLocation
             property={property}
-            onPress={() => navigation.navigate("NearbyServices", { propertyId: property.id })}
+            onPress={() =>
+              navigation.navigate("NearbyServices", { propertyId: property.id })
+            }
           />
           <View style={styles.sectionSeparator} />
 
@@ -564,7 +594,9 @@ export default function DailyDetailScreen(): React.JSX.Element {
           <View style={styles.reportAdSection}>
             <TouchableOpacity style={[styles.reportAd, rtlStyles.reportAd]}>
               <Ionicons name="flag" size={wp(5.5)} color={COLORS.error} />
-              <Text style={[styles.reportAdText, rtlStyles.reportAdText]}>{t("listings.reportAd")}</Text>
+              <Text style={[styles.reportAdText, rtlStyles.reportAdText]}>
+                {t("listings.reportAd")}
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.sectionSeparator} />
@@ -582,7 +614,12 @@ export default function DailyDetailScreen(): React.JSX.Element {
         />
 
         {/* Bottom Contact Bar with Navigation Arrows */}
-        <View style={{ paddingBottom: insets.bottom, backgroundColor: COLORS.white }}>
+        <View
+          style={{
+            paddingBottom: insets.bottom,
+            backgroundColor: COLORS.white,
+          }}
+        >
           <PropertyBottomBar
             canGoPrev={canGoPrev}
             canGoNext={canGoNext}
@@ -605,7 +642,6 @@ export default function DailyDetailScreen(): React.JSX.Element {
         onResetDates={resetDates}
         property={property as DailyProperty}
       />
-
     </>
   );
 }
@@ -667,7 +703,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: COLORS.background,
     paddingTop: hp(1),
-  },  
+  },
   sectionContainer: {
     backgroundColor: COLORS.background,
     paddingTop: hp(2),
@@ -690,7 +726,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   extraSection: {
-    backgroundColor: COLORS.background, 
+    backgroundColor: COLORS.background,
     paddingTop: hp(2),
     paddingBottom: hp(1),
   },
@@ -739,4 +775,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

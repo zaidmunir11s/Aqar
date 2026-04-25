@@ -12,7 +12,9 @@ function normalizePhone(d: string): string {
 }
 
 /** Call after successful auth with the logged-in phone (digits). Preserves createdAt for same phone; new phone gets a new createdAt. */
-export async function syncAccountProfileMetaOnAuth(phoneDigits: string): Promise<void> {
+export async function syncAccountProfileMetaOnAuth(
+  phoneDigits: string,
+): Promise<void> {
   const d = normalizePhone(phoneDigits);
   if (d.length === 0) return;
   const raw = await secureGet(STORAGE_KEYS.accountProfileMeta);
@@ -20,7 +22,11 @@ export async function syncAccountProfileMetaOnAuth(phoneDigits: string): Promise
   if (raw) {
     try {
       const p = JSON.parse(raw) as AccountProfileMeta;
-      if (p && typeof p.phoneDigits === "string" && typeof p.createdAtMs === "number") {
+      if (
+        p &&
+        typeof p.phoneDigits === "string" &&
+        typeof p.createdAtMs === "number"
+      ) {
         existing = p;
       }
     } catch {
@@ -40,7 +46,11 @@ export async function getAccountProfileMeta(): Promise<AccountProfileMeta | null
   if (!raw) return null;
   try {
     const p = JSON.parse(raw) as AccountProfileMeta;
-    if (p && typeof p.phoneDigits === "string" && typeof p.createdAtMs === "number") {
+    if (
+      p &&
+      typeof p.phoneDigits === "string" &&
+      typeof p.createdAtMs === "number"
+    ) {
       return p;
     }
   } catch {
@@ -62,7 +72,10 @@ export async function getLastActiveAtMs(): Promise<number | null> {
   return Number.isFinite(n) ? n : null;
 }
 
-export function formatProfileSinceDate(createdAtMs: number, locale: string): string {
+export function formatProfileSinceDate(
+  createdAtMs: number,
+  locale: string,
+): string {
   try {
     return new Intl.DateTimeFormat(locale, {
       year: "numeric",
@@ -77,7 +90,7 @@ export function formatProfileSinceDate(createdAtMs: number, locale: string): str
 export function formatProfileLastSeen(
   lastActiveMs: number,
   locale: string,
-  nowLabel: string
+  nowLabel: string,
 ): string {
   const diffSec = Math.floor((Date.now() - lastActiveMs) / 1000);
   if (diffSec < 60) {

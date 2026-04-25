@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -12,7 +18,11 @@ import {
   Animated,
   KeyboardAvoidingView,
 } from "react-native";
-import { Ionicons, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -55,7 +65,7 @@ export default function ContactHostScreen(): React.JSX.Element {
 
   const property = useMemo(
     () => getPropertyById(propertyId) as DailyProperty | undefined,
-    [propertyId]
+    [propertyId],
   );
 
   const handleBackPress = useCallback(() => {
@@ -64,22 +74,23 @@ export default function ContactHostScreen(): React.JSX.Element {
     }
   }, [navigation]);
 
-
   const handleSend = useCallback(() => {
     if (!isPledgeChecked || !property) return;
-    
+
     // Create default message
-    const defaultMessage = t("listings.inRegardOfAdNumber", { id: property.id });
-    
+    const defaultMessage = t("listings.inRegardOfAdNumber", {
+      id: property.id,
+    });
+
     // Combine default message with user's custom message if they wrote something
     const combinedMessage = message.trim()
       ? `${defaultMessage}\n${message.trim()}`
       : defaultMessage;
-    
+
     // Get advertiser name from property data, fallback to default (don't translate - keep as is)
     const advertiserName = property.advertiserName || "Property Owner";
     const advertiserId = property.advertiserId || `advertiser-${property.id}`;
-    
+
     navigateToChat("Conversation", {
       propertyId: property.id,
       advertiserName,
@@ -102,7 +113,7 @@ export default function ContactHostScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false, // Can't use native driver for bottom positioning
         }).start();
-      }
+      },
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -115,7 +126,7 @@ export default function ContactHostScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -127,35 +138,38 @@ export default function ContactHostScreen(): React.JSX.Element {
   // Function to get translated property type label
   const getPropertyTypeLabel = useCallback(() => {
     if (!property) return "";
-    
+
     const type = property.type?.toLowerCase() || "";
-    
+
     // Map property types to translation keys
     const typeMap: Record<string, string> = {
-      "apartment": "apartmentForBooking",
-      "villa": "villaForBooking",
-      "studio": "studioForBooking",
-      "chalet": "chaletForBooking",
-      "lounge": "chaletForBooking",
-      "tent": "tentForBooking",
-      "farm": "farmForBooking",
-      "hall": "hallForBooking",
+      apartment: "apartmentForBooking",
+      villa: "villaForBooking",
+      studio: "studioForBooking",
+      chalet: "chaletForBooking",
+      lounge: "chaletForBooking",
+      tent: "tentForBooking",
+      farm: "farmForBooking",
+      hall: "hallForBooking",
     };
-    
+
     const translationKey = typeMap[type];
     if (translationKey) {
       return t(`listings.propertyTypes.${translationKey}`);
     }
-    
+
     // Fallback: try direct translation
     const directKey = `listings.propertyTypes.${type}`;
     const translated = t(directKey, { defaultValue: "" });
     if (translated && translated !== directKey) {
       return translated;
     }
-    
+
     // Final fallback: use the label from DAILY_FILTER_OPTIONS or property type
-    return DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)?.label || property.type;
+    return (
+      DAILY_FILTER_OPTIONS.find((opt) => opt.type === property.type)?.label ||
+      property.type
+    );
   }, [property, t]);
 
   // RTL-aware styles
@@ -207,15 +221,20 @@ export default function ContactHostScreen(): React.JSX.Element {
         justifyContent: "center" as const,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   if (!property) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title={t("navigation.contactHost")} onBackPress={handleBackPress} />
+        <ScreenHeader
+          title={t("navigation.contactHost")}
+          onBackPress={handleBackPress}
+        />
         <View style={[styles.center, rtlStyles.center]}>
-          <Text style={rtlStyles.questionText}>{t("listings.propertyNotFound")}</Text>
+          <Text style={rtlStyles.questionText}>
+            {t("listings.propertyNotFound")}
+          </Text>
         </View>
       </View>
     );
@@ -247,17 +266,20 @@ export default function ContactHostScreen(): React.JSX.Element {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScreenHeader title={t("listings.contactHost")} onBackPress={handleBackPress} />
-      
+      <ScreenHeader
+        title={t("listings.contactHost")}
+        onBackPress={handleBackPress}
+      />
+
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { 
-            paddingBottom: isKeyboardVisible 
-              ? Math.max(keyboardHeightValue + hp(15), hp(30)) 
-              : hp(12) 
+          {
+            paddingBottom: isKeyboardVisible
+              ? Math.max(keyboardHeightValue + hp(15), hp(30))
+              : hp(12),
           },
         ]}
         showsVerticalScrollIndicator={true}
@@ -273,7 +295,13 @@ export default function ContactHostScreen(): React.JSX.Element {
           <View style={styles.bookingCard}>
             {/* Booking Type on top */}
             <View style={styles.priceContainer}>
-              <Text style={[styles.bottomPrice, styles.bookingTypeText, rtlStyles.bookingTypeText]}>
+              <Text
+                style={[
+                  styles.bottomPrice,
+                  styles.bookingTypeText,
+                  rtlStyles.bookingTypeText,
+                ]}
+              >
                 {property.bookingType === "daily"
                   ? t("listings.daily")
                   : property.bookingType === "monthly"
@@ -301,29 +329,48 @@ export default function ContactHostScreen(): React.JSX.Element {
                 </Text>
 
                 <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
-                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
+                  <View
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                  >
                     <MaterialCommunityIcons
                       name="arrow-expand-horizontal"
                       size={wp(4)}
                       color="#9ca3af"
                     />
-                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>{property.area} {t("listings.m2")}</Text>
+                    <Text
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
+                      {property.area} {t("listings.m2")}
+                    </Text>
                   </View>
-                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
+                  <View
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                  >
                     <FontAwesome name="bed" size={wp(4)} color="#9ca3af" />
-                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
+                    <Text
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
                       {property.bedrooms}
                     </Text>
                   </View>
-                  <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
+                  <View
+                    style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}
+                  >
                     <Ionicons name="person" size={wp(4)} color="#9ca3af" />
-                    <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
-                      {property.usage === "family" ? t("listings.family") : t("listings.single")}
+                    <Text
+                      style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                    >
+                      {property.usage === "family"
+                        ? t("listings.family")
+                        : t("listings.single")}
                     </Text>
                   </View>
                 </View>
 
-                <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.questionText]}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.bottomAddress, rtlStyles.questionText]}
+                >
                   {translateAddress(property.address, t)}
                 </Text>
               </View>
@@ -384,15 +431,15 @@ export default function ContactHostScreen(): React.JSX.Element {
         </View>
       </ScrollView>
 
-        {/* Footer with Send Button - Responsive to keyboard */}
-        <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
-          <SingleButtonFooter
-            fixed={false}
-            label={t("chat.send")}
-            onPress={handleSend}
-            disabled={!isPledgeChecked}
-          />
-        </Animated.View>
+      {/* Footer with Send Button - Responsive to keyboard */}
+      <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
+        <SingleButtonFooter
+          fixed={false}
+          label={t("chat.send")}
+          onPress={handleSend}
+          disabled={!isPledgeChecked}
+        />
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 }
@@ -559,4 +606,3 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
-

@@ -8,14 +8,22 @@ import {
   Image,
   BackHandler,
 } from "react-native";
-import { useNavigation, useFocusEffect, StackActions } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  StackActions,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader, ListingFooter, CancelModal } from "../../../../components";
+import {
+  ScreenHeader,
+  ListingFooter,
+  CancelModal,
+} from "../../../../components";
 import { navigateToMapScreen } from "../../../../utils";
 import {
   COLORS,
@@ -43,7 +51,7 @@ export default function BrokerGetFreeLicenseScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   /** Always return to role/action picker (not Licence) when opened from Step1 hint or Add Listing. */
@@ -62,7 +70,7 @@ export default function BrokerGetFreeLicenseScreen(): React.JSX.Element {
         return true;
       });
       return () => sub.remove();
-    }, [goToAddListing])
+    }, [goToAddListing]),
   );
 
   const handleClosePress = useCallback(() => {
@@ -96,7 +104,7 @@ export default function BrokerGetFreeLicenseScreen(): React.JSX.Element {
         <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
       </TouchableOpacity>
     ),
-    [handleClosePress]
+    [handleClosePress],
   );
 
   return (
@@ -131,7 +139,12 @@ export default function BrokerGetFreeLicenseScreen(): React.JSX.Element {
             {t("listings.requirements")}
           </Text>
           <View style={[styles.reqRow, rtlStyles.reqRow]}>
-            <View style={[styles.bullet, isRTL ? styles.bulletRTL : styles.bulletLTR]} />
+            <View
+              style={[
+                styles.bullet,
+                isRTL ? styles.bulletRTL : styles.bulletLTR,
+              ]}
+            />
             <Text style={[styles.reqItemText, rtlStyles.reqText]}>
               {t("listings.brokerFreeLicenseReqBrokerage")}
             </Text>

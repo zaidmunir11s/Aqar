@@ -9,7 +9,7 @@ function calculateDistance(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const R = 6371; // Radius of the Earth in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -56,7 +56,7 @@ function mapCategoryToType(category: string): string | null {
 }
 
 export function getListingTypeFromCategory(
-  category: string
+  category: string,
 ): "rent" | "sale" | null {
   return getListingType(category);
 }
@@ -88,9 +88,12 @@ function parsePrice(priceStr: string): number {
 /**
  * Check if property matches the search criteria
  */
-export function matchesCriteria(property: Property, request: SearchRequestData): boolean {
+export function matchesCriteria(
+  property: Property,
+  request: SearchRequestData,
+): boolean {
   const orderData = request.orderFormData || {};
-  
+
   // Check listing type
   const listingType = getListingType(request.category);
   if (listingType && property.listingType !== listingType) {
@@ -108,7 +111,7 @@ export function matchesCriteria(property: Property, request: SearchRequestData):
     request.location.latitude,
     request.location.longitude,
     property.lat,
-    property.lng
+    property.lng,
   );
   if (distance > 10) {
     return false; // Properties more than 10km away
@@ -147,22 +150,31 @@ export function matchesCriteria(property: Property, request: SearchRequestData):
   const selectedFeatures = getSelectedFeatures(orderData);
   if (selectedFeatures.length > 0) {
     const propertyFeatures = property.features || [];
-    
+
     // AND logic: property must have ALL of the selected features
-    const hasAllFeatures = selectedFeatures.every(selectedFeature =>
-      propertyFeatures.includes(selectedFeature)
+    const hasAllFeatures = selectedFeatures.every((selectedFeature) =>
+      propertyFeatures.includes(selectedFeature),
     );
-    
+
     if (!hasAllFeatures) {
       return false;
     }
   }
 
   // Check price range
-  if (orderData.fromPrice || orderData.toPrice || orderData.priceFrom || orderData.priceTo) {
-    const fromPrice = parseFloat(orderData.fromPrice || orderData.priceFrom || "0");
-    const toPrice = parseFloat(orderData.toPrice || orderData.priceTo || "999999999");
-    
+  if (
+    orderData.fromPrice ||
+    orderData.toPrice ||
+    orderData.priceFrom ||
+    orderData.priceTo
+  ) {
+    const fromPrice = parseFloat(
+      orderData.fromPrice || orderData.priceFrom || "0",
+    );
+    const toPrice = parseFloat(
+      orderData.toPrice || orderData.priceTo || "999999999",
+    );
+
     // Handle different property types
     let propertyPrice = 0;
     if ("price" in property && property.price) {
@@ -170,7 +182,7 @@ export function matchesCriteria(property: Property, request: SearchRequestData):
     } else if ("dailyPrice" in property) {
       propertyPrice = (property as any).dailyPrice || 0;
     }
-    
+
     if (propertyPrice < fromPrice || propertyPrice > toPrice) {
       return false;
     }
@@ -180,7 +192,7 @@ export function matchesCriteria(property: Property, request: SearchRequestData):
   if (orderData.areaFrom || orderData.areaTo) {
     const fromArea = parseFloat(orderData.areaFrom || "0");
     const toArea = parseFloat(orderData.areaTo || "999999999");
-    
+
     if (property.area < fromArea || property.area > toArea) {
       return false;
     }
@@ -195,7 +207,10 @@ export function matchesCriteria(property: Property, request: SearchRequestData):
   }
 
   // Check if only ads with photo required
-  if (request.onlyAdsWithPhoto && (!property.images || property.images.length === 0)) {
+  if (
+    request.onlyAdsWithPhoto &&
+    (!property.images || property.images.length === 0)
+  ) {
     return false;
   }
 
@@ -207,7 +222,7 @@ export function matchesCriteria(property: Property, request: SearchRequestData):
  */
 export function findMatchingPropertiesFromList(
   properties: Property[],
-  request: SearchRequestData
+  request: SearchRequestData,
 ): Property[] {
   if (!request?.category) return [];
   return properties.filter((property) => matchesCriteria(property, request));

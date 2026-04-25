@@ -35,13 +35,18 @@ const ClientsSection = memo<ClientsSectionProps>(({ onMyClientsPress }) => {
   }, [isRTL]);
   return (
     <View style={styles.container}>
-      <SectionHeader title={t("common.clients", { defaultValue: "Clients" })} iconName="people" />
+      <SectionHeader
+        title={t("common.clients", { defaultValue: "Clients" })}
+        iconName="people"
+      />
       <TouchableOpacity
         style={[styles.card, rtlStyles.card]}
         onPress={onMyClientsPress}
         activeOpacity={0.7}
       >
-        <Text style={[styles.cardText, rtlStyles.cardText]}>{t("common.myClients", { defaultValue: "My Clients" })}</Text>
+        <Text style={[styles.cardText, rtlStyles.cardText]}>
+          {t("common.myClients", { defaultValue: "My Clients" })}
+        </Text>
         <Ionicons
           name={isRTL ? "chevron-back" : "chevron-forward"}
           size={wp(5)}

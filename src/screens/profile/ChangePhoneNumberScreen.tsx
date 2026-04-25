@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -22,7 +28,11 @@ import {
 import { COLORS } from "../../constants";
 import { ScreenHeader, TextInput, SingleButtonFooter } from "../../components";
 import { useLocalization } from "../../hooks/useLocalization";
-import { useConfirmPhoneChangeMutation, useGetMeQuery, useRequestPhoneChangeOtpMutation } from "@/redux/api/userApi";
+import {
+  useConfirmPhoneChangeMutation,
+  useGetMeQuery,
+  useRequestPhoneChangeOtpMutation,
+} from "@/redux/api/userApi";
 import { getSaudiPhoneValidationError } from "@/utils/validation";
 import { setLoggedInPhoneNumber } from "@/utils/loggedInPhoneStorage";
 
@@ -32,8 +42,10 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
   const { data: meData } = useGetMeQuery();
-  const [requestOtp, { isLoading: isRequesting }] = useRequestPhoneChangeOtpMutation();
-  const [confirmChange, { isLoading: isConfirming }] = useConfirmPhoneChangeMutation();
+  const [requestOtp, { isLoading: isRequesting }] =
+    useRequestPhoneChangeOtpMutation();
+  const [confirmChange, { isLoading: isConfirming }] =
+    useConfirmPhoneChangeMutation();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [otpCode, setOtpCode] = useState<string>("");
   const [isOtpSent, setIsOtpSent] = useState<boolean>(false);
@@ -46,7 +58,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
     () => ({
       label: { textAlign: isRTL ? "right" : "left" },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Match Auth behavior: Saudi national 9 digits starting with 5, with +966 shown as prefix.
@@ -55,11 +67,14 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
   const validateOtp = (v: string): string => {
     const digits = v.replace(/\D/g, "");
     if (!isOtpSent) return "";
-    if (digits.length !== 6) return t("auth.otpMustBe6Digits", { defaultValue: "OTP must be 6 digits" });
+    if (digits.length !== 6)
+      return t("auth.otpMustBe6Digits", {
+        defaultValue: "OTP must be 6 digits",
+      });
     return "";
   };
   const otpError = validateOtp(otpCode);
-  
+
   // Check if phone number is valid
   const isFormValid =
     phoneError === "" &&
@@ -78,7 +93,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false, // Can't use native driver for bottom positioning
         }).start();
-      }
+      },
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -90,7 +105,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -112,7 +127,11 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
   const handleContinue = useCallback(async () => {
     setPhoneTouched(true);
 
-    if (!meData?.user?.hasPassword && meData?.user?.isSso && !meData?.user?.hasPhoneNumber) {
+    if (
+      !meData?.user?.hasPassword &&
+      meData?.user?.isSso &&
+      !meData?.user?.hasPhoneNumber
+    ) {
       // Still allow adding phone for SSO accounts, just proceed.
     }
 
@@ -127,7 +146,9 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
         } else {
           Alert.alert(
             t("auth.otpSent", { defaultValue: "OTP sent" }),
-            t("auth.checkMessages", { defaultValue: "Please check your messages for the code." })
+            t("auth.checkMessages", {
+              defaultValue: "Please check your messages for the code.",
+            }),
           );
         }
       } catch (e: any) {
@@ -136,11 +157,10 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
           e?.data?.error ||
           e?.error ||
           e?.message ||
-          t("profile.phoneOtpRequestFailed", { defaultValue: "Failed to request OTP." });
-        Alert.alert(
-          t("common.error", { defaultValue: "Error" }),
-          msg
-        );
+          t("profile.phoneOtpRequestFailed", {
+            defaultValue: "Failed to request OTP.",
+          });
+        Alert.alert(t("common.error", { defaultValue: "Error" }), msg);
       }
       return;
     }
@@ -157,7 +177,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
       await setLoggedInPhoneNumber(phoneNumber);
       Alert.alert(
         t("common.success", { defaultValue: "Success" }),
-        t("profile.phoneUpdated", { defaultValue: "Phone number updated" })
+        t("profile.phoneUpdated", { defaultValue: "Phone number updated" }),
       );
       navigation.goBack();
     } catch (e: any) {
@@ -166,18 +186,29 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
         e?.data?.error ||
         e?.error ||
         e?.message ||
-        t("profile.phoneUpdateFailed", { defaultValue: "Failed to update phone number." });
-      Alert.alert(
-        t("common.error", { defaultValue: "Error" }),
-        msg
-      );
+        t("profile.phoneUpdateFailed", {
+          defaultValue: "Failed to update phone number.",
+        });
+      Alert.alert(t("common.error", { defaultValue: "Error" }), msg);
     }
-  }, [phoneNumber, otpCode, isOtpSent, requestOtp, confirmChange, navigation, t, meData, phoneError]);
+  }, [
+    phoneNumber,
+    otpCode,
+    isOtpSent,
+    requestOtp,
+    confirmChange,
+    navigation,
+    t,
+    meData,
+    phoneError,
+  ]);
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title={t("profile.changePhoneNumber", { defaultValue: "Change Phone Number" })}
+        title={t("profile.changePhoneNumber", {
+          defaultValue: "Change Phone Number",
+        })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
       />
@@ -197,7 +228,11 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
         >
           {/* Phone Number Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.newPhoneNumber", { defaultValue: "New phone number" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.newPhoneNumber", {
+                defaultValue: "New phone number",
+              })}
+            </Text>
             <TextInput
               value={phoneNumber}
               onChangeText={handlePhoneChange}
@@ -230,7 +265,7 @@ export default function ChangePhoneNumberScreen(): React.JSX.Element {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
-      
+
       <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
         <SingleButtonFooter
           fixed={false}
@@ -285,4 +320,3 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
-

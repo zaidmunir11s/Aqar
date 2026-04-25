@@ -15,10 +15,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  ScreenHeader,
-  LanguageConverter,
-} from "../../components";
+import { ScreenHeader, LanguageConverter } from "../../components";
 import { COLORS } from "@/constants/colors";
 import { useLocalization } from "@/hooks";
 
@@ -81,9 +78,20 @@ export default function ServicesScreen(): React.JSX.Element {
   // Social media icons are currently not wired (URLs/share content TBD).
   // const socialMediaItems = [ ... ];
 
-  const renderIcon = (iconName: string, iconLib: string, size: number, color: string) => {
+  const renderIcon = (
+    iconName: string,
+    iconLib: string,
+    size: number,
+    color: string,
+  ) => {
     if (iconLib === "MaterialCommunityIcons") {
-      return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
+      return (
+        <MaterialCommunityIcons
+          name={iconName as any}
+          size={size}
+          color={color}
+        />
+      );
     }
     return <Ionicons name={iconName as any} size={size} color={color} />;
   };
@@ -92,19 +100,21 @@ export default function ServicesScreen(): React.JSX.Element {
   const rtlStyles = {
     gridContainer: {
       ...styles.gridContainer,
-      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+      flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
     },
     socialSection: {
       ...styles.socialSection,
-      alignItems: (isRTL ? 'flex-end' : 'flex-start') as 'flex-start' | 'flex-end',
+      alignItems: (isRTL ? "flex-end" : "flex-start") as
+        | "flex-start"
+        | "flex-end",
     },
     socialTitle: {
       ...styles.socialTitle,
-      textAlign: (isRTL ? 'right' : 'left') as 'left' | 'right',
+      textAlign: (isRTL ? "right" : "left") as "left" | "right",
     },
     socialGrid: {
       ...styles.socialGrid,
-      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+      flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
     },
   };
 
@@ -117,8 +127,8 @@ export default function ServicesScreen(): React.JSX.Element {
         rightComponent={headerRightComponent}
       />
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -131,19 +141,31 @@ export default function ServicesScreen(): React.JSX.Element {
               activeOpacity={0.8}
               onPress={() => {
                 if (service.id === "5") {
-                  navigation.navigate("Listings", { screen: "TodayAds" } as any);
+                  navigation.navigate("Listings", {
+                    screen: "TodayAds",
+                  } as any);
                   return;
                 }
                 if (service.id === "1") {
-                  Linking.openURL("mailto:sorini@palmlab.com?subject=Aqark%20Syria%20Support").catch(
-                    () => null
-                  );
+                  Linking.openURL(
+                    "mailto:sorini@palmlab.com?subject=Aqark%20Syria%20Support",
+                  ).catch(() => null);
                   return;
                 }
               }}
             >
-              <View style={[styles.tileIconWrapper, { backgroundColor: service.accent + "15" }]}>
-                {renderIcon(service.icon, service.iconLib, wp(8), service.accent)}
+              <View
+                style={[
+                  styles.tileIconWrapper,
+                  { backgroundColor: service.accent + "15" },
+                ]}
+              >
+                {renderIcon(
+                  service.icon,
+                  service.iconLib,
+                  wp(8),
+                  service.accent,
+                )}
               </View>
               <Text style={styles.tileTitle} numberOfLines={2}>
                 {service.title}
@@ -179,9 +201,7 @@ export default function ServicesScreen(): React.JSX.Element {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.versionText}>
-            {t("services.version")} 3.4.17
-          </Text>
+          <Text style={styles.versionText}>{t("services.version")} 3.4.17</Text>
         </View>
 
         <View style={{ height: hp(3) }} />

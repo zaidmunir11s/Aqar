@@ -27,16 +27,18 @@ const ListingTypeSegmentFilter = memo<ListingTypeSegmentFilterProps>(
           { key: "sale" as const, label: t("listings.sale") },
           { key: "rent" as const, label: t("listings.rent") },
         ] as const,
-      [t]
+      [t],
     );
 
     const rtlStyles = useMemo(
       () => ({
         container: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -56,18 +58,23 @@ const ListingTypeSegmentFilter = memo<ListingTypeSegmentFilterProps>(
                 }}
               >
                 <Text
-                  style={[styles.segmentText, isActive && styles.segmentTextActive]}
+                  style={[
+                    styles.segmentText,
+                    isActive && styles.segmentTextActive,
+                  ]}
                 >
                   {opt.label}
                 </Text>
               </Pressable>
-              {index < options.length - 1 ? <View style={styles.separator} /> : null}
+              {index < options.length - 1 ? (
+                <View style={styles.separator} />
+              ) : null}
             </Fragment>
           );
         })}
       </View>
     );
-  }
+  },
 );
 
 ListingTypeSegmentFilter.displayName = "ListingTypeSegmentFilter";

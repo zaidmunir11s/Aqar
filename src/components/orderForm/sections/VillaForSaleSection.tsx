@@ -7,6 +7,7 @@ import {
   FieldWithModal,
   ToggleRow,
 } from "../index";
+import { useLocalization } from "../../../hooks/useLocalization";
 import {
   APARTMENT_OPTIONS,
   BEDROOM_OPTIONS,
@@ -113,118 +114,129 @@ const VillaForSaleSection = memo<VillaForSaleSectionProps>(
     nearMetro,
     onNearMetroChange,
   }) => {
+    const { t } = useLocalization();
     return (
       <>
         <PriceInputSection
-          label="Price"
+          label={t("listings.price")}
           fromValue={priceFrom}
           toValue={priceTo}
           onFromChange={onPriceFromChange}
           onToChange={onPriceToChange}
+          fromPlaceholder={t("listings.fromPrice")}
+          toPlaceholder={t("listings.toPrice")}
         />
 
         <TabBarSection
-          label="Apartments"
+          label={t("listings.apartments")}
           options={APARTMENT_OPTIONS}
           selectedValue={selectedApartment}
           onSelect={onApartmentChange}
         />
 
         <TabBarSection
-          label="Bedrooms"
+          label={t("listings.bedrooms")}
           options={BEDROOM_OPTIONS}
           selectedValue={selectedBedroom}
           onSelect={onBedroomChange}
         />
 
         <FieldWithModal
-          label="Street Direction"
+          label={t("listings.streetDirection")}
           value={streetDirection}
-          placeholder="Select street direction"
+          placeholder={t("listings.selectStreetDirection")}
           onPress={onStreetDirectionPress}
           backgroundColor="background"
         />
 
         <TabBarSection
-          label="Living Rooms"
+          label={t("listings.livingRooms")}
           options={LIVING_ROOM_OPTIONS}
           selectedValue={selectedLivingRoom}
           onSelect={onLivingRoomChange}
         />
 
         <TabBarSection
-          label="WC"
+          label={t("listings.wc")}
           options={WC_OPTIONS}
           selectedValue={selectedWc}
           onSelect={onWcChange}
         />
 
         <PriceInputSection
-          label="Area (m²)"
+          label={t("listings.areaM2")}
           fromValue={areaFrom}
           toValue={areaTo}
           onFromChange={onAreaFromChange}
           onToChange={onAreaToChange}
-          fromPlaceholder="From area"
-          toPlaceholder="To area"
+          fromPlaceholder={t("listings.fromArea")}
+          toPlaceholder={t("listings.toArea")}
         />
 
         <FieldWithModal
-          label="Street Width"
+          label={t("listings.streetWidth")}
           value={streetWidth}
-          placeholder="Select street width"
+          placeholder={t("listings.selectStreetWidth")}
           onPress={onStreetWidthPress}
           backgroundColor="background"
         />
 
         <View style={styles.section}>
-          <ToggleRow label="Stairs" value={stairs} onValueChange={onStairsChange} />
+          <ToggleRow
+            label={t("listings.stairs")}
+            value={stairs}
+            onValueChange={onStairsChange}
+          />
         </View>
 
         <FieldWithModal
-          label="Age"
+          label={t("listings.age")}
           value={age}
-          placeholder="Select age"
+          placeholder={t("listings.selectAge")}
           onPress={onAgePress}
           backgroundColor="background"
         />
 
         <View style={styles.section}>
           <ToggleRow
-            label="Driver room"
+            label={t("listings.driverRoom")}
             value={driverRoom}
             onValueChange={onDriverRoomChange}
           />
           <ToggleRow
-            label="Maid room"
+            label={t("listings.maidRoom")}
             value={maidRoom}
             onValueChange={onMaidRoomChange}
           />
-          <ToggleRow label="Pool" value={pool} onValueChange={onPoolChange} />
           <ToggleRow
-            label="Furnished"
+            label={t("listings.pool")}
+            value={pool}
+            onValueChange={onPoolChange}
+          />
+          <ToggleRow
+            label={t("listings.furnished")}
             value={furnished}
             onValueChange={onFurnishedChange}
           />
           <ToggleRow
-            label="Kitchen"
+            label={t("listings.kitchen")}
             value={kitchen}
             onValueChange={onKitchenChange}
           />
           <ToggleRow
-            label="Car entrance"
+            label={t("listings.carEntrance")}
             value={carEntrance}
             onValueChange={onCarEntranceChange}
           />
           <ToggleRow
-            label="Basement"
+            label={t("listings.basement")}
             value={basement}
             onValueChange={onBasementChange}
           />
         </View>
 
         <TabBarSection
-          label="Villa Type"
+          label={t("listings.villaType")}
           options={VILLA_TYPE_OPTIONS}
           selectedValue={selectedVillaType}
           onSelect={onVillaTypeChange}
@@ -232,20 +244,24 @@ const VillaForSaleSection = memo<VillaForSaleSectionProps>(
 
         <View style={styles.section}>
           <ToggleRow
-            label="Air Conditioned"
+            label={t("listings.airConditioned")}
             value={airConditioned}
             onValueChange={onAirConditionedChange}
           />
-          <ToggleRow label="Near bus" value={nearBus} onValueChange={onNearBusChange} />
           <ToggleRow
-            label="Near metro"
+            label={t("listings.nearBus")}
+            value={nearBus}
+            onValueChange={onNearBusChange}
+          />
+          <ToggleRow
+            label={t("listings.nearMetro")}
             value={nearMetro}
             onValueChange={onNearMetroChange}
           />
         </View>
       </>
     );
-  }
+  },
 );
 
 VillaForSaleSection.displayName = "VillaForSaleSection";
@@ -257,4 +273,3 @@ const styles = StyleSheet.create({
 });
 
 export default VillaForSaleSection;
-

@@ -35,8 +35,19 @@ const PropertyTabs = memo<PropertyTabsProps>(
     const [nowTs, setNowTs] = React.useState<number>(Date.now());
 
     const isPublished = useMemo(
-      () => Boolean(property.listingId || property.createdAt || property.updatedAt || property.detailsItems?.length),
-      [property.createdAt, property.detailsItems, property.listingId, property.updatedAt]
+      () =>
+        Boolean(
+          property.listingId ||
+          property.createdAt ||
+          property.updatedAt ||
+          property.detailsItems?.length,
+        ),
+      [
+        property.createdAt,
+        property.detailsItems,
+        property.listingId,
+        property.updatedAt,
+      ],
     );
 
     const tabs = useMemo(
@@ -44,11 +55,20 @@ const PropertyTabs = memo<PropertyTabsProps>(
         isPublished
           ? [{ id: "main" as TabType, label: t("listings.listingMainDetails") }]
           : [
-              { id: "main" as TabType, label: t("listings.listingMainDetails") },
-              { id: "additional" as TabType, label: t("listings.additionalInformation") },
-              { id: "location" as TabType, label: t("listings.locationDetails") },
+              {
+                id: "main" as TabType,
+                label: t("listings.listingMainDetails"),
+              },
+              {
+                id: "additional" as TabType,
+                label: t("listings.additionalInformation"),
+              },
+              {
+                id: "location" as TabType,
+                label: t("listings.locationDetails"),
+              },
             ],
-      [isPublished, t]
+      [isPublished, t],
     );
 
     // In RTL, scroll to the end so the first tab (visually on the right) is in focus
@@ -81,7 +101,7 @@ const PropertyTabs = memo<PropertyTabsProps>(
           day: "2-digit",
         });
       },
-      [isRTL]
+      [isRTL],
     );
 
     const formatRelativeUpdated = useCallback(
@@ -104,7 +124,7 @@ const PropertyTabs = memo<PropertyTabsProps>(
         const days = Math.floor(hours / 24);
         return t("listings.daysAgo", { count: days });
       },
-      [nowTs, t]
+      [nowTs, t],
     );
 
     const renderMainTabContent = useCallback(() => {
@@ -114,13 +134,27 @@ const PropertyTabs = memo<PropertyTabsProps>(
           value: String(property.listingId ?? property.id),
           showCopy: true,
         },
-        { label: t("listings.createdAt"), value: formatAbsoluteDate(property.createdAt) },
-        { label: t("listings.lastUpdated"), value: formatRelativeUpdated(property.updatedAt ?? property.createdAt) },
-        { label: t("listings.deedArea"), value: `${property.area} ${t("listings.m2")}` },
+        {
+          label: t("listings.createdAt"),
+          value: formatAbsoluteDate(property.createdAt),
+        },
+        {
+          label: t("listings.lastUpdated"),
+          value: formatRelativeUpdated(
+            property.updatedAt ?? property.createdAt,
+          ),
+        },
+        {
+          label: t("listings.deedArea"),
+          value: `${property.area} ${t("listings.m2")}`,
+        },
         ...(!isPublished
           ? [
               { label: t("listings.licenseNumber"), value: "7200780161" },
-              { label: t("listings.licenseExpirationDate"), value: "01/12/2026" },
+              {
+                label: t("listings.licenseExpirationDate"),
+                value: "01/12/2026",
+              },
               { label: t("listings.source"), value: "الهيئة العامة للعقار" },
             ]
           : []),
@@ -136,13 +170,22 @@ const PropertyTabs = memo<PropertyTabsProps>(
               showCopy={detail.showCopy}
               onCopy={onCopyId}
               copyLabel={detail.showCopy ? copyIdLabel : undefined}
-              backgroundColor={index % 2 === 0 ? COLORS.white : COLORS.background}
+              backgroundColor={
+                index % 2 === 0 ? COLORS.white : COLORS.background
+              }
               isLast={index === mainDetails.length - 1}
             />
           ))}
         </View>
       );
-    }, [property, onCopyId, t, formatAbsoluteDate, formatRelativeUpdated, copyIdLabel]);
+    }, [
+      property,
+      onCopyId,
+      t,
+      formatAbsoluteDate,
+      formatRelativeUpdated,
+      copyIdLabel,
+    ]);
 
     const renderAdditionalTabContent = useCallback(() => {
       const additionalDetails = [
@@ -161,7 +204,9 @@ const PropertyTabs = memo<PropertyTabsProps>(
               key={detail.label}
               label={detail.label}
               value={detail.value}
-              backgroundColor={index % 2 === 0 ? COLORS.white : COLORS.background}
+              backgroundColor={
+                index % 2 === 0 ? COLORS.white : COLORS.background
+              }
               isLast={index === additionalDetails.length - 1}
             />
           ))}
@@ -173,7 +218,10 @@ const PropertyTabs = memo<PropertyTabsProps>(
       const locationDetails = [
         { label: t("listings.regionRegionNumber"), value: "منطقة الرياض" },
         { label: t("listings.cityCityNumber"), value: "الرياض" },
-        { label: t("listings.districtDistrictNumber"), value: "أم الحمام الشرقي" },
+        {
+          label: t("listings.districtDistrictNumber"),
+          value: "أم الحمام الشرقي",
+        },
         {
           label: t("listings.streetBuildingNumber"),
           value: "ابراهيم المروزي / 6234",
@@ -189,7 +237,9 @@ const PropertyTabs = memo<PropertyTabsProps>(
               key={detail.label}
               label={detail.label}
               value={detail.value}
-              backgroundColor={index % 2 === 0 ? COLORS.white : COLORS.background}
+              backgroundColor={
+                index % 2 === 0 ? COLORS.white : COLORS.background
+              }
               isLast={index === locationDetails.length - 1}
             />
           ))}
@@ -232,7 +282,7 @@ const PropertyTabs = memo<PropertyTabsProps>(
         {activeTab === "location" && renderLocationTabContent()}
       </>
     );
-  }
+  },
 );
 
 PropertyTabs.displayName = "PropertyTabs";

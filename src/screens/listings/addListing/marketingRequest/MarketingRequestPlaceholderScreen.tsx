@@ -9,7 +9,11 @@ import {
   ScrollView,
   BackHandler,
 } from "react-native";
-import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -54,12 +58,12 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const params = (route.params ?? {}) as {
     selectedCategory?: string;
-    attachments?: Array<{
+    attachments?: {
       id: string;
       uri: string;
       mediaType?: "photo" | "video" | "unknown";
       note?: string;
-    }>;
+    }[];
     virtualTourLink?: string;
     deed?: {
       deedType: "ELECTRONIC" | "OTHER";
@@ -73,7 +77,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    params.selectedCategory ?? null
+    params.selectedCategory ?? null,
   );
 
   const categories = CATEGORY_MAP[selectedTab];
@@ -87,7 +91,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
         if (tab === "For Rent") return t("listings.forRent");
         return tab;
       }),
-    [t]
+    [t],
   );
 
   // RTL-aware styles
@@ -100,7 +104,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   /* ------------------ */
@@ -119,7 +123,8 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
 
   const handleNextPress = () => {
     if (!selectedCategory) return;
-    const hasDraftData = (params.attachments?.length ?? 0) > 0 || !!params.virtualTourLink;
+    const hasDraftData =
+      (params.attachments?.length ?? 0) > 0 || !!params.virtualTourLink;
     const deedParam = params.deed ? { deed: params.deed } : {};
     if (hasDraftData) {
       navigation.navigate("MarketingRequestAttachments", {
@@ -130,7 +135,10 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
       });
       return;
     }
-    navigation.navigate("MarketingRequestMedia", { selectedCategory, ...deedParam });
+    navigation.navigate("MarketingRequestMedia", {
+      selectedCategory,
+      ...deedParam,
+    });
   };
 
   /* ------------------ */
@@ -141,8 +149,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
     // setSelectedCategory(null); // enable if you want reset on tab change
   };
 
-  const getSelectedTabIndex = (): number =>
-    CATEGORY_TABS.indexOf(selectedTab);
+  const getSelectedTabIndex = (): number => CATEGORY_TABS.indexOf(selectedTab);
 
   const handleCategoryPress = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -158,10 +165,10 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
       };
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        onHardwareBackPress
+        onHardwareBackPress,
       );
       return () => subscription.remove();
-    }, [])
+    }, []),
   );
 
   return (
@@ -179,11 +186,7 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
                 activeOpacity={0.7}
                 style={styles.closeButton}
               >
-                <Ionicons
-                  name="close"
-                  size={wp(6)}
-                  color={COLORS.primary}
-                />
+                <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
               </TouchableOpacity>
             }
             fontWeightBold
@@ -195,7 +198,6 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-
             <View style={styles.tabBarContainer}>
               <SegmentedControl
                 options={translatedTabs}
@@ -208,8 +210,11 @@ export default function MarketingRequestPlaceholderScreen(): React.JSX.Element {
             <View style={styles.cardContainer}>
               {categories.map((category, index) => {
                 const selected = isSelected(category.id);
-                const categoryI18nKey = getMarketingRequestCategoryTranslationKey(category.id);
-                const categoryDisplayName = categoryI18nKey ? t(categoryI18nKey) : category.text;
+                const categoryI18nKey =
+                  getMarketingRequestCategoryTranslationKey(category.id);
+                const categoryDisplayName = categoryI18nKey
+                  ? t(categoryI18nKey)
+                  : category.text;
 
                 return (
                   <TouchableOpacity

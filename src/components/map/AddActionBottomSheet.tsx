@@ -34,7 +34,9 @@ const AddActionBottomSheet = memo<AddActionBottomSheetProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         optionRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         optionTextWrap: {
           marginLeft: isRTL ? 0 : wp(3),
@@ -44,7 +46,7 @@ const AddActionBottomSheet = memo<AddActionBottomSheetProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -56,7 +58,10 @@ const AddActionBottomSheet = memo<AddActionBottomSheetProps>(
       >
         <Pressable style={styles.overlay} onPress={onClose}>
           <Pressable
-            style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, hp(2)) }]}
+            style={[
+              styles.sheet,
+              { paddingBottom: Math.max(insets.bottom, hp(2)) },
+            ]}
             onPress={() => undefined}
           >
             <Text style={[styles.title, rtlStyles.title]}>
@@ -64,7 +69,11 @@ const AddActionBottomSheet = memo<AddActionBottomSheetProps>(
             </Text>
 
             <TouchableOpacity
-              style={[styles.optionCard, styles.addOptionCard, rtlStyles.optionRow]}
+              style={[
+                styles.optionCard,
+                styles.addOptionCard,
+                rtlStyles.optionRow,
+              ]}
               activeOpacity={0.85}
               onPress={onAddAdPress}
             >
@@ -93,7 +102,11 @@ const AddActionBottomSheet = memo<AddActionBottomSheetProps>(
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.optionCard, styles.searchOptionCard, rtlStyles.optionRow]}
+              style={[
+                styles.optionCard,
+                styles.searchOptionCard,
+                rtlStyles.optionRow,
+              ]}
               activeOpacity={0.85}
               onPress={onSearchRequestPress}
             >
@@ -124,7 +137,7 @@ const AddActionBottomSheet = memo<AddActionBottomSheetProps>(
         </Pressable>
       </Modal>
     );
-  }
+  },
 );
 
 AddActionBottomSheet.displayName = "AddActionBottomSheet";

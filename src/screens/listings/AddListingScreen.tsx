@@ -6,7 +6,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ActionOptionCard, RoleOptionCard, ScreenHeader } from "../../components";
+import {
+  ActionOptionCard,
+  RoleOptionCard,
+  ScreenHeader,
+} from "../../components";
 import { navigateToMapScreen } from "../../utils";
 import { COLORS } from "@/constants";
 import { useLocalization } from "../../hooks/useLocalization";
@@ -31,7 +35,9 @@ interface ActionOption {
 export default function AddListingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
-  const [selectedRole, setSelectedRole] = useState<RoleOption["id"] | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleOption["id"] | null>(
+    null,
+  );
 
   const handleBackPress = useCallback(() => {
     navigateToMapScreen(navigation);
@@ -43,9 +49,12 @@ export default function AddListingScreen(): React.JSX.Element {
         handleBackPress();
         return true;
       };
-      const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      const sub = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
       return () => sub.remove();
-    }, [handleBackPress])
+    }, [handleBackPress]),
   );
 
   const handleRolePress = useCallback((optionId: RoleOption["id"]) => {
@@ -82,7 +91,7 @@ export default function AddListingScreen(): React.JSX.Element {
         iconLibrary: "FontAwesome6",
       },
     ],
-    [t]
+    [t],
   );
 
   const actionOptions = useMemo<ActionOption[]>(() => {
@@ -142,7 +151,7 @@ export default function AddListingScreen(): React.JSX.Element {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (

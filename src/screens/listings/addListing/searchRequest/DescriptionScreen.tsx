@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   View,
   Text,
@@ -8,7 +14,11 @@ import {
   Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, StackActions } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  StackActions,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -39,18 +49,19 @@ export default function DescriptionScreen(): React.JSX.Element {
   const params = (route.params || {}) as RouteParams;
   const { addRequest } = useSearchRequest();
   const { t, isRTL } = useLocalization();
-  
+
   const insets = useSafeAreaInsets();
   const [description, setDescription] = useState("");
   const [showCategoryError, setShowCategoryError] = useState(false);
   const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
   const footerOffset = useRef(
-    new Animated.Value(FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + 0)
+    new Animated.Value(FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + 0),
   ).current;
 
   useEffect(() => {
-    const total = FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + insets.bottom;
+    const total =
+      FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + insets.bottom;
     footerOffset.setValue(total);
   }, [insets.bottom, footerOffset]);
 
@@ -70,7 +81,7 @@ export default function DescriptionScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = useCallback(() => {
@@ -88,7 +99,7 @@ export default function DescriptionScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false, // Can't use native driver for bottom positioning
         }).start();
-      }
+      },
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -99,7 +110,7 @@ export default function DescriptionScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -115,12 +126,15 @@ export default function DescriptionScreen(): React.JSX.Element {
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
       }
-      errorTimeoutRef.current = setTimeout(() => setShowCategoryError(false), 3000);
+      errorTimeoutRef.current = setTimeout(
+        () => setShowCategoryError(false),
+        3000,
+      );
       return;
     }
-    
+
     setShowCategoryError(false);
-    
+
     try {
       await addRequest({
         category: params.orderFormData?.category || "",
@@ -155,7 +169,7 @@ export default function DescriptionScreen(): React.JSX.Element {
         clearTimeout(errorTimeoutRef.current);
       }
     },
-    []
+    [],
   );
 
   return (
@@ -170,21 +184,22 @@ export default function DescriptionScreen(): React.JSX.Element {
 
       <View style={styles.content}>
         {/* Description Title */}
-        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.description")}</Text>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+          {t("listings.description")}
+        </Text>
 
         {/* Text Input Field */}
-          <TextInput
+        <TextInput
           value={description}
           onChangeText={setDescription}
-            placeholder={t("listings.descriptionPlaceholder")}
-            multiline
-            numberOfLines={10}
+          placeholder={t("listings.descriptionPlaceholder")}
+          multiline
+          numberOfLines={10}
           containerStyle={styles.inputContainerStyle}
           inputWrapperStyle={styles.inputContainer}
           inputStyle={styles.textInput}
           showFocusStates={true}
-          />
-
+        />
       </View>
 
       {/* Category Error Message - Positioned just above footer */}
@@ -198,8 +213,14 @@ export default function DescriptionScreen(): React.JSX.Element {
             },
           ]}
         >
-          <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
-          <Text style={[styles.errorText, rtlStyles.errorText]}>{t("listings.invalidCategory")}</Text>
+          <Ionicons
+            name="information-circle"
+            size={wp(5)}
+            color={COLORS.error}
+          />
+          <Text style={[styles.errorText, rtlStyles.errorText]}>
+            {t("listings.invalidCategory")}
+          </Text>
         </Animated.View>
       )}
 

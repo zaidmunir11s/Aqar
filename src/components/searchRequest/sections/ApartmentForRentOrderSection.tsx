@@ -16,7 +16,10 @@ import {
   type RentPaymentFrequencyChoice,
 } from "../../../constants/orderFormOptions";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 interface ApartmentForRentOrderSectionProps {
   t: Translate;
@@ -43,7 +46,7 @@ interface ApartmentForRentOrderSectionProps {
   priceLabel: string;
   getTranslatedPickerValue: (
     originalValue: string | null,
-    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
   ) => string;
   onRentPeriodSelect: (period: RentPaymentFrequencyChoice) => void;
   onFromPriceChange: (value: string) => void;
@@ -66,7 +69,7 @@ interface ApartmentForRentOrderSectionProps {
 }
 
 function ApartmentForRentOrderSectionComponent(
-  props: ApartmentForRentOrderSectionProps
+  props: ApartmentForRentOrderSectionProps,
 ): React.JSX.Element {
   const {
     t,
@@ -114,7 +117,10 @@ function ApartmentForRentOrderSectionComponent(
 
   return (
     <>
-      <RentPaymentFrequencyChips selectedFrequency={rentPeriod} onSelect={onRentPeriodSelect} />
+      <RentPaymentFrequencyChips
+        selectedFrequency={rentPeriod}
+        onSelect={onRentPeriodSelect}
+      />
 
       {showYearlyContent && (
         <PriceInputSection
@@ -178,17 +184,47 @@ function ApartmentForRentOrderSectionComponent(
 
       <ToggleGroup
         toggles={[
-          { label: t("listings.furnished"), value: furnished, onValueChange: onFurnishedChange },
-          { label: t("listings.carEntrance"), value: carEntrance, onValueChange: onCarEntranceChange },
-          { label: t("listings.airConditioned"), value: airConditioned, onValueChange: onAirConditionedChange },
-          { label: t("listings.privateRoof"), value: privateRoof, onValueChange: onPrivateRoofChange },
-          { label: t("listings.apartmentInVilla"), value: apartmentInVilla, onValueChange: onApartmentInVillaChange },
-          { label: t("listings.twoEntrances"), value: twoEntrances, onValueChange: onTwoEntrancesChange },
-          { label: t("listings.specialEntrances"), value: specialEntrances, onValueChange: onSpecialEntrancesChange },
+          {
+            label: t("listings.furnished"),
+            value: furnished,
+            onValueChange: onFurnishedChange,
+          },
+          {
+            label: t("listings.carEntrance"),
+            value: carEntrance,
+            onValueChange: onCarEntranceChange,
+          },
+          {
+            label: t("listings.airConditioned"),
+            value: airConditioned,
+            onValueChange: onAirConditionedChange,
+          },
+          {
+            label: t("listings.privateRoof"),
+            value: privateRoof,
+            onValueChange: onPrivateRoofChange,
+          },
+          {
+            label: t("listings.apartmentInVilla"),
+            value: apartmentInVilla,
+            onValueChange: onApartmentInVillaChange,
+          },
+          {
+            label: t("listings.twoEntrances"),
+            value: twoEntrances,
+            onValueChange: onTwoEntrancesChange,
+          },
+          {
+            label: t("listings.specialEntrances"),
+            value: specialEntrances,
+            onValueChange: onSpecialEntrancesChange,
+          },
         ]}
       />
     </>
   );
 }
 
-export const ApartmentForRentOrderSection = memo(ApartmentForRentOrderSectionComponent);
+export const ApartmentForRentOrderSection = memo(
+  ApartmentForRentOrderSectionComponent,
+);

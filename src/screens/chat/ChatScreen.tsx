@@ -19,36 +19,44 @@ import {
 import { ScreenHeader } from "../../components";
 import { navigateToListingsMapFromOtherTab } from "../../utils";
 import { COLORS } from "../../constants";
-import { MOCK_CONVERSATIONS, getUserName, getUserAvatar, isAdminUser } from "../../data/chatData";
+import {
+  MOCK_CONVERSATIONS,
+  getUserName,
+  getUserAvatar,
+  isAdminUser,
+} from "../../data/chatData";
 import type { ChatConversation } from "../../types/chat";
 import { useLocalization, useTabNavigation } from "../../hooks";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 // Format time for last message - show year/month/day and time
-const formatLastMessageTime = (date: Date | number | undefined, isRTL: boolean): string => {
+const formatLastMessageTime = (
+  date: Date | number | undefined,
+  isRTL: boolean,
+): string => {
   if (!date) return "";
   const d = typeof date === "number" ? new Date(date) : date;
-  
+
   // Format date and time components
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
-  
+
   const datePart = `${year}/${month}/${day}`;
   const timePart = `${hours}:${minutes}`;
-  
+
   // In RTL, show time first, then date (HH:MM YYYY/MM/DD)
   // In LTR, show date first, then time (YYYY/MM/DD HH:MM)
   const dateStr = isRTL ? `${timePart} ${datePart}` : `${datePart} ${timePart}`;
-  
+
   // Convert Arabic-Indic numerals to Western numerals for RTL
   if (isRTL) {
     return dateStr.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
   }
-  
+
   return dateStr;
 };
 
@@ -58,10 +66,14 @@ interface ChatListItemProps {
   isLast?: boolean;
 }
 
-const ChatListItem = React.memo<ChatListItemProps>(function ChatListItem({ conversation, onPress, isLast = false }) {
+const ChatListItem = React.memo<ChatListItemProps>(function ChatListItem({
+  conversation,
+  onPress,
+  isLast = false,
+}) {
   const { t, isRTL } = useLocalization();
   const avatar = conversation.userAvatar || getUserAvatar(conversation.userId);
-  
+
   const rtlStyles = useMemo(
     () => ({
       chatItem: {
@@ -89,12 +101,16 @@ const ChatListItem = React.memo<ChatListItemProps>(function ChatListItem({ conve
         marginRight: isRTL ? wp(2) : 0,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
-  
+
   return (
     <TouchableOpacity
-      style={[styles.chatItem, isLast && styles.chatItemLast, rtlStyles.chatItem]}
+      style={[
+        styles.chatItem,
+        isLast && styles.chatItemLast,
+        rtlStyles.chatItem,
+      ]}
       onPress={() => onPress(conversation)}
       activeOpacity={0.7}
     >
@@ -128,7 +144,10 @@ const ChatListItem = React.memo<ChatListItemProps>(function ChatListItem({ conve
           ) : null}
         </View>
         {conversation.lastMessage ? (
-          <Text style={[styles.chatLastMessage, rtlStyles.chatLastMessage]} numberOfLines={1}>
+          <Text
+            style={[styles.chatLastMessage, rtlStyles.chatLastMessage]}
+            numberOfLines={1}
+          >
             {conversation.lastMessage}
           </Text>
         ) : null}
@@ -151,7 +170,7 @@ export default function ChatScreen(): React.JSX.Element {
   // Load and filter conversations that have messages (no mutation of source data)
   const loadConversations = useCallback(() => {
     const filtered = MOCK_CONVERSATIONS.filter(
-      (conv) => conv.lastMessage && conv.lastMessage.trim().length > 0
+      (conv) => conv.lastMessage && conv.lastMessage.trim().length > 0,
     );
     // Map to new objects with userName set - never mutate MOCK_CONVERSATIONS
     const withNames = filtered.map((conv) => {
@@ -160,19 +179,24 @@ export default function ChatScreen(): React.JSX.Element {
         userName = "تطبيق العقارات";
       } else if (!userName || userName === "Property Owner") {
         const nameFromUsers = getUserName(conv.userId);
-        userName = nameFromUsers && nameFromUsers !== "Property Owner" ? nameFromUsers : "Property Owner";
+        userName =
+          nameFromUsers && nameFromUsers !== "Property Owner"
+            ? nameFromUsers
+            : "Property Owner";
       }
       return { ...conv, userName };
     });
     // Sort by last message time (newest first)
     const sorted = [...withNames].sort((a, b) => {
       if (!a.lastMessageTime || !b.lastMessageTime) return 0;
-      const timeA = typeof a.lastMessageTime === "number" 
-        ? a.lastMessageTime 
-        : a.lastMessageTime.getTime();
-      const timeB = typeof b.lastMessageTime === "number" 
-        ? b.lastMessageTime 
-        : b.lastMessageTime.getTime();
+      const timeA =
+        typeof a.lastMessageTime === "number"
+          ? a.lastMessageTime
+          : a.lastMessageTime.getTime();
+      const timeB =
+        typeof b.lastMessageTime === "number"
+          ? b.lastMessageTime
+          : b.lastMessageTime.getTime();
       return timeB - timeA; // Newest first
     });
     setConversations(sorted);
@@ -181,7 +205,7 @@ export default function ChatScreen(): React.JSX.Element {
   // Load conversations on mount and when screen comes into focus
   useEffect(() => {
     loadConversations();
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = navigation.addListener("focus", () => {
       loadConversations();
     });
     return unsubscribe;
@@ -202,10 +226,13 @@ export default function ChatScreen(): React.JSX.Element {
         return true; // Prevent default back behavior
       };
 
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
 
       return () => backHandler.remove();
-    }, [handleBackPress])
+    }, [handleBackPress]),
   );
 
   const handleChatPress = useCallback(
@@ -217,7 +244,7 @@ export default function ChatScreen(): React.JSX.Element {
         advertiserId: conversation.userId,
       });
     },
-    [navigateToChat]
+    [navigateToChat],
   );
 
   const renderChatItem = useCallback(
@@ -228,18 +255,25 @@ export default function ChatScreen(): React.JSX.Element {
         isLast={index === conversations.length - 1}
       />
     ),
-    [handleChatPress, conversations.length]
+    [handleChatPress, conversations.length],
   );
 
-  const renderEmptyState = useCallback(() => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="chatbubbles-outline" size={wp(15)} color={COLORS.textTertiary} />
-      <Text style={styles.emptyText}>{t("chat.noConversationsYet")}</Text>
-      <Text style={styles.emptySubtext}>
-        {t("chat.startChatFromProperty")}
-      </Text>
-    </View>
-  ), [t]);
+  const renderEmptyState = useCallback(
+    () => (
+      <View style={styles.emptyContainer}>
+        <Ionicons
+          name="chatbubbles-outline"
+          size={wp(15)}
+          color={COLORS.textTertiary}
+        />
+        <Text style={styles.emptyText}>{t("chat.noConversationsYet")}</Text>
+        <Text style={styles.emptySubtext}>
+          {t("chat.startChatFromProperty")}
+        </Text>
+      </View>
+    ),
+    [t],
+  );
 
   return (
     <View style={styles.container}>

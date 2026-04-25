@@ -23,7 +23,10 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { RENT_FILTER_OPTIONS, SALE_FILTER_OPTIONS } from "../../data/propertyData";
+import {
+  RENT_FILTER_OPTIONS,
+  SALE_FILTER_OPTIONS,
+} from "../../data/propertyData";
 import {
   formatPrice,
   navigateToMapScreen,
@@ -31,6 +34,7 @@ import {
   ensurePropertyCardListingSuffix,
 } from "../../utils";
 import { filterRentSaleFromPropertyData } from "@/utils/listingPropertyFilters";
+import { applySearchFilters } from "@/utils/searchFilters";
 import {
   PropertyCard,
   ScreenHeader,
@@ -40,9 +44,14 @@ import {
   ProjectSearchModal,
   ShowMapFloatingButton,
 } from "../../components";
-import type { SearchFilterState } from "../../components/map/SearchFilterModal";
+import { SearchFilterModal } from "../../components";
+import type { SearchFilterState } from "@/types/searchFilters";
 import { COLORS } from "../../constants";
-import type { Property, ProjectProperty, RentSaleProperty } from "../../types/property";
+import type {
+  Property,
+  ProjectProperty,
+  RentSaleProperty,
+} from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
 import { useLocation } from "../../hooks/useLocation";
 import { useAppSelector, useAppDispatch } from "../../redux/hooks";
@@ -50,6 +59,8 @@ import { setPreservedFilter } from "../../redux/slices/listingsFiltersSlice";
 import { useGetPublicListingsQuery } from "@/redux/api";
 import { mapApiListingToProperty } from "@/utils/apiListingMapper";
 import { registerApiListingProperties } from "@/utils/propertyLookup";
+import { useFocusEffect } from "@react-navigation/native";
+import { listingApi } from "@/redux/api/listingApi";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -69,7 +80,7 @@ export default function PropertyListScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const dispatch = useAppDispatch();
   const preservedFilter = useAppSelector(
-    (s) => s.listingsFilters.preservedFilter
+    (s) => s.listingsFilters.preservedFilter,
   );
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
@@ -80,14 +91,46 @@ export default function PropertyListScreen(): React.JSX.Element {
   } | null>(null);
   const [nearestLocationError, setNearestLocationError] = useState<string>("");
   const [isResolvingNearest, setIsResolvingNearest] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
+    params?.searchFilters ?? null,
+  );
 
   const listingType = params?.listingType || "rent";
 
-  const { data: publicListingsData } = useGetPublicListingsQuery({
-    page: 1,
-    limit: 200,
-    listingType: listingType === "sale" ? "SALE" : "RENT",
-  });
+  useFocusEffect(
+    useCallback(() => {
+      // Prefetch both so switching the tab filter feels instant.
+      // `force: false` respects cache and avoids unnecessary network calls.
+      dispatch(
+        listingApi.util.prefetch(
+          "getPublicListings",
+          { page: 1, limit: 200, listingType: "RENT" },
+          { force: false },
+        ),
+      );
+      dispatch(
+        listingApi.util.prefetch(
+          "getPublicListings",
+          { page: 1, limit: 200, listingType: "SALE" },
+          { force: false },
+        ),
+      );
+    }, [dispatch]),
+  );
+
+  const { data: publicListingsData } = useGetPublicListingsQuery(
+    {
+      page: 1,
+      limit: 200,
+      listingType: listingType === "sale" ? "SALE" : "RENT",
+    },
+    {
+      // Ensure the list stays fresh whenever the user comes back.
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    },
+  );
 
   const apiListingProperties = useMemo(() => {
     const rows = publicListingsData?.listings ?? [];
@@ -121,7 +164,7 @@ export default function PropertyListScreen(): React.JSX.Element {
   }, [properties, visiblePropertyIds]);
 
   const [selectedFilter, setSelectedFilter] = useState<string | null>(
-    params?.selectedFilter ?? preservedFilter ?? null
+    params?.selectedFilter ?? preservedFilter ?? "latest",
   );
 
   useEffect(() => {
@@ -136,7 +179,15 @@ export default function PropertyListScreen(): React.JSX.Element {
     }
 
     if (paramFilter === undefined && preservedFilter !== null) {
-      setSelectedFilter((prev) => (prev === null ? preservedFilter : prev));
+      setSelectedFilter((prev) =>
+        prev === null || prev === "latest" ? preservedFilter : prev,
+      );
+      return;
+    }
+
+    // Default to "latest" when nothing is set (first open).
+    if (paramFilter === undefined && preservedFilter === null) {
+      setSelectedFilter((prev) => (prev === null ? "latest" : prev));
     }
   }, [params?.selectedFilter, preservedFilter, dispatch]);
 
@@ -145,29 +196,33 @@ export default function PropertyListScreen(): React.JSX.Element {
 
   // For projects: activeFilter for FilterChips (All For Sale, Villa, Land, Apartment)
   const [activeProjectFilter, setActiveProjectFilter] = useState<string>("all");
-  const [projectSearchModalVisible, setProjectSearchModalVisible] = useState<boolean>(false);
-  const [projectSelectedCity, setProjectSelectedCity] = useState<string | null>(null);
-  const [projectSelectedPropertyType, setProjectSelectedPropertyType] = useState<string | null>(null);
+  const [projectSearchModalVisible, setProjectSearchModalVisible] =
+    useState<boolean>(false);
+  const [projectSelectedCity, setProjectSelectedCity] = useState<string | null>(
+    null,
+  );
+  const [projectSelectedPropertyType, setProjectSelectedPropertyType] =
+    useState<string | null>(null);
 
   // Helper function to translate property type
   const getTranslatedTypeLabel = useCallback(
     (type: string, filterOptions: any[]) => {
       const opt = filterOptions.find((o) => o.type === type);
       if (!opt) return type;
-      
+
       // Try to find translation in propertyTypes
       const translationKey = `listings.propertyTypes.${type}`;
       const translated = t(translationKey);
-      
+
       // If translation exists and is different from the key, use it
       if (translated && translated !== translationKey) {
         return translated;
       }
-      
+
       // Fallback to filter option label
       return opt.label;
     },
-    [t]
+    [t],
   );
 
   const getTypeLabel = useCallback(
@@ -176,7 +231,7 @@ export default function PropertyListScreen(): React.JSX.Element {
         listingType === "rent" ? RENT_FILTER_OPTIONS : SALE_FILTER_OPTIONS;
       return getTranslatedTypeLabel(type, filterOptions);
     },
-    [listingType, getTranslatedTypeLabel]
+    [listingType, getTranslatedTypeLabel],
   );
 
   const handlePropertyPress = useCallback(
@@ -190,12 +245,10 @@ export default function PropertyListScreen(): React.JSX.Element {
         // Critical: keep swipe navigation restricted to the exact list user is viewing.
         visiblePropertyIds: sortedProperties.map((p) => p.id),
         listingType,
-        ...(item.serverListingId
-          ? { listingId: item.serverListingId }
-          : {}),
+        ...(item.serverListingId ? { listingId: item.serverListingId } : {}),
       });
     },
-    [properties, listingType, navigation]
+    [properties, listingType, navigation],
   );
 
   const handleBackPress = useCallback(() => {
@@ -232,16 +285,20 @@ export default function PropertyListScreen(): React.JSX.Element {
         dispatch(setPreservedFilter(null));
         setNearestLocationError(
           loc?.error ||
-            (t("errors.networkError") ?? "Unable to get your location. Please try again.")
+            (t("errors.networkError") ??
+              "Unable to get your location. Please try again."),
         );
         return;
       }
 
-      setNearestRegion({ latitude: loc.region.latitude, longitude: loc.region.longitude });
+      setNearestRegion({
+        latitude: loc.region.latitude,
+        longitude: loc.region.longitude,
+      });
       setSelectedFilter("nearest");
       dispatch(setPreservedFilter("nearest"));
     },
-    [dispatch, getCurrentLocation, t]
+    [dispatch, getCurrentLocation, t],
   );
 
   // If state restores with "nearest" selected (e.g., preserved filter),
@@ -251,7 +308,12 @@ export default function PropertyListScreen(): React.JSX.Element {
     if (nearestRegion) return;
     if (isResolvingNearest) return;
     void handleFilterValueChange("nearest");
-  }, [handleFilterValueChange, isResolvingNearest, nearestRegion, selectedFilter]);
+  }, [
+    handleFilterValueChange,
+    isResolvingNearest,
+    nearestRegion,
+    selectedFilter,
+  ]);
 
   const filterTabOptions = useMemo(
     () => [
@@ -259,12 +321,22 @@ export default function PropertyListScreen(): React.JSX.Element {
       { value: "price", label: t("listings.price") },
       { value: "nearest", label: t("listings.nearest") },
     ],
-    [t]
+    [t],
   );
 
   const handleSearchPress = useCallback(() => {
-    console.log("Search pressed");
+    setFilterModalVisible(true);
   }, []);
+
+  const closeFilterModal = useCallback(() => setFilterModalVisible(false), []);
+
+  const handleSearchFilters = useCallback(
+    (filters: SearchFilterState | null, _count: number, closeModal = true) => {
+      setSearchFilters(filters);
+      if (closeModal) setFilterModalVisible(false);
+    },
+    [],
+  );
 
   const handleProjectFilterChange = useCallback((filterId: string) => {
     setActiveProjectFilter(filterId);
@@ -274,13 +346,19 @@ export default function PropertyListScreen(): React.JSX.Element {
     setProjectSearchModalVisible(true);
   }, []);
 
-  const handleProjectSearch = useCallback((city: string | null, propertyType: string | null) => {
-    setProjectSelectedCity(city);
-    setProjectSelectedPropertyType(propertyType);
-    setProjectSearchModalVisible(false);
-  }, []);
+  const handleProjectSearch = useCallback(
+    (city: string | null, propertyType: string | null) => {
+      setProjectSelectedCity(city);
+      setProjectSelectedPropertyType(propertyType);
+      setProjectSearchModalVisible(false);
+    },
+    [],
+  );
 
-  const closeProjectSearchModal = useCallback(() => setProjectSearchModalVisible(false), []);
+  const closeProjectSearchModal = useCallback(
+    () => setProjectSearchModalVisible(false),
+    [],
+  );
 
   const getCreatedAtMs = useCallback((property: Property) => {
     const raw = (property as any)?.createdAt;
@@ -308,20 +386,24 @@ export default function PropertyListScreen(): React.JSX.Element {
     if (listingType === "projects") {
       // Filter projects based on activeProjectFilter, city, and property type
       let filtered = [...properties] as ProjectProperty[];
-      
+
       // Filter by city if selected
       if (projectSelectedCity) {
         filtered = filtered.filter((p) => {
           const city = (p as any).city;
-          return city && city.toLowerCase() === projectSelectedCity.toLowerCase();
+          return (
+            city && city.toLowerCase() === projectSelectedCity.toLowerCase()
+          );
         });
       }
-      
+
       // Filter by property type if selected
       if (projectSelectedPropertyType) {
-        filtered = filtered.filter((p) => p.type === projectSelectedPropertyType);
+        filtered = filtered.filter(
+          (p) => p.type === projectSelectedPropertyType,
+        );
       }
-      
+
       // Filter by activeProjectFilter (All For Sale, Villa, Land, Apartment)
       if (activeProjectFilter !== "all") {
         const filterOptions = SALE_FILTER_OPTIONS; // Projects are typically for sale
@@ -330,8 +412,11 @@ export default function PropertyListScreen(): React.JSX.Element {
           filtered = filtered.filter((p) => p.type === f.type);
         }
       }
-      
+
       return filtered;
+    }
+    if (searchFilters) {
+      return applySearchFilters(viewportRestrictedProperties, searchFilters);
     }
     return viewportRestrictedProperties;
   }, [
@@ -340,6 +425,8 @@ export default function PropertyListScreen(): React.JSX.Element {
     activeProjectFilter,
     projectSelectedCity,
     projectSelectedPropertyType,
+    properties,
+    searchFilters,
   ]);
 
   // Nearest filter location resolution is handled in handleFilterValueChange.
@@ -364,7 +451,7 @@ export default function PropertyListScreen(): React.JSX.Element {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     },
-    [nearestRegion]
+    [nearestRegion],
   );
 
   // Sort properties based on selected filter (sort the filtered list, not the full source)
@@ -408,7 +495,14 @@ export default function PropertyListScreen(): React.JSX.Element {
       default:
         return sorted;
     }
-  }, [filteredProperties, selectedFilter, getNumericPrice, getCreatedAtMs, nearestRegion, distanceKm]);
+  }, [
+    filteredProperties,
+    selectedFilter,
+    getNumericPrice,
+    getCreatedAtMs,
+    nearestRegion,
+    distanceKm,
+  ]);
 
   const PropertyListItem = React.memo<{
     item: Property;
@@ -449,7 +543,11 @@ export default function PropertyListScreen(): React.JSX.Element {
 
       const handlePress = useCallback(() => onPress(item), [item, onPress]);
 
-      if (("isProject" in item && item.isProject) && (listingType === "projects" || listingType === "sale")) {
+      if (
+        "isProject" in item &&
+        item.isProject &&
+        (listingType === "projects" || listingType === "sale")
+      ) {
         const filterOptions =
           (item as ProjectProperty).listingType === "sale"
             ? SALE_FILTER_OPTIONS
@@ -478,7 +576,7 @@ export default function PropertyListScreen(): React.JSX.Element {
       prevProps.listingType === nextProps.listingType &&
       prevProps.item === nextProps.item &&
       prevProps.onPress === nextProps.onPress &&
-      prevProps.getTypeLabel === nextProps.getTypeLabel
+      prevProps.getTypeLabel === nextProps.getTypeLabel,
   );
 
   PropertyListItem.displayName = "PropertyListItem";
@@ -492,13 +590,13 @@ export default function PropertyListScreen(): React.JSX.Element {
         getTypeLabel={getTypeLabel}
       />
     ),
-    [listingType, handlePropertyPress, getTypeLabel]
+    [listingType, handlePropertyPress, getTypeLabel],
   );
 
   const keyExtractor = useCallback(
     (item: Property) =>
       item.serverListingId ? `api-${item.serverListingId}` : item.id.toString(),
-    []
+    [],
   );
 
   const handleScrollBegin = useCallback(() => {
@@ -544,15 +642,18 @@ export default function PropertyListScreen(): React.JSX.Element {
         </View>
       </TouchableOpacity>
     ),
-    [handleSearchPress]
+    [handleSearchPress],
   );
 
   const isProjectsListing = listingType === "projects";
 
   const projectFilterOptions = useMemo(() => {
-    if (!isProjectsListing || properties.length === 0) return SALE_FILTER_OPTIONS;
+    if (!isProjectsListing || properties.length === 0)
+      return SALE_FILTER_OPTIONS;
     const firstProject = properties[0] as ProjectProperty;
-    return firstProject.listingType === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS;
+    return firstProject.listingType === "sale"
+      ? SALE_FILTER_OPTIONS
+      : RENT_FILTER_OPTIONS;
   }, [isProjectsListing, properties]);
 
   const listEmptyComponent = useMemo(() => {
@@ -580,7 +681,12 @@ export default function PropertyListScreen(): React.JSX.Element {
       )}
 
       {isProjectsListing && (
-        <View style={[styles.projectsFilterContainer, { paddingTop: insets.top + hp(1) }]}>
+        <View
+          style={[
+            styles.projectsFilterContainer,
+            { paddingTop: insets.top + hp(1) },
+          ]}
+        >
           <View style={{ marginTop: -(hp(9) + insets.top) }}>
             <FilterChips
               filterOptions={projectFilterOptions}
@@ -610,7 +716,9 @@ export default function PropertyListScreen(): React.JSX.Element {
           )}
           {!!nearestLocationError && (
             <View style={styles.nearestBannerError}>
-              <Text style={styles.nearestBannerText}>{nearestLocationError}</Text>
+              <Text style={styles.nearestBannerText}>
+                {nearestLocationError}
+              </Text>
             </View>
           )}
         </>
@@ -625,7 +733,7 @@ export default function PropertyListScreen(): React.JSX.Element {
           isProjectsListing && styles.projectsListContent,
         ]}
         ListEmptyComponent={listEmptyComponent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
         onScrollBeginDrag={handleScrollBegin}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollBegin={handleScrollBegin}
@@ -646,6 +754,16 @@ export default function PropertyListScreen(): React.JSX.Element {
         isRTL={isRTL}
         bottomInset={insets.bottom}
       />
+
+      {!isProjectsListing && (
+        <SearchFilterModal
+          visible={filterModalVisible}
+          onClose={closeFilterModal}
+          onSearch={handleSearchFilters}
+          properties={viewportRestrictedProperties}
+          initialFilters={searchFilters ?? undefined}
+        />
+      )}
 
       {isProjectsListing && (
         <ProjectSearchModal

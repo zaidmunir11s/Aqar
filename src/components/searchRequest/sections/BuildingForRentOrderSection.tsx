@@ -1,8 +1,16 @@
 import React, { memo } from "react";
-import { PriceInputSection, TabBarSection, FieldWithModal, ToggleGroup } from "../../index";
+import {
+  PriceInputSection,
+  TabBarSection,
+  FieldWithModal,
+  ToggleGroup,
+} from "../../index";
 import { APARTMENT_OPTIONS } from "../../../constants/orderFormOptions";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 interface BuildingForRentOrderSectionProps {
   t: Translate;
@@ -21,7 +29,7 @@ interface BuildingForRentOrderSectionProps {
   nearMetro: boolean;
   getTranslatedPickerValue: (
     originalValue: string | null,
-    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
   ) => string;
   onPriceFromChange: (value: string) => void;
   onPriceToChange: (value: string) => void;
@@ -38,7 +46,7 @@ interface BuildingForRentOrderSectionProps {
 }
 
 function BuildingForRentOrderSectionComponent(
-  props: BuildingForRentOrderSectionProps
+  props: BuildingForRentOrderSectionProps,
 ): React.JSX.Element {
   const {
     t,
@@ -92,7 +100,10 @@ function BuildingForRentOrderSectionComponent(
       />
       <FieldWithModal
         label={t("listings.streetDirection")}
-        value={getTranslatedPickerValue(buildingRentStreetDirection, "streetDirection")}
+        value={getTranslatedPickerValue(
+          buildingRentStreetDirection,
+          "streetDirection",
+        )}
         placeholder={t("listings.selectStreetDirection")}
         onPress={onOpenStreetDirection}
         backgroundColor="background"
@@ -129,13 +140,22 @@ function BuildingForRentOrderSectionComponent(
       />
       <ToggleGroup
         toggles={[
-          { label: t("listings.nearBus"), value: nearBus, onValueChange: onNearBusChange },
-          { label: t("listings.nearMetro"), value: nearMetro, onValueChange: onNearMetroChange },
+          {
+            label: t("listings.nearBus"),
+            value: nearBus,
+            onValueChange: onNearBusChange,
+          },
+          {
+            label: t("listings.nearMetro"),
+            value: nearMetro,
+            onValueChange: onNearMetroChange,
+          },
         ]}
       />
     </>
   );
 }
 
-export const BuildingForRentOrderSection = memo(BuildingForRentOrderSectionComponent);
-
+export const BuildingForRentOrderSection = memo(
+  BuildingForRentOrderSectionComponent,
+);

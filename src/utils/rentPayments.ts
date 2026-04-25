@@ -18,7 +18,7 @@ export type UserRentPaymentPublishInput = {
  * on the left and the per-period amount on the right, matching the pricing screen.
  */
 export function buildRentPaymentScheduleFromPublishForm(
-  input: UserRentPaymentPublishInput | undefined
+  input: UserRentPaymentPublishInput | undefined,
 ): RentPaymentScheduleRow[] {
   if (!input) return [];
   const annual = input.annualSar;
@@ -32,7 +32,7 @@ export function buildRentPaymentScheduleFromPublishForm(
     frequency: RentPaymentScheduleRow["frequency"],
     periodsPerYear: number,
     accept: boolean | undefined,
-    installmentSar: number | undefined
+    installmentSar: number | undefined,
   ) => {
     if (!accept || installmentSar == null) return;
     if (!Number.isFinite(installmentSar) || installmentSar <= 0) return;
@@ -44,9 +44,24 @@ export function buildRentPaymentScheduleFromPublishForm(
     });
   };
 
-  pushInstallment("semiAnnual", 2, input.acceptSemiAnnual, input.semiAnnualInstallmentSar);
-  pushInstallment("quarterly", 4, input.acceptQuarterly, input.quarterlyInstallmentSar);
-  pushInstallment("monthly", 12, input.acceptMonthly, input.monthlyInstallmentSar);
+  pushInstallment(
+    "semiAnnual",
+    2,
+    input.acceptSemiAnnual,
+    input.semiAnnualInstallmentSar,
+  );
+  pushInstallment(
+    "quarterly",
+    4,
+    input.acceptQuarterly,
+    input.quarterlyInstallmentSar,
+  );
+  pushInstallment(
+    "monthly",
+    12,
+    input.acceptMonthly,
+    input.monthlyInstallmentSar,
+  );
 
   return rows;
 }
@@ -55,7 +70,9 @@ export function buildRentPaymentScheduleFromPublishForm(
  * Default rows when `rentPaymentSchedule` is not stored on the listing:
  * same annual reference on the left, per-period amount on the right (except yearly).
  */
-export function buildDefaultRentPaymentRows(annualSar: number): RentPaymentScheduleRow[] {
+export function buildDefaultRentPaymentRows(
+  annualSar: number,
+): RentPaymentScheduleRow[] {
   if (!Number.isFinite(annualSar) || annualSar <= 0) return [];
   const a = Math.round(annualSar);
   return [

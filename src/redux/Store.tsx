@@ -1,11 +1,11 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query';
-import { baseApi } from './api/baseApi';
-import './api/listingApi';
-import './api/favoritesApi';
-import './api/userApi';
-import localizationReducer from './slices/localizationSlice';
-import listingsFiltersReducer from './slices/listingsFiltersSlice';
+import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { baseApi } from "./api/baseApi";
+import "./api/listingApi";
+import "./api/favoritesApi";
+import "./api/userApi";
+import localizationReducer from "./slices/localizationSlice";
+import listingsFiltersReducer from "./slices/listingsFiltersSlice";
 
 export const store = configureStore({
   reducer: {
@@ -17,7 +17,7 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
       },
     }).concat(baseApi.middleware),
 });

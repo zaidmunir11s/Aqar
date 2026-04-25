@@ -12,14 +12,16 @@ type ServicesTabIconProps = {
   newLabel: string;
 };
 
-const ServicesTabIcon = memo<ServicesTabIconProps>(({ color, isRTL, newLabel }) => (
-  <View style={styles.iconWrap}>
-    <View style={[styles.badge, isRTL && styles.badgeRTL]}>
-      <Text style={styles.badgeText}>{newLabel}</Text>
+const ServicesTabIcon = memo<ServicesTabIconProps>(
+  ({ color, isRTL, newLabel }) => (
+    <View style={styles.iconWrap}>
+      <View style={[styles.badge, isRTL && styles.badgeRTL]}>
+        <Text style={styles.badgeText}>{newLabel}</Text>
+      </View>
+      <Ionicons name="construct" size={wp(6)} color={color} />
     </View>
-    <Ionicons name="construct" size={wp(6)} color={color} />
-  </View>
-));
+  ),
+);
 
 ServicesTabIcon.displayName = "ServicesTabIcon";
 

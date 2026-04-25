@@ -1,5 +1,10 @@
 import React, { memo } from "react";
-import { TabBarSection, FieldWithModal, PriceInputSection, ToggleGroup } from "../../index";
+import {
+  TabBarSection,
+  FieldWithModal,
+  PriceInputSection,
+  ToggleGroup,
+} from "../../index";
 
 type T = (key: string, options?: Record<string, string | number>) => string;
 
@@ -16,7 +21,7 @@ interface Props {
   nearMetro: boolean;
   getTranslatedPickerValue: (
     value: string | null,
-    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
   ) => string;
   onLandRentTypeSelect: (v: string) => void;
   onOpenStreetDirection: () => void;
@@ -30,8 +35,21 @@ interface Props {
 function Comp(p: Props): React.JSX.Element {
   return (
     <>
-      <TabBarSection options={p.translatedResidentialCommercialOptions} selectedValue={p.selectedLandRentType} onSelect={p.onLandRentTypeSelect} />
-      <FieldWithModal label={p.t("listings.streetDirection")} value={p.getTranslatedPickerValue(p.landRentStreetDirection, "streetDirection")} placeholder={p.t("listings.selectStreetDirection")} onPress={p.onOpenStreetDirection} backgroundColor="background" />
+      <TabBarSection
+        options={p.translatedResidentialCommercialOptions}
+        selectedValue={p.selectedLandRentType}
+        onSelect={p.onLandRentTypeSelect}
+      />
+      <FieldWithModal
+        label={p.t("listings.streetDirection")}
+        value={p.getTranslatedPickerValue(
+          p.landRentStreetDirection,
+          "streetDirection",
+        )}
+        placeholder={p.t("listings.selectStreetDirection")}
+        onPress={p.onOpenStreetDirection}
+        backgroundColor="background"
+      />
       <PriceInputSection
         label={p.t("listings.areaM2")}
         fromValue={p.landRentAreaFrom}
@@ -42,11 +60,25 @@ function Comp(p: Props): React.JSX.Element {
         toPlaceholder={p.t("listings.toArea")}
         helperText={p.areaRangeHint}
       />
-      <FieldWithModal label={p.t("listings.streetWidth")} value={p.getTranslatedPickerValue(p.landRentStreetWidth, "streetWidth")} placeholder={p.t("listings.selectStreetWidth")} onPress={p.onOpenStreetWidth} backgroundColor="background" />
+      <FieldWithModal
+        label={p.t("listings.streetWidth")}
+        value={p.getTranslatedPickerValue(p.landRentStreetWidth, "streetWidth")}
+        placeholder={p.t("listings.selectStreetWidth")}
+        onPress={p.onOpenStreetWidth}
+        backgroundColor="background"
+      />
       <ToggleGroup
         toggles={[
-          { label: p.t("listings.nearBus"), value: p.nearBus, onValueChange: p.onNearBusChange },
-          { label: p.t("listings.nearMetro"), value: p.nearMetro, onValueChange: p.onNearMetroChange },
+          {
+            label: p.t("listings.nearBus"),
+            value: p.nearBus,
+            onValueChange: p.onNearBusChange,
+          },
+          {
+            label: p.t("listings.nearMetro"),
+            value: p.nearMetro,
+            onValueChange: p.onNearMetroChange,
+          },
         ]}
       />
     </>
@@ -54,4 +86,3 @@ function Comp(p: Props): React.JSX.Element {
 }
 
 export const LandForRentOrderSection = memo(Comp);
-

@@ -44,7 +44,7 @@ const SocialMediaIcon = memo<SocialMediaIconProps>(
         {renderIcon()}
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 SocialMediaIcon.displayName = "SocialMediaIcon";

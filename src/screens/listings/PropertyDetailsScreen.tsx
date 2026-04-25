@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -25,7 +31,10 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { RENT_FILTER_OPTIONS, SALE_FILTER_OPTIONS } from "../../data/propertyData";
+import {
+  RENT_FILTER_OPTIONS,
+  SALE_FILTER_OPTIONS,
+} from "../../data/propertyData";
 import {
   openPhoneDialer,
   openWhatsApp,
@@ -59,7 +68,11 @@ import type { CalendarDates } from "../../hooks/useCalendar";
 import type { TabType } from "../../components/property/PropertyTabs";
 import { COLORS } from "@/constants";
 import { getMarketingRequestCategoryTranslationKey } from "@/constants/categories";
-import { useLocalization, usePropertyDetailNavigation, useTabNavigation } from "../../hooks";
+import {
+  useLocalization,
+  usePropertyDetailNavigation,
+  useTabNavigation,
+} from "../../hooks";
 import {
   useGetPublicListingByIdQuery,
   useGetMyFavoritesQuery,
@@ -142,7 +155,8 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState<string>("");
   const [reportDetails, setReportDetails] = useState<string>("");
-  const [reportListing, { isLoading: isReporting }] = useReportListingMutation();
+  const [reportListing, { isLoading: isReporting }] =
+    useReportListingMutation();
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-200)).current; // Start fully off-screen (hidden)
   const scrollViewRef = useRef<ScrollView>(null);
@@ -154,9 +168,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (!property?.serverListingId || !favoritesData?.favorites) return;
-    const ids = new Set(
-      favoritesData.favorites.map((f) => f.listingId)
-    );
+    const ids = new Set(favoritesData.favorites.map((f) => f.listingId));
     setFavorited(ids.has(property.serverListingId));
   }, [property?.serverListingId, favoritesData]);
 
@@ -197,12 +209,11 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
       // When RTL is active and gallery is inverted, adjust index calculation
       const imagesLength = property?.images?.length || 1;
-      const index = isRTL && imagesLength > 0 
-        ? imagesLength - 1 - rawIndex 
-        : rawIndex;
+      const index =
+        isRTL && imagesLength > 0 ? imagesLength - 1 - rawIndex : rawIndex;
       setCurrentImageIndex(index);
     },
-    [isRTL, property?.images?.length]
+    [isRTL, property?.images?.length],
   );
 
   /** Mock catalog listings omit `advertiserPhone`; published ads (id ≥ 500000) must use stored publisher number only. */
@@ -216,28 +227,37 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   }, [property]);
 
   const hasAdvertiserContactPhone = useMemo(
-    () => Boolean(normalizeAdvertiserPhoneForTel(resolvedAdvertiserPhoneForContact || undefined)),
-    [resolvedAdvertiserPhoneForContact]
+    () =>
+      Boolean(
+        normalizeAdvertiserPhoneForTel(
+          resolvedAdvertiserPhoneForContact || undefined,
+        ),
+      ),
+    [resolvedAdvertiserPhoneForContact],
   );
 
   const handleCall = useCallback(() => {
-    const tel = normalizeAdvertiserPhoneForTel(resolvedAdvertiserPhoneForContact || undefined);
+    const tel = normalizeAdvertiserPhoneForTel(
+      resolvedAdvertiserPhoneForContact || undefined,
+    );
     if (!tel) return;
     openPhoneDialer(tel).catch((e: any) => {
       Alert.alert(
         t("common.error"),
-        e?.message || t("common.somethingWentWrong") || "Something went wrong."
+        e?.message || t("common.somethingWentWrong") || "Something went wrong.",
       );
     });
   }, [resolvedAdvertiserPhoneForContact]);
 
   const handleWhatsApp = useCallback(() => {
-    const wa = normalizeAdvertiserPhoneForWhatsApp(resolvedAdvertiserPhoneForContact || undefined);
+    const wa = normalizeAdvertiserPhoneForWhatsApp(
+      resolvedAdvertiserPhoneForContact || undefined,
+    );
     if (!wa) return;
     openWhatsApp(wa).catch((e: any) => {
       Alert.alert(
         t("common.error"),
-        e?.message || t("common.somethingWentWrong") || "Something went wrong."
+        e?.message || t("common.somethingWentWrong") || "Something went wrong.",
       );
     });
   }, [resolvedAdvertiserPhoneForContact]);
@@ -246,14 +266,15 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     if (!property) return;
 
     const metaLocation = String(
-      (property.listingMetadata as any)?.locationDisplayName ?? ""
+      (property.listingMetadata as any)?.locationDisplayName ?? "",
     ).trim();
     const title =
       (metaLocation ||
         property.address?.trim() ||
         property.city?.trim() ||
         property.categoryLabel?.trim() ||
-        t("listings.property")) ?? "Listing";
+        t("listings.property")) ??
+      "Listing";
 
     const locationParts = [
       metaLocation || null,
@@ -305,7 +326,8 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       lines.push("");
       lines.push(t("listings.advertiserInformation") ?? "Advertiser");
       if (advertiserName) lines.push(`${t("profile.name")}: ${advertiserName}`);
-      if (contactPhone) lines.push(`${t("profile.phoneNumber")}: ${contactPhone}`);
+      if (contactPhone)
+        lines.push(`${t("profile.phoneNumber")}: ${contactPhone}`);
     }
     if (description) {
       lines.push("");
@@ -341,7 +363,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     if (!reason) {
       Alert.alert(
         t("common.error"),
-        t("listings.reportAdReasonRequired") ?? "Please choose a reason."
+        t("listings.reportAdReasonRequired") ?? "Please choose a reason.",
       );
       return;
     }
@@ -354,15 +376,21 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       setIsReportModalVisible(false);
       Alert.alert(
         t("common.success"),
-        t("listings.reportSubmitted") ?? "Report submitted."
+        t("listings.reportSubmitted") ?? "Report submitted.",
       );
     } catch (e: any) {
       Alert.alert(
         t("common.error"),
-        e?.data?.message || e?.message || "Could not submit report."
+        e?.data?.message || e?.message || "Could not submit report.",
       );
     }
-  }, [property?.serverListingId, reportReason, reportDetails, reportListing, t]);
+  }, [
+    property?.serverListingId,
+    reportReason,
+    reportDetails,
+    reportListing,
+    t,
+  ]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -387,7 +415,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     if (!isAuthenticated) {
       Alert.alert(
         t("common.error"),
-        t("auth.loginRequired") ?? "Please log in to save favorites."
+        t("auth.loginRequired") ?? "Please log in to save favorites.",
       );
       return;
     }
@@ -420,11 +448,15 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
         : [getDefaultImageUrl()];
     const imageCaptionsForMedia =
       property?.images?.length && property?.imageCaptions?.length
-        ? property.images.map((_uri, idx) => (property.imageCaptions?.[idx] ?? "").trim())
+        ? property.images.map((_uri, idx) =>
+            (property.imageCaptions?.[idx] ?? "").trim(),
+          )
         : undefined;
     navigation.navigate("ListingMedia", {
       images,
-      ...(imageCaptionsForMedia ? { imageCaptions: imageCaptionsForMedia } : {}),
+      ...(imageCaptionsForMedia
+        ? { imageCaptions: imageCaptionsForMedia }
+        : {}),
       ...(property?.videoUris?.length ? { videoUris: property.videoUris } : {}),
     });
   }, [navigation, property]);
@@ -460,17 +492,17 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   const dynamicFeatureLabels = useMemo(
     () => buildDynamicFeatureLabels(property, t),
-    [property, t]
+    [property, t],
   );
 
   const isPublishedListing = useMemo(
     () => isPublishedListingProperty(property),
-    [property]
+    [property],
   );
 
   const propertyInfoRows = useMemo(
     () => buildPropertyInfoRows(property, t),
-    [property, t]
+    [property, t],
   );
 
   const propertyFeatureRows = useMemo(() => {
@@ -495,14 +527,12 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
         setDescriptionExceedsThreeLines(true);
       }
     },
-    []
+    [],
   );
 
   const handleTabPress = useCallback((tab: TabType) => {
     setActiveTab(tab);
   }, []);
-
-
 
   const handleCopyId = useCallback(async () => {
     try {
@@ -556,7 +586,7 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
+    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight],
   );
 
   const propertyImages = useMemo((): string[] => {
@@ -566,19 +596,24 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
   }, [property]);
 
   const propertyImageCaptions = useMemo(() => {
-    if (!property?.images?.length || !property.imageCaptions?.length) return undefined;
-    return property.images.map((_uri, idx) => (property.imageCaptions?.[idx] ?? "").trim());
+    if (!property?.images?.length || !property.imageCaptions?.length)
+      return undefined;
+    return property.images.map((_uri, idx) =>
+      (property.imageCaptions?.[idx] ?? "").trim(),
+    );
   }, [property]);
 
   const isPlaceholderGalleryOnly = useMemo(
     () => isOnlyDefaultPropertyPlaceholderImages(propertyImages),
-    [propertyImages]
+    [propertyImages],
   );
 
   if (!property) {
     return (
       <View style={styles.center}>
-        <Text style={isRTL && styles.centerTextRTL}>{t("listings.propertyNotFound")}</Text>
+        <Text style={isRTL && styles.centerTextRTL}>
+          {t("listings.propertyNotFound")}
+        </Text>
       </View>
     );
   }
@@ -588,20 +623,20 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     (type: string, filterOptions: any[]) => {
       const opt = filterOptions.find((o) => o.type === type);
       if (!opt) return type;
-      
+
       // Try to find translation in propertyTypes
       const translationKey = `listings.propertyTypes.${type}`;
       const translated = t(translationKey);
-      
+
       // If translation exists and is different from the key, use it
       if (translated && translated !== translationKey) {
         return translated;
       }
-      
+
       // Fallback to filter option label
       return opt.label;
     },
-    [t]
+    [t],
   );
 
   // Get type label from filter options
@@ -610,7 +645,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       return property.categoryLabel.trim();
     }
     if (property.categoryId?.trim()) {
-      const key = getMarketingRequestCategoryTranslationKey(property.categoryId.trim());
+      const key = getMarketingRequestCategoryTranslationKey(
+        property.categoryId.trim(),
+      );
       if (key) {
         return t(key);
       }
@@ -636,13 +673,13 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
 
   const typeLabel = getPropertyTypeLabel();
   const listingText =
-    (property.categoryLabel || property.categoryId)
+    property.categoryLabel || property.categoryId
       ? ""
       : property.listingType === "rent"
-      ? t("listings.forRent")
-      : property.listingType === "sale"
-        ? t("listings.forSale")
-        : "";
+        ? t("listings.forRent")
+        : property.listingType === "sale"
+          ? t("listings.forSale")
+          : "";
 
   const displayPrice = useMemo(() => {
     const formatNumeric = (value: number) =>
@@ -677,21 +714,30 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
     return buildDefaultRentPaymentRows(parsed);
   }, [property, parseCompactPrice]);
 
-  const renderDetailIcon = useCallback((icon: DetailIconSpec | null | undefined) => {
-    if (icon == null) {
-      return null;
-    }
-    const size = wp(5);
-    const color = "#9ca3af";
+  const renderDetailIcon = useCallback(
+    (icon: DetailIconSpec | null | undefined) => {
+      if (icon == null) {
+        return null;
+      }
+      const size = wp(5);
+      const color = "#9ca3af";
 
-    if (icon.library === "MaterialCommunityIcons") {
-      return <MaterialCommunityIcons name={icon.name as any} size={size} color={color} />;
-    }
-    if (icon.library === "Feather") {
-      return <Feather name={icon.name as any} size={size} color={color} />;
-    }
-    return <Ionicons name={icon.name as any} size={size} color={color} />;
-  }, []);
+      if (icon.library === "MaterialCommunityIcons") {
+        return (
+          <MaterialCommunityIcons
+            name={icon.name as any}
+            size={size}
+            color={color}
+          />
+        );
+      }
+      if (icon.library === "Feather") {
+        return <Feather name={icon.name as any} size={size} color={color} />;
+      }
+      return <Ionicons name={icon.name as any} size={size} color={color} />;
+    },
+    [],
+  );
 
   return (
     <>
@@ -705,14 +751,19 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           ]}
         >
           <IconButton onPress={handleBackPress}>
-            <Ionicons 
-              name={isRTL ? "arrow-forward" : "arrow-back"} 
-              size={wp(6)} 
-              color={COLORS.backButton} 
+            <Ionicons
+              name={isRTL ? "arrow-forward" : "arrow-back"}
+              size={wp(6)}
+              color={COLORS.backButton}
             />
           </IconButton>
-          <View style={styles.headerIconsSpacer} />  
-          <View style={[styles.headerIconsRight, isRTL && styles.headerIconsRightRTL]}>
+          <View style={styles.headerIconsSpacer} />
+          <View
+            style={[
+              styles.headerIconsRight,
+              isRTL && styles.headerIconsRightRTL,
+            ]}
+          >
             <IconButton onPress={handleShare}>
               <Ionicons
                 name="share-social-outline"
@@ -785,105 +836,135 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           {/* Financing Options Card and Average Sale Card - Only for Sale */}
           {property.listingType === "sale" && (
             <>
-              <AverageSaleCard property={property} onPress={handleAverageCardPress} />
+              <AverageSaleCard
+                property={property}
+                onPress={handleAverageCardPress}
+              />
             </>
           )}
 
           {/* Property Information */}
           {propertyInfoRows.length > 0 && (
             <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
-              {t("listings.propertyInformation")}
-            </Text>
-            <View style={styles.infoList}>
-              {propertyInfoRows.map((item, index) => (
-                <View
-                  key={`${item.label}-${item.icon?.name ?? "no-icon"}-${index}`}
-                  style={[
-                    styles.publishAlignedInfoRow,
-                    isRTL && styles.publishAlignedRowReverse,
-                    index === propertyInfoRows.length - 1 && styles.lastListItemBorder,
-                    { backgroundColor: index % 2 === 0 ? COLORS.white : COLORS.background },
-                  ]}
-                >
-                  <View style={[styles.publishAlignedInfoLeft, isRTL && styles.publishAlignedRowReverse]}>
-                    {item.icon != null ? renderDetailIcon(item.icon) : (
-                      <View style={styles.publishAlignedIconSpacer} />
-                    )}
-                    <Text style={[styles.publishAlignedInfoLabel, isRTL && styles.sectionTitleRTL]}>
-                      {item.label}
-                    </Text>
-                  </View>
+              <Text
+                style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}
+              >
+                {t("listings.propertyInformation")}
+              </Text>
+              <View style={styles.infoList}>
+                {propertyInfoRows.map((item, index) => (
                   <View
+                    key={`${item.label}-${item.icon?.name ?? "no-icon"}-${index}`}
                     style={[
-                      styles.publishAlignedInfoValueColumn,
-                      isRTL && styles.publishAlignedInfoValueColumnRTL,
+                      styles.publishAlignedInfoRow,
+                      isRTL && styles.publishAlignedRowReverse,
+                      index === propertyInfoRows.length - 1 &&
+                        styles.lastListItemBorder,
+                      {
+                        backgroundColor:
+                          index % 2 === 0 ? COLORS.white : COLORS.background,
+                      },
                     ]}
                   >
-                    <Text style={[styles.publishAlignedInfoValueText, isRTL && styles.sectionTitleRTL]}>
-                      {item.value}
-                    </Text>
+                    <View
+                      style={[
+                        styles.publishAlignedInfoLeft,
+                        isRTL && styles.publishAlignedRowReverse,
+                      ]}
+                    >
+                      {item.icon != null ? (
+                        renderDetailIcon(item.icon)
+                      ) : (
+                        <View style={styles.publishAlignedIconSpacer} />
+                      )}
+                      <Text
+                        style={[
+                          styles.publishAlignedInfoLabel,
+                          isRTL && styles.sectionTitleRTL,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.publishAlignedInfoValueColumn,
+                        isRTL && styles.publishAlignedInfoValueColumnRTL,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.publishAlignedInfoValueText,
+                          isRTL && styles.sectionTitleRTL,
+                        ]}
+                      >
+                        {item.value}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
-            <View style={styles.sectionSeparator} />
+                ))}
+              </View>
+              <View style={styles.sectionSeparator} />
             </View>
           )}
 
           {/* Property Features */}
           {propertyFeatureRows.length > 0 && (
             <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
-              {t("listings.propertyFeatures")}
-            </Text>
-            <View style={styles.featuresList}>
-              {propertyFeatureRows
-                .map((label) => ({ label }))
-                .reduce<Array<Array<{ label: string; index: number }>>>(
-                  (rows, item, index) => {
-                    const rowIndex = Math.floor(index / 2);
-                    if (!rows[rowIndex]) {
-                      rows[rowIndex] = [];
-                    }
-                    rows[rowIndex].push({ ...item, index });
-                    return rows;
-                  },
-                  []
-                )
-                .map((row, rowIndex) => (
-                  <View
-                    key={rowIndex}
-                    style={[
-                      styles.featureRow,
-                      isRTL && styles.featureRowRTL,
-                      rowIndex ===
-                        Math.ceil(propertyFeatureRows.length / 2) - 1 &&
-                        styles.lastListItemBorder,
-                      {
-                        backgroundColor:
-                          rowIndex % 2 === 0 ? "#fff" : COLORS.background,
-                      },
-                    ]}
-                  >
-                    {row.map((item, itemIndex) => (
-                      <FeatureItem
-                        key={`${item.label}-${rowIndex}-${itemIndex}`}
-                        label={item.label}
-                        backgroundColor="transparent"
-                        showBorder={itemIndex === 0 && row.length === 2}
-                      />
-                    ))}
-                  </View>
-                ))}
-            </View>
-            <View style={styles.sectionSeparator} />
+              <Text
+                style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}
+              >
+                {t("listings.propertyFeatures")}
+              </Text>
+              <View style={styles.featuresList}>
+                {propertyFeatureRows
+                  .map((label) => ({ label }))
+                  .reduce<{ label: string; index: number }[][]>(
+                    (rows, item, index) => {
+                      const rowIndex = Math.floor(index / 2);
+                      if (!rows[rowIndex]) {
+                        rows[rowIndex] = [];
+                      }
+                      rows[rowIndex].push({ ...item, index });
+                      return rows;
+                    },
+                    [],
+                  )
+                  .map((row, rowIndex) => (
+                    <View
+                      key={rowIndex}
+                      style={[
+                        styles.featureRow,
+                        isRTL && styles.featureRowRTL,
+                        rowIndex ===
+                          Math.ceil(propertyFeatureRows.length / 2) - 1 &&
+                          styles.lastListItemBorder,
+                        {
+                          backgroundColor:
+                            rowIndex % 2 === 0 ? "#fff" : COLORS.background,
+                        },
+                      ]}
+                    >
+                      {row.map((item, itemIndex) => (
+                        <FeatureItem
+                          key={`${item.label}-${rowIndex}-${itemIndex}`}
+                          label={item.label}
+                          backgroundColor="transparent"
+                          showBorder={itemIndex === 0 && row.length === 2}
+                        />
+                      ))}
+                    </View>
+                  ))}
+              </View>
+              <View style={styles.sectionSeparator} />
             </View>
           )}
 
           {/* Extra / Description */}
           <View style={styles.extraSection}>
-            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
+            <Text
+              style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}
+            >
               {t("listings.extra")}
             </Text>
             <View style={styles.descriptionWrapper}>
@@ -903,7 +984,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                   </Text>
                   {!expandedDescription && descriptionExceedsThreeLines && (
                     <TouchableOpacity onPress={expandDescription}>
-                      <Text style={[styles.readMore, isRTL && styles.readMoreRTL]}>
+                      <Text
+                        style={[styles.readMore, isRTL && styles.readMoreRTL]}
+                      >
                         {t("listings.readMore")}
                       </Text>
                     </TouchableOpacity>
@@ -914,11 +997,12 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           </View>
           <View style={styles.sectionSeparator} />
 
-
           {/* Location Map */}
           <PropertyLocation
             property={property}
-            onPress={() => navigation.navigate("NearbyServices", { propertyId: property.id })}
+            onPress={() =>
+              navigation.navigate("NearbyServices", { propertyId: property.id })
+            }
           />
           <View style={styles.sectionSeparator} />
 
@@ -930,15 +1014,15 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           )}
 
           {/* Advertiser Information */}
-              <PropertyAdvertiser
-                advertiserName={property.advertiserName?.trim() ?? ""}
-                advertiserSubtitle={property.advertiserSubtitle}
-                contactActionsEnabled={hasAdvertiserContactPhone}
-                onCall={handleCall}
-                onWhatsApp={handleWhatsApp}
-                onAdvertiserRowPress={handleAdvertiserRowPress}
-              />
-              <View style={styles.sectionSeparator} />
+          <PropertyAdvertiser
+            advertiserName={property.advertiserName?.trim() ?? ""}
+            advertiserSubtitle={property.advertiserSubtitle}
+            contactActionsEnabled={hasAdvertiserContactPhone}
+            onCall={handleCall}
+            onWhatsApp={handleWhatsApp}
+            onAdvertiserRowPress={handleAdvertiserRowPress}
+          />
+          <View style={styles.sectionSeparator} />
 
           {/* Tabs Section */}
           <PropertyTabs
@@ -946,7 +1030,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
             onTabChange={handleTabPress}
             property={property}
             onCopyId={handleCopyId}
-            copyIdLabel={copiedId ? (t("common.copied") ?? "Copied") : undefined}
+            copyIdLabel={
+              copiedId ? (t("common.copied") ?? "Copied") : undefined
+            }
           />
 
           {/* Report Ad */}
@@ -958,7 +1044,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
               disabled={!property?.serverListingId}
             >
               <Ionicons name="flag" size={wp(5.5)} color={COLORS.error} />
-              <Text style={[styles.reportAdText, isRTL && styles.reportAdTextRTL]}>
+              <Text
+                style={[styles.reportAdText, isRTL && styles.reportAdTextRTL]}
+              >
                 {t("listings.reportAd")}
               </Text>
             </TouchableOpacity>
@@ -968,9 +1056,13 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
           <View style={{ height: hp(12) }} />
         </ScrollView>
 
-
         {/* Bottom Contact Bar with Navigation Arrows */}
-        <View style={{ paddingBottom: insets.bottom, backgroundColor: COLORS.white }}>
+        <View
+          style={{
+            paddingBottom: insets.bottom,
+            backgroundColor: COLORS.white,
+          }}
+        >
           <PropertyBottomBar
             canGoPrev={canGoPrev}
             canGoNext={canGoNext}
@@ -991,18 +1083,29 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
       >
         <View style={styles.reportModalBackdrop}>
           <View style={styles.reportModalCard}>
-            <Text style={[styles.reportModalTitle, isRTL && styles.reportModalTitleRTL]}>
+            <Text
+              style={[
+                styles.reportModalTitle,
+                isRTL && styles.reportModalTitleRTL,
+              ]}
+            >
               {t("listings.reportAd")}
             </Text>
 
-            <Text style={[styles.reportModalLabel, isRTL && styles.reportModalTitleRTL]}>
+            <Text
+              style={[
+                styles.reportModalLabel,
+                isRTL && styles.reportModalTitleRTL,
+              ]}
+            >
               {t("listings.reason") ?? "Reason"}
             </Text>
             <View style={styles.reportReasons}>
               {[
                 t("listings.reportReasonSpam") ?? "Spam",
                 t("listings.reportReasonFraud") ?? "Fraud / scam",
-                t("listings.reportReasonInaccurate") ?? "Inaccurate information",
+                t("listings.reportReasonInaccurate") ??
+                  "Inaccurate information",
                 t("listings.reportReasonOther") ?? "Other",
               ].map((label) => (
                 <TouchableOpacity
@@ -1018,7 +1121,8 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                   <Text
                     style={[
                       styles.reportReasonChipText,
-                      reportReason === label && styles.reportReasonChipTextActive,
+                      reportReason === label &&
+                        styles.reportReasonChipTextActive,
                     ]}
                   >
                     {label}
@@ -1027,7 +1131,12 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
               ))}
             </View>
 
-            <Text style={[styles.reportModalLabel, isRTL && styles.reportModalTitleRTL]}>
+            <Text
+              style={[
+                styles.reportModalLabel,
+                isRTL && styles.reportModalTitleRTL,
+              ]}
+            >
               {t("listings.detailsOptional") ?? "Details (optional)"}
             </Text>
             <RNTextInput
@@ -1036,10 +1145,18 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
               editable={!isReporting}
               placeholder={t("listings.addMoreDetails") ?? "Add more details"}
               multiline
-              style={[styles.reportDetailsInput, isRTL && styles.reportDetailsInputRTL]}
+              style={[
+                styles.reportDetailsInput,
+                isRTL && styles.reportDetailsInputRTL,
+              ]}
             />
 
-            <View style={[styles.reportModalActions, isRTL && styles.reportModalActionsRTL]}>
+            <View
+              style={[
+                styles.reportModalActions,
+                isRTL && styles.reportModalActionsRTL,
+              ]}
+            >
               <TouchableOpacity
                 style={[styles.reportModalBtn, styles.reportModalCancel]}
                 onPress={closeReportModal}
@@ -1061,7 +1178,9 @@ export default function PropertyDetailsScreen(): React.JSX.Element {
                 activeOpacity={0.85}
               >
                 <Text style={styles.reportModalSubmitText}>
-                  {isReporting ? (t("common.loading") ?? "Loading...") : (t("listings.submitReport") ?? "Submit")}
+                  {isReporting
+                    ? (t("common.loading") ?? "Loading...")
+                    : (t("listings.submitReport") ?? "Submit")}
                 </Text>
               </TouchableOpacity>
             </View>

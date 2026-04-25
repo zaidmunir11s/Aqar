@@ -66,10 +66,11 @@ export const MARKETING_REQUEST_CATEGORY_I18N_KEY: Record<string, string> = {
   "rent-13": "listings.propertyTypes.chaletForRent",
 };
 
-export function getMarketingRequestCategoryTranslationKey(categoryId: string): string {
+export function getMarketingRequestCategoryTranslationKey(
+  categoryId: string,
+): string {
   return MARKETING_REQUEST_CATEGORY_I18N_KEY[categoryId] ?? "";
 }
-
 
 export const FOR_BOOKING_CATEGORIES: CategoryItem[] = [
   { id: "1", text: "Apartment for booking" },

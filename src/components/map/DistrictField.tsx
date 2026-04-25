@@ -39,7 +39,7 @@ export default function DistrictField({
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (

@@ -1,5 +1,11 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -28,11 +34,11 @@ const FilterTabs = memo<FilterTabsProps>(
     const { isRTL } = useLocalization();
 
     const wrapperStyle = useMemo(
-    (): ViewStyle => ({
-      flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-    }),
-    [isRTL]
-  );
+      (): ViewStyle => ({
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      }),
+      [isRTL],
+    );
 
     const handlePress = (value: string) => {
       onValueChange(selectedValue === value ? null : value);
@@ -57,7 +63,12 @@ const FilterTabs = memo<FilterTabsProps>(
                 <Text
                   style={[
                     styles.tabText,
-                    { textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right" },
+                    {
+                      textAlign: (isRTL ? "right" : "center") as
+                        | "left"
+                        | "center"
+                        | "right",
+                    },
                     selectedValue === option.value && styles.tabTextActive,
                   ]}
                 >
@@ -69,7 +80,7 @@ const FilterTabs = memo<FilterTabsProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 FilterTabs.displayName = "FilterTabs";

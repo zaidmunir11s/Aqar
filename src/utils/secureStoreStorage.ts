@@ -20,4 +20,3 @@ export const secureStoreStorage = {
     await SecureStore.deleteItemAsync(key);
   },
 };
-

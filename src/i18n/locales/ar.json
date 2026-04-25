@@ -21,6 +21,7 @@
     "clear": "مسح",
     "apply": "تطبيق",
     "close": "إغلاق",
+    "select": "اختر",
     "submit": "إرسال",
     "retry": "إعادة المحاولة",
     "ok": "موافق",
@@ -166,6 +167,7 @@
     "pleaseSelectStreetDirection": "يرجى اختيار اتجاه شارع صحيح",
     "streetWidth": "عرض الشارع",
     "streetWidthWithMeter": "{{value}} متر",
+    "meterUnit": "متر",
     "paymentOptions": "خيارات الدفع",
     "firstFloor": "الطابق الأول",
     "secondFloor": "الطابق الثاني",
@@ -294,6 +296,16 @@
     "brokerGetFreeLicenseTitle": "احصل على ترخيص مجاني",
     "brokerFreeLicenseIntro": "تسمح منصة عقار للوسطاء المرخصين بإصدار ترخيص إعلان مجاني ونشره داخل المنصة",
     "brokerFreeLicenseReqBrokerage": "عقد الوساطة.",
+    "brokerIssueAdLicenseTitle": "إصدار ترخيص إعلان",
+    "brokerageContractNumber": "رقم عقد الوساطة",
+    "brokerageContractNumberError": "رقم عقد الوساطة يجب أن يكون 10 أرقام ويبدأ بـ 61 أو 62",
+    "deedNumberDigitsError": "رقم السند يجب أن يكون 12 أو 16 رقمًا",
+    "propertyPrice": "سعر العقار",
+    "adType": "نوع الإعلان",
+    "pleaseMakeSelection": "يرجى اختيار قيمة...",
+    "areYouAnAgent": "هل أنت وكيل؟",
+    "attorneyNumber": "رقم الوكالة",
+    "adLicenseAgreement": "أوافق على استخدام هذا الترخيص فقط على منصة عقارك سوريا، وفي حال تم استخدامه على منصة أخرى يحق للمنصة حذف الإعلان.",
     "addImagesAndVideos": "إضافة الصور والفيديوهات",
     "addPhotosOrVideosOfProperty": "أضف صورًا أو فيديوهات للعقار",
     "addingVideoRaisesPriority": "إضافة فيديو لإعلانك ترفع أولوية ظهور إعلانك",
@@ -492,6 +504,7 @@
     "unitsMatchSearch": "وحدة تطابق بحثك",
     "showMap": "عرض الخريطة",
     "projectNotFound": "المشروع غير موجود",
+    "hasPhotos": "يحتوي على صور",
     "city": "المدينة",
     "selectCity": "اختر المدينة",
     "chooseCity": "اختر المدينة",
@@ -673,8 +686,8 @@
     "commission": "العمولة",
     "riyals": "ريال",
     "averageForRent": "متوسط {{propertyType}} للإيجار {{rooms}} غرف في {{location}}",
-    "averageForSale": "متوسط فيلا للبيع المساحة ({{minArea}} - {{maxArea}})م² في {{location}}",
-    "averageForSaleNoRange": "متوسط فيلا للبيع في {{location}}",
+    "averageForSale": "متوسط {{propertyType}} للبيع المساحة ({{minArea}} - {{maxArea}})م² في {{location}}",
+    "averageForSaleNoRange": "متوسط {{propertyType}} للبيع في {{location}}",
     "averagePriceInArea": "متوسط السعر في المنطقة",
     "priceTable": "جدول الأسعار",
     "chartDataSource": "بناءً على بيانات الإعلانات المنشورة على منصة عقارك سوريا",
@@ -970,7 +983,13 @@
       "harassment": "مضايقة",
       "inappropriate": "محتوى غير لائق",
       "other": "أخرى"
-    }
+    },
+    "financialInformation": "المعلومات المالية",
+    "payments": "المدفوعات",
+    "financialSettings": "إعدادات مالية",
+    "manageCards": "إدارة البطاقات",
+    "promotionServicesTitle": "خدمات الترويج",
+    "promotionServicesSubtitle": "خدمات تساعدك على تسريع بيع أو تأجير العقار"
   },
   "chat": {
     "title": "المحادثات",
@@ -989,6 +1008,20 @@
     "blockUser": "حظر المستخدم",
     "unblockUser": "إلغاء حظر المستخدم",
     "blockUserConfirmation": "لن تتلقى أي رسالة من هذا المستخدم. حظر هذا المستخدم؟"
+  },
+  "rentalUnit": {
+    "addBookableUnitTitle": "إضافة وحدة قابلة للحجز",
+    "addBookableUnitCta": "إضافة وحدة قابلة للحجز",
+    "description": "خدمة تسهّل عليك إدراج وحدتك\nللحجز اليومي أو الشهري فوراً عبر\nمنصة عقارك سوريا، مع ضمان الحقوق لكلا\nالطرفين.",
+    "benefitsTitle": "مزايا الحجوزات على منصة عقارك سوريا",
+    "learnMore": "اعرف المزيد عن الخدمة",
+    "benefits": {
+      "commissionFreePrices": "أسعار بدون عمولة!",
+      "earnMoreReferral": "اربح 5% إضافية في كل حجز عبر مشاركة رابط الإحالة مع الضيوف",
+      "verifiedBookings": "حجوزات موثقة عبر التحقق الوطني",
+      "managementSystem": "نظام متكامل لإدارة الحجوزات (تحديد الحد الأدنى لمدة الحجز، إضافة خصومات، تحديث الأسعار والأيام المحجوزة، أسعار خاصة للمناسبات... إلخ)",
+      "weeklyPayments": "صرف أسبوعي للمدفوعات كل يوم ثلاثاء"
+    }
   },
   "projects": {
     "title": "المشاريع",
@@ -1077,7 +1110,10 @@
     "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
     "unauthorized": "غير مصرح لك بتنفيذ هذا الإجراء.",
     "notFound": "لم يتم العثور على المورد المطلوب.",
-    "serverError": "خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقًا."
+    "serverError": "خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقًا.",
+    "unexpectedTitle": "حدث خطأ غير متوقع",
+    "unexpectedMessage": "نعتذر عن الإزعاج. حدث خطأ غير متوقع.",
+    "errorDetails": "تفاصيل الخطأ:"
   },
   "validation": {
     "required": "هذا الحقل مطلوب",

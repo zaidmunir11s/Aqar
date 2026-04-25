@@ -35,4 +35,3 @@ export function useBookingModal() {
     closeModal,
   };
 }
-

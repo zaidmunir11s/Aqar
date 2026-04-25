@@ -23,12 +23,7 @@ const UserInfoCard = memo<UserInfoCardProps>(
       lastSeen.trim().length > 0 ? lastSeen : t("profile.now");
 
     return (
-      <View
-        style={[
-          styles.card,
-          isRTL && { flexDirection: "row-reverse" },
-        ]}
-      >
+      <View style={[styles.card, isRTL && { flexDirection: "row-reverse" }]}>
         <View style={styles.item}>
           <Ionicons
             name="calendar-outline"
@@ -36,8 +31,7 @@ const UserInfoCard = memo<UserInfoCardProps>(
             color={COLORS.primary}
           />
           <Text style={styles.infoText}>
-            {t("profile.since", { defaultValue: "Since" })}{" "}
-            {sinceShown}
+            {t("profile.since", { defaultValue: "Since" })} {sinceShown}
           </Text>
         </View>
 
@@ -54,7 +48,7 @@ const UserInfoCard = memo<UserInfoCardProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 UserInfoCard.displayName = "UserInfoCard";

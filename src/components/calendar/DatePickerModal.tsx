@@ -1,4 +1,11 @@
-import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  memo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -53,16 +60,20 @@ const DatePickerModal = memo<DatePickerModalProps>(
   ({ visible, onClose, onDateSelect, title, initialDate }) => {
     const { t, isRTL } = useLocalization();
     const currentDate = useMemo(() => initialDate || new Date(), [initialDate]);
-    
+
     // Get translated month names
     const months = useMemo(
       () => MONTH_KEYS.map((key) => t(`listings.calendar.months.${key}`)),
-      [t]
+      [t],
     );
-    
+
     // State
-    const [selectedMonth, setSelectedMonth] = useState(() => currentDate.getMonth());
-    const [selectedYear, setSelectedYear] = useState(() => currentDate.getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState(() =>
+      currentDate.getMonth(),
+    );
+    const [selectedYear, setSelectedYear] = useState(() =>
+      currentDate.getFullYear(),
+    );
     const [selectedDay, setSelectedDay] = useState(() => currentDate.getDate());
 
     // Refs for initial scroll position
@@ -76,20 +87,20 @@ const DatePickerModal = memo<DatePickerModalProps>(
       const startYear = 1900;
       return Array.from(
         { length: currentYear - startYear + 1 },
-        (_, i) => startYear + i
+        (_, i) => startYear + i,
       );
     }, []);
 
     // Calculate days in selected month
     const daysInMonth = useMemo(
       () => new Date(selectedYear, selectedMonth + 1, 0).getDate(),
-      [selectedYear, selectedMonth]
+      [selectedYear, selectedMonth],
     );
 
     // Generate days array
     const days = useMemo(
       () => Array.from({ length: daysInMonth }, (_, i) => i + 1),
-      [daysInMonth]
+      [daysInMonth],
     );
 
     // Update selected day when month/year changes
@@ -143,19 +154,29 @@ const DatePickerModal = memo<DatePickerModalProps>(
     const rtlStyles = useMemo(
       () => ({
         pickerHeader: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         pickerHeaderText: {
-          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+          textAlign: (isRTL ? "right" : "center") as
+            | "left"
+            | "right"
+            | "center",
         },
         pickerContent: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         pickerItemText: {
-          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+          textAlign: (isRTL ? "right" : "center") as
+            | "left"
+            | "right"
+            | "center",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     // Sync state from scroll position when user stops scrolling (same pattern as BookingDateModal)
@@ -165,7 +186,7 @@ const DatePickerModal = memo<DatePickerModalProps>(
         const clamped = Math.max(0, Math.min(index, itemCount - 1));
         onSelect(clamped);
       },
-      []
+      [],
     );
 
     const renderPickerColumn = useCallback(
@@ -173,7 +194,7 @@ const DatePickerModal = memo<DatePickerModalProps>(
         items: (string | number)[],
         selectedIndex: number,
         onSelect: (index: number) => void,
-        scrollRef: React.RefObject<ScrollView | null>
+        scrollRef: React.RefObject<ScrollView | null>,
       ) => (
         <View style={styles.pickerColumn}>
           <ScrollView
@@ -194,7 +215,10 @@ const DatePickerModal = memo<DatePickerModalProps>(
             {items.map((item, index) => {
               const isSelected = index === selectedIndex;
               return (
-                <View key={index} style={[styles.pickerItem, { height: ITEM_HEIGHT }]}>
+                <View
+                  key={index}
+                  style={[styles.pickerItem, { height: ITEM_HEIGHT }]}
+                >
                   <Text
                     style={[
                       styles.pickerItemText,
@@ -211,7 +235,7 @@ const DatePickerModal = memo<DatePickerModalProps>(
           </ScrollView>
         </View>
       ),
-      [onScrollEnd, rtlStyles]
+      [onScrollEnd, rtlStyles],
     );
 
     const handleOk = useCallback(() => {
@@ -223,7 +247,7 @@ const DatePickerModal = memo<DatePickerModalProps>(
 
     const yearIndex = useMemo(
       () => years.indexOf(selectedYear),
-      [years, selectedYear]
+      [years, selectedYear],
     );
 
     return (
@@ -242,19 +266,19 @@ const DatePickerModal = memo<DatePickerModalProps>(
           <View style={styles.pickerContainer}>
             <View style={[styles.pickerHeader, rtlStyles.pickerHeader]}>
               <TouchableOpacity onPress={onClose} style={styles.backButton}>
-                <Ionicons 
-                  name={isRTL ? "arrow-forward" : "arrow-back"} 
-                  size={wp(6)} 
-                  color={COLORS.primary} 
+                <Ionicons
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
+                  size={wp(6)}
+                  color={COLORS.primary}
                 />
               </TouchableOpacity>
-              <Text style={[styles.pickerHeaderText, rtlStyles.pickerHeaderText]}>
+              <Text
+                style={[styles.pickerHeaderText, rtlStyles.pickerHeaderText]}
+              >
                 {title}
               </Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
-                <Text style={styles.okButtonText}>
-                  {t("common.confirm")}
-                </Text>
+                <Text style={styles.okButtonText}>{t("common.confirm")}</Text>
               </TouchableOpacity>
             </View>
 
@@ -263,26 +287,26 @@ const DatePickerModal = memo<DatePickerModalProps>(
                 days,
                 Math.min(selectedDay - 1, days.length - 1),
                 (index) => setSelectedDay(index + 1),
-                dayScrollRef
+                dayScrollRef,
               )}
               {renderPickerColumn(
                 months,
                 selectedMonth,
                 setSelectedMonth,
-                monthScrollRef
+                monthScrollRef,
               )}
               {renderPickerColumn(
                 years,
                 yearIndex >= 0 ? yearIndex : 0,
                 (index) => setSelectedYear(years[index]),
-                yearScrollRef
+                yearScrollRef,
               )}
             </View>
           </View>
         </View>
       </Modal>
     );
-  }
+  },
 );
 
 DatePickerModal.displayName = "DatePickerModal";

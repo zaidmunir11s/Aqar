@@ -1,10 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -13,7 +8,11 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS } from "../../constants";
-import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
+import {
+  useLocalization,
+  useKeyboardHeight,
+  useTabNavigation,
+} from "../../hooks";
 import { getSaudiPhoneValidationError } from "../../utils/validation";
 import type { AuthStackParamList } from "../../navigation/types";
 
@@ -29,8 +28,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
 
   const phoneErrorKey = getSaudiPhoneValidationError(phoneNumber);
   const phoneError = phoneErrorKey ? t(phoneErrorKey) : "";
-  const isFormValid =
-    phoneNumber.trim().length > 0 && phoneErrorKey === "";
+  const isFormValid = phoneNumber.trim().length > 0 && phoneErrorKey === "";
 
   const handlePhoneChange = useCallback((text: string) => {
     setPhoneNumber(text.replace(/[^0-9]/g, ""));
@@ -67,12 +65,12 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
         textAlign: "left" as "left", // Always left-aligned so cursor starts from left (after prefix)
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: hp(3) + keyboardHeight }],
-    [keyboardHeight]
+    [keyboardHeight],
   );
 
   return (
@@ -88,7 +86,9 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, rtlStyles.title]}>{t("auth.forgotPassword")}</Text>
+          <Text style={[styles.title, rtlStyles.title]}>
+            {t("auth.forgotPassword")}
+          </Text>
           <Text style={[styles.subtitle, rtlStyles.subtitle]}>
             {t("auth.enterMobileNumber")}
           </Text>
@@ -153,4 +153,3 @@ const styles = StyleSheet.create({
     marginTop: hp(2),
   },
 });
-

@@ -27,18 +27,21 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
   const { t, isRTL } = useLocalization();
 
   // Helper function to format time with translated AM/PM
-  const formatTime = useCallback((timeString: string): string => {
-    // Parse time string like "04:00 pm" or "12:00 am"
-    const match = timeString.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
-    if (!match) return timeString;
-    
-    const [, hours, minutes, period] = match;
-    const periodLower = period.toLowerCase();
-    const amText = t("listings.time.am");
-    const pmText = t("listings.time.pm");
-    
-    return `${hours}:${minutes} ${periodLower === "am" ? amText : pmText}`;
-  }, [t]);
+  const formatTime = useCallback(
+    (timeString: string): string => {
+      // Parse time string like "04:00 pm" or "12:00 am"
+      const match = timeString.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+      if (!match) return timeString;
+
+      const [, hours, minutes, period] = match;
+      const periodLower = period.toLowerCase();
+      const amText = t("listings.time.am");
+      const pmText = t("listings.time.pm");
+
+      return `${hours}:${minutes} ${periodLower === "am" ? amText : pmText}`;
+    },
+    [t],
+  );
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -61,13 +64,13 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Get rules based on booking type
   const getRules = (): RuleItem[] => {
     const { bookingType } = property;
-    
+
     // Default values - can be extended to use property data when available
     switch (bookingType) {
       case "monthly":
@@ -141,21 +144,20 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.unitRules.title")}</Text>
+      <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+        {t("listings.unitRules.title")}
+      </Text>
       <View style={styles.rulesList}>
         {rules.map((rule, index) => {
           const isFirst = index === 0;
           const isLast = index === rules.length - 1;
-          
+
           // Use InfoItem for rules with icons
           if (rule.icon) {
             return (
               <View
                 key={rule.label}
-                style={[
-                  isFirst && styles.firstRow,
-                  isLast && styles.lastRow,
-                ]}
+                style={[isFirst && styles.firstRow, isLast && styles.lastRow]}
               >
                 <InfoItem
                   icon={rule.icon}
@@ -181,10 +183,14 @@ const UnitRules = memo<UnitRulesProps>(({ property }) => {
               ]}
             >
               <View style={[styles.ruleLeftSection, rtlStyles.ruleLeftSection]}>
-                <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>{rule.label}</Text>
+                <Text style={[styles.ruleLabel, rtlStyles.ruleLabel]}>
+                  {rule.label}
+                </Text>
               </View>
               <View style={styles.ruleValueContainer}>
-                <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>{rule.value}</Text>
+                <Text style={[styles.ruleValue, rtlStyles.ruleValue]}>
+                  {rule.value}
+                </Text>
               </View>
             </View>
           );
@@ -249,4 +255,3 @@ const styles = StyleSheet.create({
 });
 
 export default UnitRules;
-

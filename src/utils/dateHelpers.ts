@@ -41,7 +41,7 @@ export function formatDateRange(
   startDateStr: string,
   endDateStr: string,
   t?: (key: string) => string,
-  isRTL?: boolean
+  isRTL?: boolean,
 ): string {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
@@ -50,9 +50,9 @@ export function formatDateRange(
   const endDay = end.getDate();
   const startMonthIndex = start.getMonth();
   const endMonthIndex = end.getMonth();
-  
+
   // Use translated month names if translation function is provided
-  const startMonth = t 
+  const startMonth = t
     ? t(`listings.calendar.months.${MONTH_KEYS[startMonthIndex]}`)
     : MONTH_NAMES[startMonthIndex];
   const endMonth = t
@@ -86,7 +86,7 @@ export function formatDateRange(
  */
 export function calculateDays(
   startDateStr: string,
-  endDateStr: string
+  endDateStr: string,
 ): number {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);

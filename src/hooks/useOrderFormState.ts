@@ -1,5 +1,8 @@
 import { useState } from "react";
-import type { ApartmentRentTenant, RentPaymentFrequency } from "../constants/orderFormOptions";
+import type {
+  ApartmentRentTenant,
+  RentPaymentFrequency,
+} from "../constants/orderFormOptions";
 
 /**
  * Centralized state management for order form
@@ -17,9 +20,12 @@ export function useOrderFormState() {
   const [toPrice, setToPrice] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
   const [priceTo, setPriceTo] = useState("");
-  const [apartmentRentTenant, setApartmentRentTenant] = useState<ApartmentRentTenant>(null);
+  const [apartmentRentTenant, setApartmentRentTenant] =
+    useState<ApartmentRentTenant>(null);
   const [selectedBedroom, setSelectedBedroom] = useState<string | null>(null);
-  const [selectedLivingRoom, setSelectedLivingRoom] = useState<string | null>(null);
+  const [selectedLivingRoom, setSelectedLivingRoom] = useState<string | null>(
+    null,
+  );
   const [selectedWc, setSelectedWc] = useState<string | null>(null);
   const [floor, setFloor] = useState<string>("");
   const [showFloorModal, setShowFloorModal] = useState(false);
@@ -36,15 +42,20 @@ export function useOrderFormState() {
   // Villa for sale
   const [villaPriceFrom, setVillaPriceFrom] = useState("");
   const [villaPriceTo, setVillaPriceTo] = useState("");
-  const [selectedApartment, setSelectedApartment] = useState<string | null>(null);
+  const [selectedApartment, setSelectedApartment] = useState<string | null>(
+    null,
+  );
   const [streetDirection, setStreetDirection] = useState<string>("");
-  const [showStreetDirectionModal, setShowStreetDirectionModal] = useState(false);
+  const [showStreetDirectionModal, setShowStreetDirectionModal] =
+    useState(false);
   const [areaFrom, setAreaFrom] = useState("");
   const [areaTo, setAreaTo] = useState("");
   const [streetWidth, setStreetWidth] = useState<string>("");
   const [showStreetWidthModal, setShowStreetWidthModal] = useState(false);
   const [stairs, setStairs] = useState(true);
-  const [selectedVillaType, setSelectedVillaType] = useState<string | null>(null);
+  const [selectedVillaType, setSelectedVillaType] = useState<string | null>(
+    null,
+  );
   const [driverRoom, setDriverRoom] = useState(true);
   const [maidRoom, setMaidRoom] = useState(true);
   const [pool, setPool] = useState(true);
@@ -69,18 +80,27 @@ export function useOrderFormState() {
   const [apartmentSalePriceTo, setApartmentSalePriceTo] = useState("");
   const [apartmentSaleAreaFrom, setApartmentSaleAreaFrom] = useState("");
   const [apartmentSaleAreaTo, setApartmentSaleAreaTo] = useState("");
-  const [apartmentSaleCarEntrance, setApartmentSaleCarEntrance] = useState(true);
-  const [apartmentSaleAirConditioned, setApartmentSaleAirConditioned] = useState(true);
+  const [apartmentSaleCarEntrance, setApartmentSaleCarEntrance] =
+    useState(true);
+  const [apartmentSaleAirConditioned, setApartmentSaleAirConditioned] =
+    useState(true);
   const [apartmentSaleInVilla, setApartmentSaleInVilla] = useState(true);
-  const [apartmentSaleTwoEntrances, setApartmentSaleTwoEntrances] = useState(true);
-  const [apartmentSaleSpecialEntrances, setApartmentSaleSpecialEntrances] = useState(true);
+  const [apartmentSaleTwoEntrances, setApartmentSaleTwoEntrances] =
+    useState(true);
+  const [apartmentSaleSpecialEntrances, setApartmentSaleSpecialEntrances] =
+    useState(true);
 
   // Building for sale
   const [buildingPriceFrom, setBuildingPriceFrom] = useState("");
   const [buildingPriceTo, setBuildingPriceTo] = useState("");
-  const [buildingApartments, setBuildingApartments] = useState<string | null>(null);
-  const [selectedBuildingType, setSelectedBuildingType] = useState<string | null>(null);
-  const [buildingStreetDirection, setBuildingStreetDirection] = useState<string>("");
+  const [buildingApartments, setBuildingApartments] = useState<string | null>(
+    null,
+  );
+  const [selectedBuildingType, setSelectedBuildingType] = useState<
+    string | null
+  >(null);
+  const [buildingStreetDirection, setBuildingStreetDirection] =
+    useState<string>("");
   const [stores, setStores] = useState<string>("");
   const [showStoresModal, setShowStoresModal] = useState(false);
   const [buildingAreaFrom, setBuildingAreaFrom] = useState("");
@@ -89,10 +109,12 @@ export function useOrderFormState() {
   // Small house for sale
   const [smallHousePriceFrom, setSmallHousePriceFrom] = useState("");
   const [smallHousePriceTo, setSmallHousePriceTo] = useState("");
-  const [smallHouseStreetDirection, setSmallHouseStreetDirection] = useState<string>("");
+  const [smallHouseStreetDirection, setSmallHouseStreetDirection] =
+    useState<string>("");
   const [smallHouseAreaFrom, setSmallHouseAreaFrom] = useState("");
   const [smallHouseAreaTo, setSmallHouseAreaTo] = useState("");
-  const [smallHouseStreetWidth, setSmallHouseStreetWidth] = useState<string>("");
+  const [smallHouseStreetWidth, setSmallHouseStreetWidth] =
+    useState<string>("");
   const [smallHouseFurnished, setSmallHouseFurnished] = useState(true);
   const [smallHouseTent, setSmallHouseTent] = useState(true);
 
@@ -101,7 +123,8 @@ export function useOrderFormState() {
   const [loungeSalePriceTo, setLoungeSalePriceTo] = useState("");
   const [loungeSaleAreaFrom, setLoungeSaleAreaFrom] = useState("");
   const [loungeSaleAreaTo, setLoungeSaleAreaTo] = useState("");
-  const [loungeSaleStreetWidth, setLoungeSaleStreetWidth] = useState<string>("");
+  const [loungeSaleStreetWidth, setLoungeSaleStreetWidth] =
+    useState<string>("");
 
   // Farm for sale
   const [farmPriceFrom, setFarmPriceFrom] = useState("");
@@ -123,10 +146,12 @@ export function useOrderFormState() {
   const [floorSaleAreaTo, setFloorSaleAreaTo] = useState("");
 
   // Villa for rent
-  const [villaRentRentPeriod, setVillaRentRentPeriod] = useState<RentPaymentFrequency>(null);
+  const [villaRentRentPeriod, setVillaRentRentPeriod] =
+    useState<RentPaymentFrequency>(null);
   const [villaRentPriceFrom, setVillaRentPriceFrom] = useState("");
   const [villaRentPriceTo, setVillaRentPriceTo] = useState("");
-  const [villaRentStreetDirection, setVillaRentStreetDirection] = useState<string>("");
+  const [villaRentStreetDirection, setVillaRentStreetDirection] =
+    useState<string>("");
   const [villaRentAreaFrom, setVillaRentAreaFrom] = useState("");
   const [villaRentAreaTo, setVillaRentAreaTo] = useState("");
   const [villaRentStreetWidth, setVillaRentStreetWidth] = useState<string>("");
@@ -138,11 +163,14 @@ export function useOrderFormState() {
   const [villaRentKitchen, setVillaRentKitchen] = useState(true);
   const [villaRentCarEntrance, setVillaRentCarEntrance] = useState(true);
   const [villaRentBasement, setVillaRentBasement] = useState(true);
-  const [villaRentVillaType, setVillaRentVillaType] = useState<string | null>(null);
+  const [villaRentVillaType, setVillaRentVillaType] = useState<string | null>(
+    null,
+  );
   const [villaRentAirConditioned, setVillaRentAirConditioned] = useState(true);
 
   // Big flat for rent
-  const [bigFlatRentPeriod, setBigFlatRentPeriod] = useState<RentPaymentFrequency>(null);
+  const [bigFlatRentPeriod, setBigFlatRentPeriod] =
+    useState<RentPaymentFrequency>(null);
   const [bigFlatPriceFrom, setBigFlatPriceFrom] = useState("");
   const [bigFlatPriceTo, setBigFlatPriceTo] = useState("");
   const [bigFlatAreaFrom, setBigFlatAreaFrom] = useState("");
@@ -154,14 +182,16 @@ export function useOrderFormState() {
   const [bigFlatSpecialEntrances, setBigFlatSpecialEntrances] = useState(true);
 
   // Lounge for rent
-  const [loungeRentRentPeriod, setLoungeRentRentPeriod] = useState<RentPaymentFrequency>(null);
+  const [loungeRentRentPeriod, setLoungeRentRentPeriod] =
+    useState<RentPaymentFrequency>(null);
   const [loungeRentPriceFrom, setLoungeRentPriceFrom] = useState("");
   const [loungeRentPriceTo, setLoungeRentPriceTo] = useState("");
   const [loungeRentAreaFrom, setLoungeRentAreaFrom] = useState("");
   const [loungeRentAreaTo, setLoungeRentAreaTo] = useState("");
   const [loungeRentPool, setLoungeRentPool] = useState(true);
   const [loungeRentFootballPitch, setLoungeRentFootballPitch] = useState(true);
-  const [loungeRentVolleyballCourt, setLoungeRentVolleyballCourt] = useState(true);
+  const [loungeRentVolleyballCourt, setLoungeRentVolleyballCourt] =
+    useState(true);
   const [loungeRentTent, setLoungeRentTent] = useState(true);
   const [loungeRentKitchen, setLoungeRentKitchen] = useState(true);
   const [loungeRentPlayground, setLoungeRentPlayground] = useState(true);
@@ -170,10 +200,12 @@ export function useOrderFormState() {
   // Small house for rent
   const [smallHouseRentPriceFrom, setSmallHouseRentPriceFrom] = useState("");
   const [smallHouseRentPriceTo, setSmallHouseRentPriceTo] = useState("");
-  const [smallHouseRentStreetDirection, setSmallHouseRentStreetDirection] = useState<string>("");
+  const [smallHouseRentStreetDirection, setSmallHouseRentStreetDirection] =
+    useState<string>("");
   const [smallHouseRentAreaFrom, setSmallHouseRentAreaFrom] = useState("");
   const [smallHouseRentAreaTo, setSmallHouseRentAreaTo] = useState("");
-  const [smallHouseRentStreetWidth, setSmallHouseRentStreetWidth] = useState<string>("");
+  const [smallHouseRentStreetWidth, setSmallHouseRentStreetWidth] =
+    useState<string>("");
   const [smallHouseRentFurnished, setSmallHouseRentFurnished] = useState(true);
   const [smallHouseRentTent, setSmallHouseRentTent] = useState(true);
   const [smallHouseRentKitchen, setSmallHouseRentKitchen] = useState(true);
@@ -188,23 +220,33 @@ export function useOrderFormState() {
   // Building for rent
   const [buildingRentPriceFrom, setBuildingRentPriceFrom] = useState("");
   const [buildingRentPriceTo, setBuildingRentPriceTo] = useState("");
-  const [buildingRentApartments, setBuildingRentApartments] = useState<string | null>(null);
-  const [selectedBuildingRentType, setSelectedBuildingRentType] = useState<string | null>(null);
-  const [buildingRentStreetDirection, setBuildingRentStreetDirection] = useState<string>("");
+  const [buildingRentApartments, setBuildingRentApartments] = useState<
+    string | null
+  >(null);
+  const [selectedBuildingRentType, setSelectedBuildingRentType] = useState<
+    string | null
+  >(null);
+  const [buildingRentStreetDirection, setBuildingRentStreetDirection] =
+    useState<string>("");
   const [buildingRentStores, setBuildingRentStores] = useState<string>("");
   const [buildingRentAreaFrom, setBuildingRentAreaFrom] = useState("");
   const [buildingRentAreaTo, setBuildingRentAreaTo] = useState("");
-  const [buildingRentStreetWidth, setBuildingRentStreetWidth] = useState<string>("");
+  const [buildingRentStreetWidth, setBuildingRentStreetWidth] =
+    useState<string>("");
 
   // Land for rent
-  const [selectedLandRentType, setSelectedLandRentType] = useState<string | null>(null);
-  const [landRentStreetDirection, setLandRentStreetDirection] = useState<string>("");
+  const [selectedLandRentType, setSelectedLandRentType] = useState<
+    string | null
+  >(null);
+  const [landRentStreetDirection, setLandRentStreetDirection] =
+    useState<string>("");
   const [landRentAreaFrom, setLandRentAreaFrom] = useState("");
   const [landRentAreaTo, setLandRentAreaTo] = useState("");
   const [landRentStreetWidth, setLandRentStreetWidth] = useState<string>("");
 
   // Room for rent
-  const [roomRentRentPeriod, setRoomRentRentPeriod] = useState<RentPaymentFrequency>(null);
+  const [roomRentRentPeriod, setRoomRentRentPeriod] =
+    useState<RentPaymentFrequency>(null);
   const [roomRentPriceFrom, setRoomRentPriceFrom] = useState("");
   const [roomRentPriceTo, setRoomRentPriceTo] = useState("");
   const [roomRentKitchen, setRoomRentKitchen] = useState(true);
@@ -214,11 +256,13 @@ export function useOrderFormState() {
   const [officeRentPriceTo, setOfficeRentPriceTo] = useState("");
   const [officeRentAreaFrom, setOfficeRentAreaFrom] = useState("");
   const [officeRentAreaTo, setOfficeRentAreaTo] = useState("");
-  const [officeRentStreetWidth, setOfficeRentStreetWidth] = useState<string>("");
+  const [officeRentStreetWidth, setOfficeRentStreetWidth] =
+    useState<string>("");
   const [officeRentFurnished, setOfficeRentFurnished] = useState(true);
 
   // Tent for rent
-  const [tentRentRentPeriod, setTentRentRentPeriod] = useState<RentPaymentFrequency>(null);
+  const [tentRentRentPeriod, setTentRentRentPeriod] =
+    useState<RentPaymentFrequency>(null);
   const [tentRentFamilySection, setTentRentFamilySection] = useState(true);
 
   // Warehouse for rent
@@ -226,17 +270,20 @@ export function useOrderFormState() {
   const [warehouseRentPriceTo, setWarehouseRentPriceTo] = useState("");
   const [warehouseRentAreaFrom, setWarehouseRentAreaFrom] = useState("");
   const [warehouseRentAreaTo, setWarehouseRentAreaTo] = useState("");
-  const [warehouseRentStreetWidth, setWarehouseRentStreetWidth] = useState<string>("");
+  const [warehouseRentStreetWidth, setWarehouseRentStreetWidth] =
+    useState<string>("");
 
   // Chalet for rent
-  const [chaletRentRentPeriod, setChaletRentRentPeriod] = useState<RentPaymentFrequency>(null);
+  const [chaletRentRentPeriod, setChaletRentRentPeriod] =
+    useState<RentPaymentFrequency>(null);
   const [chaletRentPriceFrom, setChaletRentPriceFrom] = useState("");
   const [chaletRentPriceTo, setChaletRentPriceTo] = useState("");
   const [chaletRentAreaFrom, setChaletRentAreaFrom] = useState("");
   const [chaletRentAreaTo, setChaletRentAreaTo] = useState("");
   const [chaletRentPool, setChaletRentPool] = useState(true);
   const [chaletRentFootballPitch, setChaletRentFootballPitch] = useState(true);
-  const [chaletRentVolleyballCourt, setChaletRentVolleyballCourt] = useState(true);
+  const [chaletRentVolleyballCourt, setChaletRentVolleyballCourt] =
+    useState(true);
   const [chaletRentTent, setChaletRentTent] = useState(true);
   const [chaletRentKitchen, setChaletRentKitchen] = useState(true);
   const [chaletRentPlayground, setChaletRentPlayground] = useState(true);
@@ -663,4 +710,3 @@ export function useOrderFormState() {
     setOtherAreaTo,
   };
 }
-

@@ -1,5 +1,13 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Platform, ViewStyle, TextStyle } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -42,16 +50,28 @@ const AccountManagementSection = memo<AccountManagementSectionProps>(
         menuItem: { flexDirection: isRTL ? "row-reverse" : "row" } as ViewStyle,
         menuItemText: { textAlign: isRTL ? "right" : "left" } as TextStyle,
         logoutText: { textAlign: isRTL ? "right" : "left" } as TextStyle,
-        chevron: { marginLeft: isRTL ? 0 : wp(2), marginRight: isRTL ? wp(2) : 0 },
+        chevron: {
+          marginLeft: isRTL ? 0 : wp(2),
+          marginRight: isRTL ? wp(2) : 0,
+        },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
       <View style={styles.container}>
-        <SectionHeader title={t("profile.accountManagement", { defaultValue: "Account Management" })} iconName="person" />
+        <SectionHeader
+          title={t("profile.accountManagement", {
+            defaultValue: "Account Management",
+          })}
+          iconName="person"
+        />
         <View style={styles.card}>
-          <TouchableOpacity style={[styles.menuItem, rtlStyles.menuItem]} onPress={onUpdateProfilePress} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.menuItem, rtlStyles.menuItem]}
+            onPress={onUpdateProfilePress}
+            activeOpacity={0.7}
+          >
             <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
               {t("profile.updateProfile", { defaultValue: "Update profile" })}
             </Text>
@@ -72,7 +92,9 @@ const AccountManagementSection = memo<AccountManagementSectionProps>(
                 activeOpacity={0.7}
               >
                 <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
-                  {t("profile.changePassword", { defaultValue: "Change password" })}
+                  {t("profile.changePassword", {
+                    defaultValue: "Change password",
+                  })}
                 </Text>
                 <Ionicons
                   name={isRTL ? "chevron-back" : "chevron-forward"}
@@ -94,8 +116,12 @@ const AccountManagementSection = memo<AccountManagementSectionProps>(
               >
                 <Text style={[styles.menuItemText, rtlStyles.menuItemText]}>
                   {phoneNumberMissing
-                    ? t("profile.addPhoneNumber", { defaultValue: "Add phone number" })
-                    : t("profile.changePhoneNumber", { defaultValue: "Change phone number" })}
+                    ? t("profile.addPhoneNumber", {
+                        defaultValue: "Add phone number",
+                      })
+                    : t("profile.changePhoneNumber", {
+                        defaultValue: "Change phone number",
+                      })}
                 </Text>
                 <Ionicons
                   name={isRTL ? "chevron-back" : "chevron-forward"}
@@ -108,7 +134,11 @@ const AccountManagementSection = memo<AccountManagementSectionProps>(
           ) : null}
 
           <View style={styles.separator} />
-          <TouchableOpacity style={[styles.menuItem, rtlStyles.menuItem]} onPress={onLogoutPress} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.menuItem, rtlStyles.menuItem]}
+            onPress={onLogoutPress}
+            activeOpacity={0.7}
+          >
             <Text style={[styles.logoutText, rtlStyles.logoutText]}>
               {t("auth.logout", { defaultValue: "Log out" })}
             </Text>
@@ -139,7 +169,7 @@ const AccountManagementSection = memo<AccountManagementSectionProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 AccountManagementSection.displayName = "AccountManagementSection";

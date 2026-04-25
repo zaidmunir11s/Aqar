@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   StyleSheet,
@@ -14,7 +20,11 @@ import {
   Share,
   TextInput as RNTextInput,
 } from "react-native";
-import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -41,7 +51,10 @@ import {
   useUpdateListingMutation,
   useDeleteListingMutation,
 } from "@/redux/api";
-import { useHideAdvertiserMutation, useReportAdvertiserMutation } from "@/redux/api/userApi";
+import {
+  useHideAdvertiserMutation,
+  useReportAdvertiserMutation,
+} from "@/redux/api/userApi";
 import { mapApiListingToProperty } from "@/utils/apiListingMapper";
 import { registerApiListingProperties } from "@/utils/propertyLookup";
 import { useIsAuthenticated } from "@/context/auth-context";
@@ -76,28 +89,36 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   const { data: myListingsData } = useGetMyListingsQuery(undefined, {
     skip: !isAuthenticated,
   });
-  const [updateListing, { isLoading: isUpdatingListing }] = useUpdateListingMutation();
-  const [deleteListing, { isLoading: isDeletingListing }] = useDeleteListingMutation();
+  const [updateListing, { isLoading: isUpdatingListing }] =
+    useUpdateListingMutation();
+  const [deleteListing, { isLoading: isDeletingListing }] =
+    useDeleteListingMutation();
 
   // When opened from a listing (advertiser row), we want to show that user's profile + ads,
   // even if the viewer isn't authenticated (or /me hasn't loaded yet).
-  const isViewingOtherUser = Boolean(profileUserId) && profileUserId !== meData?.user?.id;
+  const isViewingOtherUser =
+    Boolean(profileUserId) && profileUserId !== meData?.user?.id;
   const isViewingMyProfile = !isViewingOtherUser;
 
-  const [hideAdvertiser, { isLoading: isHidingAdvertiser }] = useHideAdvertiserMutation();
-  const [reportAdvertiser, { isLoading: isReportingAdvertiser }] = useReportAdvertiserMutation();
+  const [hideAdvertiser, { isLoading: isHidingAdvertiser }] =
+    useHideAdvertiserMutation();
+  const [reportAdvertiser, { isLoading: isReportingAdvertiser }] =
+    useReportAdvertiserMutation();
 
   const { data: publicUserData } = useGetPublicUserByIdQuery(profileUserId!, {
     skip: !profileUserId,
   });
-  const { data: publicUserListingsData } = useGetPublicUserListingsQuery(profileUserId!, {
-    skip: !profileUserId,
-  });
+  const { data: publicUserListingsData } = useGetPublicUserListingsQuery(
+    profileUserId!,
+    {
+      skip: !profileUserId,
+    },
+  );
 
   const apiMyProperties = useMemo(() => {
     const rows = isViewingOtherUser
-      ? publicUserListingsData?.listings ?? []
-      : myListingsData?.listings ?? [];
+      ? (publicUserListingsData?.listings ?? [])
+      : (myListingsData?.listings ?? []);
     return rows.map(mapApiListingToProperty);
   }, [isViewingOtherUser, myListingsData, publicUserListingsData]);
 
@@ -112,7 +133,8 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   const [userPhoneDigits, setUserPhoneDigits] = useState<string>("");
   const [listTick, setListTick] = useState(0);
   const [adsTab, setAdsTab] = useState<ProfileAdsTabKey>("current");
-  const [listingTypeFilter, setListingTypeFilter] = useState<ListingTypeFilter>(null);
+  const [listingTypeFilter, setListingTypeFilter] =
+    useState<ListingTypeFilter>(null);
   const [sinceDisplay, setSinceDisplay] = useState<string>("");
   const [lastSeenDisplay, setLastSeenDisplay] = useState<string>("");
   const [hideConfirmVisible, setHideConfirmVisible] = useState(false);
@@ -134,11 +156,16 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   }, []);
 
   const showFeedback = useCallback(
-    (title: string, message: string, variant: FeedbackVariant, onClose?: () => void) => {
+    (
+      title: string,
+      message: string,
+      variant: FeedbackVariant,
+      onClose?: () => void,
+    ) => {
       feedbackOnCloseRef.current = onClose ?? null;
       setFeedback({ visible: true, title, message, variant });
     },
-    []
+    [],
   );
 
   useFocusEffect(
@@ -151,10 +178,12 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
             const name =
               u && (u.firstName || u.lastName)
                 ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()
-                : params.userName?.trim() ?? "";
+                : (params.userName?.trim() ?? "");
             if (!active) return;
             setDisplayName(name);
-            setAvatarUri(u?.profileImage?.trim?.() ? u.profileImage.trim() : null);
+            setAvatarUri(
+              u?.profileImage?.trim?.() ? u.profileImage.trim() : null,
+            );
             setUserPhoneDigits("");
             setSinceDisplay(t("listings.notAvailable"));
             setLastSeenDisplay(t("profile.now"));
@@ -195,7 +224,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
 
           const nowLabel = t("profile.now");
           if (meta && meta.phoneDigits === phoneDigits) {
-            setSinceDisplay(formatProfileSinceDate(meta.createdAtMs, i18n.language));
+            setSinceDisplay(
+              formatProfileSinceDate(meta.createdAtMs, i18n.language),
+            );
           } else {
             setSinceDisplay(t("listings.notAvailable"));
           }
@@ -218,16 +249,25 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
       return () => {
         active = false;
       };
-    }, [t, i18n.language, meData?.user, isViewingOtherUser, publicUserData?.user, params.userName])
+    }, [
+      t,
+      i18n.language,
+      meData?.user,
+      isViewingOtherUser,
+      publicUserData?.user,
+      params.userName,
+    ]),
   );
 
   const { current, archived } = useMemo(() => {
     const local = getUserProfilePublishedAds(userPhoneDigits || null);
     const apiArchived = apiMyProperties.filter(
-      (p) => String((p as any)?.listingStatus ?? "").toUpperCase() === "ARCHIVED"
+      (p) =>
+        String((p as any)?.listingStatus ?? "").toUpperCase() === "ARCHIVED",
     );
     const apiCurrent = apiMyProperties.filter(
-      (p) => String((p as any)?.listingStatus ?? "").toUpperCase() !== "ARCHIVED"
+      (p) =>
+        String((p as any)?.listingStatus ?? "").toUpperCase() !== "ARCHIVED",
     );
 
     return {
@@ -252,7 +292,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   const handleSharePress = useCallback(async () => {
     const name = displayName.trim();
     const phone = userPhoneDigits.trim();
-    const bio = (isViewingOtherUser ? publicUserData?.user?.bio : meData?.user?.bio) ?? "";
+    const bio =
+      (isViewingOtherUser ? publicUserData?.user?.bio : meData?.user?.bio) ??
+      "";
 
     const lines: string[] = [];
     if (name) lines.push(name);
@@ -270,12 +312,23 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
     } catch {
       // dismissed
     }
-  }, [displayName, isViewingOtherUser, meData?.user?.bio, publicUserData?.user?.bio, t, userPhoneDigits]);
+  }, [
+    displayName,
+    isViewingOtherUser,
+    meData?.user?.bio,
+    publicUserData?.user?.bio,
+    t,
+    userPhoneDigits,
+  ]);
 
   const handleHideAdvertiserPress = useCallback(() => {
     if (!profileUserId) return;
     if (!isAuthenticated) {
-      showFeedback(t("auth.loginRequiredTitle"), t("auth.loginRequiredMessage"), "error");
+      showFeedback(
+        t("auth.loginRequiredTitle"),
+        t("auth.loginRequiredMessage"),
+        "error",
+      );
       return;
     }
 
@@ -294,15 +347,22 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
       [
         { key: "SPAM" as const, label: t("profile.reportReasons.spam") },
         { key: "FRAUD" as const, label: t("profile.reportReasons.fraud") },
-        { key: "HARASSMENT" as const, label: t("profile.reportReasons.harassment") },
-        { key: "INAPPROPRIATE_CONTENT" as const, label: t("profile.reportReasons.inappropriate") },
+        {
+          key: "HARASSMENT" as const,
+          label: t("profile.reportReasons.harassment"),
+        },
+        {
+          key: "INAPPROPRIATE_CONTENT" as const,
+          label: t("profile.reportReasons.inappropriate"),
+        },
         { key: "OTHER" as const, label: t("profile.reportReasons.other") },
       ] as const,
-    [t]
+    [t],
   );
 
   const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [selectedReportReason, setSelectedReportReason] = useState<ReportReason | null>(null);
+  const [selectedReportReason, setSelectedReportReason] =
+    useState<ReportReason | null>(null);
   const [reportFreeText, setReportFreeText] = useState("");
 
   const closeReportModal = useCallback(() => {
@@ -313,7 +373,11 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   const openReportModal = useCallback(() => {
     if (!profileUserId) return;
     if (!isAuthenticated) {
-      showFeedback(t("auth.loginRequiredTitle"), t("auth.loginRequiredMessage"), "error");
+      showFeedback(
+        t("auth.loginRequiredTitle"),
+        t("auth.loginRequiredMessage"),
+        "error",
+      );
       return;
     }
     setSelectedReportReason(null);
@@ -324,7 +388,11 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
   const submitAdvertiserReport = useCallback(async () => {
     if (!profileUserId) return;
     if (!selectedReportReason) {
-      showFeedback(t("common.error"), t("profile.reportReasonRequired"), "error");
+      showFeedback(
+        t("common.error"),
+        t("profile.reportReasonRequired"),
+        "error",
+      );
       return;
     }
     try {
@@ -334,11 +402,22 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         details: reportFreeText.trim() || null,
       }).unwrap();
       setReportModalVisible(false);
-      showFeedback(t("common.done"), t("profile.reportAdvertiserSuccess"), "success");
+      showFeedback(
+        t("common.done"),
+        t("profile.reportAdvertiserSuccess"),
+        "success",
+      );
     } catch {
       showFeedback(t("common.error"), t("errors.generic"), "error");
     }
-  }, [profileUserId, reportAdvertiser, reportFreeText, selectedReportReason, showFeedback, t]);
+  }, [
+    profileUserId,
+    reportAdvertiser,
+    reportFreeText,
+    selectedReportReason,
+    showFeedback,
+    t,
+  ]);
 
   const handleMorePress = useCallback(() => {
     if (!profileUserId) return;
@@ -355,7 +434,11 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
 
   const closeManageModal = useCallback(() => {
     if (isUpdatingListing || isDeletingListing) return;
-    setManageModal({ visible: false, listingServerId: null, isArchived: false });
+    setManageModal({
+      visible: false,
+      listingServerId: null,
+      isArchived: false,
+    });
   }, [isDeletingListing, isUpdatingListing]);
 
   const openManageModal = useCallback((item: Property) => {
@@ -383,12 +466,19 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         manageModal.isArchived
           ? (t("profile.unhideListingSuccess") ?? "Listing is now visible.")
           : (t("profile.hideListingSuccess") ?? "Listing hidden from public."),
-        "success"
+        "success",
       );
     } catch {
       showFeedback(t("common.error"), t("errors.generic"), "error");
     }
-  }, [closeManageModal, manageModal.isArchived, manageModal.listingServerId, showFeedback, t, updateListing]);
+  }, [
+    closeManageModal,
+    manageModal.isArchived,
+    manageModal.listingServerId,
+    showFeedback,
+    t,
+    updateListing,
+  ]);
 
   const confirmDelete = useCallback(async () => {
     const sid = manageModal.listingServerId;
@@ -396,14 +486,28 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
     try {
       await deleteListing({ id: sid }).unwrap();
       closeManageModal();
-      showFeedback(t("common.done"), t("profile.deleteListingSuccess") ?? "Listing deleted.", "success");
+      showFeedback(
+        t("common.done"),
+        t("profile.deleteListingSuccess") ?? "Listing deleted.",
+        "success",
+      );
     } catch {
       showFeedback(t("common.error"), t("errors.generic"), "error");
     }
-  }, [closeManageModal, deleteListing, manageModal.listingServerId, showFeedback, t]);
+  }, [
+    closeManageModal,
+    deleteListing,
+    manageModal.listingServerId,
+    showFeedback,
+    t,
+  ]);
 
   const moreButtonRef = useRef<View>(null);
-  const [moreMenu, setMoreMenu] = useState<{ visible: boolean; x: number; y: number }>({
+  const [moreMenu, setMoreMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+  }>({
     visible: false,
     x: 0,
     y: 0,
@@ -435,7 +539,7 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         listingType: item.listingType,
       });
     },
-    [navigateToListings, filteredAds]
+    [navigateToListings, filteredAds],
   );
 
   const renderItem: ListRenderItem<Property> = useCallback(
@@ -443,7 +547,7 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
       const { title, priceLine, listingTypeForCard } = buildProfileAdCardLines(
         item,
         t,
-        i18n.language
+        i18n.language,
       );
       return (
         <View style={styles.cardRow}>
@@ -464,7 +568,11 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <View style={styles.cardMenuButtonCircle}>
-                  <Ionicons name="ellipsis-vertical" size={wp(5)} color={COLORS.primary} />
+                  <Ionicons
+                    name="ellipsis-vertical"
+                    size={wp(5)}
+                    color={COLORS.primary}
+                  />
                 </View>
               </TouchableOpacity>
             ) : null}
@@ -472,7 +580,13 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         </View>
       );
     },
-    [t, i18n.language, handlePropertyPress, isViewingMyProfile, openManageModal]
+    [
+      t,
+      i18n.language,
+      handlePropertyPress,
+      isViewingMyProfile,
+      openManageModal,
+    ],
   );
 
   const keyExtractor = useCallback((item: Property) => String(item.id), []);
@@ -489,7 +603,7 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "center") as "center" | "right" | "left",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const listHeader = useMemo(
@@ -511,7 +625,10 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
           )}
         </View>
         {displayName.length > 0 ? (
-          <Text style={[styles.profileName, rtlStyles.profileName]} numberOfLines={2}>
+          <Text
+            style={[styles.profileName, rtlStyles.profileName]}
+            numberOfLines={2}
+          >
             {displayName}
           </Text>
         ) : null}
@@ -522,7 +639,10 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
           currentCount={current.length}
           archivedCount={archived.length}
         />
-        <ListingTypeSegmentFilter value={listingTypeFilter} onChange={setListingTypeFilter} />
+        <ListingTypeSegmentFilter
+          value={listingTypeFilter}
+          onChange={setListingTypeFilter}
+        />
       </View>
     ),
     [
@@ -535,7 +655,7 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
       listingTypeFilter,
       sinceDisplay,
       lastSeenDisplay,
-    ]
+    ],
   );
 
   return (
@@ -546,13 +666,19 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         fontWeightBold={true}
         backButtonColor={COLORS.primary}
         rightComponent={
-          <View style={[styles.rightIconsContainer, rtlStyles.rightIconsContainer]}>
+          <View
+            style={[styles.rightIconsContainer, rtlStyles.rightIconsContainer]}
+          >
             <TouchableOpacity
               style={styles.iconButton}
               onPress={handleSharePress}
               activeOpacity={0.7}
             >
-              <Ionicons name="share-social" size={wp(6)} color={COLORS.primary} />
+              <Ionicons
+                name="share-social"
+                size={wp(6)}
+                color={COLORS.primary}
+              />
             </TouchableOpacity>
             {isViewingOtherUser ? (
               <View ref={moreButtonRef} collapsable={false}>
@@ -562,7 +688,11 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                   activeOpacity={0.7}
                   disabled={isHidingAdvertiser || isReportingAdvertiser}
                 >
-                  <Ionicons name="ellipsis-vertical" size={wp(6)} color={COLORS.primary} />
+                  <Ionicons
+                    name="ellipsis-vertical"
+                    size={wp(6)}
+                    color={COLORS.primary}
+                  />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -588,7 +718,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 openReportModal();
               }}
             >
-              <Text style={styles.popoverItemText}>{t("profile.reportAdvertiserAction")}</Text>
+              <Text style={styles.popoverItemText}>
+                {t("profile.reportAdvertiserAction")}
+              </Text>
             </Pressable>
             <View style={styles.manageDivider} />
             <Pressable
@@ -598,7 +730,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 handleHideAdvertiserPress();
               }}
             >
-              <Text style={[styles.popoverItemText, styles.popoverItemTextDanger]}>
+              <Text
+                style={[styles.popoverItemText, styles.popoverItemTextDanger]}
+              >
                 {t("profile.hideAdvertiserAction")}
               </Text>
             </Pressable>
@@ -620,7 +754,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         >
           <Pressable style={styles.reportCard} onPress={() => {}}>
             <View style={styles.reportHeaderRow}>
-              <Text style={styles.reportTitle}>{t("profile.hideAdvertiserAction")}</Text>
+              <Text style={styles.reportTitle}>
+                {t("profile.hideAdvertiserAction")}
+              </Text>
               <Pressable
                 style={styles.reportCloseButton}
                 onPress={() => setHideConfirmVisible(false)}
@@ -629,14 +765,18 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 <Ionicons name="close" size={wp(5)} color="#6b7280" />
               </Pressable>
             </View>
-            <Text style={styles.reportSubtitle}>{t("profile.hideAdvertiserConfirm")}</Text>
+            <Text style={styles.reportSubtitle}>
+              {t("profile.hideAdvertiserConfirm")}
+            </Text>
             <View style={styles.reportActionsRow}>
               <Pressable
                 style={styles.reportCancelButton}
                 onPress={() => setHideConfirmVisible(false)}
                 disabled={isHidingAdvertiser}
               >
-                <Text style={styles.reportCancelText}>{t("common.cancel")}</Text>
+                <Text style={styles.reportCancelText}>
+                  {t("common.cancel")}
+                </Text>
               </Pressable>
               <Pressable
                 style={[
@@ -646,23 +786,31 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 onPress={async () => {
                   if (!profileUserId) return;
                   try {
-                    await hideAdvertiser({ advertiserId: profileUserId }).unwrap();
+                    await hideAdvertiser({
+                      advertiserId: profileUserId,
+                    }).unwrap();
                     setHideConfirmVisible(false);
                     showFeedback(
                       t("common.done"),
                       t("profile.hideAdvertiserSuccess"),
                       "success",
-                      () => navigation.goBack()
+                      () => navigation.goBack(),
                     );
                   } catch {
                     setHideConfirmVisible(false);
-                    showFeedback(t("common.error"), t("errors.generic"), "error");
+                    showFeedback(
+                      t("common.error"),
+                      t("errors.generic"),
+                      "error",
+                    );
                   }
                 }}
                 disabled={isHidingAdvertiser}
               >
                 <Text style={styles.reportSubmitText}>
-                  {isHidingAdvertiser ? t("common.loading") : t("profile.hideAdvertiserAction")}
+                  {isHidingAdvertiser
+                    ? t("common.loading")
+                    : t("profile.hideAdvertiserAction")}
                 </Text>
               </Pressable>
             </View>
@@ -678,7 +826,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
         <Pressable style={styles.reportBackdrop} onPress={closeReportModal}>
           <Pressable style={styles.reportCard} onPress={() => {}}>
             <View style={styles.reportHeaderRow}>
-              <Text style={styles.reportTitle}>{t("profile.reportAdvertiserTitle")}</Text>
+              <Text style={styles.reportTitle}>
+                {t("profile.reportAdvertiserTitle")}
+              </Text>
               <Pressable
                 style={styles.reportCloseButton}
                 onPress={closeReportModal}
@@ -687,7 +837,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 <Ionicons name="close" size={wp(5)} color="#6b7280" />
               </Pressable>
             </View>
-            <Text style={styles.reportSubtitle}>{t("profile.reportAdvertiserSubtitle")}</Text>
+            <Text style={styles.reportSubtitle}>
+              {t("profile.reportAdvertiserSubtitle")}
+            </Text>
 
             <View style={styles.reportReasonGrid}>
               {reportReasonOptions.map((opt) => {
@@ -715,7 +867,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
               })}
             </View>
 
-            <Text style={styles.reportDetailsLabel}>{t("profile.reportDetailsOptional")}</Text>
+            <Text style={styles.reportDetailsLabel}>
+              {t("profile.reportDetailsOptional")}
+            </Text>
             <RNTextInput
               value={reportFreeText}
               onChangeText={setReportFreeText}
@@ -733,7 +887,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 onPress={closeReportModal}
                 disabled={isReportingAdvertiser}
               >
-                <Text style={styles.reportCancelText}>{t("common.cancel")}</Text>
+                <Text style={styles.reportCancelText}>
+                  {t("common.cancel")}
+                </Text>
               </Pressable>
               <Pressable
                 style={[
@@ -744,7 +900,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 disabled={isReportingAdvertiser}
               >
                 <Text style={styles.reportSubmitText}>
-                  {isReportingAdvertiser ? t("common.loading") : t("common.submit")}
+                  {isReportingAdvertiser
+                    ? t("common.loading")
+                    : t("common.submit")}
                 </Text>
               </Pressable>
             </View>
@@ -763,17 +921,25 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
               <View
                 style={[
                   styles.feedbackDot,
-                  feedback.variant === "success" ? styles.feedbackDotSuccess : styles.feedbackDotError,
+                  feedback.variant === "success"
+                    ? styles.feedbackDotSuccess
+                    : styles.feedbackDotError,
                 ]}
               />
               <Text style={styles.feedbackTitle}>{feedback.title}</Text>
-              <Pressable style={styles.feedbackCloseButton} onPress={closeFeedback}>
+              <Pressable
+                style={styles.feedbackCloseButton}
+                onPress={closeFeedback}
+              >
                 <Ionicons name="close" size={wp(5)} color="#6b7280" />
               </Pressable>
             </View>
             <Text style={styles.feedbackMessage}>{feedback.message}</Text>
             <View style={styles.feedbackActionsRow}>
-              <Pressable style={styles.feedbackOkButton} onPress={closeFeedback}>
+              <Pressable
+                style={styles.feedbackOkButton}
+                onPress={closeFeedback}
+              >
                 <Text style={styles.feedbackOkText}>{t("common.ok")}</Text>
               </Pressable>
             </View>
@@ -792,16 +958,25 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
           <Pressable style={styles.reportCard} onPress={() => {}}>
             <View style={styles.reportHeaderRow}>
               <Text style={styles.reportTitle}>
-                {t("profile.manageListingTitle", { defaultValue: "Manage listing" })}
+                {t("profile.manageListingTitle", {
+                  defaultValue: "Manage listing",
+                })}
               </Text>
-              <Pressable style={styles.reportCloseButton} onPress={closeManageModal}>
+              <Pressable
+                style={styles.reportCloseButton}
+                onPress={closeManageModal}
+              >
                 <Ionicons name="close" size={wp(6)} color="#6b7280" />
               </Pressable>
             </View>
             <Text style={styles.reportSubtitle}>
               {manageModal.isArchived
-                ? t("profile.unhideListingConfirm", { defaultValue: "Make this listing visible again?" })
-                : t("profile.hideListingConfirm", { defaultValue: "Hide this listing from the public feed?" })}
+                ? t("profile.unhideListingConfirm", {
+                    defaultValue: "Make this listing visible again?",
+                  })
+                : t("profile.hideListingConfirm", {
+                    defaultValue: "Hide this listing from the public feed?",
+                  })}
             </Text>
 
             <View style={styles.reportActionsRow}>
@@ -810,13 +985,16 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                 onPress={closeManageModal}
                 disabled={isUpdatingListing || isDeletingListing}
               >
-                <Text style={styles.reportCancelText}>{t("common.cancel")}</Text>
+                <Text style={styles.reportCancelText}>
+                  {t("common.cancel")}
+                </Text>
               </Pressable>
 
               <Pressable
                 style={[
                   styles.reportSubmitButton,
-                  (isUpdatingListing || isDeletingListing) && styles.reportSubmitButtonDisabled,
+                  (isUpdatingListing || isDeletingListing) &&
+                    styles.reportSubmitButtonDisabled,
                 ]}
                 onPress={archiveOrUnarchive}
                 disabled={isUpdatingListing || isDeletingListing}
@@ -825,8 +1003,12 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
                   {isUpdatingListing
                     ? t("common.loading")
                     : manageModal.isArchived
-                      ? t("profile.unhideListingAction", { defaultValue: "Unhide" })
-                      : t("profile.hideListingAction", { defaultValue: "Hide" })}
+                      ? t("profile.unhideListingAction", {
+                          defaultValue: "Unhide",
+                        })
+                      : t("profile.hideListingAction", {
+                          defaultValue: "Hide",
+                        })}
                 </Text>
               </Pressable>
             </View>
@@ -836,7 +1018,8 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
             <Pressable
               style={[
                 styles.deleteListingButton,
-                (isUpdatingListing || isDeletingListing) && styles.deleteListingButtonDisabled,
+                (isUpdatingListing || isDeletingListing) &&
+                  styles.deleteListingButtonDisabled,
               ]}
               onPress={confirmDelete}
               disabled={isUpdatingListing || isDeletingListing}
@@ -845,7 +1028,9 @@ export default function UserProfileAdsScreen(): React.JSX.Element {
               <Text style={styles.deleteListingButtonText}>
                 {isDeletingListing
                   ? t("common.loading")
-                  : t("profile.deleteListingAction", { defaultValue: "Delete listing" })}
+                  : t("profile.deleteListingAction", {
+                      defaultValue: "Delete listing",
+                    })}
               </Text>
             </Pressable>
           </Pressable>

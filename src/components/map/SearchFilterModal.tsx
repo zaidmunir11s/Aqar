@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -18,7 +24,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../../constants";
 import { TabBarSection, ToggleRow } from "../orderForm";
 import { ToggleSwitch } from "../common";
-import { BEDROOM_OPTIONS, LIVING_ROOM_OPTIONS, WC_OPTIONS, VILLA_TYPE_OPTIONS } from "../../constants/orderFormOptions";
+import {
+  BEDROOM_OPTIONS,
+  LIVING_ROOM_OPTIONS,
+  WC_OPTIONS,
+  VILLA_TYPE_OPTIONS,
+} from "../../constants/orderFormOptions";
 import type { Property } from "../../types/property";
 import type { SearchFilterState } from "../../types/searchFilters";
 import { applySearchFilters } from "../../utils/searchFilters";
@@ -30,20 +41,59 @@ export type { SearchFilterState };
 export interface SearchFilterModalProps {
   visible: boolean;
   onClose: () => void;
-  onSearch: (filters: SearchFilterState | null, count: number, shouldClose?: boolean) => void;
+  onSearch: (
+    filters: SearchFilterState | null,
+    count: number,
+    shouldClose?: boolean,
+  ) => void;
   properties: Property[];
   initialFilters?: SearchFilterState | null;
 }
 
 // Property types will be translated in the component using useLocalization
 const PROPERTY_TYPES = [
-  { id: "apartment", nameKey: "apartment", icon: "sofa-single", iconLibrary: "MaterialCommunityIcons" },
-  { id: "chalet", nameKey: "chalet", icon: "umbrella-beach", iconLibrary: "MaterialCommunityIcons" },
-  { id: "studio", nameKey: "studio", icon: "tv-outline", iconLibrary: "Ionicons" },
-  { id: "villa", nameKey: "villa", icon: "home", iconLibrary: "MaterialCommunityIcons" },
-  { id: "tent", nameKey: "tent", icon: "tent", iconLibrary: "MaterialCommunityIcons" },
-  { id: "farm", nameKey: "farm", icon: "barn", iconLibrary: "MaterialCommunityIcons" },
-  { id: "hall", nameKey: "hall", icon: "storefront-outline", iconLibrary: "MaterialCommunityIcons" },
+  {
+    id: "apartment",
+    nameKey: "apartment",
+    icon: "sofa-single",
+    iconLibrary: "MaterialCommunityIcons",
+  },
+  {
+    id: "chalet",
+    nameKey: "chalet",
+    icon: "umbrella-beach",
+    iconLibrary: "MaterialCommunityIcons",
+  },
+  {
+    id: "studio",
+    nameKey: "studio",
+    icon: "tv-outline",
+    iconLibrary: "Ionicons",
+  },
+  {
+    id: "villa",
+    nameKey: "villa",
+    icon: "home",
+    iconLibrary: "MaterialCommunityIcons",
+  },
+  {
+    id: "tent",
+    nameKey: "tent",
+    icon: "tent",
+    iconLibrary: "MaterialCommunityIcons",
+  },
+  {
+    id: "farm",
+    nameKey: "farm",
+    icon: "barn",
+    iconLibrary: "MaterialCommunityIcons",
+  },
+  {
+    id: "hall",
+    nameKey: "hall",
+    icon: "storefront-outline",
+    iconLibrary: "MaterialCommunityIcons",
+  },
 ];
 
 const defaultFilterState: SearchFilterState = {
@@ -85,10 +135,15 @@ export default function SearchFilterModal({
   initialFilters,
 }: SearchFilterModalProps): React.JSX.Element {
   const { t, isRTL } = useLocalization();
-  const [filters, setFilters] = useState<SearchFilterState>(initialFilters || defaultFilterState);
-  const [focusedPriceInput, setFocusedPriceInput] = useState<"from" | "to" | null>(null);
+  const [filters, setFilters] = useState<SearchFilterState>(
+    initialFilters || defaultFilterState,
+  );
+  const [focusedPriceInput, setFocusedPriceInput] = useState<
+    "from" | "to" | null
+  >(null);
   const insets = useSafeAreaInsets();
   const propertyTypeScrollRef = React.useRef<ScrollView>(null);
+  const lastPropertyTypeScrollXRef = useRef(0);
 
   // Track initial filters when modal opens to avoid auto-applying on initial load
   const initialFiltersRef = useRef<SearchFilterState | null>(null);
@@ -108,9 +163,10 @@ export default function SearchFilterModal({
     if (visible) {
       const filtersToSet = initialFilters || defaultFilterState;
       setFilters(filtersToSet);
-      initialFiltersRef.current = typeof structuredClone === "function"
-        ? structuredClone(filtersToSet)
-        : JSON.parse(JSON.stringify(filtersToSet));
+      initialFiltersRef.current =
+        typeof structuredClone === "function"
+          ? structuredClone(filtersToSet)
+          : JSON.parse(JSON.stringify(filtersToSet));
       previousFiltersRef.current = JSON.stringify(filtersToSet);
       hasUserInteracted.current = false;
     } else {
@@ -124,13 +180,13 @@ export default function SearchFilterModal({
   // Auto-apply filters when they change (but not on initial load)
   useEffect(() => {
     if (!visible || !hasUserInteracted.current) return;
-    
+
     // Use string comparison but only if it actually changed
     const currentFiltersString = JSON.stringify(filters);
     if (previousFiltersRef.current === currentFiltersString) return;
-    
+
     previousFiltersRef.current = currentFiltersString;
-    
+
     // Use a timeout to debounce rapid changes
     const timeoutId = setTimeout(() => {
       if (!visible) return; // Check if still visible
@@ -138,15 +194,18 @@ export default function SearchFilterModal({
       // Auto-apply filters immediately without closing modal
       onSearchRef.current(filters, count, false);
     }, 300); // 300ms debounce
-    
+
     return () => clearTimeout(timeoutId);
   }, [filters, visible]);
 
   // Mark that user has interacted when they change any filter
-  const updateFilter = useCallback((key: keyof SearchFilterState, value: any) => {
-    hasUserInteracted.current = true;
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const updateFilter = useCallback(
+    (key: keyof SearchFilterState, value: any) => {
+      hasUserInteracted.current = true;
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -204,7 +263,7 @@ export default function SearchFilterModal({
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Reset focused input when modal closes
@@ -214,20 +273,43 @@ export default function SearchFilterModal({
     }
   }, [visible]);
 
-  // Scroll property types to start in RTL
+  // Keep property type horizontal scroll position stable between opens,
+  // and scroll to the selected type when present.
   useEffect(() => {
-    if (visible && isRTL && propertyTypeScrollRef.current) {
-      // In RTL, scroll to the end (which is the start visually) after a short delay
-      setTimeout(() => {
-        propertyTypeScrollRef.current?.scrollToEnd({ animated: false });
-      }, 100);
-    } else if (visible && !isRTL && propertyTypeScrollRef.current) {
-      // In LTR, scroll to the start
-      setTimeout(() => {
-        propertyTypeScrollRef.current?.scrollTo({ x: 0, animated: false });
-      }, 100);
-    }
-  }, [visible, isRTL]);
+    if (!visible || !propertyTypeScrollRef.current) return;
+
+    const displayed = isRTL ? [...PROPERTY_TYPES].reverse() : PROPERTY_TYPES;
+    const selected = filters.selectedPropertyType;
+    const baseDelayMs = 100;
+
+    setTimeout(() => {
+      if (!propertyTypeScrollRef.current) return;
+
+      if (selected) {
+        const idx = displayed.findIndex((t) => t.id === selected);
+        if (idx >= 0) {
+          const itemW = wp(30);
+          const gap = wp(2);
+          const x = Math.max(0, idx * (itemW + gap) - wp(6));
+          propertyTypeScrollRef.current.scrollTo({ x, animated: false });
+          return;
+        }
+      }
+
+      // No selected type: restore last position, otherwise go to start/end.
+      const lastX = lastPropertyTypeScrollXRef.current;
+      if (Number.isFinite(lastX) && lastX > 0) {
+        propertyTypeScrollRef.current.scrollTo({ x: lastX, animated: false });
+        return;
+      }
+
+      if (isRTL) {
+        propertyTypeScrollRef.current.scrollToEnd({ animated: false });
+      } else {
+        propertyTypeScrollRef.current.scrollTo({ x: 0, animated: false });
+      }
+    }, baseDelayMs);
+  }, [visible, isRTL, filters.selectedPropertyType]);
 
   // Check if any filters are applied (including "All" for tab bars — user has made a selection)
   const hasFilters = useMemo(() => {
@@ -297,9 +379,10 @@ export default function SearchFilterModal({
 
   const handleReset = useCallback(() => {
     setFilters(defaultFilterState);
-    initialFiltersRef.current = typeof structuredClone === "function"
-      ? structuredClone(defaultFilterState)
-      : JSON.parse(JSON.stringify(defaultFilterState));
+    initialFiltersRef.current =
+      typeof structuredClone === "function"
+        ? structuredClone(defaultFilterState)
+        : JSON.parse(JSON.stringify(defaultFilterState));
     hasUserInteracted.current = true; // Mark as interacted so auto-apply works
     // Immediately apply reset by calling onSearch with null to clear filters
     // This will update the preserved state so both screens see the reset
@@ -314,12 +397,15 @@ export default function SearchFilterModal({
     onSearch(filters, count, true); // Pass true to close modal
   }, [filters, properties, onSearch]);
 
-
   const renderPropertyTypeOptions = () => {
     if (!filters.selectedPropertyType) {
       return (
         <View style={styles.instructionContainer}>
-          <SlidersHorizontal size={40} color={COLORS.textSecondary} strokeWidth={2.5} />
+          <SlidersHorizontal
+            size={40}
+            color={COLORS.textSecondary}
+            strokeWidth={2.5}
+          />
           <Text style={[styles.instructionText, rtlStyles.instructionText]}>
             {t("listings.searchFilter.selectPropertyType")}
           </Text>
@@ -338,15 +424,19 @@ export default function SearchFilterModal({
         [familiesText]: "Families",
       };
       const reverseUsageTypeMap: { [key: string]: string } = {
-        "Singles": singlesText,
-        "Families": familiesText,
+        Singles: singlesText,
+        Families: familiesText,
       };
-      
+
       return (
         <View style={styles.propertyTypeContent}>
           <TabBarSection
             options={[singlesText, familiesText]}
-            selectedValue={filters.usageType ? reverseUsageTypeMap[filters.usageType] || null : null}
+            selectedValue={
+              filters.usageType
+                ? reverseUsageTypeMap[filters.usageType] || null
+                : null
+            }
             onSelect={(value) => {
               const mappedValue = usageTypeMap[value];
               if (filters.usageType === mappedValue) {
@@ -507,15 +597,19 @@ export default function SearchFilterModal({
         [familiesText]: "Families",
       };
       const reverseUsageTypeMap: { [key: string]: string } = {
-        "Singles": singlesText,
-        "Families": familiesText,
+        Singles: singlesText,
+        Families: familiesText,
       };
-      
+
       return (
         <View style={styles.propertyTypeContent}>
           <TabBarSection
             options={[singlesText, familiesText]}
-            selectedValue={filters.usageType ? reverseUsageTypeMap[filters.usageType] || null : null}
+            selectedValue={
+              filters.usageType
+                ? reverseUsageTypeMap[filters.usageType] || null
+                : null
+            }
             onSelect={(value) => {
               const mappedValue = usageTypeMap[value];
               if (filters.usageType === mappedValue) {
@@ -807,10 +901,19 @@ export default function SearchFilterModal({
         <View style={styles.modalContainer}>
           {/* Header */}
           <View style={[styles.header, rtlStyles.header]}>
-            <TouchableOpacity onPress={onClose} style={[styles.backButton, rtlStyles.backButton]}>
-              <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={wp(6)} color={COLORS.arrows} />
+            <TouchableOpacity
+              onPress={onClose}
+              style={[styles.backButton, rtlStyles.backButton]}
+            >
+              <Ionicons
+                name={isRTL ? "arrow-forward" : "arrow-back"}
+                size={wp(6)}
+                color={COLORS.arrows}
+              />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>{t("listings.searchFilter.title")}</Text>
+            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
+              {t("listings.searchFilter.title")}
+            </Text>
             <View style={styles.headerSpacer} />
           </View>
 
@@ -822,19 +925,27 @@ export default function SearchFilterModal({
           >
             {/* Total Price */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.searchFilter.totalPrice")}</Text>
-              <View style={[styles.priceInputsContainer, rtlStyles.priceInputsContainer]}>
+              <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+                {t("listings.searchFilter.totalPrice")}
+              </Text>
+              <View
+                style={[
+                  styles.priceInputsContainer,
+                  rtlStyles.priceInputsContainer,
+                ]}
+              >
                 <View
                   style={[
                     styles.priceInputWrapper,
                     rtlStyles.priceInputWrapper,
-                    focusedPriceInput === "from" && styles.priceInputWrapperActive,
+                    focusedPriceInput === "from" &&
+                      styles.priceInputWrapperActive,
                   ]}
                 >
                   <TextInput
                     style={[styles.priceInput, rtlStyles.priceInput]}
                     placeholder={t("listings.searchFilter.fromPrice")}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={COLORS.textTertiary}
                     value={filters.fromPrice}
                     onChangeText={(value) => {
                       hasUserInteracted.current = true;
@@ -845,19 +956,22 @@ export default function SearchFilterModal({
                     onBlur={() => setFocusedPriceInput(null)}
                     textAlign={isRTL ? "right" : "left"}
                   />
-                  <Text style={[styles.currencyText, rtlStyles.currencyText]}>{t("listings.sar")}</Text>
+                  <Text style={[styles.currencyText, rtlStyles.currencyText]}>
+                    {t("listings.sar")}
+                  </Text>
                 </View>
                 <View
                   style={[
                     styles.priceInputWrapper,
                     rtlStyles.priceInputWrapper,
-                    focusedPriceInput === "to" && styles.priceInputWrapperActive,
+                    focusedPriceInput === "to" &&
+                      styles.priceInputWrapperActive,
                   ]}
                 >
                   <TextInput
                     style={[styles.priceInput, rtlStyles.priceInput]}
                     placeholder={t("listings.searchFilter.toPrice")}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={COLORS.textTertiary}
                     value={filters.toPrice}
                     onChangeText={(value) => {
                       hasUserInteracted.current = true;
@@ -868,55 +982,71 @@ export default function SearchFilterModal({
                     onBlur={() => setFocusedPriceInput(null)}
                     textAlign={isRTL ? "right" : "left"}
                   />
-                  <Text style={[styles.currencyText, rtlStyles.currencyText]}>{t("listings.sar")}</Text>
+                  <Text style={[styles.currencyText, rtlStyles.currencyText]}>
+                    {t("listings.sar")}
+                  </Text>
                 </View>
               </View>
             </View>
 
             {/* Property Type */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.searchFilter.propertyType")}</Text>
+              <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+                {t("listings.searchFilter.propertyType")}
+              </Text>
               <ScrollView
                 ref={propertyTypeScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[styles.propertyTypeScrollContainer, rtlStyles.propertyTypeScrollContainer]}
+                onScroll={(e) => {
+                  lastPropertyTypeScrollXRef.current =
+                    e.nativeEvent.contentOffset.x;
+                }}
+                scrollEventThrottle={16}
+                contentContainerStyle={[
+                  styles.propertyTypeScrollContainer,
+                  rtlStyles.propertyTypeScrollContainer,
+                ]}
               >
-                {(isRTL ? [...PROPERTY_TYPES].reverse() : PROPERTY_TYPES).map((type) => {
-                  const IconComponent =
-                    type.iconLibrary === "MaterialCommunityIcons"
-                      ? MaterialCommunityIcons
-                      : Ionicons;
-                  return (
-                    <TouchableOpacity
-                      key={type.id}
-                      style={[
-                        styles.propertyTypeButton,
-                        rtlStyles.propertyTypeButton,
-                        filters.selectedPropertyType === type.id &&
-                          styles.propertyTypeButtonActive,
-                      ]}
-                      onPress={() => handlePropertyTypeSelect(type.id)}
-                      activeOpacity={0.7}
-                    >
-                      <IconComponent
-                        name={type.icon as any}
-                        size={wp(6)}
-                        color={COLORS.textPrimary}
-                      />
-                      <Text
+                {(isRTL ? [...PROPERTY_TYPES].reverse() : PROPERTY_TYPES).map(
+                  (type) => {
+                    const IconComponent =
+                      type.iconLibrary === "MaterialCommunityIcons"
+                        ? MaterialCommunityIcons
+                        : Ionicons;
+                    return (
+                      <TouchableOpacity
+                        key={type.id}
                         style={[
-                          styles.propertyTypeText,
-                          rtlStyles.propertyTypeText,
+                          styles.propertyTypeButton,
+                          rtlStyles.propertyTypeButton,
                           filters.selectedPropertyType === type.id &&
-                            styles.propertyTypeTextActive,
+                            styles.propertyTypeButtonActive,
                         ]}
+                        onPress={() => handlePropertyTypeSelect(type.id)}
+                        activeOpacity={0.7}
                       >
-                        {t(`listings.searchFilter.propertyTypes.${type.nameKey}`)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                        <IconComponent
+                          name={type.icon as any}
+                          size={wp(6)}
+                          color={COLORS.textPrimary}
+                        />
+                        <Text
+                          style={[
+                            styles.propertyTypeText,
+                            rtlStyles.propertyTypeText,
+                            filters.selectedPropertyType === type.id &&
+                              styles.propertyTypeTextActive,
+                          ]}
+                        >
+                          {t(
+                            `listings.searchFilter.propertyTypes.${type.nameKey}`,
+                          )}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  },
+                )}
               </ScrollView>
 
               {/* Property Type Options */}
@@ -925,7 +1055,18 @@ export default function SearchFilterModal({
           </ScrollView>
 
           {/* Footer */}
-          <View style={[styles.footer, rtlStyles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }]}>
+          <View
+            style={[
+              styles.footer,
+              rtlStyles.footer,
+              {
+                paddingBottom: Math.max(
+                  insets.bottom,
+                  Platform.OS === "ios" ? hp(2) : hp(1),
+                ),
+              },
+            ]}
+          >
             {hasFilters ? (
               <>
                 <TouchableOpacity
@@ -933,15 +1074,27 @@ export default function SearchFilterModal({
                   onPress={handleReset}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.resetButtonText, rtlStyles.resetButtonText]}>{t("listings.searchFilter.reset")}</Text>
+                  <Text
+                    style={[styles.resetButtonText, rtlStyles.resetButtonText]}
+                  >
+                    {t("listings.searchFilter.reset")}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.searchButton}
                   onPress={handleSearch}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.searchButtonText, rtlStyles.searchButtonText]}>
-                    {t("listings.searchFilter.search")} {matchingCount > 0 ? `${formatCount(matchingCount)} ${t("listings.searchFilter.ads")}` : ""}
+                  <Text
+                    style={[
+                      styles.searchButtonText,
+                      rtlStyles.searchButtonText,
+                    ]}
+                  >
+                    {t("listings.searchFilter.search")}{" "}
+                    {matchingCount > 0
+                      ? `${formatCount(matchingCount)} ${t("listings.searchFilter.ads")}`
+                      : ""}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -953,8 +1106,16 @@ export default function SearchFilterModal({
                   onPress={handleSearch}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.searchButtonText, rtlStyles.searchButtonText]}>
-                    {t("listings.searchFilter.search")} {matchingCount > 0 ? `${formatCount(matchingCount)} ${t("listings.searchFilter.ads")}` : ""}
+                  <Text
+                    style={[
+                      styles.searchButtonText,
+                      rtlStyles.searchButtonText,
+                    ]}
+                  >
+                    {t("listings.searchFilter.search")}{" "}
+                    {matchingCount > 0
+                      ? `${formatCount(matchingCount)} ${t("listings.searchFilter.ads")}`
+                      : ""}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -1074,7 +1235,7 @@ const styles = StyleSheet.create({
     gap: hp(0.5),
   },
   propertyTypeButtonActive: {
-    borderColor: "#3b82f6",
+    borderColor: COLORS.primary,
     borderWidth: 2,
   },
   propertyTypeText: {
@@ -1088,7 +1249,7 @@ const styles = StyleSheet.create({
   },
   propertyTypeContent: {
     // marginTop: hp(2),
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.white,
     paddingHorizontal: 0,
     paddingVertical: hp(2),
     borderRadius: wp(2),
@@ -1101,7 +1262,7 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: wp(3.5),
-    color: "#9ca3af",
+    color: COLORS.textTertiary,
     marginTop: hp(1),
     textAlign: "center",
   },
@@ -1110,7 +1271,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
     paddingTop: hp(1),
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: COLORS.borderLight,
     justifyContent: "space-between",
     gap: wp(3),
   },
@@ -1130,7 +1291,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   searchButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: COLORS.primary,
     paddingVertical: hp(1.8),
     paddingHorizontal: wp(6),
     borderRadius: wp(2),
@@ -1143,7 +1304,6 @@ const styles = StyleSheet.create({
   searchButtonText: {
     fontSize: wp(4.2),
     fontWeight: "600",
-    color: "#fff",
+    color: COLORS.white,
   },
 });
-

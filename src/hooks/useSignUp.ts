@@ -38,8 +38,3 @@ export const useSignUp = () => {
     verifyOtp,
   };
 };
-
-
-
-
-

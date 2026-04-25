@@ -19,4 +19,3 @@ export async function secureRemove(key: string): Promise<void> {
 export async function secureMultiRemove(keys: string[]): Promise<void> {
   await Promise.all(keys.map((k) => SecureStore.deleteItemAsync(k)));
 }
-

@@ -19,7 +19,7 @@ const LoadingIndicator = memo<LoadingIndicatorProps>(
         {message && <Text style={styles.text}>{message}</Text>}
       </View>
     );
-  }
+  },
 );
 
 LoadingIndicator.displayName = "LoadingIndicator";

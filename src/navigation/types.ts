@@ -1,4 +1,7 @@
-import type { NavigatorScreenParams, ParamListBase } from "@react-navigation/native";
+import type {
+  NavigatorScreenParams,
+  ParamListBase,
+} from "@react-navigation/native";
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -24,4 +27,3 @@ export type RootTabParamList = {
   Chat: NavigatorScreenParams<ParamListBase> | undefined;
   Services: undefined;
 };
-

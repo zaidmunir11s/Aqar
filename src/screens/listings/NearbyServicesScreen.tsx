@@ -1,6 +1,16 @@
-import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { View, StyleSheet, Platform, TouchableOpacity } from "react-native";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MapView, { Marker } from "react-native-maps";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
@@ -71,7 +81,11 @@ export default function NearbyServicesScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const params = (route.params || {}) as RouteParams;
-  const { propertyId, latitude: paramLatitude, longitude: paramLongitude } = params;
+  const {
+    propertyId,
+    latitude: paramLatitude,
+    longitude: paramLongitude,
+  } = params;
   const mapRef = useRef<MapView>(null);
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
@@ -83,7 +97,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   const property = useMemo<Property | undefined>(() => {
@@ -92,16 +106,23 @@ export default function NearbyServicesScreen(): React.JSX.Element {
   }, [propertyId]);
 
   const hasParamCoords =
-    isValidCoordinate(paramLatitude) &&
-    isValidLongitude(paramLongitude);
+    isValidCoordinate(paramLatitude) && isValidLongitude(paramLongitude);
 
   const hasValidPropertyCoords =
     property &&
     isValidCoordinate(property.lat) &&
     isValidLongitude(property.lng);
 
-  const latitude = hasParamCoords ? paramLatitude! : hasValidPropertyCoords ? property!.lat : RIYADH_REGION.latitude;
-  const longitude = hasParamCoords ? paramLongitude! : hasValidPropertyCoords ? property!.lng : RIYADH_REGION.longitude;
+  const latitude = hasParamCoords
+    ? paramLatitude!
+    : hasValidPropertyCoords
+      ? property!.lat
+      : RIYADH_REGION.latitude;
+  const longitude = hasParamCoords
+    ? paramLongitude!
+    : hasValidPropertyCoords
+      ? property!.lng
+      : RIYADH_REGION.longitude;
 
   const initialRegion = useMemo(
     () => ({
@@ -110,7 +131,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
       latitudeDelta: 0.01,
       longitudeDelta: 0.01,
     }),
-    [latitude, longitude]
+    [latitude, longitude],
   );
 
   useEffect(() => {
@@ -121,7 +142,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       },
-      400
+      400,
     );
   }, [latitude, longitude]);
 
@@ -133,7 +154,7 @@ export default function NearbyServicesScreen(): React.JSX.Element {
       },
       isRTL ? styles.satelliteFabRTL : styles.satelliteFabLTR,
     ],
-    [isRTL, insets.bottom]
+    [isRTL, insets.bottom],
   );
 
   const handleBackPress = () => navigation.goBack();
@@ -174,7 +195,11 @@ export default function NearbyServicesScreen(): React.JSX.Element {
         ) : (
           <View style={[styles.map, styles.mapPlaceholder]} />
         )}
-        <TouchableOpacity style={satelliteFabStyle} onPress={handleToggleSatellite} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={satelliteFabStyle}
+          onPress={handleToggleSatellite}
+          activeOpacity={0.85}
+        >
           <MaterialIcons
             name="satellite-alt"
             size={wp(6.5)}

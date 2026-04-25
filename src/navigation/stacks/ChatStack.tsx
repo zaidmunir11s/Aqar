@@ -13,6 +13,3 @@ export default function ChatStack(): React.JSX.Element {
     </Stack.Navigator>
   );
 }
-
-
-

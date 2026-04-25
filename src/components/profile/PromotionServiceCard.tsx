@@ -6,21 +6,23 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface PromotionServiceCardProps {
   onPress?: () => void;
 }
 
 const PromotionServiceCard = memo<PromotionServiceCardProps>(({ onPress }) => {
+  const { t } = useLocalization();
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.iconContainer}>
         <Ionicons name="trending-up" size={wp(7)} color={COLORS.white} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>Promotion Services</Text>
+        <Text style={styles.title}>{t("profile.promotionServicesTitle")}</Text>
         <Text style={styles.subtitle}>
-          Services that help you speed up the sale and rental of the property
+          {t("profile.promotionServicesSubtitle")}
         </Text>
       </View>
       <Ionicons

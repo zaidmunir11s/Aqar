@@ -1,9 +1,18 @@
 import React, { useCallback, useMemo, useEffect } from "react";
-import { View, StyleSheet, FlatList, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-native-responsive-screen";
+import {
+  heightPercentageToDP as hp,
+  widthPercentageToDP as wp,
+} from "react-native-responsive-screen";
 import { useLocalization } from "@/hooks/useLocalization";
 import { ScreenHeader, PropertyCard } from "@/components";
 import type { Property } from "@/types/property";
@@ -67,7 +76,7 @@ export default function TodayAdsScreen(): React.JSX.Element {
         ...(item.serverListingId ? { listingId: item.serverListingId } : {}),
       });
     },
-    [navigation, todayProperties]
+    [navigation, todayProperties],
   );
 
   return (
@@ -82,7 +91,10 @@ export default function TodayAdsScreen(): React.JSX.Element {
         keyExtractor={(item) => item.serverListingId ?? String(item.id)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <TouchableOpacity activeOpacity={0.9} onPress={() => handlePropertyPress(item)}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => handlePropertyPress(item)}
+          >
             <PropertyCard
               property={item}
               onPress={() => handlePropertyPress(item)}
@@ -91,12 +103,12 @@ export default function TodayAdsScreen(): React.JSX.Element {
                   (item as any)?.listingMetadata?.locationDisplayName ??
                     item.address ??
                     item.city ??
-                    ""
+                    "",
                 ).trim() ||
                 getTranslatedPropertyTypeLabel(
                   item.type,
                   item.listingType as "rent" | "sale" | "daily",
-                  t
+                  t,
                 ) ||
                 t("listings.property")
               }
@@ -135,4 +147,3 @@ const styles = StyleSheet.create({
     fontSize: wp(3.8),
   },
 });
-

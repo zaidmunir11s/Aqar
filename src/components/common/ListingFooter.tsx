@@ -52,11 +52,16 @@ const ListingFooter = memo<ListingFooterProps>(
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
     useEffect(() => {
-      const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-      const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-      const dimensionsSub = Dimensions.addEventListener("change", ({ window }) => {
-        windowHeightRef.current = window.height;
-      });
+      const showEvent =
+        Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+      const hideEvent =
+        Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+      const dimensionsSub = Dimensions.addEventListener(
+        "change",
+        ({ window }) => {
+          windowHeightRef.current = window.height;
+        },
+      );
 
       const onShow = (event: any) => {
         const screenY = event?.endCoordinates?.screenY;
@@ -71,7 +76,7 @@ const ListingFooter = memo<ListingFooterProps>(
         const keyboardHeight = Math.max(
           overlapFromScreenY,
           overlapFromHeight,
-          overlapFromMetrics
+          overlapFromMetrics,
         );
         const compensatedHeight =
           keyboardHeight + (Platform.OS === "android" ? insets.bottom : 0);
@@ -106,13 +111,17 @@ const ListingFooter = memo<ListingFooterProps>(
     const rtlStyles = useMemo(
       () => ({
         progressBarBackground: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         buttonContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -127,7 +136,12 @@ const ListingFooter = memo<ListingFooterProps>(
       >
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBarBackground, rtlStyles.progressBarBackground]}>
+          <View
+            style={[
+              styles.progressBarBackground,
+              rtlStyles.progressBarBackground,
+            ]}
+          >
             <View
               style={[
                 styles.progressBarFill,
@@ -154,9 +168,17 @@ const ListingFooter = memo<ListingFooterProps>(
               onPress={onNextPress}
               activeOpacity={0.4}
               disabled={nextDisabled}
-              style={[styles.nextButton, nextDisabled && styles.nextButtonDisabled]}
+              style={[
+                styles.nextButton,
+                nextDisabled && styles.nextButtonDisabled,
+              ]}
             >
-              <Text style={[styles.nextText, nextDisabled && styles.nextTextDisabled]}>
+              <Text
+                style={[
+                  styles.nextText,
+                  nextDisabled && styles.nextTextDisabled,
+                ]}
+              >
                 {nextText}
               </Text>
             </TouchableOpacity>
@@ -164,7 +186,7 @@ const ListingFooter = memo<ListingFooterProps>(
         </View>
       </Animated.View>
     );
-  }
+  },
 );
 
 ListingFooter.displayName = "ListingFooter";
@@ -173,7 +195,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
     // paddingBottom: Platform.OS === "ios" ? hp(2) : hp(1),
-
   },
   progressBarContainer: {
     // paddingHorizontal: wp(4),

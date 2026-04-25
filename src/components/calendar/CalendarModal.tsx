@@ -18,7 +18,7 @@ import { Calendar, LocaleConfig } from "react-native-calendars";
 import { getTodayISO, calculateDays } from "../../utils";
 import type { CalendarDates, MarkedDates } from "../../hooks/useCalendar";
 import type { DailyPriceProperty } from "../../hooks/useDailyPrice";
-import {COLORS} from "../../constants";
+import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 
 export interface CalendarModalProps {
@@ -47,16 +47,17 @@ const CalendarModal = memo<CalendarModalProps>(
     const insets = useSafeAreaInsets();
     const [currentMonth, setCurrentMonth] = useState<string>(() => {
       const today = new Date();
-      return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
     });
-    
+
     // Calculate bottom padding: safe area + small buffer for tab bar
-    const bottomPadding = Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) + hp(2);
+    const bottomPadding =
+      Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) + hp(2);
 
     // Configure LocaleConfig for month and day names with translations
     useEffect(() => {
       const localeKey = isRTL ? "ar" : "en";
-      
+
       // Month names with translations
       const monthNames = [
         t("listings.calendar.months.january"),
@@ -85,17 +86,17 @@ const CalendarModal = memo<CalendarModalProps>(
       ];
 
       // Short day names
-      const dayNamesShort = dayNames.map(day => day.substring(0, 3));
+      const dayNamesShort = dayNames.map((day) => day.substring(0, 3));
 
       // Configure locale
       LocaleConfig.locales[localeKey] = {
         monthNames,
-        monthNamesShort: monthNames.map(month => month.substring(0, 3)),
+        monthNamesShort: monthNames.map((month) => month.substring(0, 3)),
         dayNames,
         dayNamesShort,
         today: "Today",
       };
-      
+
       LocaleConfig.defaultLocale = localeKey;
     }, [t, isRTL]);
 
@@ -109,7 +110,9 @@ const CalendarModal = memo<CalendarModalProps>(
     const rtlStyles = useMemo(
       () => ({
         calendarHeader: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         calendarHeaderText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -118,7 +121,9 @@ const CalendarModal = memo<CalendarModalProps>(
           // No transform needed, using different icon names
         },
         warningBox: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         warningBoxText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -126,7 +131,9 @@ const CalendarModal = memo<CalendarModalProps>(
           marginRight: isRTL ? wp(2) : 0,
         },
         startAgainButton: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         startAgainButtonText: {
           marginLeft: isRTL ? 0 : wp(2),
@@ -136,7 +143,7 @@ const CalendarModal = memo<CalendarModalProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
     useEffect(() => {
       if (
@@ -146,7 +153,7 @@ const CalendarModal = memo<CalendarModalProps>(
       ) {
         const days = calculateDays(
           selectedDates.startDate,
-          selectedDates.endDate
+          selectedDates.endDate,
         );
         if (days < 30) {
           setShowWarning(true);
@@ -187,12 +194,26 @@ const CalendarModal = memo<CalendarModalProps>(
             activeOpacity={1}
             onPress={onClose}
           />
-          <View style={[styles.calendarContainer, { paddingBottom: bottomPadding }]}>
+          <View
+            style={[styles.calendarContainer, { paddingBottom: bottomPadding }]}
+          >
             <View style={[styles.calendarHeader, rtlStyles.calendarHeader]}>
-              <TouchableOpacity onPress={onClose} style={[styles.backButton, rtlStyles.backButton]}>
-                <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={wp(6)} color={COLORS.arrows} />
+              <TouchableOpacity
+                onPress={onClose}
+                style={[styles.backButton, rtlStyles.backButton]}
+              >
+                <Ionicons
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
+                  size={wp(6)}
+                  color={COLORS.arrows}
+                />
               </TouchableOpacity>
-              <Text style={[styles.calendarHeaderText, rtlStyles.calendarHeaderText]}>
+              <Text
+                style={[
+                  styles.calendarHeaderText,
+                  rtlStyles.calendarHeaderText,
+                ]}
+              >
                 {t("listings.chooseReservation")}
               </Text>
               <TouchableOpacity style={styles.okButton} onPress={onClose}>
@@ -210,7 +231,7 @@ const CalendarModal = memo<CalendarModalProps>(
               hideArrows={false}
               current={currentMonth}
               onMonthChange={(month) => {
-                const newMonth = `${month.year}-${String(month.month).padStart(2, '0')}-01`;
+                const newMonth = `${month.year}-${String(month.month).padStart(2, "0")}-01`;
                 if (newMonth !== currentMonth) {
                   setCurrentMonth(newMonth);
                 }
@@ -218,9 +239,14 @@ const CalendarModal = memo<CalendarModalProps>(
               renderArrow={(direction) => {
                 // Keep arrow directions the same in both LTR and RTL
                 // Left arrow always points left (chevron-back), right arrow always points right (chevron-forward)
-                const iconName = direction === "left" ? "chevron-back" : "chevron-forward";
+                const iconName =
+                  direction === "left" ? "chevron-back" : "chevron-forward";
                 return (
-                  <Ionicons name={iconName} size={wp(5)} color={COLORS.arrows} />
+                  <Ionicons
+                    name={iconName}
+                    size={wp(5)}
+                    color={COLORS.arrows}
+                  />
                 );
               }}
               onPressArrowLeft={(subtractMonth) => {
@@ -228,10 +254,10 @@ const CalendarModal = memo<CalendarModalProps>(
                 // In LTR: left arrow should go to previous month
                 if (isRTL) {
                   // For RTL, we need to go forward, so we'll manually update the month
-                  const [year, month] = currentMonth.split('-').map(Number);
+                  const [year, month] = currentMonth.split("-").map(Number);
                   const nextMonth = month === 12 ? 1 : month + 1;
                   const nextYear = month === 12 ? year + 1 : year;
-                  const newMonth = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+                  const newMonth = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
                   setCurrentMonth(newMonth);
                 } else {
                   subtractMonth();
@@ -242,10 +268,10 @@ const CalendarModal = memo<CalendarModalProps>(
                 // In LTR: right arrow should go to next month
                 if (isRTL) {
                   // For RTL, we need to go backward, so we'll manually update the month
-                  const [year, month] = currentMonth.split('-').map(Number);
+                  const [year, month] = currentMonth.split("-").map(Number);
                   const prevMonth = month === 1 ? 12 : month - 1;
                   const prevYear = month === 1 ? year - 1 : year;
-                  const newMonth = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+                  const newMonth = `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`;
                   setCurrentMonth(newMonth);
                 } else {
                   addMonth();
@@ -322,7 +348,13 @@ const CalendarModal = memo<CalendarModalProps>(
 
             {/* Warning Message - Red box */}
             {showWarning && (
-              <Animated.View style={[styles.warningBox, rtlStyles.warningBox, { opacity: fadeAnim }]}>
+              <Animated.View
+                style={[
+                  styles.warningBox,
+                  rtlStyles.warningBox,
+                  { opacity: fadeAnim },
+                ]}
+              >
                 <Ionicons
                   name="information-circle"
                   size={wp(5)}
@@ -341,13 +373,25 @@ const CalendarModal = memo<CalendarModalProps>(
                   style={[styles.startAgainButton, rtlStyles.startAgainButton]}
                   onPress={onResetDates}
                 >
-                  <MaterialIcons name="loop" size={wp(5.5)}  />
-                  <Text style={[styles.startAgainButtonText, rtlStyles.startAgainButtonText]}>{t("listings.calendarModal.startAgain")}</Text>
+                  <MaterialIcons name="loop" size={wp(5.5)} />
+                  <Text
+                    style={[
+                      styles.startAgainButtonText,
+                      rtlStyles.startAgainButtonText,
+                    ]}
+                  >
+                    {t("listings.calendarModal.startAgain")}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.calendarFooter}>
-                <Text style={[styles.chooseDateRangeText, rtlStyles.chooseDateRangeText]}>
+                <Text
+                  style={[
+                    styles.chooseDateRangeText,
+                    rtlStyles.chooseDateRangeText,
+                  ]}
+                >
                   {t("listings.calendarModal.pleaseChooseDateRange")}
                 </Text>
               </View>
@@ -356,7 +400,7 @@ const CalendarModal = memo<CalendarModalProps>(
         </View>
       </Modal>
     );
-  }
+  },
 );
 
 CalendarModal.displayName = "CalendarModal";

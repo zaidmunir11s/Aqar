@@ -17,20 +17,22 @@ export interface BackButtonProps {
 const BackButton = memo<BackButtonProps>(
   ({ onPress, color = "#0e856a", size = wp(7), style }) => {
     const { isRTL } = useLocalization();
-    
+
     // Determine arrow direction based on RTL
-    const arrowIcon: keyof typeof Ionicons.glyphMap = isRTL ? "arrow-forward" : "arrow-back";
+    const arrowIcon: keyof typeof Ionicons.glyphMap = isRTL
+      ? "arrow-forward"
+      : "arrow-back";
 
     return (
-      <TouchableOpacity 
-        style={[styles.button, style]} 
+      <TouchableOpacity
+        style={[styles.button, style]}
         onPress={onPress}
         activeOpacity={0.7}
       >
         <Ionicons name={arrowIcon} size={size} color={color} />
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 BackButton.displayName = "BackButton";

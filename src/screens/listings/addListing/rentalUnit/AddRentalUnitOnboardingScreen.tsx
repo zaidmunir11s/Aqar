@@ -16,6 +16,7 @@ import {
 import { ScreenHeader, PrimaryButton } from "../../../../components";
 import { COLORS } from "@/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -27,29 +28,30 @@ interface BenefitItem {
 const BENEFITS: BenefitItem[] = [
   {
     id: "1",
-    text: "Commission Free Prices!",
+    text: "rentalUnit.benefits.commissionFreePrices",
   },
   {
     id: "2",
-    text: "Earn 5% more on every booking by sharing your referral link with guests",
+    text: "rentalUnit.benefits.earnMoreReferral",
   },
   {
     id: "3",
-    text: "Bookings verified through National Authentication",
+    text: "rentalUnit.benefits.verifiedBookings",
   },
   {
     id: "4",
-    text: "Comprehensive booking management system (set minimum booking duration, add discounts, update prices and booked days, special rates for events, etc.)",
+    text: "rentalUnit.benefits.managementSystem",
   },
   {
     id: "5",
-    text: "Weekly disbursement of payments every Tuesday",
+    text: "rentalUnit.benefits.weeklyPayments",
   },
 ];
 
 export default function AddRentalUnitOnboardingScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { t } = useLocalization();
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -66,7 +68,7 @@ export default function AddRentalUnitOnboardingScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Add bookable unit"
+        title={t("rentalUnit.addBookableUnitTitle")}
         onBackPress={handleBackPress}
         showRightSide={false}
         fontWeightBold={true}
@@ -78,24 +80,25 @@ export default function AddRentalUnitOnboardingScreen(): React.JSX.Element {
         {/* Calendar Icon Section */}
         <View style={styles.iconContainer}>
           <View style={styles.iconWrapper}>
-            <FontAwesome5 name="calendar-plus" size={wp(8)} color={COLORS.info} />
+            <FontAwesome5
+              name="calendar-plus"
+              size={wp(8)}
+              color={COLORS.info}
+            />
           </View>
         </View>
 
         {/* Description Text */}
         <View style={styles.descriptionContainer}>
           <Text style={styles.descriptionText}>
-            A service that makes it easy for you to list your unit{"\n"}
-            for daily or monthly booking instantly through the{"\n"}
-            Aqar platform, with guaranteed rights for both{"\n"}
-            parties.
+            {t("rentalUnit.description")}
           </Text>
         </View>
 
         {/* Benefits Section */}
         <View style={styles.benefitsContainer}>
           <Text style={styles.benefitsTitle}>
-            Benefits of reservations on Aqar platform
+            {t("rentalUnit.benefitsTitle")}
           </Text>
 
           {BENEFITS.map((benefit) => (
@@ -103,7 +106,7 @@ export default function AddRentalUnitOnboardingScreen(): React.JSX.Element {
               <View style={styles.checkmarkCircle}>
                 <Ionicons name="checkmark" size={wp(3)} color="#fff" />
               </View>
-              <Text style={styles.benefitText}>{benefit.text}</Text>
+              <Text style={styles.benefitText}>{t(benefit.text)}</Text>
             </View>
           ))}
         </View>
@@ -114,26 +117,23 @@ export default function AddRentalUnitOnboardingScreen(): React.JSX.Element {
           onPress={handleLearnMorePress}
           activeOpacity={0.7}
         >
-          <Text style={styles.learnMoreText}>
-            Learn more about the service
-          </Text>
+          <Text style={styles.learnMoreText}>{t("rentalUnit.learnMore")}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Sticky CTA Button */}
       <View
-  style={[
-    styles.buttonContainer,
-    {
-      paddingBottom: Platform.OS === 'ios' 
-        ? Math.max(insets.bottom, 16) 
-        : 12,
-    },
-  ]}
->
+        style={[
+          styles.buttonContainer,
+          {
+            paddingBottom:
+              Platform.OS === "ios" ? Math.max(insets.bottom, 16) : 12,
+          },
+        ]}
+      >
         <PrimaryButton
           onPress={handleAddUnitPress}
-          text="Add bookable unit"
+          text={t("rentalUnit.addBookableUnitCta")}
         />
       </View>
     </View>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   benefitItem: {
     flexDirection: "row",
-    alignItems: "center",        // ← Changed to "center" so checkmark aligns vertically with multiline text
+    alignItems: "center", // ← Changed to "center" so checkmark aligns vertically with multiline text
     marginBottom: hp(2),
   },
   checkmarkCircle: {

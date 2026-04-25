@@ -39,7 +39,10 @@ const STREET_DIRECTION_OPTIONS = [
   "3 Streets",
   "4 Streets",
 ];
-const APARTMENT_PICKER_OPTIONS = [...Array.from({ length: 30 }, (_, i) => `${i}`), "30+"];
+const APARTMENT_PICKER_OPTIONS = [
+  ...Array.from({ length: 30 }, (_, i) => `${i}`),
+  "30+",
+];
 
 const TOGGLE_TRACK_WIDTH = wp(9);
 const TOGGLE_TRACK_HEIGHT = hp(1.5);
@@ -78,7 +81,10 @@ export default function VillaForSaleDetailsForm({
   const [drainageAvailability, setDrainageAvailability] = useState(false);
 
   const ageDisplayOptions = useMemo(() => buildAgePickerDisplayOptions(t), [t]);
-  const villaTypeDisplayOptions = useMemo(() => buildVillaTypeDisplayOptions(t), [t]);
+  const villaTypeDisplayOptions = useMemo(
+    () => buildVillaTypeDisplayOptions(t),
+    [t],
+  );
 
   const villaRtl = useMemo(
     () => ({
@@ -97,7 +103,7 @@ export default function VillaForSaleDetailsForm({
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const isStreetDirectionValid = streetDirection !== "Not Defined";
@@ -108,14 +114,49 @@ export default function VillaForSaleDetailsForm({
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "navigate", label: t("listings.streetDirection"), value: getDirectionLabel(streetDirection, t) },
-      { type: "value", icon: "bed", label: t("listings.bedrooms"), value: bedrooms },
-      { type: "value", icon: "business", label: t("listings.apartments"), value: apartments },
-      { type: "value", icon: "home", label: t("listings.livingRooms"), value: livingRooms },
-      { type: "value", icon: "water", label: t("listings.restrooms"), value: wc },
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
+      {
+        type: "value",
+        icon: "navigate",
+        label: t("listings.streetDirection"),
+        value: getDirectionLabel(streetDirection, t),
+      },
+      {
+        type: "value",
+        icon: "bed",
+        label: t("listings.bedrooms"),
+        value: bedrooms,
+      },
+      {
+        type: "value",
+        icon: "business",
+        label: t("listings.apartments"),
+        value: apartments,
+      },
+      {
+        type: "value",
+        icon: "home",
+        label: t("listings.livingRooms"),
+        value: livingRooms,
+      },
+      {
+        type: "value",
+        icon: "water",
+        label: t("listings.restrooms"),
+        value: wc,
+      },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
       { type: "toggle", label: t("listings.stairs"), enabled: stairs },
-      { type: "value", icon: "business", label: t("listings.realEstateAge"), value: formatRealEstateAgeLabel(ageLessThan, t) },
+      {
+        type: "value",
+        icon: "business",
+        label: t("listings.realEstateAge"),
+        value: formatRealEstateAgeLabel(ageLessThan, t),
+      },
       { type: "toggle", label: t("listings.driverRoom"), enabled: driverRoom },
       { type: "toggle", label: t("listings.maidRoom"), enabled: maidRoom },
       { type: "toggle", label: t("listings.pool"), enabled: pool },
@@ -124,7 +165,11 @@ export default function VillaForSaleDetailsForm({
       { type: "toggle", label: t("listings.backyard"), enabled: backyard },
       { type: "toggle", label: t("listings.kitchen"), enabled: kitchen },
       { type: "toggle", label: t("listings.extraUnit"), enabled: extraUnit },
-      { type: "toggle", label: t("listings.carEntrance"), enabled: carEntrance },
+      {
+        type: "toggle",
+        label: t("listings.carEntrance"),
+        enabled: carEntrance,
+      },
       { type: "toggle", label: t("listings.basement"), enabled: basement },
       { type: "toggle", label: t("listings.lift"), enabled: lift },
       {
@@ -134,8 +179,16 @@ export default function VillaForSaleDetailsForm({
         value: villaType ? villaTypeRowLabel(villaType, t) : "---",
       },
       { type: "toggle", label: t("listings.water"), enabled: water },
-      { type: "toggle", label: t("listings.electricity"), enabled: electricity },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: drainageAvailability,
+      },
     ]);
   }, [
     ageLessThan,
@@ -167,14 +220,28 @@ export default function VillaForSaleDetailsForm({
 
   return (
     <>
-      <OptionChips label={t("listings.bedrooms")} options={BEDROOM_OPTIONS} selectedValue={bedrooms} onSelect={setBedrooms} />
-      <OptionChips label={t("listings.livingRooms")} options={LIVING_ROOM_OPTIONS} selectedValue={livingRooms} onSelect={setLivingRooms} />
+      <OptionChips
+        label={t("listings.bedrooms")}
+        options={BEDROOM_OPTIONS}
+        selectedValue={bedrooms}
+        onSelect={setBedrooms}
+      />
+      <OptionChips
+        label={t("listings.livingRooms")}
+        options={LIVING_ROOM_OPTIONS}
+        selectedValue={livingRooms}
+        onSelect={setLivingRooms}
+      />
       <OptionChips
         label={t("listings.streetDirection")}
-        options={STREET_DIRECTION_OPTIONS.map((opt) => getDirectionLabel(opt, t))}
+        options={STREET_DIRECTION_OPTIONS.map((opt) =>
+          getDirectionLabel(opt, t),
+        )}
         selectedValue={getDirectionLabel(streetDirection, t)}
         onSelect={(value) => {
-          const original = STREET_DIRECTION_OPTIONS.find((opt) => getDirectionLabel(opt, t) === value);
+          const original = STREET_DIRECTION_OPTIONS.find(
+            (opt) => getDirectionLabel(opt, t) === value,
+          );
           setStreetDirection(original ?? "Not Defined");
         }}
         scrollable
@@ -184,7 +251,12 @@ export default function VillaForSaleDetailsForm({
             : undefined
         }
       />
-      <OptionChips label={t("listings.wc")} options={WC_OPTIONS} selectedValue={wc} onSelect={setWc} />
+      <OptionChips
+        label={t("listings.wc")}
+        options={WC_OPTIONS}
+        selectedValue={wc}
+        onSelect={setWc}
+      />
 
       <SliderWithInput
         label={t("listings.streetWidth")}
@@ -193,19 +265,32 @@ export default function VillaForSaleDetailsForm({
         max={100}
       />
 
-      <ToggleRow label={t("listings.stairs")} value={stairs} onValueChange={setStairs} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
+      <ToggleRow
+        label={t("listings.stairs")}
+        value={stairs}
+        onValueChange={setStairs}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
       <View style={[styles.inlineRow, villaRtl.inlineRow]}>
-        <Text style={[styles.inlineRowLabel, villaRtl.inlineRowLabel]}>{t("listings.apartments")}</Text>
+        <Text style={[styles.inlineRowLabel, villaRtl.inlineRowLabel]}>
+          {t("listings.apartments")}
+        </Text>
         <TouchableOpacity
           style={[styles.inlineField, villaRtl.inlineField]}
           onPress={() => setShowApartmentsModal(true)}
         >
-          <Text style={[styles.inlineFieldText, villaRtl.inlineFieldText]}>{apartments}</Text>
+          <Text style={[styles.inlineFieldText, villaRtl.inlineFieldText]}>
+            {apartments}
+          </Text>
           <Ionicons name="chevron-down" size={wp(4.8)} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
       <View style={[styles.inlineRow, villaRtl.inlineRow]}>
-        <Text style={[styles.inlineRowLabel, villaRtl.inlineRowLabel]}>{t("listings.ageLessThan")}</Text>
+        <Text style={[styles.inlineRowLabel, villaRtl.inlineRowLabel]}>
+          {t("listings.ageLessThan")}
+        </Text>
         <TouchableOpacity
           style={[styles.inlineField, villaRtl.inlineField]}
           onPress={() => setShowAgeModal(true)}
@@ -216,26 +301,126 @@ export default function VillaForSaleDetailsForm({
           <Ionicons name="chevron-down" size={wp(4.8)} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-      <ToggleRow label={t("listings.driverRoom")} value={driverRoom} onValueChange={setDriverRoom} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.maidRoom")} value={maidRoom} onValueChange={setMaidRoom} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.pool")} value={pool} onValueChange={setPool} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.furnished")} value={furnished} onValueChange={setFurnished} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.tent")} value={tent} onValueChange={setTent} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.backyard")} value={backyard} onValueChange={setBackyard} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.kitchen")} value={kitchen} onValueChange={setKitchen} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.extraUnit")} value={extraUnit} onValueChange={setExtraUnit} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.carEntrance")} value={carEntrance} onValueChange={setCarEntrance} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.basement")} value={basement} onValueChange={setBasement} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.lift")} value={lift} onValueChange={setLift} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
+      <ToggleRow
+        label={t("listings.driverRoom")}
+        value={driverRoom}
+        onValueChange={setDriverRoom}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.maidRoom")}
+        value={maidRoom}
+        onValueChange={setMaidRoom}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.pool")}
+        value={pool}
+        onValueChange={setPool}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.furnished")}
+        value={furnished}
+        onValueChange={setFurnished}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.tent")}
+        value={tent}
+        onValueChange={setTent}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.backyard")}
+        value={backyard}
+        onValueChange={setBackyard}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.kitchen")}
+        value={kitchen}
+        onValueChange={setKitchen}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.extraUnit")}
+        value={extraUnit}
+        onValueChange={setExtraUnit}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.carEntrance")}
+        value={carEntrance}
+        onValueChange={setCarEntrance}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.basement")}
+        value={basement}
+        onValueChange={setBasement}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.lift")}
+        value={lift}
+        onValueChange={setLift}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
       <OptionChips
         label={t("listings.villaType")}
         options={villaTypeDisplayOptions}
         selectedValue={villaType ? villaTypeRowLabel(villaType, t) : ""}
-        onSelect={(label) => setVillaType(canonicalVillaTypeFromDisplayLabel(label, t))}
+        onSelect={(label) =>
+          setVillaType(canonicalVillaTypeFromDisplayLabel(label, t))
+        }
       />
-      <ToggleRow label={t("listings.water")} value={water} onValueChange={setWater} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.electricity")} value={electricity} onValueChange={setElectricity} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.drainageAvailability")} value={drainageAvailability} onValueChange={setDrainageAvailability} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
+      <ToggleRow
+        label={t("listings.water")}
+        value={water}
+        onValueChange={setWater}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.electricity")}
+        value={electricity}
+        onValueChange={setElectricity}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.drainageAvailability")}
+        value={drainageAvailability}
+        onValueChange={setDrainageAvailability}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
 
       <WheelPickerModal
         visible={showApartmentsModal}
@@ -248,7 +433,9 @@ export default function VillaForSaleDetailsForm({
       <WheelPickerModal
         visible={showAgeModal}
         onClose={() => setShowAgeModal(false)}
-        onSelect={(picked) => setAgeLessThan(canonicalAgeFromDisplayLabel(picked, t))}
+        onSelect={(picked) =>
+          setAgeLessThan(canonicalAgeFromDisplayLabel(picked, t))
+        }
         title={t("listings.ageLessThan")}
         options={ageDisplayOptions}
         initialValue={agePickerRowLabel(ageLessThan, t)}

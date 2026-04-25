@@ -1,17 +1,28 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import type { Property, RentSaleProperty } from "../../types/property";
+import type { Property } from "../../types/property";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateAddress } from "../../utils/addressTranslation";
 import { ChartNoAxesColumn } from "lucide-react-native";
+import { COLORS } from "@/constants/colors";
+import { usePropertyMarketPriceInsight } from "@/hooks/usePropertyMarketPriceInsight";
+import type { ListingPriceFilters } from "@/utils/listingPriceInsights";
 
 export interface AverageSaleCardProps {
   property: Property;
+  /** Optional filters for market stats (area range also narrows the API query when set). */
+  insightFilters?: ListingPriceFilters;
   /** Optional filter range shown in label, when available. */
   minArea?: number;
   maxArea?: number;
@@ -25,110 +36,176 @@ export interface AverageSaleCardProps {
 
 /**
  * Average sale card component for sale listings
- * Shows average villa for sale area and price in location
+ * Shows market average for sale listings in a location
  */
 const AverageSaleCard = memo<AverageSaleCardProps>(
-  ({ property, minArea, maxArea, onPress, variant = "default", onEditPress }) => {
-  const { t, isRTL } = useLocalization();
-  
-  const parseCompactPrice = (rawPrice?: string): number | null => {
-    const raw = (rawPrice ?? "").trim();
-    if (!raw) return null;
-    const compactMatch = raw.match(/^([\d.,]+)\s*([kKmM])$/);
-    if (compactMatch) {
-      const amount = Number.parseFloat(compactMatch[1].replace(/,/g, ""));
-      if (!Number.isFinite(amount)) return null;
-      const multiplier = compactMatch[2].toLowerCase() === "m" ? 1_000_000 : 1_000;
-      return Math.round(amount * multiplier);
-    }
-    const digitsOnly = raw.replace(/[^\d]/g, "");
-    if (!digitsOnly) return null;
-    const numeric = Number(digitsOnly);
-    return Number.isFinite(numeric) ? numeric : null;
-  };
+  ({
+    property,
+    insightFilters,
+    minArea,
+    maxArea,
+    onPress,
+    variant = "default",
+    onEditPress,
+  }) => {
+    const { t, isRTL } = useLocalization();
 
-  // Calculate average price (in a real app, this would come from API)
-  const saleProperty = property as RentSaleProperty;
-  const averagePrice = useMemo(() => {
-    const parsed = parseCompactPrice(saleProperty.price);
-    const fallback = 4810360;
-    const numeric = parsed ?? fallback;
-    return numeric.toLocaleString(isRTL ? "ar-SA" : "en-US");
-  }, [isRTL, saleProperty.price]);
-  
-  // Translate the location/address
-  const rawLocation = property.address || property.city || "";
-  const translatedLocation = useMemo(
-    () => rawLocation ? translateAddress(rawLocation, t) : t("listings.city"),
-    [rawLocation, t]
-  );
-  
-  const hasAreaRange =
-    typeof minArea === "number" &&
-    Number.isFinite(minArea) &&
-    typeof maxArea === "number" &&
-    Number.isFinite(maxArea) &&
-    minArea > 0 &&
-    maxArea > 0;
+    const isDetail = variant === "detail";
 
-  // RTL-aware styles
-  const rtlStyles = useMemo(
-    () => ({
-      card: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      iconContainer: {
-        marginRight: isRTL ? 0 : wp(3),
-        marginLeft: isRTL ? wp(3) : 0,
-      },
-      label: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-      price: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-    }),
-    [isRTL]
-  );
+    const getTranslatedTypeLabel = (type: string): string => {
+      const translationKey = `listings.propertyTypes.${type}`;
+      const translated = t(translationKey);
+      if (translated && translated !== translationKey) {
+        return translated;
+      }
+      return type;
+    };
 
-  const isDetail = variant === "detail";
-  const Wrapper = isDetail ? View : TouchableOpacity;
-  const wrapperProps = isDetail
-    ? { style: [styles.card, rtlStyles.card] }
-    : { style: [styles.card, rtlStyles.card], onPress, activeOpacity: 0.7 };
+    const propertyTypeLabel = useMemo(
+      () => getTranslatedTypeLabel(property.type),
+      [property.type, t],
+    );
 
-  return (
-    <Wrapper {...wrapperProps}>
-      <View style={[styles.iconContainer, rtlStyles.iconContainer]}>
-        <ChartNoAxesColumn size={wp(7)} color="#3b82f6" strokeWidth={3} />
-      </View>
-      <View style={styles.content}>
-        <Text style={[styles.label, rtlStyles.label, isDetail && styles.labelBold]}>
-          {hasAreaRange
-            ? t("listings.averageForSale", {
-                minArea,
-                maxArea,
-                location: translatedLocation,
-              })
-            : t("listings.averageForSaleNoRange", {
-                defaultValue: "Average Villa for sale in {{location}}",
-                location: translatedLocation,
-              })}
-        </Text>
-        {!isDetail && (
-          <Text style={[styles.price, rtlStyles.price]}>{averagePrice} {t("listings.sar")}</Text>
+    const mergedInsightFilters = useMemo((): ListingPriceFilters => {
+      const base = insightFilters ?? {};
+      const out: ListingPriceFilters = { ...base };
+      if (
+        typeof minArea === "number" &&
+        Number.isFinite(minArea) &&
+        minArea > 0
+      ) {
+        out.minArea = minArea;
+      }
+      if (
+        typeof maxArea === "number" &&
+        Number.isFinite(maxArea) &&
+        maxArea > 0
+      ) {
+        out.maxArea = maxArea;
+      }
+      return out;
+    }, [insightFilters, minArea, maxArea]);
+
+    const { avgPrice, isLoading, isFetching } = usePropertyMarketPriceInsight(
+      property,
+      "sale",
+      { variant, filters: mergedInsightFilters },
+    );
+
+    const averagePriceText = useMemo(() => {
+      if (avgPrice != null && Number.isFinite(avgPrice)) {
+        return avgPrice.toLocaleString(isRTL ? "ar-SA" : "en-US");
+      }
+      return "---";
+    }, [avgPrice, isRTL]);
+
+    const showPriceSpinner =
+      !isDetail &&
+      (isLoading || (isFetching && avgPrice == null));
+
+    // Translate the location/address
+    const rawLocation = property.address || property.city || "";
+    const translatedLocation = useMemo(
+      () =>
+        rawLocation ? translateAddress(rawLocation, t) : t("listings.city"),
+      [rawLocation, t],
+    );
+
+    const hasAreaRange =
+      typeof minArea === "number" &&
+      Number.isFinite(minArea) &&
+      typeof maxArea === "number" &&
+      Number.isFinite(maxArea) &&
+      minArea > 0 &&
+      maxArea > 0;
+
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        card: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+        },
+        iconContainer: {
+          marginRight: isRTL ? 0 : wp(3),
+          marginLeft: isRTL ? wp(3) : 0,
+        },
+        label: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        price: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        priceRow: {
+          alignItems: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-end"
+            | "flex-start",
+        },
+      }),
+      [isRTL],
+    );
+
+    const Wrapper = isDetail ? View : TouchableOpacity;
+    const wrapperProps = isDetail
+      ? { style: [styles.card, rtlStyles.card] }
+      : { style: [styles.card, rtlStyles.card], onPress, activeOpacity: 0.7 };
+
+    return (
+      <Wrapper {...wrapperProps}>
+        <View style={[styles.iconContainer, rtlStyles.iconContainer]}>
+          <ChartNoAxesColumn size={wp(7)} color="#3b82f6" strokeWidth={3} />
+        </View>
+        <View style={styles.content}>
+          <Text
+            style={[
+              styles.label,
+              rtlStyles.label,
+              isDetail && styles.labelBold,
+            ]}
+          >
+            {hasAreaRange
+              ? t("listings.averageForSale", {
+                  propertyType: propertyTypeLabel,
+                  minArea,
+                  maxArea,
+                  location: translatedLocation,
+                })
+              : t("listings.averageForSaleNoRange", {
+                  defaultValue: "Average {{propertyType}} for sale in {{location}}",
+                  propertyType: propertyTypeLabel,
+                  location: translatedLocation,
+                })}
+          </Text>
+          {!isDetail && (
+            <View style={[styles.priceRow, rtlStyles.priceRow]}>
+              {showPriceSpinner ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={[styles.price, rtlStyles.price]}>
+                  {averagePriceText} {t("listings.sar")}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+        {isDetail ? (
+          <TouchableOpacity
+            onPress={onEditPress}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Text style={styles.editText}>{t("common.edit")}</Text>
+          </TouchableOpacity>
+        ) : (
+          <Ionicons
+            name={isRTL ? "chevron-back" : "chevron-forward"}
+            size={wp(5)}
+            color="#9ca3af"
+          />
         )}
-      </View>
-      {isDetail ? (
-        <TouchableOpacity onPress={onEditPress} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Text style={styles.editText}>{t("common.edit")}</Text>
-        </TouchableOpacity>
-      ) : (
-        <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={wp(5)} color="#9ca3af" />
-      )}
-    </Wrapper>
-  );
-  }
+      </Wrapper>
+    );
+  },
 );
 
 AverageSaleCard.displayName = "AverageSaleCard";
@@ -157,6 +234,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  priceRow: {
+    minHeight: hp(3),
+    justifyContent: "center",
   },
   label: {
     fontSize: wp(3.2),

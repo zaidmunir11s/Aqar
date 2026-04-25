@@ -8,7 +8,11 @@ type Props = {
   height: number;
 };
 
-const GalleryVideoSlide = memo(function GalleryVideoSlide({ uri, width, height }: Props) {
+const GalleryVideoSlide = memo(function GalleryVideoSlide({
+  uri,
+  width,
+  height,
+}: Props) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = false;
   });
@@ -20,7 +24,9 @@ const GalleryVideoSlide = memo(function GalleryVideoSlide({ uri, width, height }
         player={player}
         nativeControls
         contentFit="contain"
-        {...(Platform.OS === "android" ? { surfaceType: "textureView" as const } : {})}
+        {...(Platform.OS === "android"
+          ? { surfaceType: "textureView" as const }
+          : {})}
       />
     </View>
   );

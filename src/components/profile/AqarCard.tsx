@@ -35,7 +35,11 @@ const AqarCard = memo<AqarCardProps>(({ onPress }) => {
     };
   }, [isRTL]);
   return (
-    <TouchableOpacity style={[styles.card, rtlStyles.card]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, rtlStyles.card]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.iconContainer}>
         <Ionicons name="map" size={wp(8)} color="#fbbf24" />
         <Ionicons
@@ -49,8 +53,14 @@ const AqarCard = memo<AqarCardProps>(({ onPress }) => {
         </View>
       </View>
       <View style={styles.textContainer}>
-        <Text style={[styles.title, rtlStyles.title]}>{t("common.bayt", { defaultValue: "Bayt" })}</Text>
-        <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("common.exploreBaytFeatures", { defaultValue: "Explore Bayt Features" })}</Text>
+        <Text style={[styles.title, rtlStyles.title]}>
+          {t("common.bayt", { defaultValue: "Bayt" })}
+        </Text>
+        <Text style={[styles.subtitle, rtlStyles.subtitle]}>
+          {t("common.exploreBaytFeatures", {
+            defaultValue: "Explore Bayt Features",
+          })}
+        </Text>
       </View>
       <Ionicons
         name={isRTL ? "chevron-back" : "chevron-forward"}

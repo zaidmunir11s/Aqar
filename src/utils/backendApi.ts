@@ -6,10 +6,12 @@ type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export async function backendRequest<T>(
   path: string,
-  opts?: { method?: HttpMethod; body?: unknown }
+  opts?: { method?: HttpMethod; body?: unknown },
 ): Promise<T> {
   const rawPath = path.startsWith("/") ? path : `/${path}`;
-  const normalizedPath = rawPath.startsWith("/api/") ? rawPath : `/api${rawPath}`;
+  const normalizedPath = rawPath.startsWith("/api/")
+    ? rawPath
+    : `/api${rawPath}`;
   const url = `${API_CONFIG.BASE_URL}${normalizedPath}`;
   const token = await secureGet(STORAGE_KEYS.authToken);
 
@@ -30,4 +32,3 @@ export async function backendRequest<T>(
   }
   return json as T;
 }
-

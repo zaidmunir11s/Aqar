@@ -20,7 +20,13 @@ export interface SegmentedControlProps {
 const LARGE_DEFAULT_HEIGHT = hp(4.2);
 
 const SegmentedControl = memo<SegmentedControlProps>(
-  ({ options, selectedIndex, onSelect, variant = "default", segmentHeight }) => {
+  ({
+    options,
+    selectedIndex,
+    onSelect,
+    variant = "default",
+    segmentHeight,
+  }) => {
     const { isRTL } = useLocalization();
     const isLarge = variant === "large";
     const largeH = segmentHeight ?? LARGE_DEFAULT_HEIGHT;
@@ -28,20 +34,24 @@ const SegmentedControl = memo<SegmentedControlProps>(
     const rtlStyles = useMemo(
       () => ({
         container: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         segmentTextDir: {
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
       <View
         style={[
           isLarge ? largeStyles.container : styles.container,
-          isLarge ? { flexDirection: isRTL ? "row-reverse" : "row" } : rtlStyles.container,
+          isLarge
+            ? { flexDirection: isRTL ? "row-reverse" : "row" }
+            : rtlStyles.container,
         ]}
       >
         {options.map((option, index) => (
@@ -52,7 +62,10 @@ const SegmentedControl = memo<SegmentedControlProps>(
                 isLarge && { height: largeH },
                 index === selectedIndex &&
                   (isLarge ? largeStyles.segmentActive : styles.segmentActive),
-                pressed && (isLarge ? largeStyles.segmentPressed : styles.segmentPressed),
+                pressed &&
+                  (isLarge
+                    ? largeStyles.segmentPressed
+                    : styles.segmentPressed),
               ]}
               onPress={() => onSelect(index)}
               delayLongPress={300}
@@ -62,20 +75,24 @@ const SegmentedControl = memo<SegmentedControlProps>(
                   isLarge ? largeStyles.segmentText : styles.segmentText,
                   isLarge && rtlStyles.segmentTextDir,
                   index === selectedIndex &&
-                    (isLarge ? largeStyles.segmentTextActive : styles.segmentTextActive),
+                    (isLarge
+                      ? largeStyles.segmentTextActive
+                      : styles.segmentTextActive),
                 ]}
               >
                 {option}
               </Text>
             </Pressable>
             {index < options.length - 1 ? (
-              <View style={isLarge ? largeStyles.separator : styles.separator} />
+              <View
+                style={isLarge ? largeStyles.separator : styles.separator}
+              />
             ) : null}
           </React.Fragment>
         ))}
       </View>
     );
-  }
+  },
 );
 
 SegmentedControl.displayName = "SegmentedControl";

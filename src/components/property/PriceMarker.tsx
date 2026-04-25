@@ -19,14 +19,17 @@ export interface PriceMarkerProps {
 /**
  * Format price string that may contain K or M to translated version
  */
-const translatePriceString = (priceStr: string, t: (key: string) => string): string => {
+const translatePriceString = (
+  priceStr: string,
+  t: (key: string) => string,
+): string => {
   if (!priceStr) return priceStr;
-  
+
   // Replace K with translated thousand
   let translated = priceStr.replace(/\s*K\b/g, ` ${t("listings.thousand")}`);
   // Replace M with translated million
   translated = translated.replace(/\s*M\b/g, ` ${t("listings.million")}`);
-  
+
   return translated;
 };
 
@@ -36,7 +39,7 @@ const translatePriceString = (priceStr: string, t: (key: string) => string): str
 const PriceMarker = memo<PriceMarkerProps>(
   ({ property, isSelected, isVisited, listingType, calculatedPrice }) => {
     const { t, isRTL } = useLocalization();
-    
+
     // Format number to compact notation with translations
     const formatCompactNumber = (num: number): string => {
       if (num >= 1000000) {
@@ -66,8 +69,8 @@ const PriceMarker = memo<PriceMarkerProps>(
       } else {
         const dailyProperty = property as any;
         displayText =
-          dailyProperty.bookingType === "daily" 
-            ? t("listings.daily") 
+          dailyProperty.bookingType === "daily"
+            ? t("listings.daily")
             : t("listings.monthly");
       }
     } else {
@@ -87,13 +90,15 @@ const PriceMarker = memo<PriceMarkerProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
       <View style={styles.markerContainer}>
         <View style={[styles.priceBubble, { backgroundColor: bg }]}>
-          <Text style={[styles.priceText, rtlStyles.priceText]}>{displayText}</Text>
+          <Text style={[styles.priceText, rtlStyles.priceText]}>
+            {displayText}
+          </Text>
         </View>
         <View style={[styles.pointer, { borderTopColor: bg }]} />
       </View>
@@ -108,7 +113,7 @@ const PriceMarker = memo<PriceMarkerProps>(
       prevProps.calculatedPrice === nextProps.calculatedPrice &&
       prevProps.property.id === nextProps.property.id
     );
-  }
+  },
 );
 
 PriceMarker.displayName = "PriceMarker";

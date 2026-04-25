@@ -1,7 +1,10 @@
 import type { PropertyDetailItem } from "@/types/property";
+import type { PropertyDetailsDisplayItem } from "@/components/marketingRequestPropertyDetails/shared/CategoryFormProps";
+import type { UserRentPaymentPublishInput } from "./rentPayments";
+import { parseRentListingPriceToSar } from "./propertyHelpers";
 
 function serializePropertyDetailItems(
-  items: PropertyDetailItem[] | undefined
+  items: PropertyDetailItem[] | undefined,
 ): Record<string, unknown>[] {
   if (!items?.length) return [];
   return items.map((item) => ({
@@ -12,9 +15,6 @@ function serializePropertyDetailItems(
     ...(item.icon ? { icon: item.icon } : {}),
   }));
 }
-import type { PropertyDetailsDisplayItem } from "@/components/marketingRequestPropertyDetails/shared/CategoryFormProps";
-import type { UserRentPaymentPublishInput } from "./rentPayments";
-import { parseRentListingPriceToSar } from "./propertyHelpers";
 
 /** Prisma `PropertyType` values accepted by POST /api/listings */
 const CATEGORY_TO_PROPERTY_TYPE: Record<string, string> = {
@@ -44,7 +44,7 @@ const CATEGORY_TO_PROPERTY_TYPE: Record<string, string> = {
 
 function parseNumericDetail(
   items: PropertyDetailItem[] | undefined,
-  labelSubstrings: string[]
+  labelSubstrings: string[],
 ): number | undefined {
   if (!items?.length) return undefined;
   for (const item of items) {
@@ -59,7 +59,7 @@ function parseNumericDetail(
 }
 
 function serializeDisplayItems(
-  items: PropertyDetailsDisplayItem[] | undefined
+  items: PropertyDetailsDisplayItem[] | undefined,
 ): Record<string, unknown>[] {
   if (!items?.length) return [];
   return items.map((item) => ({
@@ -105,11 +105,11 @@ export type MarketingPublishParams = {
   pricingDetailsItems?: PropertyDetailsDisplayItem[];
   rentPaymentOptions?: UserRentPaymentPublishInput;
   /** Photo/video notes and types from attachments (parallel to upload order). */
-  attachmentsMeta?: Array<{
+  attachmentsMeta?: {
     id: string;
     mediaType?: "photo" | "video" | "unknown";
     note?: string;
-  }>;
+  }[];
   /** Public https URLs after Supabase Storage upload (photos + videos). */
   media?: { url: string; order: number; kind: "PHOTO" | "VIDEO" }[];
   /** Optional deed payload for license-based flows. */
@@ -153,7 +153,7 @@ export type CreateListingBody = {
  * Structured JSON stored on `Listing.metadata` — full marketing-request context (no deed).
  */
 export function buildMarketingListingMetadata(
-  input: MarketingPublishParams
+  input: MarketingPublishParams,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {
     flow: "marketing_request",
@@ -180,13 +180,11 @@ export function buildMarketingListingMetadata(
   }
   if (input.propertyDetailsItems?.length) {
     out.propertyDetailsItems = serializeDisplayItems(
-      input.propertyDetailsItems
+      input.propertyDetailsItems,
     );
   }
   if (input.pricingDetailsItems?.length) {
-    out.pricingDetailsItems = serializeDisplayItems(
-      input.pricingDetailsItems
-    );
+    out.pricingDetailsItems = serializeDisplayItems(input.pricingDetailsItems);
   }
   if (input.attachmentsMeta?.length) {
     out.attachmentsMeta = input.attachmentsMeta.map((a) => ({
@@ -216,11 +214,7 @@ export function buildMarketingListingMetadata(
     "سنة",
     "real estate age",
   ]);
-  if (
-    livingRooms != null ||
-    restroomsExtra != null ||
-    estateAge != null
-  ) {
+  if (livingRooms != null || restroomsExtra != null || estateAge != null) {
     out.extraFields = {
       ...(livingRooms != null ? { livingRooms } : {}),
       ...(restroomsExtra != null ? { restroomsListed: restroomsExtra } : {}),
@@ -236,7 +230,7 @@ export function buildMarketingListingMetadata(
  * Deed is intentionally omitted. Rich UI data is duplicated into `metadata` JSON for the DB.
  */
 export function buildCreateListingBodyFromMarketing(
-  input: MarketingPublishParams
+  input: MarketingPublishParams,
 ): CreateListingBody {
   const isRent = input.selectedCategory.startsWith("rent-");
   const listingType: "RENT" | "SALE" = isRent ? "RENT" : "SALE";
@@ -250,11 +244,10 @@ export function buildCreateListingBodyFromMarketing(
   const priceSar = Math.max(
     1,
     priceParsed ??
-      (Number.isFinite(digitsOnly) && digitsOnly > 0 ? digitsOnly : 1)
+      (Number.isFinite(digitsOnly) && digitsOnly > 0 ? digitsOnly : 1),
   );
 
-  const areaSqm =
-    Number(String(input.area ?? "").replace(/[^\d.]/g, "")) || 1;
+  const areaSqm = Number(String(input.area ?? "").replace(/[^\d.]/g, "")) || 1;
 
   const bedrooms =
     parseNumericDetail(input.detailsItems, [

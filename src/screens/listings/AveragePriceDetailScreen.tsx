@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Text, ActivityIndicator } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Text,
+  ActivityIndicator,
+} from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   AverageCard,
@@ -16,58 +22,18 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "@/constants/colors";
 import { useGetPublicListingsQuery } from "@/redux/api";
-import { parseBackendDateMs } from "@/utils/dateParsing";
-
-const INSIGHTS_DAYS = 90;
-
-const UI_TO_PRISMA_PROPERTY_TYPE: Record<string, string> = {
-  apartment: "APARTMENT",
-  land: "LAND",
-  building: "BUILDING",
-  villa: "VILLA",
-  office: "COMMERCIAL",
-  small_house: "HOUSE",
-  lounge: "LOUNGE",
-  farm: "FARM",
-  store: "STORE",
-  floor: "FLOOR",
-  other: "OTHER",
-};
-
-function median(values: number[]): number | null {
-  const v = values.filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
-  if (v.length === 0) return null;
-  const mid = Math.floor(v.length / 2);
-  if (v.length % 2 === 0) return (v[mid - 1] + v[mid]) / 2;
-  return v[mid];
-}
-
-function average(values: number[]): number | null {
-  const v = values.filter((n) => Number.isFinite(n));
-  if (v.length === 0) return null;
-  const sum = v.reduce((a, b) => a + b, 0);
-  return sum / v.length;
-}
-
-function startOfDay(d: Date): Date {
-  const out = new Date(d);
-  out.setHours(0, 0, 0, 0);
-  return out;
-}
-
-function formatDayLabel(dayStart: Date): string {
-  return dayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+import {
+  buildMarketListingsQueryArgs,
+  computeListingPriceInsights,
+  getPrismaPropertyTypeForQuery,
+  INSIGHTS_DAYS,
+  type ListingPriceFilters,
+} from "@/utils/listingPriceInsights";
 
 export interface AveragePriceDetailParams {
   property: Property;
   averageType: "rent" | "sale";
-  filters?: {
-    city?: string;
-    minArea?: number;
-    maxArea?: number;
-    bedrooms?: number;
-  };
+  filters?: ListingPriceFilters;
 }
 
 export default function AveragePriceDetailScreen(): React.JSX.Element {
@@ -95,7 +61,7 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
       if (abs >= 1_000) return fmt(n / 1_000, thousand);
       return `${Math.round(n).toLocaleString(loc)} ${t("listings.sar")}`;
     },
-    [isRTL, t]
+    [isRTL, t],
   );
 
   const handleBackPress = useCallback(() => {
@@ -104,82 +70,38 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
 
   const handleEditPress = useCallback(() => {
     (navigation as { navigate: (name: string) => void }).navigate(
-      "AqarResidentialStats"
+      "AqarResidentialStats",
     );
   }, [navigation]);
 
-  const prismaPropertyType = useMemo(() => {
-    const key = String((property as any)?.type ?? "").trim();
-    return UI_TO_PRISMA_PROPERTY_TYPE[key] ?? undefined;
-  }, [property]);
-
-  const { data: publicListingsData, isLoading } = useGetPublicListingsQuery(
-    {
-      page: 1,
-      limit: 200,
-      listingType: averageType === "rent" ? "RENT" : "SALE",
-      ...(prismaPropertyType ? { propertyType: prismaPropertyType } : {}),
-      ...(filters?.city?.trim() ? { city: filters.city.trim() } : {}),
-      ...(typeof filters?.bedrooms === "number" ? { bedrooms: filters.bedrooms } : {}),
-      ...(typeof filters?.minArea === "number" ? { minArea: filters.minArea } : {}),
-      ...(typeof filters?.maxArea === "number" ? { maxArea: filters.maxArea } : {}),
-    },
-    { skip: !property || !averageType }
+  const prismaPropertyType = useMemo(
+    () => getPrismaPropertyTypeForQuery(property?.type),
+    [property?.type],
   );
 
-  const insights = useMemo(() => {
-    const rows = publicListingsData?.listings ?? [];
-    const now = Date.now();
-    const minTs = now - INSIGHTS_DAYS * 24 * 60 * 60 * 1000;
+  const marketQueryArgs = useMemo(() => {
+    if (!property || !averageType) return undefined;
+    return buildMarketListingsQueryArgs(
+      property,
+      averageType === "rent" ? "rent" : "sale",
+      filters,
+    );
+  }, [property, averageType, filters]);
 
-    const parsed = rows
-      .map((r) => {
-        const created = parseBackendDateMs(r.createdAt);
-        return {
-          createdAtMs: created ?? 0,
-          price: Number(r.price),
-          area: Number(r.area),
-        };
-      })
-      .filter((r) => r.createdAtMs >= minTs && Number.isFinite(r.price) && r.price > 0);
+  const { data: publicListingsData, isLoading } = useGetPublicListingsQuery(
+    marketQueryArgs ?? { page: 1, limit: 200, listingType: "SALE" },
+    { skip: !marketQueryArgs },
+  );
 
-    const prices = parsed.map((r) => r.price);
-    const pricePerSqm = parsed
-      .map((r) => (Number.isFinite(r.area) && r.area > 0 ? r.price / r.area : NaN))
-      .filter((n) => Number.isFinite(n) && n > 0);
+  const insights = useMemo(
+    () =>
+      computeListingPriceInsights(publicListingsData?.listings ?? [], {
+        excludeListingId: property?.serverListingId,
+      }),
+    [publicListingsData, property?.serverListingId],
+  );
 
-    const medPrice = median(prices);
-    const avgPrice = average(prices);
-    const minPrice = prices.length ? Math.min(...prices) : null;
-    const maxPrice = prices.length ? Math.max(...prices) : null;
-    const medPpsm = median(pricePerSqm);
-
-    const daily = new Map<number, number[]>();
-    for (const r of parsed) {
-      const d = startOfDay(new Date(r.createdAtMs)).getTime();
-      const list = daily.get(d) ?? [];
-      list.push(r.price);
-      daily.set(d, list);
-    }
-
-    const chart: ChartDataPoint[] = Array.from(daily.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([dayStartMs, list]) => ({
-        period: formatDayLabel(new Date(dayStartMs)),
-        value: Math.round(median(list) ?? 0),
-      }))
-      .filter((p) => p.value > 0);
-
-    return {
-      sampleSize: parsed.length,
-      medianPrice: medPrice != null ? Math.round(medPrice) : null,
-      avgPrice: avgPrice != null ? Math.round(avgPrice) : null,
-      minPrice: minPrice != null ? Math.round(minPrice) : null,
-      maxPrice: maxPrice != null ? Math.round(maxPrice) : null,
-      medianPricePerSqm: medPpsm != null ? Math.round(medPpsm) : null,
-      chart,
-    };
-  }, [publicListingsData]);
+  const chartData = insights.chart as ChartDataPoint[];
 
   if (!property || !averageType) {
     return (
@@ -194,7 +116,9 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
 
   const formatSar = (n: number | null) => formatCompactSar(n);
   const formatSarPerSqm = (n: number | null) =>
-    n == null ? "---" : `${Math.round(n).toLocaleString(isRTL ? "ar-SA" : "en-US")} ${t("listings.sar")}/m²`;
+    n == null
+      ? "---"
+      : `${Math.round(n).toLocaleString(isRTL ? "ar-SA" : "en-US")} ${t("listings.sar")}/m²`;
 
   return (
     <View style={styles.container}>
@@ -212,12 +136,14 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
             <AverageCard
               property={property}
               variant="detail"
+              insightFilters={filters}
               onEditPress={handleEditPress}
             />
           ) : (
             <AverageSaleCard
               property={property}
               variant="detail"
+              insightFilters={filters}
               onEditPress={handleEditPress}
               minArea={filters?.minArea}
               maxArea={filters?.maxArea}
@@ -234,9 +160,16 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
             {t("listings.viewAveragePriceIndexForEach")}
           </Text>
 
-          <Text style={[styles.chartDataSource, { textAlign: isRTL ? "right" : "left" }]}>
+          <Text
+            style={[
+              styles.chartDataSource,
+              { textAlign: isRTL ? "right" : "left" },
+            ]}
+          >
             {`${t("listings.latest")}: ${INSIGHTS_DAYS} ${t("listings.days") ?? "days"} · ${t("listings.city")}: ${
-              filters?.city?.trim() ? filters.city.trim() : "---"
+              filters?.city?.trim() ||
+              property?.city?.trim() ||
+              "---"
             } · ${t("listings.property")}: ${prismaPropertyType ?? "---"}`}
           </Text>
 
@@ -261,7 +194,10 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
                         ? `${formatSar(insights.minPrice)} / ${formatSar(insights.maxPrice)}`
                         : "---",
                   },
-                  { label: "Median SAR/m²", value: formatSarPerSqm(insights.medianPricePerSqm) },
+                  {
+                    label: "Median SAR/m²",
+                    value: formatSarPerSqm(insights.medianPricePerSqm),
+                  },
                 ].map((m) => (
                   <View key={m.label} style={styles.metricRow}>
                     <Text style={styles.metricLabel}>{m.label}</Text>
@@ -271,7 +207,7 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
               </View>
 
               <AveragePriceChart
-                data={insights.chart}
+                data={chartData}
                 periodMode="halfYear"
                 containerStyle={styles.chartContainer}
               />
@@ -286,7 +222,7 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
               </Text>
 
               <View style={styles.priceTableCard}>
-                {insights.chart.map((item, index) => {
+                {chartData.map((item, index) => {
                   const priceText = formatCompactSar(item.value);
                   const labelSlot = (
                     <View
@@ -308,13 +244,17 @@ export default function AveragePriceDetailScreen(): React.JSX.Element {
                       {isRTL ? (
                         <>
                           <View style={styles.priceTableSpacer} />
-                          <Text style={styles.priceTablePrice}>{priceText}</Text>
+                          <Text style={styles.priceTablePrice}>
+                            {priceText}
+                          </Text>
                           {labelSlot}
                         </>
                       ) : (
                         <>
                           {labelSlot}
-                          <Text style={styles.priceTablePrice}>{priceText}</Text>
+                          <Text style={styles.priceTablePrice}>
+                            {priceText}
+                          </Text>
                           <View style={styles.priceTableSpacer} />
                         </>
                       )}
@@ -359,7 +299,7 @@ const styles = StyleSheet.create({
   chartDataSource: {
     marginTop: hp(1.5),
     fontSize: wp(3.5),
-    color: COLORS.textSecondary,   
+    color: COLORS.textSecondary,
   },
   priceTableTitle: {
     marginTop: hp(2.5),

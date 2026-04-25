@@ -16,7 +16,10 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenHeader, PropertyImageGallery } from "@/components";
 import { COLORS } from "@/constants";
@@ -46,12 +49,12 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 type NavigationProp = NativeStackNavigationProp<any>;
 type RouteParams = {
   selectedCategory?: string;
-  attachments?: Array<{
+  attachments?: {
     id: string;
     uri: string;
     mediaType?: "photo" | "video" | "unknown";
     note?: string;
-  }>;
+  }[];
   /** From choose-location: geocoded or modal area/city string */
   locationDisplayName?: string;
   virtualTourLink?: string;
@@ -109,7 +112,9 @@ const hasPositiveNumericValue = (value?: string): boolean => {
   return Number(digitsOnly) > 0;
 };
 
-const shouldShowPropertyDetailItem = (item: PropertyDetailsDisplayItem): boolean => {
+const shouldShowPropertyDetailItem = (
+  item: PropertyDetailsDisplayItem,
+): boolean => {
   if (item.type === "toggle") {
     return item.enabled === true;
   }
@@ -137,7 +142,13 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
 
   const propertyDetailsItems = useMemo(() => {
     return (params.propertyDetailsItems ?? [])
-      .filter((item) => !(item.type === "toggle" && item.label === t("listings.drainageAvailability")))
+      .filter(
+        (item) =>
+          !(
+            item.type === "toggle" &&
+            item.label === t("listings.drainageAvailability")
+          ),
+      )
       .map((item) => {
         let next = item;
         if (item.type === "value" && item.value != null) {
@@ -145,7 +156,12 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
             const raw = String(next.value ?? "").trim();
             const numMatch = raw.match(/^(\d+)/);
             if (numMatch) {
-              next = { ...next, value: t("listings.streetWidthWithMeter", { value: numMatch[1] }) };
+              next = {
+                ...next,
+                value: t("listings.streetWidthWithMeter", {
+                  value: numMatch[1],
+                }),
+              };
             }
           }
         }
@@ -161,7 +177,11 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
           if (s.length > 0 && s !== "---") {
             next = {
               ...next,
-              value: formatPropertyDetailValueForListingDisplay(next.label, s, t),
+              value: formatPropertyDetailValueForListingDisplay(
+                next.label,
+                s,
+                t,
+              ),
             };
           }
         }
@@ -170,16 +190,23 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       .filter(shouldShowPropertyDetailItem);
   }, [params.propertyDetailsItems, t]);
   const pricingDetailsItems = useMemo(
-    () => (params.pricingDetailsItems ?? []).filter(shouldShowPropertyDetailItem),
-    [params.pricingDetailsItems]
+    () =>
+      (params.pricingDetailsItems ?? []).filter(shouldShowPropertyDetailItem),
+    [params.pricingDetailsItems],
   );
   const normalizedArea = normalizeNumericDisplay(params.area);
   const shouldShowArea = hasPositiveNumericValue(normalizedArea);
 
   const orderedInfoItems = useMemo<PropertyDetailItem[]>(() => {
-    const resolveInfoIcon = (label: string, currentIcon?: string): string | undefined => {
+    const resolveInfoIcon = (
+      label: string,
+      currentIcon?: string,
+    ): string | undefined => {
       const L = label.trim().toLowerCase();
-      if (label === t("listings.pricePerMeter") || label === t("listings.meterPrice")) {
+      if (
+        label === t("listings.pricePerMeter") ||
+        label === t("listings.meterPrice")
+      ) {
         return undefined;
       }
       if (L === t("listings.tent").trim().toLowerCase()) {
@@ -195,7 +222,10 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       if (label === t("listings.bedrooms")) return "mdi:bed-outline";
       if (label === t("listings.livingRooms")) return "mdi:sofa-outline";
       if (label === t("listings.restrooms")) return "mdi:toilet";
-      if (label === t("listings.realEstateAge") || label === t("listings.ageLessThan")) {
+      if (
+        label === t("listings.realEstateAge") ||
+        label === t("listings.ageLessThan")
+      ) {
         return "mdi:calendar-clock-outline";
       }
       if (label === t("listings.streetWidth")) {
@@ -203,7 +233,9 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       }
       if (label === t("listings.type")) return "feather:tag";
       if (label === t("listings.usage")) return "feather:users";
-      return currentIcon?.trim() ? currentIcon.trim() : "mdi:information-outline";
+      return currentIcon?.trim()
+        ? currentIcon.trim()
+        : "mdi:information-outline";
     };
 
     const rows: PropertyDetailItem[] = [
@@ -218,22 +250,30 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
           ]
         : []),
       ...pricingDetailsItems.map((item) =>
-        item.type === "value" ? { ...item } : item
+        item.type === "value" ? { ...item } : item,
       ),
       ...propertyDetailsItems.map((item) =>
-        item.type === "value" ? { ...item } : item
+        item.type === "value" ? { ...item } : item,
       ),
     ];
     return rows
       .map((item) =>
         item.type === "value"
           ? { ...item, icon: resolveInfoIcon(item.label, item.icon) }
-          : { ...item, icon: item.icon ?? undefined }
+          : { ...item, icon: item.icon ?? undefined },
       )
       .filter((item) =>
-        item.type === "toggle" ? item.enabled === true : shouldShowPropertyDetailItem(item)
+        item.type === "toggle"
+          ? item.enabled === true
+          : shouldShowPropertyDetailItem(item),
       );
-  }, [normalizedArea, pricingDetailsItems, propertyDetailsItems, shouldShowArea, t]);
+  }, [
+    normalizedArea,
+    pricingDetailsItems,
+    propertyDetailsItems,
+    shouldShowArea,
+    t,
+  ]);
 
   const headerCommissionText = useMemo(() => {
     if (!params.hasCommission || !params.commissionValue?.trim()) return null;
@@ -243,7 +283,9 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       const raw = params.commissionValue.replace(/[^\d.]/g, "");
       const n = parseFloat(raw);
       if (Number.isNaN(n) || n <= 0) return null;
-      const pctStr = Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(6))).replace(/\.?0+$/, "");
+      const pctStr = Number.isInteger(n)
+        ? String(n)
+        : String(parseFloat(n.toFixed(6))).replace(/\.?0+$/, "");
       valuePart = `${pctStr}%`;
     } else {
       const digits = params.commissionValue.replace(/[^\d]/g, "");
@@ -251,7 +293,13 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       valuePart = `${Number(digits).toLocaleString(loc)} ${t("listings.riyals")}`;
     }
     return t("listings.publishCommissionLine", { value: valuePart });
-  }, [params.commissionType, params.commissionValue, params.hasCommission, i18n.language, t]);
+  }, [
+    params.commissionType,
+    params.commissionValue,
+    params.hasCommission,
+    i18n.language,
+    t,
+  ]);
 
   const publishPhotoEntries = useMemo(() => {
     return (params.attachments ?? [])
@@ -271,18 +319,20 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
 
   const publishPlaceholderOnly = useMemo(
     () => isOnlyDefaultPropertyPlaceholderImages(publishImages),
-    [publishImages]
+    [publishImages],
   );
 
   const hasAnyPhotoCaption = useMemo(
     () => publishPhotoEntries.some((e) => e.note.length > 0),
-    [publishPhotoEntries]
+    [publishPhotoEntries],
   );
 
   const publishImageCaptions = useMemo(
     () =>
-      publishPhotoEntries.length > 0 ? publishPhotoEntries.map((e) => e.note) : undefined,
-    [publishPhotoEntries]
+      publishPhotoEntries.length > 0
+        ? publishPhotoEntries.map((e) => e.note)
+        : undefined,
+    [publishPhotoEntries],
   );
 
   const publishVideoUris = useMemo(
@@ -290,7 +340,7 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       (params.attachments ?? [])
         .filter((item) => item.mediaType === "video" && item.uri?.trim())
         .map((item) => item.uri.trim()),
-    [params.attachments]
+    [params.attachments],
   );
 
   const handleImageScroll = useCallback(
@@ -300,7 +350,7 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       const index = isRTL ? publishImages.length - 1 - rawIndex : rawIndex;
       setCurrentImageIndex(index);
     },
-    [isRTL, publishImages.length]
+    [isRTL, publishImages.length],
   );
 
   const handleOpenGallery = useCallback(() => {
@@ -330,22 +380,22 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       const inner = Math.max(0, outerW - 2 * descriptionHorizontalPad);
       if (inner > 0) setDescriptionTextWidth(inner);
     },
-    [descriptionHorizontalPad]
+    [descriptionHorizontalPad],
   );
 
   const rtlBodyText = useMemo(
     () =>
       isRTL
-        ? ({ textAlign: "right" as const, writingDirection: "rtl" as const })
-        : ({ textAlign: "left" as const, writingDirection: "ltr" as const }),
-    [isRTL]
+        ? { textAlign: "right" as const, writingDirection: "rtl" as const }
+        : { textAlign: "left" as const, writingDirection: "ltr" as const },
+    [isRTL],
   );
 
   const handlePublishAd = useCallback(async () => {
     if (!isAuthenticated) {
       Alert.alert(
         t("common.error"),
-        t("auth.loginRequired") ?? "Please log in to publish a listing."
+        t("auth.loginRequired") ?? "Please log in to publish a listing.",
       );
       return;
     }
@@ -353,8 +403,8 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
     try {
       setIsPublishing(true);
       let media: UploadedListingMedia[] | undefined;
-      const attachmentItems = (params.attachments ?? []).filter(
-        (a) => a.uri?.trim()
+      const attachmentItems = (params.attachments ?? []).filter((a) =>
+        a.uri?.trim(),
       );
       if (attachmentItems.length > 0) {
         try {
@@ -365,14 +415,14 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
               uri: a.uri.trim(),
               order: i,
               mediaType: a.mediaType,
-            }))
+            })),
           );
         } catch (upErr) {
           Alert.alert(
             t("common.error"),
             upErr instanceof Error
               ? upErr.message
-              : "Upload failed. Create the Storage bucket and policies (see .env.example)."
+              : "Upload failed. Create the Storage bucket and policies (see .env.example).",
           );
           return;
         }
@@ -417,8 +467,7 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
       const err = e as { data?: { message?: string } };
       Alert.alert(
         t("common.error"),
-        err?.data?.message ??
-          "Could not publish listing. Please try again."
+        err?.data?.message ?? "Could not publish listing. Please try again.",
       );
     } finally {
       setIsPublishing(false);
@@ -444,7 +493,9 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
     const color = "#9ca3af";
     if (trimmed.startsWith("mdi:")) {
       const name = trimmed.slice(4);
-      return <MaterialCommunityIcons name={name as any} size={size} color={color} />;
+      return (
+        <MaterialCommunityIcons name={name as any} size={size} color={color} />
+      );
     }
     if (trimmed.startsWith("feather:")) {
       const name = trimmed.slice("feather:".length);
@@ -463,8 +514,14 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
         fontSize={wp(5)}
       />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={hasAnyPhotoCaption ? styles.publishGallerySection : undefined}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View
+          style={hasAnyPhotoCaption ? styles.publishGallerySection : undefined}
+        >
           <PropertyImageGallery
             images={publishImages}
             imageCaptions={publishImageCaptions}
@@ -481,21 +538,31 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
         </View>
 
         <View style={styles.summaryHeaderBlock}>
-          <Text style={[styles.locationHeaderText, rtlBodyText]}>{locationLabel}</Text>
-          <Text style={[styles.categoryText, rtlBodyText]}>{categoryLabel}</Text>
+          <Text style={[styles.locationHeaderText, rtlBodyText]}>
+            {locationLabel}
+          </Text>
+          <Text style={[styles.categoryText, rtlBodyText]}>
+            {categoryLabel}
+          </Text>
           <Text style={[styles.priceLineBase, rtlBodyText]}>
             <Text style={[styles.priceMain, rtlBodyText]}>
-              {params.price ? `${normalizeNumericDisplay(params.price)} ${t("listings.sar")}` : "---"}
+              {params.price
+                ? `${normalizeNumericDisplay(params.price)} ${t("listings.sar")}`
+                : "---"}
             </Text>
             {headerCommissionText ? (
-              <Text style={[styles.headerCommissionInline, rtlBodyText]}>{` ${headerCommissionText}`}</Text>
+              <Text
+                style={[styles.headerCommissionInline, rtlBodyText]}
+              >{` ${headerCommissionText}`}</Text>
             ) : null}
           </Text>
         </View>
         <View style={styles.sectionSeparator} />
 
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, rtlBodyText]}>{t("listings.propertyInformation")}</Text>
+          <Text style={[styles.sectionTitle, rtlBodyText]}>
+            {t("listings.propertyInformation")}
+          </Text>
           <View style={styles.infoList}>
             {orderedInfoItems.map((item, index) =>
               item.type === "value" ? (
@@ -504,19 +571,34 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
                   style={[
                     styles.infoRow,
                     isRTL && styles.rowReverse,
-                    { backgroundColor: index % 2 === 0 ? COLORS.white : COLORS.background },
+                    {
+                      backgroundColor:
+                        index % 2 === 0 ? COLORS.white : COLORS.background,
+                    },
                   ]}
                 >
-                  <View style={[styles.infoLeftSection, isRTL && styles.rowReverse]}>
-                    {item.icon != null && String(item.icon).trim().length > 0 ? (
+                  <View
+                    style={[styles.infoLeftSection, isRTL && styles.rowReverse]}
+                  >
+                    {item.icon != null &&
+                    String(item.icon).trim().length > 0 ? (
                       renderDetailIcon(item.icon)
                     ) : (
                       <View style={styles.infoIconSpacer} />
                     )}
-                    <Text style={[styles.infoLabel, rtlBodyText]}>{item.label}</Text>
+                    <Text style={[styles.infoLabel, rtlBodyText]}>
+                      {item.label}
+                    </Text>
                   </View>
-                  <View style={[styles.infoValueColumn, isRTL && styles.infoValueColumnRTL]}>
-                    <Text style={[styles.infoValueText, rtlBodyText]}>{item.value ?? "---"}</Text>
+                  <View
+                    style={[
+                      styles.infoValueColumn,
+                      isRTL && styles.infoValueColumnRTL,
+                    ]}
+                  >
+                    <Text style={[styles.infoValueText, rtlBodyText]}>
+                      {item.value ?? "---"}
+                    </Text>
                   </View>
                 </View>
               ) : (
@@ -525,39 +607,73 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
                   style={[
                     styles.toggleInfoRow,
                     isRTL && styles.rowReverse,
-                    { backgroundColor: index % 2 === 0 ? COLORS.white : COLORS.background },
+                    {
+                      backgroundColor:
+                        index % 2 === 0 ? COLORS.white : COLORS.background,
+                    },
                   ]}
                 >
-                  <View style={[styles.infoLeftSection, isRTL && styles.rowReverse]}>
+                  <View
+                    style={[styles.infoLeftSection, isRTL && styles.rowReverse]}
+                  >
                     <View style={styles.infoIconSpacer} />
-                    <Text style={[styles.toggleInfoLabel, rtlBodyText]}>{item.label}</Text>
+                    <Text style={[styles.toggleInfoLabel, rtlBodyText]}>
+                      {item.label}
+                    </Text>
                   </View>
-                  <View style={[styles.infoValueColumn, isRTL && styles.infoValueColumnRTL]}>
+                  <View
+                    style={[
+                      styles.infoValueColumn,
+                      isRTL && styles.infoValueColumnRTL,
+                    ]}
+                  >
                     {item.enabled ? (
                       item.label === t("listings.tent") ? (
-                        <Text style={[styles.infoValueText, rtlBodyText]}>1</Text>
+                        <Text style={[styles.infoValueText, rtlBodyText]}>
+                          1
+                        </Text>
                       ) : (
-                        <Ionicons name="checkmark-circle" size={wp(6)} color={COLORS.checkmarkCircle} />
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={wp(6)}
+                          color={COLORS.checkmarkCircle}
+                        />
                       )
                     ) : (
-                      <Text style={[styles.toggleInfoDash, rtlBodyText]}>-</Text>
+                      <Text style={[styles.toggleInfoDash, rtlBodyText]}>
+                        -
+                      </Text>
                     )}
                   </View>
                 </View>
-              )
+              ),
             )}
             <View
               style={[
                 styles.infoRow,
                 isRTL && styles.rowReverse,
-                { backgroundColor: (orderedInfoItems.length % 2 === 0) ? COLORS.white : COLORS.background },
+                {
+                  backgroundColor:
+                    orderedInfoItems.length % 2 === 0
+                      ? COLORS.white
+                      : COLORS.background,
+                },
               ]}
             >
-              <View style={[styles.infoLeftSection, isRTL && styles.rowReverse]}>
+              <View
+                style={[styles.infoLeftSection, isRTL && styles.rowReverse]}
+              >
                 <Feather name="hash" size={wp(5)} color="#9ca3af" />
-                <Text style={[styles.infoLabel, rtlBodyText]}>{t("listings.listingId")}</Text>
+                <Text style={[styles.infoLabel, rtlBodyText]}>
+                  {t("listings.listingId")}
+                </Text>
               </View>
-              <View style={[styles.infoValueColumn, isRTL && styles.infoValueColumnRTL]}>
+              <View
+                style={[
+                  styles.infoValueColumn,
+                  isRTL && styles.infoValueColumnRTL,
+                ]}
+              >
                 <Text style={[styles.infoValueText, rtlBodyText]} />
               </View>
             </View>
@@ -565,14 +681,32 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
               style={[
                 styles.infoRow,
                 isRTL && styles.rowReverse,
-                { backgroundColor: ((orderedInfoItems.length + 1) % 2 === 0) ? COLORS.white : COLORS.background },
+                {
+                  backgroundColor:
+                    (orderedInfoItems.length + 1) % 2 === 0
+                      ? COLORS.white
+                      : COLORS.background,
+                },
               ]}
             >
-              <View style={[styles.infoLeftSection, isRTL && styles.rowReverse]}>
-                <MaterialCommunityIcons name="clock-time-four-outline" size={wp(5)} color="#9ca3af" />
-                <Text style={[styles.infoLabel, rtlBodyText]}>{t("listings.lastUpdated")}</Text>
+              <View
+                style={[styles.infoLeftSection, isRTL && styles.rowReverse]}
+              >
+                <MaterialCommunityIcons
+                  name="clock-time-four-outline"
+                  size={wp(5)}
+                  color="#9ca3af"
+                />
+                <Text style={[styles.infoLabel, rtlBodyText]}>
+                  {t("listings.lastUpdated")}
+                </Text>
               </View>
-              <View style={[styles.infoValueColumn, isRTL && styles.infoValueColumnRTL]}>
+              <View
+                style={[
+                  styles.infoValueColumn,
+                  isRTL && styles.infoValueColumnRTL,
+                ]}
+              >
                 <Text style={[styles.infoValueText, rtlBodyText]} />
               </View>
             </View>
@@ -580,14 +714,28 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
               style={[
                 styles.infoRow,
                 isRTL && styles.rowReverse,
-                { backgroundColor: ((orderedInfoItems.length + 2) % 2 === 0) ? COLORS.white : COLORS.background },
+                {
+                  backgroundColor:
+                    (orderedInfoItems.length + 2) % 2 === 0
+                      ? COLORS.white
+                      : COLORS.background,
+                },
               ]}
             >
-              <View style={[styles.infoLeftSection, isRTL && styles.rowReverse]}>
+              <View
+                style={[styles.infoLeftSection, isRTL && styles.rowReverse]}
+              >
                 <Feather name="eye" size={wp(5)} color="#9ca3af" />
-                <Text style={[styles.infoLabel, rtlBodyText]}>{t("listings.views")}</Text>
+                <Text style={[styles.infoLabel, rtlBodyText]}>
+                  {t("listings.views")}
+                </Text>
               </View>
-              <View style={[styles.infoValueColumn, isRTL && styles.infoValueColumnRTL]}>
+              <View
+                style={[
+                  styles.infoValueColumn,
+                  isRTL && styles.infoValueColumnRTL,
+                ]}
+              >
                 <Text style={[styles.infoValueText, rtlBodyText]}>0</Text>
               </View>
             </View>
@@ -598,19 +746,28 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
 
         {hasDescription ? (
           <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, rtlBodyText]}>{t("listings.description")}</Text>
-            <View style={styles.descriptionWrapper} onLayout={onDescriptionWrapperLayout}>
+            <Text style={[styles.sectionTitle, rtlBodyText]}>
+              {t("listings.description")}
+            </Text>
+            <View
+              style={styles.descriptionWrapper}
+              onLayout={onDescriptionWrapperLayout}
+            >
               {descriptionTextWidth > 0 ? (
                 <Text
                   pointerEvents="none"
                   style={[
                     styles.descriptionText,
                     styles.descriptionMeasureText,
-                    isRTL ? styles.descriptionMeasureAnchorRTL : styles.descriptionMeasureAnchorLTR,
+                    isRTL
+                      ? styles.descriptionMeasureAnchorRTL
+                      : styles.descriptionMeasureAnchorLTR,
                     rtlBodyText,
                     { width: descriptionTextWidth },
                   ]}
-                  onTextLayout={(e) => setDescriptionFullLineCount(e.nativeEvent.lines.length)}
+                  onTextLayout={(e) =>
+                    setDescriptionFullLineCount(e.nativeEvent.lines.length)
+                  }
                 >
                   {descriptionTrimmed}
                 </Text>
@@ -626,9 +783,14 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
                 <TouchableOpacity
                   onPress={() => setDescriptionExpanded(true)}
                   activeOpacity={0.7}
-                  style={[styles.readMoreTouchable, isRTL && styles.readMoreTouchableRTL]}
+                  style={[
+                    styles.readMoreTouchable,
+                    isRTL && styles.readMoreTouchableRTL,
+                  ]}
                 >
-                  <Text style={[styles.readMoreLink, rtlBodyText]}>{t("listings.readMore")}</Text>
+                  <Text style={[styles.readMoreLink, rtlBodyText]}>
+                    {t("listings.readMore")}
+                  </Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -637,7 +799,9 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
         ) : null}
 
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, rtlBodyText]}>{t("listings.location")}</Text>
+          <Text style={[styles.sectionTitle, rtlBodyText]}>
+            {t("listings.location")}
+          </Text>
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.mapWrapper}
@@ -656,7 +820,8 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
                   latitude: params.selectedLocation?.latitude ?? 24.7136,
                   longitude: params.selectedLocation?.longitude ?? 46.6753,
                   latitudeDelta: params.selectedLocation?.latitudeDelta ?? 0.06,
-                  longitudeDelta: params.selectedLocation?.longitudeDelta ?? 0.06,
+                  longitudeDelta:
+                    params.selectedLocation?.longitudeDelta ?? 0.06,
                 }}
                 scrollEnabled={false}
                 zoomEnabled={false}
@@ -669,22 +834,38 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
                     longitude: params.selectedLocation?.longitude ?? 46.6753,
                   }}
                 >
-                  <Ionicons name="location" size={wp(8)} color={COLORS.primary} />
+                  <Ionicons
+                    name="location"
+                    size={wp(8)}
+                    color={COLORS.primary}
+                  />
                 </Marker>
               </MapView>
             </View>
           </TouchableOpacity>
-          <View style={[styles.locationAlert, isRTL && styles.locationAlertRTL]}>
+          <View
+            style={[styles.locationAlert, isRTL && styles.locationAlertRTL]}
+          >
             <Ionicons name="information-circle" size={wp(5)} color="#3b82f6" />
-            <Text style={[styles.locationAlertText, rtlBodyText]}>{locationLabel}</Text>
+            <Text style={[styles.locationAlertText, rtlBodyText]}>
+              {locationLabel}
+            </Text>
           </View>
           <View style={styles.sectionSeparator} />
         </View>
       </ScrollView>
 
-      <View style={[styles.singleActionFooter, { paddingBottom: Math.max(hp(1), insets.bottom) }]}>
+      <View
+        style={[
+          styles.singleActionFooter,
+          { paddingBottom: Math.max(hp(1), insets.bottom) },
+        ]}
+      >
         <TouchableOpacity
-          style={[styles.publishButton, (isCreatingListing || isPublishing) && styles.publishButtonDisabled]}
+          style={[
+            styles.publishButton,
+            (isCreatingListing || isPublishing) && styles.publishButtonDisabled,
+          ]}
           activeOpacity={0.85}
           onPress={handlePublishAd}
           disabled={isCreatingListing || isPublishing}
@@ -692,7 +873,9 @@ export default function MarketingRequestPublishAdScreen(): React.JSX.Element {
           {isCreatingListing || isPublishing ? (
             <ActivityIndicator color={COLORS.white} />
           ) : (
-            <Text style={styles.publishButtonText}>{t("listings.publishAd")}</Text>
+            <Text style={styles.publishButtonText}>
+              {t("listings.publishAd")}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -919,4 +1102,3 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
 });
-

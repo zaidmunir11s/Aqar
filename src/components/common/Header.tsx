@@ -1,5 +1,12 @@
 import React, { memo, ReactNode, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -8,7 +15,7 @@ import {
 } from "react-native-responsive-screen";
 import { useLocalization } from "@/hooks";
 import BackButton from "./BackButton";
-import { COLORS } from "../../constants"; 
+import { COLORS } from "../../constants";
 export interface HeaderProps {
   title?: string;
   onBackPress?: () => void;
@@ -16,56 +23,66 @@ export interface HeaderProps {
   rightComponent?: ReactNode;
 }
 
-const Header = memo<HeaderProps>(({ title, onBackPress, onClosePress, rightComponent }) => {
-  const insets = useSafeAreaInsets();
-  const { isRTL } = useLocalization();
-  const showBack = Boolean(onBackPress);
-  const showClose = Boolean(onClosePress);
+const Header = memo<HeaderProps>(
+  ({ title, onBackPress, onClosePress, rightComponent }) => {
+    const insets = useSafeAreaInsets();
+    const { isRTL } = useLocalization();
+    const showBack = Boolean(onBackPress);
+    const showClose = Boolean(onClosePress);
 
-  const rtlStyles = useMemo(
-    (): { header: ViewStyle; headerTitle: TextStyle } => ({
-      header: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      headerTitle: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-      },
-    }),
-    [isRTL]
-  );
+    const rtlStyles = useMemo(
+      (): { header: ViewStyle; headerTitle: TextStyle } => ({
+        header: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+        },
+        headerTitle: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL],
+    );
 
-  const headerStyle = {
-    ...styles.header,
-    ...rtlStyles.header,
-    paddingTop: insets.top + hp(1),
-  };
+    const headerStyle = {
+      ...styles.header,
+      ...rtlStyles.header,
+      paddingTop: insets.top + hp(1),
+    };
 
-  return (
-    <View style={headerStyle}>
-      {showClose ? (
-        <TouchableOpacity
-          onPress={onClosePress}
-          style={styles.iconButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="close" size={wp(6)} color="#111827" />
-        </TouchableOpacity>
-      ) : showBack ? (
-        <View style={styles.iconButton}>
-          <BackButton onPress={onBackPress!} color={COLORS.primary} size={wp(6)} />
-        </View>
-      ) : (
-        <View style={styles.iconPlaceholder} />
-      )}
-      {title != null && title !== "" ? (
-        <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>{title}</Text>
-      ) : (
-        <View style={styles.titleSpacer} />
-      )}
-      {rightComponent ?? <View style={styles.iconPlaceholder} />}
-    </View>
-  );
-});
+    return (
+      <View style={headerStyle}>
+        {showClose ? (
+          <TouchableOpacity
+            onPress={onClosePress}
+            style={styles.iconButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={wp(6)} color="#111827" />
+          </TouchableOpacity>
+        ) : showBack ? (
+          <View style={styles.iconButton}>
+            <BackButton
+              onPress={onBackPress!}
+              color={COLORS.primary}
+              size={wp(6)}
+            />
+          </View>
+        ) : (
+          <View style={styles.iconPlaceholder} />
+        )}
+        {title != null && title !== "" ? (
+          <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
+            {title}
+          </Text>
+        ) : (
+          <View style={styles.titleSpacer} />
+        )}
+        {rightComponent ?? <View style={styles.iconPlaceholder} />}
+      </View>
+    );
+  },
+);
 
 Header.displayName = "Header";
 

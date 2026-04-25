@@ -12,7 +12,10 @@ import {
   WC_OPTIONS,
 } from "../../../constants/orderFormOptions";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 interface Props {
   t: Translate;
@@ -42,7 +45,7 @@ interface Props {
   nearMetro: boolean;
   getTranslatedPickerValue: (
     originalValue: string | null,
-    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
   ) => string;
   onApartmentSelect: (v: string) => void;
   onBedroomSelect: (v: string) => void;
@@ -71,12 +74,44 @@ interface Props {
 function Comp(p: Props): React.JSX.Element {
   return (
     <>
-      <PriceInputSection label={p.t("listings.price")} fromValue={p.priceFrom} toValue={p.priceTo} onFromChange={p.onPriceFromChange} onToChange={p.onPriceToChange} />
-      <TabBarSection label={p.t("listings.apartments")} options={APARTMENT_OPTIONS} selectedValue={p.selectedApartment} onSelect={p.onApartmentSelect} />
-      <TabBarSection label={p.t("listings.bedrooms")} options={BEDROOM_OPTIONS} selectedValue={p.selectedBedroom} onSelect={p.onBedroomSelect} />
-      <FieldWithModal label={p.t("listings.streetDirection")} value={p.getTranslatedPickerValue(p.streetDirection, "streetDirection")} placeholder={p.t("listings.selectStreetDirection")} onPress={p.onOpenStreetDirection} backgroundColor="background" />
-      <TabBarSection label={p.t("listings.livingRooms")} options={LIVING_ROOM_OPTIONS} selectedValue={p.selectedLivingRoom} onSelect={p.onLivingRoomSelect} />
-      <TabBarSection label={p.t("listings.wc")} options={WC_OPTIONS} selectedValue={p.selectedWc} onSelect={p.onWcSelect} />
+      <PriceInputSection
+        label={p.t("listings.price")}
+        fromValue={p.priceFrom}
+        toValue={p.priceTo}
+        onFromChange={p.onPriceFromChange}
+        onToChange={p.onPriceToChange}
+      />
+      <TabBarSection
+        label={p.t("listings.apartments")}
+        options={APARTMENT_OPTIONS}
+        selectedValue={p.selectedApartment}
+        onSelect={p.onApartmentSelect}
+      />
+      <TabBarSection
+        label={p.t("listings.bedrooms")}
+        options={BEDROOM_OPTIONS}
+        selectedValue={p.selectedBedroom}
+        onSelect={p.onBedroomSelect}
+      />
+      <FieldWithModal
+        label={p.t("listings.streetDirection")}
+        value={p.getTranslatedPickerValue(p.streetDirection, "streetDirection")}
+        placeholder={p.t("listings.selectStreetDirection")}
+        onPress={p.onOpenStreetDirection}
+        backgroundColor="background"
+      />
+      <TabBarSection
+        label={p.t("listings.livingRooms")}
+        options={LIVING_ROOM_OPTIONS}
+        selectedValue={p.selectedLivingRoom}
+        onSelect={p.onLivingRoomSelect}
+      />
+      <TabBarSection
+        label={p.t("listings.wc")}
+        options={WC_OPTIONS}
+        selectedValue={p.selectedWc}
+        onSelect={p.onWcSelect}
+      />
       <PriceInputSection
         label={p.t("listings.areaM2")}
         fromValue={p.areaFrom}
@@ -87,26 +122,90 @@ function Comp(p: Props): React.JSX.Element {
         toPlaceholder={p.t("listings.toArea")}
         helperText={p.areaRangeHint}
       />
-      <FieldWithModal label={p.t("listings.streetWidth")} value={p.getTranslatedPickerValue(p.streetWidth, "streetWidth")} placeholder={p.t("listings.selectStreetWidth")} onPress={p.onOpenStreetWidth} backgroundColor="background" />
-      <ToggleGroup toggles={[{ label: p.t("listings.stairs"), value: p.stairs, onValueChange: p.onStairsChange }]} />
-      <FieldWithModal label={p.t("listings.age")} value={p.getTranslatedPickerValue(p.age, "age")} placeholder={p.t("listings.selectAge")} onPress={p.onOpenAge} backgroundColor="background" />
-      <ToggleGroup toggles={[
-        { label: p.t("listings.driverRoom"), value: p.driverRoom, onValueChange: p.onDriverRoomChange },
-        { label: p.t("listings.maidRoom"), value: p.maidRoom, onValueChange: p.onMaidRoomChange },
-        { label: p.t("listings.pool"), value: p.pool, onValueChange: p.onPoolChange },
-        { label: p.t("listings.furnished"), value: p.villaFurnished, onValueChange: p.onVillaFurnishedChange },
-        { label: p.t("listings.kitchen"), value: p.kitchen, onValueChange: p.onKitchenChange },
-        { label: p.t("listings.carEntrance"), value: p.villaCarEntrance, onValueChange: p.onVillaCarEntranceChange },
-        { label: p.t("listings.basement"), value: p.basement, onValueChange: p.onBasementChange },
-      ]} />
-      <TabBarSection label={p.t("listings.villaType")} options={p.translatedVillaTypeOptions} selectedValue={p.selectedVillaType} onSelect={p.onVillaTypeSelect} />
-      <ToggleGroup toggles={[
-        { label: p.t("listings.nearBus"), value: p.nearBus, onValueChange: p.onNearBusChange },
-        { label: p.t("listings.nearMetro"), value: p.nearMetro, onValueChange: p.onNearMetroChange },
-      ]} />
+      <FieldWithModal
+        label={p.t("listings.streetWidth")}
+        value={p.getTranslatedPickerValue(p.streetWidth, "streetWidth")}
+        placeholder={p.t("listings.selectStreetWidth")}
+        onPress={p.onOpenStreetWidth}
+        backgroundColor="background"
+      />
+      <ToggleGroup
+        toggles={[
+          {
+            label: p.t("listings.stairs"),
+            value: p.stairs,
+            onValueChange: p.onStairsChange,
+          },
+        ]}
+      />
+      <FieldWithModal
+        label={p.t("listings.age")}
+        value={p.getTranslatedPickerValue(p.age, "age")}
+        placeholder={p.t("listings.selectAge")}
+        onPress={p.onOpenAge}
+        backgroundColor="background"
+      />
+      <ToggleGroup
+        toggles={[
+          {
+            label: p.t("listings.driverRoom"),
+            value: p.driverRoom,
+            onValueChange: p.onDriverRoomChange,
+          },
+          {
+            label: p.t("listings.maidRoom"),
+            value: p.maidRoom,
+            onValueChange: p.onMaidRoomChange,
+          },
+          {
+            label: p.t("listings.pool"),
+            value: p.pool,
+            onValueChange: p.onPoolChange,
+          },
+          {
+            label: p.t("listings.furnished"),
+            value: p.villaFurnished,
+            onValueChange: p.onVillaFurnishedChange,
+          },
+          {
+            label: p.t("listings.kitchen"),
+            value: p.kitchen,
+            onValueChange: p.onKitchenChange,
+          },
+          {
+            label: p.t("listings.carEntrance"),
+            value: p.villaCarEntrance,
+            onValueChange: p.onVillaCarEntranceChange,
+          },
+          {
+            label: p.t("listings.basement"),
+            value: p.basement,
+            onValueChange: p.onBasementChange,
+          },
+        ]}
+      />
+      <TabBarSection
+        label={p.t("listings.villaType")}
+        options={p.translatedVillaTypeOptions}
+        selectedValue={p.selectedVillaType}
+        onSelect={p.onVillaTypeSelect}
+      />
+      <ToggleGroup
+        toggles={[
+          {
+            label: p.t("listings.nearBus"),
+            value: p.nearBus,
+            onValueChange: p.onNearBusChange,
+          },
+          {
+            label: p.t("listings.nearMetro"),
+            value: p.nearMetro,
+            onValueChange: p.onNearMetroChange,
+          },
+        ]}
+      />
     </>
   );
 }
 
 export const VillaForSaleOrderSection = memo(Comp);
-

@@ -64,16 +64,13 @@ const CITY_KEY_MAP: Record<string, string> = {
 
 export type TranslateFn = (
   key: string,
-  opts?: { defaultValue?: string }
+  opts?: { defaultValue?: string },
 ) => string;
 
 /**
  * Translate a city name for display using i18n.
  */
-export function translateCityName(
-  cityName: string,
-  t: TranslateFn
-): string {
+export function translateCityName(cityName: string, t: TranslateFn): string {
   if (!cityName || cityName === "City") {
     return cityName;
   }

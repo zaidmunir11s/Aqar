@@ -20,9 +20,13 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { openPhoneDialer, getDefaultImageUrl, getPropertyById } from "../../utils";
-import { IconButton } from "../../components";
 import {
+  openPhoneDialer,
+  getDefaultImageUrl,
+  getPropertyById,
+} from "../../utils";
+import {
+  IconButton,
   ProjectImageGallery,
   ProjectHeader,
   ProjectDetails,
@@ -32,12 +36,14 @@ import {
   ProjectUnitsSortModal,
   SingleButtonFooter,
 } from "../../components";
-import type { ProjectUnitsFilterState, ProjectUnitsSortOption } from "../../components";
+import type {
+  ProjectUnitsFilterState,
+  ProjectUnitsSortOption,
+} from "../../components";
 import type { ProjectProperty } from "../../types/property";
 import { COLORS } from "@/constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { ListFilter, SlidersHorizontal } from "lucide-react-native";
-
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -60,10 +66,14 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [showStickyHeader, setShowStickyHeader] = useState<boolean>(false);
-  const [unitsFilterModalVisible, setUnitsFilterModalVisible] = useState<boolean>(false);
-  const [unitsFilterState, setUnitsFilterState] = useState<ProjectUnitsFilterState | null>(null);
-  const [unitsSortModalVisible, setUnitsSortModalVisible] = useState<boolean>(false);
-  const [selectedSortOption, setSelectedSortOption] = useState<ProjectUnitsSortOption>("normalSort");
+  const [unitsFilterModalVisible, setUnitsFilterModalVisible] =
+    useState<boolean>(false);
+  const [unitsFilterState, setUnitsFilterState] =
+    useState<ProjectUnitsFilterState | null>(null);
+  const [unitsSortModalVisible, setUnitsSortModalVisible] =
+    useState<boolean>(false);
+  const [selectedSortOption, setSelectedSortOption] =
+    useState<ProjectUnitsSortOption>("normalSort");
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-200)).current; // Start fully off-screen (hidden)
   const scrollViewRef = useRef<ScrollView>(null);
@@ -95,12 +105,11 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
       const rawIndex = Math.round(scrollPosition / SCREEN_WIDTH);
       // When RTL is active and gallery is inverted, adjust index calculation
       const imagesLength = project?.images?.length || 1;
-      const index = isRTL && imagesLength > 0
-        ? imagesLength - 1 - rawIndex
-        : rawIndex;
+      const index =
+        isRTL && imagesLength > 0 ? imagesLength - 1 - rawIndex : rawIndex;
       setCurrentImageIndex(index);
     },
-    [isRTL, project?.images?.length]
+    [isRTL, project?.images?.length],
   );
 
   const handleCall = useCallback(() => {
@@ -131,7 +140,7 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
       // Update animated value for potential future animations
       scrollY.setValue(offsetY);
     },
-    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight]
+    [scrollY, showStickyHeader, headerTranslateY, stickyHeaderHeight],
   );
 
   const handleDeveloperLogoPress = useCallback(() => {
@@ -162,7 +171,9 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
   if (!project) {
     return (
       <View style={styles.center}>
-        <Text style={isRTL && styles.centerTextRTL}>{t("projects.projectNotFound")}</Text>
+        <Text style={isRTL && styles.centerTextRTL}>
+          {t("projects.projectNotFound")}
+        </Text>
       </View>
     );
   }
@@ -213,7 +224,13 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
             },
           ]}
         >
-          <Text style={[styles.stickyHeaderTitle, isRTL && styles.stickyHeaderTitleRTL]} numberOfLines={1}>
+          <Text
+            style={[
+              styles.stickyHeaderTitle,
+              isRTL && styles.stickyHeaderTitleRTL,
+            ]}
+            numberOfLines={1}
+          >
             {project.projectNameArabic || project.projectName}
           </Text>
         </Animated.View>
@@ -239,7 +256,10 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           />
 
           {/* Project Header */}
-          <ProjectHeader project={project} onLogoPress={handleDeveloperLogoPress} />
+          <ProjectHeader
+            project={project}
+            onLogoPress={handleDeveloperLogoPress}
+          />
 
           {/* Project Details */}
           <ProjectDetails
@@ -252,12 +272,18 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
 
           {/* Know More */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}>
+            <Text
+              style={[styles.sectionTitle, isRTL && styles.sectionTitleRTL]}
+            >
               {t("projects.knowMore")}
             </Text>
-            <TouchableOpacity style={[styles.documentButton, isRTL && styles.documentButtonRTL]}>
+            <TouchableOpacity
+              style={[styles.documentButton, isRTL && styles.documentButtonRTL]}
+            >
               <FontAwesome6 name="file-pdf" size={wp(6)} color="#6b7280" />
-              <Text style={[styles.documentText, isRTL && styles.documentTextRTL]}>
+              <Text
+                style={[styles.documentText, isRTL && styles.documentTextRTL]}
+              >
                 {t("projects.introducingDocument")}
               </Text>
             </TouchableOpacity>
@@ -268,11 +294,26 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
 
           {/* Project Units */}
           <View style={[styles.section, styles.projectUnitsSection]}>
-            <View style={[styles.projectUnitsRow, isRTL && styles.projectUnitsRowRTL]}>
-              <Text style={[styles.projectUnitsTitle, isRTL && styles.sectionTitleRTL]}>
+            <View
+              style={[
+                styles.projectUnitsRow,
+                isRTL && styles.projectUnitsRowRTL,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.projectUnitsTitle,
+                  isRTL && styles.sectionTitleRTL,
+                ]}
+              >
                 {t("projects.projectUnits")}
               </Text>
-              <View style={[styles.projectUnitsButtons, isRTL && styles.projectUnitsButtonsRTL]}>
+              <View
+                style={[
+                  styles.projectUnitsButtons,
+                  isRTL && styles.projectUnitsButtonsRTL,
+                ]}
+              >
                 <TouchableOpacity
                   style={[styles.filterButton, isRTL && styles.filterButtonRTL]}
                   onPress={() => setUnitsFilterModalVisible(true)}
@@ -280,7 +321,9 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
                 >
                   <SlidersHorizontal
                     size={25}
-                    color={hasActiveFilters ? COLORS.primary : COLORS.textSecondary}
+                    color={
+                      hasActiveFilters ? COLORS.primary : COLORS.textSecondary
+                    }
                     strokeWidth={2.5}
                   />
                   <Text style={styles.filterButtonText}>
@@ -295,7 +338,9 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
                   <ListFilter
                     size={wp(5.5)}
                     strokeWidth={3}
-                    color={hasNonDefaultSort ? COLORS.primary : COLORS.textSecondary}
+                    color={
+                      hasNonDefaultSort ? COLORS.primary : COLORS.textSecondary
+                    }
                   />
                 </TouchableOpacity>
               </View>
@@ -305,11 +350,11 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           <View style={{ height: hp(12) }} />
         </ScrollView>
 
-          <SingleButtonFooter
-            fixed={false}
-            label={t("projects.contact")}
-            onPress={handleCall}
-          />
+        <SingleButtonFooter
+          fixed={false}
+          label={t("projects.contact")}
+          onPress={handleCall}
+        />
       </View>
 
       {/* Project Units Filter Modal - slides up from bottom */}
@@ -335,7 +380,6 @@ export default function ProjectDetailsScreen(): React.JSX.Element {
           // TODO: apply sort to project units list when list is implemented
         }}
       />
-
     </>
   );
 }

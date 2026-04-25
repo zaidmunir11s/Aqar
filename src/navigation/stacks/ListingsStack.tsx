@@ -62,8 +62,14 @@ export default function ListingsStack(): React.JSX.Element {
       <Stack.Screen name="PropertyDetails" component={PropertyDetailsScreen} />
       <Stack.Screen name="ListingMedia" component={ListingMediaScreen} />
       <Stack.Screen name="NearbyServices" component={NearbyServicesScreen} />
-      <Stack.Screen name="AveragePriceDetail" component={AveragePriceDetailScreen} />
-      <Stack.Screen name="AqarResidentialStats" component={AqarResidentialStatsScreen} />
+      <Stack.Screen
+        name="AveragePriceDetail"
+        component={AveragePriceDetailScreen}
+      />
+      <Stack.Screen
+        name="AqarResidentialStats"
+        component={AqarResidentialStatsScreen}
+      />
       <Stack.Screen name="Conversation" component={ConversationScreen} />
       <Stack.Screen name="UserProfileAds" component={UserProfileAdsScreen} />
       <Stack.Screen name="DailyDetails" component={DailyDetailScreen} />
@@ -73,23 +79,68 @@ export default function ListingsStack(): React.JSX.Element {
       <Stack.Screen name="TodayAds" component={TodayAdsScreen} />
       <Stack.Screen name="AddListing" component={AddListingScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />
-      <Stack.Screen name="DeveloperProfile" component={DeveloperProfileScreen} />
+      <Stack.Screen
+        name="DeveloperProfile"
+        component={DeveloperProfileScreen}
+      />
       <Stack.Screen name="Licence" component={Step1LicenseScreen} />
-      <Stack.Screen name="BrokerIssueAdLicense" component={BrokerIssueAdLicenseScreen} />
-      <Stack.Screen name="BrokerGetFreeLicense" component={BrokerGetFreeLicenseScreen} />
-      <Stack.Screen name="PublishLicenseAdvertisement" component={PublishLicenseAdvertisementScreen} />
-      <Stack.Screen name="DeedOwnerInformation" component={DeedOwnerInformationScreen} />
-      <Stack.Screen name="MarketingRequestPlaceholder" component={MarketingRequestPlaceholderScreen} />
-      <Stack.Screen name="MarketingRequestMedia" component={MarketingRequestMediaScreen} />
+      <Stack.Screen
+        name="BrokerIssueAdLicense"
+        component={BrokerIssueAdLicenseScreen}
+      />
+      <Stack.Screen
+        name="BrokerGetFreeLicense"
+        component={BrokerGetFreeLicenseScreen}
+      />
+      <Stack.Screen
+        name="PublishLicenseAdvertisement"
+        component={PublishLicenseAdvertisementScreen}
+      />
+      <Stack.Screen
+        name="DeedOwnerInformation"
+        component={DeedOwnerInformationScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestPlaceholder"
+        component={MarketingRequestPlaceholderScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestMedia"
+        component={MarketingRequestMediaScreen}
+      />
       <Stack.Screen name="AttachMedia" component={AttachMediaScreen} />
-      <Stack.Screen name="MarketingRequestAlbums" component={MarketingRequestAlbumsScreen} />
-      <Stack.Screen name="MarketingRequestAlbumAssets" component={MarketingRequestAlbumAssetsScreen} />
-      <Stack.Screen name="MarketingRequestAttachments" component={MarketingRequestAttachmentsScreen} />
-      <Stack.Screen name="MarketingRequestChooseLocation" component={MarketingRequestChooseLocationScreen} />
-      <Stack.Screen name="MarketingRequestPropertyDetails" component={MarketingRequestPropertyDetailsScreen} />
-      <Stack.Screen name="MarketingRequestPricingCommission" component={MarketingRequestPricingCommissionScreen} />
-      <Stack.Screen name="MarketingRequestPublishAd" component={MarketingRequestPublishAdScreen} />
-      <Stack.Screen name="AddRentalUnitOnboarding" component={AddRentalUnitOnboardingScreen} />
+      <Stack.Screen
+        name="MarketingRequestAlbums"
+        component={MarketingRequestAlbumsScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestAlbumAssets"
+        component={MarketingRequestAlbumAssetsScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestAttachments"
+        component={MarketingRequestAttachmentsScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestChooseLocation"
+        component={MarketingRequestChooseLocationScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestPropertyDetails"
+        component={MarketingRequestPropertyDetailsScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestPricingCommission"
+        component={MarketingRequestPricingCommissionScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestPublishAd"
+        component={MarketingRequestPublishAdScreen}
+      />
+      <Stack.Screen
+        name="AddRentalUnitOnboarding"
+        component={AddRentalUnitOnboardingScreen}
+      />
       <Stack.Screen name="ChooseCategory" component={ChooseCategoryScreen} />
       <Stack.Screen name="SearchRequest" component={SearchRequestScreen} />
       <Stack.Screen name="NewOrder" component={NewOrderScreen} />

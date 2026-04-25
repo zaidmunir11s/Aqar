@@ -20,30 +20,40 @@ export interface ToggleRowProps {
 /**
  * Reusable toggle row component
  */
-const ToggleRow = memo<ToggleRowProps>(({ label, value, onValueChange, trackWidth, trackHeight, thumbSize }) => {
-  const { isRTL } = useLocalization();
+const ToggleRow = memo<ToggleRowProps>(
+  ({ label, value, onValueChange, trackWidth, trackHeight, thumbSize }) => {
+    const { isRTL } = useLocalization();
 
-  // RTL-aware styles
-  const rtlStyles = useMemo(
-    () => ({
-      toggleRow: {
-        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-      },
-      toggleLabel: {
-        textAlign: (isRTL ? "right" : "left") as "left" | "right",
-        writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
-      },
-    }),
-    [isRTL]
-  );
+    // RTL-aware styles
+    const rtlStyles = useMemo(
+      () => ({
+        toggleRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+        },
+        toggleLabel: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+          writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
+        },
+      }),
+      [isRTL],
+    );
 
-  return (
-    <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
-      <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>{label}</Text>
-      <ToggleSwitch value={value} onValueChange={onValueChange} trackWidth={trackWidth} trackHeight={trackHeight} thumbSize={thumbSize} />
-    </View>
-  );
-});
+    return (
+      <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
+        <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>{label}</Text>
+        <ToggleSwitch
+          value={value}
+          onValueChange={onValueChange}
+          trackWidth={trackWidth}
+          trackHeight={trackHeight}
+          thumbSize={thumbSize}
+        />
+      </View>
+    );
+  },
+);
 
 ToggleRow.displayName = "ToggleRow";
 
@@ -62,4 +72,3 @@ const styles = StyleSheet.create({
 });
 
 export default ToggleRow;
-

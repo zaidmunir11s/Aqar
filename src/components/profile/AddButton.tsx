@@ -10,7 +10,7 @@ import { useLocalization } from "@/hooks/useLocalization";
 
 export interface AddButtonProps {
   onPress?: () => void;
-  text?: string;           // ← keep as optional override
+  text?: string; // ← keep as optional override
 }
 
 /**
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(3),
     paddingHorizontal: wp(3.5),
     paddingVertical: hp(1.5),
-    gap: wp(2),                    // ← gap already handles nice spacing
+    gap: wp(2), // ← gap already handles nice spacing
   },
   buttonText: {
     fontSize: wp(4.5),

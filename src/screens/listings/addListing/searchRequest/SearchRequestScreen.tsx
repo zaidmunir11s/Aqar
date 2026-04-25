@@ -40,7 +40,7 @@ export default function SearchRequestScreen(): React.JSX.Element {
   useFocusEffect(
     useCallback(() => {
       debouncedLoad();
-    }, [debouncedLoad])
+    }, [debouncedLoad]),
   );
 
   const handleBackPress = useCallback(() => {
@@ -75,7 +75,7 @@ export default function SearchRequestScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (

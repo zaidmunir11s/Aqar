@@ -24,8 +24,7 @@ const PhoneCard = memo<PhoneCardProps>(
   ({ phoneNumber, displayName, avatarUri, onPress }) => {
     const { isRTL } = useLocalization();
     const trimmedName = displayName?.trim() ?? "";
-    const trimmedUri =
-      typeof avatarUri === "string" ? avatarUri.trim() : "";
+    const trimmedUri = typeof avatarUri === "string" ? avatarUri.trim() : "";
     const [remoteAvatarFailed, setRemoteAvatarFailed] = useState(false);
 
     useEffect(() => {
@@ -103,7 +102,7 @@ const PhoneCard = memo<PhoneCardProps>(
         />
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 PhoneCard.displayName = "PhoneCard";

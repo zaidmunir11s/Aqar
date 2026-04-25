@@ -40,13 +40,17 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
     const rtlStyles = useMemo(
       () => ({
         fixedBottomCard: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         fixedCardText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         dateEditRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         selectedDateText: {
           marginRight: isRTL ? 0 : wp(2),
@@ -60,12 +64,18 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
           marginRight: isRTL ? wp(3) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
-    
+
     if (!selectedDates.startDate || !selectedDates.endDate) {
       return (
-        <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard, { bottom: bottomOffset }]}>
+        <View
+          style={[
+            styles.fixedBottomCard,
+            rtlStyles.fixedBottomCard,
+            { bottom: bottomOffset },
+          ]}
+        >
           <Text
             style={[styles.fixedCardText, rtlStyles.fixedCardText]}
             numberOfLines={1}
@@ -77,7 +87,9 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
             style={[styles.fixedChooseButton, { flexShrink: 0 }]}
             onPress={onChooseDate}
           >
-            <Text style={styles.fixedChooseButtonText}>{t("listings.choose")}</Text>
+            <Text style={styles.fixedChooseButtonText}>
+              {t("listings.choose")}
+            </Text>
           </TouchableOpacity>
         </View>
       );
@@ -103,7 +115,13 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
     }
 
     return (
-      <View style={[styles.fixedBottomCard, rtlStyles.fixedBottomCard, { bottom: bottomOffset }]}>
+      <View
+        style={[
+          styles.fixedBottomCard,
+          rtlStyles.fixedBottomCard,
+          { bottom: bottomOffset },
+        ]}
+      >
         <View style={styles.contentWrapper}>
           <View style={[styles.dateEditRow, rtlStyles.dateEditRow]}>
             <Text
@@ -111,7 +129,12 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {formatDateRange(selectedDates.startDate, selectedDates.endDate, t, isRTL)}
+              {formatDateRange(
+                selectedDates.startDate,
+                selectedDates.endDate,
+                t,
+                isRTL,
+              )}
             </Text>
             <TouchableOpacity onPress={onChooseDate} style={{ flexShrink: 0 }}>
               <Text style={styles.editText}>{t("common.edit")}</Text>
@@ -125,12 +148,15 @@ const DailyBookingCard = memo<DailyBookingCardProps>(
             {priceText}
           </Text>
         </View>
-        <TouchableOpacity style={[styles.reserveButton, rtlStyles.reserveButton]} onPress={onReserve}>
+        <TouchableOpacity
+          style={[styles.reserveButton, rtlStyles.reserveButton]}
+          onPress={onReserve}
+        >
           <Text style={styles.reserveButtonText}>{t("listings.reserve")}</Text>
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 DailyBookingCard.displayName = "DailyBookingCard";

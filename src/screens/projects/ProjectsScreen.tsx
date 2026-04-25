@@ -5,13 +5,24 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, Text, ActivityIndicator } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Animated,
+  Platform,
+  Text,
+  ActivityIndicator,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { PROPERTY_DATA, SALE_FILTER_OPTIONS, RENT_FILTER_OPTIONS } from "../../data/propertyData";
+import {
+  PROPERTY_DATA,
+  SALE_FILTER_OPTIONS,
+  RENT_FILTER_OPTIONS,
+} from "../../data/propertyData";
 import { RIYADH_REGION, COLORS, CITY_REGIONS } from "../../constants";
 import {
   widthPercentageToDP as wp,
@@ -60,10 +71,7 @@ function isValidLongitude(value: number | undefined | null): boolean {
 
 // Helper function to check if project has valid coordinates
 function hasValidCoordinates(project: ProjectProperty): boolean {
-  return (
-    isValidCoordinate(project.lat) &&
-    isValidLongitude(project.lng)
-  );
+  return isValidCoordinate(project.lat) && isValidLongitude(project.lng);
 }
 
 export default function ProjectsScreen(): React.JSX.Element {
@@ -74,7 +82,9 @@ export default function ProjectsScreen(): React.JSX.Element {
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
-  const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const lastMarkerPressTimeRef = useRef<number>(0);
 
   const [activeTab, setActiveTab] = useState<TabType>("sale");
@@ -87,7 +97,9 @@ export default function ProjectsScreen(): React.JSX.Element {
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
   const [searchModalVisible, setSearchModalVisible] = useState<boolean>(false);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [selectedPropertyType, setSelectedPropertyType] = useState<string | null>(null);
+  const [selectedPropertyType, setSelectedPropertyType] = useState<
+    string | null
+  >(null);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
   const mapReadyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { getCurrentLocation } = useLocation();
@@ -96,7 +108,9 @@ export default function ProjectsScreen(): React.JSX.Element {
   const filteredProjects = useMemo(() => {
     let projects = PROPERTY_DATA.filter(
       (p): p is ProjectProperty =>
-        isProjectProperty(p) && p.listingType === activeTab && hasValidCoordinates(p)
+        isProjectProperty(p) &&
+        p.listingType === activeTab &&
+        hasValidCoordinates(p),
     );
 
     // Filter by city if selected
@@ -113,7 +127,8 @@ export default function ProjectsScreen(): React.JSX.Element {
     }
 
     if (activeFilter !== "all") {
-      const filterOptions = activeTab === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS;
+      const filterOptions =
+        activeTab === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS;
       const f = filterOptions.find((x) => x.id === activeFilter);
       if (f?.type) {
         projects = projects.filter((p) => p.type === f.type);
@@ -146,7 +161,7 @@ export default function ProjectsScreen(): React.JSX.Element {
         p.lat >= region.latitude - latHalf &&
         p.lat <= region.latitude + latHalf &&
         p.lng >= region.longitude - lngHalf &&
-        p.lng <= region.longitude + lngHalf
+        p.lng <= region.longitude + lngHalf,
     );
   }, [filteredProjects, region]);
 
@@ -228,25 +243,28 @@ export default function ProjectsScreen(): React.JSX.Element {
   }, [centerOnCurrentLocation]);
 
   // Handlers
-  const handleTabChange = useCallback((tab: TabType) => {
-    setActiveTab(tab);
-    setActiveFilter("all"); // Reset filter when switching tabs
-    // Reset map to user's home region when switching between tabs
-    // Only animate if component is mounted, map is ready, and ref is valid
-    if (
-      isMountedRef.current &&
-      isMapReady &&
-      mapRef.current &&
-      isValidCoordinate(homeRegion.latitude) &&
-      isValidLongitude(homeRegion.longitude)
-    ) {
-      try {
-        mapRef.current.animateToRegion(homeRegion, 800);
-      } catch (error) {
-        console.warn("Error animating to region:", error);
+  const handleTabChange = useCallback(
+    (tab: TabType) => {
+      setActiveTab(tab);
+      setActiveFilter("all"); // Reset filter when switching tabs
+      // Reset map to user's home region when switching between tabs
+      // Only animate if component is mounted, map is ready, and ref is valid
+      if (
+        isMountedRef.current &&
+        isMapReady &&
+        mapRef.current &&
+        isValidCoordinate(homeRegion.latitude) &&
+        isValidLongitude(homeRegion.longitude)
+      ) {
+        try {
+          mapRef.current.animateToRegion(homeRegion, 800);
+        } catch (error) {
+          console.warn("Error animating to region:", error);
+        }
       }
-    }
-  }, [isMapReady, homeRegion]);
+    },
+    [isMapReady, homeRegion],
+  );
 
   const handleFilterChange = useCallback((filterId: string) => {
     setActiveFilter(filterId);
@@ -268,7 +286,12 @@ export default function ProjectsScreen(): React.JSX.Element {
       }
 
       // Don't handle marker press if component is unmounted, map is moving, or not ready
-      if (!isMountedRef.current || !isMapReady || isMapMoving || !mapRef.current) {
+      if (
+        !isMountedRef.current ||
+        !isMapReady ||
+        isMapMoving ||
+        !mapRef.current
+      ) {
         return;
       }
 
@@ -281,7 +304,12 @@ export default function ProjectsScreen(): React.JSX.Element {
       // Use timeout to ensure map state is stable before navigation
       markerPressTimeoutRef.current = setTimeout(() => {
         // Double-check everything is still valid
-        if (!isMountedRef.current || !isMapReady || isMapMoving || !mapRef.current) {
+        if (
+          !isMountedRef.current ||
+          !isMapReady ||
+          isMapMoving ||
+          !mapRef.current
+        ) {
           return;
         }
 
@@ -294,7 +322,7 @@ export default function ProjectsScreen(): React.JSX.Element {
         }
       }, 100);
     },
-    [navigation, isMapReady, isMapMoving]
+    [navigation, isMapReady, isMapMoving],
   );
 
   const handleMapPress = useCallback(() => {
@@ -309,7 +337,7 @@ export default function ProjectsScreen(): React.JSX.Element {
 
     try {
       const result = await getCurrentLocation();
-      
+
       // Check if still mounted after async operation
       if (!isMountedRef.current) {
         return;
@@ -354,36 +382,40 @@ export default function ProjectsScreen(): React.JSX.Element {
   }, []);
 
   // Helper function to find the closest city based on map coordinates
-  const findClosestCity = useCallback((lat: number, lng: number): string | null => {
-    // Validate inputs
-    if (!isValidCoordinate(lat) || !isValidLongitude(lng)) {
-      return null;
-    }
-
-    let closestCity: string | null = null;
-    let minDistance = Infinity;
-
-    for (const [cityName, cityRegion] of Object.entries(CITY_REGIONS)) {
-      // Validate city region coordinates
-      if (
-        !isValidCoordinate(cityRegion.latitude) ||
-        !isValidLongitude(cityRegion.longitude)
-      ) {
-        continue; // Skip invalid city regions
+  const findClosestCity = useCallback(
+    (lat: number, lng: number): string | null => {
+      // Validate inputs
+      if (!isValidCoordinate(lat) || !isValidLongitude(lng)) {
+        return null;
       }
 
-      const distance = Math.sqrt(
-        Math.pow(lat - cityRegion.latitude, 2) + Math.pow(lng - cityRegion.longitude, 2)
-      );
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestCity = cityName;
-      }
-    }
+      let closestCity: string | null = null;
+      let minDistance = Infinity;
 
-    // Only return city if it's reasonably close (within ~0.3 degrees, roughly 33km)
-    return minDistance < 0.3 ? closestCity : null;
-  }, []);
+      for (const [cityName, cityRegion] of Object.entries(CITY_REGIONS)) {
+        // Validate city region coordinates
+        if (
+          !isValidCoordinate(cityRegion.latitude) ||
+          !isValidLongitude(cityRegion.longitude)
+        ) {
+          continue; // Skip invalid city regions
+        }
+
+        const distance = Math.sqrt(
+          Math.pow(lat - cityRegion.latitude, 2) +
+            Math.pow(lng - cityRegion.longitude, 2),
+        );
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestCity = cityName;
+        }
+      }
+
+      // Only return city if it's reasonably close (within ~0.3 degrees, roughly 33km)
+      return minDistance < 0.3 ? closestCity : null;
+    },
+    [],
+  );
 
   const handleRegionChangeComplete = useCallback(
     (newRegion: typeof RIYADH_REGION) => {
@@ -397,19 +429,22 @@ export default function ProjectsScreen(): React.JSX.Element {
         newRegion.longitudeDelta > 0
       ) {
         setRegion(newRegion);
-        
+
         // Detect which city the map is centered on and update selectedCity
-        const detectedCity = findClosestCity(newRegion.latitude, newRegion.longitude);
+        const detectedCity = findClosestCity(
+          newRegion.latitude,
+          newRegion.longitude,
+        );
         if (detectedCity && detectedCity !== selectedCity) {
           setSelectedCity(detectedCity);
         }
       }
-      
+
       mapMoveTimeoutRef.current = setTimeout(() => {
         setIsMapMoving(false);
       }, 500);
     },
-    [findClosestCity, selectedCity]
+    [findClosestCity, selectedCity],
   );
 
   const handleShowList = useCallback(() => {
@@ -432,31 +467,40 @@ export default function ProjectsScreen(): React.JSX.Element {
     setSearchModalVisible(true);
   }, []);
 
-  const handleSearch = useCallback((city: string | null, propertyType: string | null) => {
-    setSelectedCity(city);
-    setSelectedPropertyType(propertyType);
-    
-    // Move map to selected city if city is provided
-    // Only animate if component is mounted, map is ready, and ref is valid
-    if (isMountedRef.current && isMapReady && city && CITY_REGIONS[city] && mapRef.current) {
-      const cityRegion = CITY_REGIONS[city];
-      // Validate city region before animating
+  const handleSearch = useCallback(
+    (city: string | null, propertyType: string | null) => {
+      setSelectedCity(city);
+      setSelectedPropertyType(propertyType);
+
+      // Move map to selected city if city is provided
+      // Only animate if component is mounted, map is ready, and ref is valid
       if (
-        isValidCoordinate(cityRegion.latitude) &&
-        isValidLongitude(cityRegion.longitude) &&
-        isValidCoordinate(cityRegion.latitudeDelta) &&
-        isValidLongitude(cityRegion.longitudeDelta) &&
-        cityRegion.latitudeDelta > 0 &&
-        cityRegion.longitudeDelta > 0
+        isMountedRef.current &&
+        isMapReady &&
+        city &&
+        CITY_REGIONS[city] &&
+        mapRef.current
       ) {
-        try {
-          mapRef.current.animateToRegion(cityRegion, 800);
-        } catch (error) {
-          console.warn("Error animating to city:", error);
+        const cityRegion = CITY_REGIONS[city];
+        // Validate city region before animating
+        if (
+          isValidCoordinate(cityRegion.latitude) &&
+          isValidLongitude(cityRegion.longitude) &&
+          isValidCoordinate(cityRegion.latitudeDelta) &&
+          isValidLongitude(cityRegion.longitudeDelta) &&
+          cityRegion.latitudeDelta > 0 &&
+          cityRegion.longitudeDelta > 0
+        ) {
+          try {
+            mapRef.current.animateToRegion(cityRegion, 800);
+          } catch (error) {
+            console.warn("Error animating to city:", error);
+          }
         }
       }
-    }
-  }, [isMapReady]);
+    },
+    [isMapReady],
+  );
 
   const renderMarker = useCallback(
     (p: ProjectProperty) => {
@@ -487,7 +531,7 @@ export default function ProjectsScreen(): React.JSX.Element {
         </Marker>
       );
     },
-    [handleMarkerPress]
+    [handleMarkerPress],
   );
 
   return (
@@ -509,12 +553,15 @@ export default function ProjectsScreen(): React.JSX.Element {
           if (mapReadyTimeoutRef.current) {
             clearTimeout(mapReadyTimeoutRef.current);
           }
-          mapReadyTimeoutRef.current = setTimeout(() => {
-            // Double-check component is still mounted and map ref is still valid
-            if (isMountedRef.current && mapRef.current) {
-              setIsMapReady(true);
-            }
-          }, Platform.OS === "android" ? 500 : 300);
+          mapReadyTimeoutRef.current = setTimeout(
+            () => {
+              // Double-check component is still mounted and map ref is still valid
+              if (isMountedRef.current && mapRef.current) {
+                setIsMapReady(true);
+              }
+            },
+            Platform.OS === "android" ? 500 : 300,
+          );
         }}
       >
         {visibleProjects.map(renderMarker).filter(Boolean)}
@@ -532,7 +579,9 @@ export default function ProjectsScreen(): React.JSX.Element {
 
       {/* Filter chips */}
       <FilterChips
-        filterOptions={activeTab === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS}
+        filterOptions={
+          activeTab === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS
+        }
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
         onSearchPress={handleSearchPress}

@@ -10,7 +10,10 @@ import {
   LIVING_ROOM_OPTIONS,
 } from "../../../constants/orderFormOptions";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 interface SmallHouseForRentOrderSectionProps {
   t: Translate;
@@ -30,7 +33,7 @@ interface SmallHouseForRentOrderSectionProps {
   nearMetro: boolean;
   getTranslatedPickerValue: (
     originalValue: string | null,
-    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
   ) => string;
   onBedroomSelect: (value: string) => void;
   onLivingRoomSelect: (value: string) => void;
@@ -49,7 +52,7 @@ interface SmallHouseForRentOrderSectionProps {
 }
 
 function SmallHouseForRentOrderSectionComponent(
-  props: SmallHouseForRentOrderSectionProps
+  props: SmallHouseForRentOrderSectionProps,
 ): React.JSX.Element {
   const {
     t,
@@ -101,7 +104,10 @@ function SmallHouseForRentOrderSectionComponent(
       />
       <FieldWithModal
         label={t("listings.streetDirection")}
-        value={getTranslatedPickerValue(smallHouseRentStreetDirection, "streetDirection")}
+        value={getTranslatedPickerValue(
+          smallHouseRentStreetDirection,
+          "streetDirection",
+        )}
         placeholder={t("listings.selectStreetDirection")}
         onPress={onOpenStreetDirection}
         backgroundColor="background"
@@ -123,7 +129,10 @@ function SmallHouseForRentOrderSectionComponent(
       />
       <FieldWithModal
         label={t("listings.streetWidth")}
-        value={getTranslatedPickerValue(smallHouseRentStreetWidth, "streetWidth")}
+        value={getTranslatedPickerValue(
+          smallHouseRentStreetWidth,
+          "streetWidth",
+        )}
         placeholder={t("listings.selectStreetWidth")}
         onPress={onOpenStreetWidth}
         backgroundColor="background"
@@ -137,11 +146,31 @@ function SmallHouseForRentOrderSectionComponent(
       />
       <ToggleGroup
         toggles={[
-          { label: t("listings.furnished"), value: smallHouseRentFurnished, onValueChange: onFurnishedChange },
-          { label: t("listings.tent"), value: smallHouseRentTent, onValueChange: onTentChange },
-          { label: t("listings.kitchen"), value: smallHouseRentKitchen, onValueChange: onKitchenChange },
-          { label: t("listings.nearBus"), value: nearBus, onValueChange: onNearBusChange },
-          { label: t("listings.nearMetro"), value: nearMetro, onValueChange: onNearMetroChange },
+          {
+            label: t("listings.furnished"),
+            value: smallHouseRentFurnished,
+            onValueChange: onFurnishedChange,
+          },
+          {
+            label: t("listings.tent"),
+            value: smallHouseRentTent,
+            onValueChange: onTentChange,
+          },
+          {
+            label: t("listings.kitchen"),
+            value: smallHouseRentKitchen,
+            onValueChange: onKitchenChange,
+          },
+          {
+            label: t("listings.nearBus"),
+            value: nearBus,
+            onValueChange: onNearBusChange,
+          },
+          {
+            label: t("listings.nearMetro"),
+            value: nearMetro,
+            onValueChange: onNearMetroChange,
+          },
         ]}
       />
     </>
@@ -149,6 +178,5 @@ function SmallHouseForRentOrderSectionComponent(
 }
 
 export const SmallHouseForRentOrderSection = memo(
-  SmallHouseForRentOrderSectionComponent
+  SmallHouseForRentOrderSectionComponent,
 );
-

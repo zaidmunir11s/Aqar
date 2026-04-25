@@ -1,7 +1,15 @@
 import React, { memo } from "react";
-import { PriceInputSection, TabBarSection, FieldWithModal, ToggleGroup } from "../../index";
+import {
+  PriceInputSection,
+  TabBarSection,
+  FieldWithModal,
+  ToggleGroup,
+} from "../../index";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 interface LandForSaleOrderSectionProps {
   t: Translate;
@@ -9,7 +17,7 @@ interface LandForSaleOrderSectionProps {
   selectedLandType: string | null;
   getTranslatedPickerValue: (
     originalValue: string | null,
-    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+    type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
   ) => string;
   landStreetDirection: string | null;
   landStreetWidth: string | null;
@@ -31,7 +39,7 @@ interface LandForSaleOrderSectionProps {
 }
 
 function LandForSaleOrderSectionComponent(
-  props: LandForSaleOrderSectionProps
+  props: LandForSaleOrderSectionProps,
 ): React.JSX.Element {
   const {
     t,
@@ -96,8 +104,16 @@ function LandForSaleOrderSectionComponent(
       />
       <ToggleGroup
         toggles={[
-          { label: t("listings.nearBus"), value: nearBus, onValueChange: onNearBusChange },
-          { label: t("listings.nearMetro"), value: nearMetro, onValueChange: onNearMetroChange },
+          {
+            label: t("listings.nearBus"),
+            value: nearBus,
+            onValueChange: onNearBusChange,
+          },
+          {
+            label: t("listings.nearMetro"),
+            value: nearMetro,
+            onValueChange: onNearMetroChange,
+          },
         ]}
       />
     </>
@@ -105,4 +121,3 @@ function LandForSaleOrderSectionComponent(
 }
 
 export const LandForSaleOrderSection = memo(LandForSaleOrderSectionComponent);
-

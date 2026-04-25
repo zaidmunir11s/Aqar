@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import { COLORS } from "@/constants";
 import WheelPickerModal from "../../common/WheelPickerModal";
 import { useLocalization } from "@/hooks/useLocalization";
@@ -58,7 +61,7 @@ export default function InlineWheelPickerField({
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
@@ -70,7 +73,9 @@ export default function InlineWheelPickerField({
         onPress={() => setVisible(true)}
         activeOpacity={0.85}
       >
-        <Text style={[styles.inlineFieldText, rtlStyles.fieldText]}>{displayValue}</Text>
+        <Text style={[styles.inlineFieldText, rtlStyles.fieldText]}>
+          {displayValue}
+        </Text>
         <Ionicons name="chevron-down" size={wp(4.8)} color={COLORS.primary} />
       </TouchableOpacity>
 
@@ -125,4 +130,3 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
 });
-

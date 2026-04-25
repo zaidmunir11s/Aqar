@@ -31,7 +31,9 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
     const rtlStyles = useMemo(
       () => ({
         modalContent: {
-          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+          alignItems: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-start"
+            | "flex-end",
         },
         modalHeading: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -40,8 +42,12 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         modalButtons: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-          justifyContent: (isRTL ? "flex-end" : "flex-end") as "flex-start" | "flex-end",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+          justifyContent: (isRTL ? "flex-end" : "flex-end") as
+            | "flex-start"
+            | "flex-end",
           marginLeft: isRTL ? 0 : wp(3),
           marginRight: isRTL ? wp(3) : 0,
         },
@@ -52,7 +58,7 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -64,7 +70,9 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, rtlStyles.modalContent]}>
-            <Text style={[styles.modalHeading, rtlStyles.modalHeading]}>{t("common.appName")}</Text>
+            <Text style={[styles.modalHeading, rtlStyles.modalHeading]}>
+              {t("common.appName")}
+            </Text>
             <Text style={[styles.modalText, rtlStyles.modalText]}>
               {t("common.deleteRequestConfirm")}
             </Text>
@@ -74,21 +82,35 @@ const DeleteConfirmationModal = memo<DeleteConfirmationModalProps>(
                 onPress={onCancel}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.modalNoButtonText, rtlStyles.modalNoButtonText]}>{t("common.no")}</Text>
+                <Text
+                  style={[
+                    styles.modalNoButtonText,
+                    rtlStyles.modalNoButtonText,
+                  ]}
+                >
+                  {t("common.no")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalYesButton}
                 onPress={onConfirm}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.modalYesButtonText, rtlStyles.modalYesButtonText]}>{t("common.yes")}</Text>
+                <Text
+                  style={[
+                    styles.modalYesButtonText,
+                    rtlStyles.modalYesButtonText,
+                  ]}
+                >
+                  {t("common.yes")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
     );
-  }
+  },
 );
 
 DeleteConfirmationModal.displayName = "DeleteConfirmationModal";

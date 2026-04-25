@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -15,7 +21,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  CommonActions,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useSSO, useAuth } from "@clerk/clerk-expo";
@@ -24,7 +34,11 @@ import * as Linking from "expo-linking";
 import { secureGet, secureSet } from "@/utils/secureStore";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS, STORAGE_KEYS } from "../../constants";
-import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
+import {
+  useLocalization,
+  useKeyboardHeight,
+  useTabNavigation,
+} from "../../hooks";
 import { useLoginMutation } from "@/redux/api";
 import { API_CONFIG } from "@/constants/api";
 import {
@@ -36,7 +50,10 @@ import {
   setLoggedInDisplayName,
   setLoggedInProfileImageUri,
 } from "../../utils/loggedInPhoneStorage";
-import { syncAccountProfileMetaOnAuth, touchLastActiveAt } from "../../utils/accountActivityStorage";
+import {
+  syncAccountProfileMetaOnAuth,
+  touchLastActiveAt,
+} from "../../utils/accountActivityStorage";
 import type { AuthStackParamList } from "../../navigation/types";
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -53,12 +70,18 @@ export default function LoginScreen(): React.JSX.Element {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoadingGoogle, setIsLoadingGoogle] = useState<boolean>(false);
-  const [cachedProfileImageUri, setCachedProfileImageUri] = useState<string | null>(null);
+  const [cachedProfileImageUri, setCachedProfileImageUri] = useState<
+    string | null
+  >(null);
   const resolvedAvatarUri = useMemo(() => {
     const raw = (cachedProfileImageUri ?? "").trim();
     if (!raw) return null;
     // Avoid showing a broken placeholder for invalid URIs
-    if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("file://")) {
+    if (
+      raw.startsWith("http://") ||
+      raw.startsWith("https://") ||
+      raw.startsWith("file://")
+    ) {
       return raw;
     }
     return null;
@@ -71,10 +94,10 @@ export default function LoginScreen(): React.JSX.Element {
           CommonActions.reset({
             index: 0,
             routes: [{ name: "ProfileDetail" }],
-          })
+          }),
         );
       }
-    }, [isLoaded, isAuthenticated, navigation])
+    }, [isLoaded, isAuthenticated, navigation]),
   );
 
   useFocusEffect(
@@ -83,7 +106,8 @@ export default function LoginScreen(): React.JSX.Element {
       (async () => {
         try {
           const uri = await secureGet(STORAGE_KEYS.loggedInProfileImageUri);
-          if (active) setCachedProfileImageUri(uri && uri.length > 0 ? uri : null);
+          if (active)
+            setCachedProfileImageUri(uri && uri.length > 0 ? uri : null);
         } catch {
           if (active) setCachedProfileImageUri(null);
         }
@@ -91,22 +115,30 @@ export default function LoginScreen(): React.JSX.Element {
       return () => {
         active = false;
       };
-    }, [])
+    }, []),
   );
 
-  const validatePhoneNumber = useCallback((phone: string): string => {
-    const key = getSaudiPhoneValidationError(phone);
-    return key ? t(key) : "";
-  }, [t]);
+  const validatePhoneNumber = useCallback(
+    (phone: string): string => {
+      const key = getSaudiPhoneValidationError(phone);
+      return key ? t(key) : "";
+    },
+    [t],
+  );
 
-  const validatePassword = useCallback((pwd: string): string => {
-    const key = getPasswordValidationError(pwd, "generic");
-    return key ? t(key) : "";
-  }, [t]);
+  const validatePassword = useCallback(
+    (pwd: string): string => {
+      const key = getPasswordValidationError(pwd, "generic");
+      return key ? t(key) : "";
+    },
+    [t],
+  );
 
   const [phoneErrorShown, setPhoneErrorShown] = useState<boolean>(false);
   const [passwordErrorShown, setPasswordErrorShown] = useState<boolean>(false);
-  const passwordErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passwordErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const { keyboardHeight } = useKeyboardHeight();
 
   // Validate and get translated error messages
@@ -127,7 +159,7 @@ export default function LoginScreen(): React.JSX.Element {
       if (passwordErrorTimeoutRef.current) {
         clearTimeout(passwordErrorTimeoutRef.current);
       }
-      
+
       // Set new timeout to hide error after 2 seconds
       passwordErrorTimeoutRef.current = setTimeout(() => {
         setPasswordErrorShown(false);
@@ -206,7 +238,8 @@ export default function LoginScreen(): React.JSX.Element {
 
       Alert.alert(
         t("common.success"),
-        result.message || (t("auth.loggedInSuccessfully") ?? "Logged in successfully"),
+        result.message ||
+          (t("auth.loggedInSuccessfully") ?? "Logged in successfully"),
         [
           {
             text: "OK",
@@ -215,18 +248,19 @@ export default function LoginScreen(): React.JSX.Element {
                 CommonActions.reset({
                   index: 0,
                   routes: [{ name: "ProfileDetail" }],
-                })
+                }),
               );
             },
           },
-        ]
+        ],
       );
     } catch (error: unknown) {
       const err = error as { data?: { message?: string }; message?: string };
       const errorMessage =
         err?.data?.message ??
         err?.message ??
-        (t("auth.failedToLogin") ?? "Failed to login. Please try again.");
+        t("auth.failedToLogin") ??
+        "Failed to login. Please try again.";
       Alert.alert(t("auth.loginError"), errorMessage);
     }
   }, [
@@ -257,7 +291,7 @@ export default function LoginScreen(): React.JSX.Element {
       CommonActions.reset({
         index: 0,
         routes: [{ name: "ProfileDetail" }],
-      })
+      }),
     );
   }, [navigation]);
 
@@ -286,7 +320,7 @@ export default function LoginScreen(): React.JSX.Element {
         if (!clerkToken) {
           Alert.alert(
             t("auth.loginError"),
-            "Signed in with Google, but could not retrieve a Clerk token for backend login."
+            "Signed in with Google, but could not retrieve a Clerk token for backend login.",
           );
           resetToProfile();
           return;
@@ -314,7 +348,7 @@ export default function LoginScreen(): React.JSX.Element {
               "Check EXPO_PUBLIC_API_BASE_URL and Clerk JWT template (audience: aqar-backend).",
             ]
               .filter(Boolean)
-              .join("\n")
+              .join("\n"),
           );
           resetToProfile();
           return;
@@ -345,12 +379,19 @@ export default function LoginScreen(): React.JSX.Element {
 
       Alert.alert(
         t("auth.loginError"),
-        err?.errors?.[0]?.message || t("auth.failedToSignInWithGoogle")
+        err?.errors?.[0]?.message || t("auth.failedToSignInWithGoogle"),
       );
     } finally {
       setIsLoadingGoogle(false);
     }
-  }, [getToken, resetToProfile, setHasBackendSession, startSSOFlow, isSignedIn, t]);
+  }, [
+    getToken,
+    resetToProfile,
+    setHasBackendSession,
+    startSSOFlow,
+    isSignedIn,
+    t,
+  ]);
 
   const handleAppleLogin = useCallback(() => {
     // Apple sign-in is not wired yet.
@@ -415,15 +456,17 @@ export default function LoginScreen(): React.JSX.Element {
         textAlign: "left" as "left", // Always left-aligned so cursor starts from left (after prefix)
       },
       forgotPasswordContainer: {
-        alignItems: (isRTL ? "flex-start" : "flex-end") as "flex-start" | "flex-end",
+        alignItems: (isRTL ? "flex-start" : "flex-end") as
+          | "flex-start"
+          | "flex-end",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: hp(8) + keyboardHeight }],
-    [keyboardHeight]
+    [keyboardHeight],
   );
 
   if (isLoaded && isAuthenticated) {
@@ -453,8 +496,12 @@ export default function LoginScreen(): React.JSX.Element {
               />
             </View>
           ) : null}
-          <Text style={[styles.title, rtlStyles.title]}>{t("auth.loginToBayt")}</Text>
-          <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("auth.verifyToContinue")}</Text>
+          <Text style={[styles.title, rtlStyles.title]}>
+            {t("auth.loginToBayt")}
+          </Text>
+          <Text style={[styles.subtitle, rtlStyles.subtitle]}>
+            {t("auth.verifyToContinue")}
+          </Text>
         </View>
 
         {/* Phone Number Input */}
@@ -488,9 +535,16 @@ export default function LoginScreen(): React.JSX.Element {
         />
 
         {/* Forgot Password Link */}
-        <View style={[styles.forgotPasswordContainer, rtlStyles.forgotPasswordContainer]}>
+        <View
+          style={[
+            styles.forgotPasswordContainer,
+            rtlStyles.forgotPasswordContainer,
+          ]}
+        >
           <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
-            <Text style={styles.forgotPasswordText}>{t("auth.forgotYourPassword")}</Text>
+            <Text style={styles.forgotPasswordText}>
+              {t("auth.forgotYourPassword")}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -527,7 +581,9 @@ export default function LoginScreen(): React.JSX.Element {
         >
           <GoogleLogo containerStyle={rtlStyles.googleLogoContainer} />
           <Text style={[styles.socialButtonText, rtlStyles.socialButtonText]}>
-            {isLoadingGoogle ? t("auth.signingIn") : t("auth.continueWithGoogle")}
+            {isLoadingGoogle
+              ? t("auth.signingIn")
+              : t("auth.continueWithGoogle")}
           </Text>
         </TouchableOpacity>
 
@@ -548,10 +604,19 @@ export default function LoginScreen(): React.JSX.Element {
         </TouchableOpacity>
 
         {/* Create Account Link */}
-        <View style={[styles.createAccountContainer, rtlStyles.createAccountContainer]}>
-          <Text style={styles.createAccountText}>{t("auth.dontHaveAccount")} </Text>
+        <View
+          style={[
+            styles.createAccountContainer,
+            rtlStyles.createAccountContainer,
+          ]}
+        >
+          <Text style={styles.createAccountText}>
+            {t("auth.dontHaveAccount")}{" "}
+          </Text>
           <TouchableOpacity onPress={handleCreateAccount} activeOpacity={0.7}>
-            <Text style={styles.createAccountLink}>{t("auth.createAccount")}</Text>
+            <Text style={styles.createAccountLink}>
+              {t("auth.createAccount")}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -30,7 +30,7 @@ const IconButton = memo<IconButtonProps>(
         {children}
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 IconButton.displayName = "IconButton";

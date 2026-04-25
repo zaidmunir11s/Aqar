@@ -31,14 +31,16 @@ const FieldWithModal = memo<FieldWithModalProps>(
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         field: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         fieldText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -52,18 +54,20 @@ const FieldWithModal = memo<FieldWithModalProps>(
           ]}
           onPress={onPress}
         >
-          <Text style={[styles.fieldText, rtlStyles.fieldText, !value && styles.placeholder]}>
+          <Text
+            style={[
+              styles.fieldText,
+              rtlStyles.fieldText,
+              !value && styles.placeholder,
+            ]}
+          >
             {value || placeholder}
           </Text>
-          <Ionicons 
-            name= "chevron-down" 
-            size={wp(5)} 
-            color={COLORS.primary} 
-          />
+          <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 FieldWithModal.displayName = "FieldWithModal";
@@ -103,4 +107,3 @@ const styles = StyleSheet.create({
 });
 
 export default FieldWithModal;
-

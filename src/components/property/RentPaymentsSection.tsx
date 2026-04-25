@@ -6,7 +6,10 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "@/constants";
 import { useLocalization } from "@/hooks/useLocalization";
-import type { RentPaymentScheduleRow, RentPaymentFrequencyId } from "@/types/property";
+import type {
+  RentPaymentScheduleRow,
+  RentPaymentFrequencyId,
+} from "@/types/property";
 
 export interface RentPaymentsSectionProps {
   rows: RentPaymentScheduleRow[];
@@ -41,21 +44,21 @@ const RentPaymentsSection = React.memo(function RentPaymentsSection({
     () => ({
       flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const rtlTextEnd = useMemo(
     () => ({
       textAlign: (isRTL ? "left" : "right") as "left" | "right",
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const rtlTextStart = useMemo(
     () => ({
       textAlign: (isRTL ? "right" : "left") as "left" | "right",
     }),
-    [isRTL]
+    [isRTL],
   );
 
   if (rows.length === 0) return null;
@@ -65,11 +68,14 @@ const RentPaymentsSection = React.memo(function RentPaymentsSection({
 
   return (
     <View style={styles.wrapper}>
-      <Text style={[styles.sectionTitle, rtlTextStart]}>{t("listings.rentPayments")}</Text>
+      <Text style={[styles.sectionTitle, rtlTextStart]}>
+        {t("listings.rentPayments")}
+      </Text>
       <View style={styles.list}>
         {rows.map((row, index) => {
           const hasRight =
-            row.installmentAmountSar != null && Number.isFinite(row.installmentAmountSar);
+            row.installmentAmountSar != null &&
+            Number.isFinite(row.installmentAmountSar);
           const suffixKey = breakdownSuffixKey(row.frequency);
           return (
             <View
@@ -86,8 +92,12 @@ const RentPaymentsSection = React.memo(function RentPaymentsSection({
             >
               <View style={styles.leftCol}>
                 <Text style={[styles.leftLine, rtlTextStart]}>
-                  <Text style={styles.amountText}>{formatSar(row.primaryAmountSar)} </Text>
-                  <Text style={styles.frequencyText}>{t(frequencyKey(row.frequency))}</Text>
+                  <Text style={styles.amountText}>
+                    {formatSar(row.primaryAmountSar)}{" "}
+                  </Text>
+                  <Text style={styles.frequencyText}>
+                    {t(frequencyKey(row.frequency))}
+                  </Text>
                 </Text>
               </View>
               {hasRight ? (

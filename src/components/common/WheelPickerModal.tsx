@@ -1,4 +1,11 @@
-import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  memo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -7,6 +14,7 @@ import {
   TouchableOpacity,
   Pressable,
   Dimensions,
+  FlatList,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -19,7 +27,6 @@ import Animated, {
   runOnJS,
   SharedValue,
 } from "react-native-reanimated";
-import { FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -43,7 +50,6 @@ const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 
-
 const PickerItem = memo(
   ({
     item,
@@ -58,16 +64,36 @@ const PickerItem = memo(
   }) => {
     const animStyle = useAnimatedStyle(() => {
       const center = index * ITEM_HEIGHT;
-      const input = [center - 2 * ITEM_HEIGHT, center - ITEM_HEIGHT, center, center + ITEM_HEIGHT, center + 2 * ITEM_HEIGHT];
-      const scale = interpolate(scrollY.value, input, [0.82, 0.9, 1.12, 0.9, 0.82], Extrapolation.CLAMP);
-      const opacity = interpolate(scrollY.value, input, [0.2, 0.45, 1, 0.45, 0.2], Extrapolation.CLAMP);
+      const input = [
+        center - 2 * ITEM_HEIGHT,
+        center - ITEM_HEIGHT,
+        center,
+        center + ITEM_HEIGHT,
+        center + 2 * ITEM_HEIGHT,
+      ];
+      const scale = interpolate(
+        scrollY.value,
+        input,
+        [0.82, 0.9, 1.12, 0.9, 0.82],
+        Extrapolation.CLAMP,
+      );
+      const opacity = interpolate(
+        scrollY.value,
+        input,
+        [0.2, 0.45, 1, 0.45, 0.2],
+        Extrapolation.CLAMP,
+      );
       return { opacity, transform: [{ scale }] };
     });
 
     const colorStyle = useAnimatedStyle(() => {
       const center = index * ITEM_HEIGHT;
       const input = [center - ITEM_HEIGHT, center, center + ITEM_HEIGHT];
-      const color = interpolateColor(scrollY.value, input, [COLORS.textSecondary, COLORS.primary, COLORS.textSecondary]);
+      const color = interpolateColor(scrollY.value, input, [
+        COLORS.textSecondary,
+        COLORS.primary,
+        COLORS.textSecondary,
+      ]);
       return { color };
     });
 
@@ -85,7 +111,7 @@ const PickerItem = memo(
         </Animated.Text>
       </View>
     );
-  }
+  },
 );
 
 PickerItem.displayName = "PickerItem";
@@ -113,7 +139,9 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
     const headerRtlStyles = useMemo(
       () => ({
         pickerHeader: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         pickerHeaderText: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -126,7 +154,7 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     useEffect(() => {
@@ -165,10 +193,7 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
       handleClose();
     }, [options, selectedIndex, onSelect, handleClose]);
 
-    const updateIndex = useCallback(
-      (idx: number) => setSelectedIndex(idx),
-      []
-    );
+    const updateIndex = useCallback((idx: number) => setSelectedIndex(idx), []);
 
     const scrollHandler = useAnimatedScrollHandler({
       onScroll: (event) => {
@@ -185,13 +210,16 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
       transform: [{ translateY: translateY.value }],
     }));
 
-    const keyExtractor = useCallback((item: string, i: number) => `${item}-${i}`, []);
+    const keyExtractor = useCallback(
+      (item: string, i: number) => `${item}-${i}`,
+      [],
+    );
 
     const renderItem = useCallback(
       ({ item, index }: { item: string; index: number }) => (
         <PickerItem item={item} index={index} scrollY={scrollY} isRTL={isRTL} />
       ),
-      [scrollY, isRTL]
+      [scrollY, isRTL],
     );
 
     const getItemLayout = useCallback(
@@ -200,11 +228,16 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
         offset: ITEM_HEIGHT * index,
         index,
       }),
-      []
+      [],
     );
 
     return (
-      <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="none"
+        onRequestClose={handleClose}
+      >
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={handleClose} />
           <Animated.View style={[styles.pickerContainer, sheetStyle]}>
@@ -216,15 +249,29 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
                   color={COLORS.primary}
                 />
               </TouchableOpacity>
-              <Text style={[styles.pickerHeaderText, headerRtlStyles.pickerHeaderText]}>{title}</Text>
+              <Text
+                style={[
+                  styles.pickerHeaderText,
+                  headerRtlStyles.pickerHeaderText,
+                ]}
+              >
+                {title}
+              </Text>
               <TouchableOpacity style={styles.okButton} onPress={handleOk}>
-                <Text style={[styles.okButtonText, headerRtlStyles.okButtonText]}>
+                <Text
+                  style={[styles.okButtonText, headerRtlStyles.okButtonText]}
+                >
                   {t("common.confirm")}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.wheelWrapper, isRTL && styles.wheelWrapperForceLtr]}>
+            <View
+              style={[
+                styles.wheelWrapper,
+                isRTL && styles.wheelWrapperForceLtr,
+              ]}
+            >
               <Animated.FlatList
                 ref={flatListRef}
                 data={options}
@@ -235,7 +282,9 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
                 snapToInterval={ITEM_HEIGHT}
                 decelerationRate="fast"
                 bounces={false}
-                contentContainerStyle={{ paddingVertical: (PICKER_HEIGHT - ITEM_HEIGHT) / 2 }}
+                contentContainerStyle={{
+                  paddingVertical: (PICKER_HEIGHT - ITEM_HEIGHT) / 2,
+                }}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
                 removeClippedSubviews={false}
@@ -248,7 +297,7 @@ const WheelPickerModal = memo<WheelPickerModalProps>(
         </View>
       </Modal>
     );
-  }
+  },
 );
 
 WheelPickerModal.displayName = "WheelPickerModal";

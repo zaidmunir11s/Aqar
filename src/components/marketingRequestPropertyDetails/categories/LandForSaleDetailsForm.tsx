@@ -51,7 +51,7 @@ export default function LandForSaleDetailsForm({
       t("listings.commercial"),
       t("listings.residentialAndCommercial"),
     ],
-    [t]
+    [t],
   );
 
   const isStreetDirectionValid = streetDirection !== "Not Defined";
@@ -62,12 +62,34 @@ export default function LandForSaleDetailsForm({
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "navigate", label: t("listings.streetDirection"), value: getDirectionLabel(streetDirection, t) },
-      { type: "value", label: t("listings.landType"), value: landTypeOptions[landTypeIndex] ?? "" },
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
+      {
+        type: "value",
+        icon: "navigate",
+        label: t("listings.streetDirection"),
+        value: getDirectionLabel(streetDirection, t),
+      },
+      {
+        type: "value",
+        label: t("listings.landType"),
+        value: landTypeOptions[landTypeIndex] ?? "",
+      },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
       { type: "toggle", label: t("listings.water"), enabled: water },
-      { type: "toggle", label: t("listings.electricity"), enabled: electricity },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: drainageAvailability,
+      },
     ]);
   }, [
     drainageAvailability,
@@ -85,10 +107,14 @@ export default function LandForSaleDetailsForm({
     <>
       <OptionChips
         label={t("listings.streetDirection")}
-        options={STREET_DIRECTION_OPTIONS.map((opt) => getDirectionLabel(opt, t))}
+        options={STREET_DIRECTION_OPTIONS.map((opt) =>
+          getDirectionLabel(opt, t),
+        )}
         selectedValue={getDirectionLabel(streetDirection, t)}
         onSelect={(value) => {
-          const original = STREET_DIRECTION_OPTIONS.find((opt) => getDirectionLabel(opt, t) === value);
+          const original = STREET_DIRECTION_OPTIONS.find(
+            (opt) => getDirectionLabel(opt, t) === value,
+          );
           setStreetDirection(original ?? "Not Defined");
         }}
         scrollable
@@ -118,9 +144,30 @@ export default function LandForSaleDetailsForm({
         max={100}
       />
 
-      <ToggleRow label={t("listings.water")} value={water} onValueChange={setWater} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.electricity")} value={electricity} onValueChange={setElectricity} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
-      <ToggleRow label={t("listings.drainageAvailability")} value={drainageAvailability} onValueChange={setDrainageAvailability} trackWidth={TOGGLE_TRACK_WIDTH} trackHeight={TOGGLE_TRACK_HEIGHT} thumbSize={TOGGLE_THUMB_SIZE} />
+      <ToggleRow
+        label={t("listings.water")}
+        value={water}
+        onValueChange={setWater}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.electricity")}
+        value={electricity}
+        onValueChange={setElectricity}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
+      <ToggleRow
+        label={t("listings.drainageAvailability")}
+        value={drainageAvailability}
+        onValueChange={setDrainageAvailability}
+        trackWidth={TOGGLE_TRACK_WIDTH}
+        trackHeight={TOGGLE_TRACK_HEIGHT}
+        thumbSize={TOGGLE_THUMB_SIZE}
+      />
     </>
   );
 }

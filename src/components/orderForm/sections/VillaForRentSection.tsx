@@ -126,33 +126,45 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
           if (opt === "Townhouse") return t("listings.townhouse");
           return opt;
         }),
-      [t]
+      [t],
     );
 
     // Create reverse map for villa type
-    const createReverseMap = useCallback((original: string[], translated: string[]) => {
-      const map: Record<string, string> = {};
-      original.forEach((orig, index) => {
-        map[translated[index]] = orig;
-      });
-      return map;
-    }, []);
+    const createReverseMap = useCallback(
+      (original: string[], translated: string[]) => {
+        const map: Record<string, string> = {};
+        original.forEach((orig, index) => {
+          map[translated[index]] = orig;
+        });
+        return map;
+      },
+      [],
+    );
 
     const villaTypeReverseMap = useMemo(
       () => createReverseMap(VILLA_TYPE_OPTIONS, translatedVillaTypeOptions),
-      [createReverseMap, translatedVillaTypeOptions]
+      [createReverseMap, translatedVillaTypeOptions],
     );
 
     // Get translated initial value
-    const getTranslatedInitialValue = useCallback((originalValue: string | null): string => {
-      if (!originalValue) return "";
-      const originalIndex = Object.values(villaTypeReverseMap).indexOf(originalValue);
-      return originalIndex >= 0 ? translatedVillaTypeOptions[originalIndex] : originalValue;
-    }, [villaTypeReverseMap, translatedVillaTypeOptions]);
+    const getTranslatedInitialValue = useCallback(
+      (originalValue: string | null): string => {
+        if (!originalValue) return "";
+        const originalIndex =
+          Object.values(villaTypeReverseMap).indexOf(originalValue);
+        return originalIndex >= 0
+          ? translatedVillaTypeOptions[originalIndex]
+          : originalValue;
+      },
+      [villaTypeReverseMap, translatedVillaTypeOptions],
+    );
 
     return (
       <>
-        <RentPaymentFrequencyChips selectedFrequency={rentPeriod} onSelect={onRentPeriodChange} />
+        <RentPaymentFrequencyChips
+          selectedFrequency={rentPeriod}
+          onSelect={onRentPeriodChange}
+        />
 
         <PriceInputSection
           label={getRentSearchPriceLabel(rentPeriod, t)}
@@ -210,7 +222,13 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
         />
 
         <ToggleGroup
-          toggles={[{ label: t("listings.stairs"), value: stairs, onValueChange: onStairsChange }]}
+          toggles={[
+            {
+              label: t("listings.stairs"),
+              value: stairs,
+              onValueChange: onStairsChange,
+            },
+          ]}
         />
 
         <FieldWithModal
@@ -223,13 +241,41 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
 
         <ToggleGroup
           toggles={[
-            { label: t("listings.driverRoom"), value: driverRoom, onValueChange: onDriverRoomChange },
-            { label: t("listings.maidRoom"), value: maidRoom, onValueChange: onMaidRoomChange },
-            { label: t("listings.pool"), value: pool, onValueChange: onPoolChange },
-            { label: t("listings.furnished"), value: villaFurnished, onValueChange: onVillaFurnishedChange },
-            { label: t("listings.kitchen"), value: kitchen, onValueChange: onKitchenChange },
-            { label: t("listings.carEntrance"), value: villaCarEntrance, onValueChange: onVillaCarEntranceChange },
-            { label: t("listings.basement"), value: basement, onValueChange: onBasementChange },
+            {
+              label: t("listings.driverRoom"),
+              value: driverRoom,
+              onValueChange: onDriverRoomChange,
+            },
+            {
+              label: t("listings.maidRoom"),
+              value: maidRoom,
+              onValueChange: onMaidRoomChange,
+            },
+            {
+              label: t("listings.pool"),
+              value: pool,
+              onValueChange: onPoolChange,
+            },
+            {
+              label: t("listings.furnished"),
+              value: villaFurnished,
+              onValueChange: onVillaFurnishedChange,
+            },
+            {
+              label: t("listings.kitchen"),
+              value: kitchen,
+              onValueChange: onKitchenChange,
+            },
+            {
+              label: t("listings.carEntrance"),
+              value: villaCarEntrance,
+              onValueChange: onVillaCarEntranceChange,
+            },
+            {
+              label: t("listings.basement"),
+              value: basement,
+              onValueChange: onBasementChange,
+            },
           ]}
         />
 
@@ -238,24 +284,36 @@ const VillaForRentSection = memo<VillaForRentSectionProps>(
           options={translatedVillaTypeOptions}
           selectedValue={getTranslatedInitialValue(selectedVillaType)}
           onSelect={(translatedValue: string) => {
-            const originalValue = villaTypeReverseMap[translatedValue] || translatedValue;
+            const originalValue =
+              villaTypeReverseMap[translatedValue] || translatedValue;
             onVillaTypeChange(originalValue);
           }}
         />
 
         <ToggleGroup
           toggles={[
-            { label: t("listings.airConditioned"), value: airConditioned, onValueChange: onAirConditionedChange },
-            { label: t("listings.nearBus"), value: nearBus, onValueChange: onNearBusChange },
-            { label: t("listings.nearMetro"), value: nearMetro, onValueChange: onNearMetroChange },
+            {
+              label: t("listings.airConditioned"),
+              value: airConditioned,
+              onValueChange: onAirConditionedChange,
+            },
+            {
+              label: t("listings.nearBus"),
+              value: nearBus,
+              onValueChange: onNearBusChange,
+            },
+            {
+              label: t("listings.nearMetro"),
+              value: nearMetro,
+              onValueChange: onNearMetroChange,
+            },
           ]}
         />
       </>
     );
-  }
+  },
 );
 
 VillaForRentSection.displayName = "VillaForRentSection";
 
 export default VillaForRentSection;
-

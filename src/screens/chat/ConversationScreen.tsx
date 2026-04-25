@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -65,7 +71,7 @@ const formatDate = (date: Date | number, t: any, isRTL: boolean): string => {
   ];
   const month = t(`listings.calendar.months.${monthKeys[d.getMonth()]}`);
   const day = d.getDate().toString().padStart(2, "0");
-  
+
   // In RTL, show day first, then month, then year (DD Month YYYY)
   // In LTR, show year first, then month, then day (YYYY Month DD)
   if (isRTL) {
@@ -83,12 +89,12 @@ const formatTime = (date: Date | number, t: any, isRTL: boolean): string => {
   hours = hours % 12;
   hours = hours ? hours : 12; // the hour '0' should be '12'
   const timeStr = `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
-  
+
   // Convert Arabic-Indic numerals to Western numerals for RTL
   if (isRTL) {
     return timeStr.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
   }
-  
+
   return timeStr;
 };
 
@@ -120,16 +126,24 @@ export default function ConversationScreen(): React.JSX.Element {
     advertiserId,
     defaultMessage,
   } = params;
-  
+
   // Get or create conversation (return enriched copy - never mutate source)
   const conversation = useMemo(() => {
-    let base: typeof import("../../data/chatData").MOCK_CONVERSATIONS[0] | null = null;
+    let base:
+      | (typeof import("../../data/chatData").MOCK_CONVERSATIONS)[0]
+      | null = null;
     if (conversationId) {
       const { MOCK_CONVERSATIONS } = require("../../data/chatData");
-      base = MOCK_CONVERSATIONS.find((c: any) => c.id === conversationId) ?? null;
+      base =
+        MOCK_CONVERSATIONS.find((c: any) => c.id === conversationId) ?? null;
     } else if (propertyId && advertiserId) {
-      const defaultName = advertiserName || getUserName(advertiserId) || "Property Owner";
-      base = getOrCreateConversationForProperty(propertyId, defaultName, advertiserId);
+      const defaultName =
+        advertiserName || getUserName(advertiserId) || "Property Owner";
+      base = getOrCreateConversationForProperty(
+        propertyId,
+        defaultName,
+        advertiserId,
+      );
     }
     if (!base) return null;
 
@@ -138,13 +152,17 @@ export default function ConversationScreen(): React.JSX.Element {
       userName = advertiserName;
     } else if (!userName || userName === "Property Owner") {
       const nameFromUsers = getUserName(base.userId);
-      userName = nameFromUsers !== "Property Owner" ? nameFromUsers : (advertiserName || "Property Owner");
+      userName =
+        nameFromUsers !== "Property Owner"
+          ? nameFromUsers
+          : advertiserName || "Property Owner";
     }
     if (isAdminUser(base.userId)) {
       userName = "تطبيق العقارات";
     }
 
-    const userAvatar = base.userAvatar ?? getUserAvatar(base.userId) ?? undefined;
+    const userAvatar =
+      base.userAvatar ?? getUserAvatar(base.userId) ?? undefined;
 
     return { ...base, userName, userAvatar };
   }, [conversationId, propertyId, advertiserId, advertiserName]);
@@ -158,7 +176,8 @@ export default function ConversationScreen(): React.JSX.Element {
   const [inputText, setInputText] = useState(defaultMessage || "");
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
-  const [blockConfirmationModalVisible, setBlockConfirmationModalVisible] = useState(false);
+  const [blockConfirmationModalVisible, setBlockConfirmationModalVisible] =
+    useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const modalSlideAnim = useRef(new Animated.Value(0)).current;
 
@@ -167,8 +186,10 @@ export default function ConversationScreen(): React.JSX.Element {
     if (conversation) {
       const chatMessages = getMessagesForConversation(conversation.id);
       const sorted = [...chatMessages].sort((a, b) => {
-        const dateA = typeof a.createdAt === "number" ? a.createdAt : a.createdAt.getTime();
-        const dateB = typeof b.createdAt === "number" ? b.createdAt : b.createdAt.getTime();
+        const dateA =
+          typeof a.createdAt === "number" ? a.createdAt : a.createdAt.getTime();
+        const dateB =
+          typeof b.createdAt === "number" ? b.createdAt : b.createdAt.getTime();
         return dateA - dateB; // Oldest first (chronological)
       });
       setMessages(sorted);
@@ -190,7 +211,7 @@ export default function ConversationScreen(): React.JSX.Element {
         flatListRef.current.scrollToEnd({ animated });
       }
     },
-    [messages.length]
+    [messages.length],
   );
 
   // Scroll to bottom when content size changes (e.g. new messages)
@@ -212,25 +233,25 @@ export default function ConversationScreen(): React.JSX.Element {
   // Handle keyboard show/hide
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (e) => {
         Animated.timing(keyboardHeight, {
           toValue: e.endCoordinates.height,
-          duration: Platform.OS === 'ios' ? e.duration || 250 : 100,
+          duration: Platform.OS === "ios" ? e.duration || 250 : 100,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       (e) => {
         Animated.timing(keyboardHeight, {
           toValue: 0,
-          duration: Platform.OS === 'ios' ? e.duration || 250 : 100,
+          duration: Platform.OS === "ios" ? e.duration || 250 : 100,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -315,72 +336,101 @@ export default function ConversationScreen(): React.JSX.Element {
   }, [inputText, conversation]);
 
   // Render message text with ad number highlighting
-  const renderMessageText = useCallback((text: string | undefined, isReceived: boolean = false) => {
-    if (!text || typeof text !== 'string') {
-      return <Text style={[styles.messageText, isReceived && styles.receivedMessageText]}></Text>;
-    }
+  const renderMessageText = useCallback(
+    (text: string | undefined, isReceived: boolean = false) => {
+      if (!text || typeof text !== "string") {
+        return (
+          <Text
+            style={[
+              styles.messageText,
+              isReceived && styles.receivedMessageText,
+            ]}
+          ></Text>
+        );
+      }
 
-    // Match any text starting with # (not just numbers)
-    const adNumberPattern = /#[^\s]*/g;
-    const parts: Array<{ text: string; isAdNumber: boolean }> = [];
-    let lastIndex = 0;
-    let match;
-    adNumberPattern.lastIndex = 0;
+      // Match any text starting with # (not just numbers)
+      const adNumberPattern = /#[^\s]*/g;
+      const parts: { text: string; isAdNumber: boolean }[] = [];
+      let lastIndex = 0;
+      let match;
+      adNumberPattern.lastIndex = 0;
 
-    while ((match = adNumberPattern.exec(text)) !== null) {
-      if (match.index > lastIndex) {
+      while ((match = adNumberPattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push({
+            text: text.substring(lastIndex, match.index),
+            isAdNumber: false,
+          });
+        }
         parts.push({
-          text: text.substring(lastIndex, match.index),
+          text: match[0],
+          isAdNumber: true,
+        });
+        lastIndex = match.index + match[0].length;
+      }
+
+      if (lastIndex < text.length) {
+        parts.push({
+          text: text.substring(lastIndex),
           isAdNumber: false,
         });
       }
-      parts.push({
-        text: match[0],
-        isAdNumber: true,
-      });
-      lastIndex = match.index + match[0].length;
-    }
 
-    if (lastIndex < text.length) {
-      parts.push({
-        text: text.substring(lastIndex),
-        isAdNumber: false,
-      });
-    }
-
-    if (parts.length === 0) {
-      return <Text style={[styles.messageText, isReceived && styles.receivedMessageText]}>{text}</Text>;
-    }
-
-    return (
-      <Text style={[styles.messageText, isReceived && styles.receivedMessageText]}>
-        {parts.map((part, index) => (
+      if (parts.length === 0) {
+        return (
           <Text
-            key={index}
-            style={part.isAdNumber ? (isReceived ? styles.receivedAdNumberText : styles.adNumberText) : undefined}
+            style={[
+              styles.messageText,
+              isReceived && styles.receivedMessageText,
+            ]}
           >
-            {part.text}
+            {text}
           </Text>
-        ))}
-      </Text>
-    );
-  }, []);
+        );
+      }
+
+      return (
+        <Text
+          style={[styles.messageText, isReceived && styles.receivedMessageText]}
+        >
+          {parts.map((part, index) => (
+            <Text
+              key={index}
+              style={
+                part.isAdNumber
+                  ? isReceived
+                    ? styles.receivedAdNumberText
+                    : styles.adNumberText
+                  : undefined
+              }
+            >
+              {part.text}
+            </Text>
+          ))}
+        </Text>
+      );
+    },
+    [],
+  );
 
   const renderMessage = useCallback(
     ({ item, index }: { item: ChatMessage; index: number }) => {
       const isCurrentUser = item.user._id === MOCK_USERS.currentUser._id;
-      const       showDateSeparator =
+      const showDateSeparator =
         index === 0 ||
         !isSameDay(
           item.createdAt,
-          messages[index - 1]?.createdAt || item.createdAt
+          messages[index - 1]?.createdAt || item.createdAt,
         );
 
       return (
         <View>
           {showDateSeparator && (
             <View style={styles.dateContainer}>
-              <Text style={styles.dateText}>{formatDate(item.createdAt, t, isRTL)}</Text>
+              <Text style={styles.dateText}>
+                {formatDate(item.createdAt, t, isRTL)}
+              </Text>
             </View>
           )}
           <View
@@ -389,8 +439,12 @@ export default function ConversationScreen(): React.JSX.Element {
               // In RTL: user messages on left, received on right
               // In LTR: user messages on right, received on left
               isRTL
-                ? (isCurrentUser ? styles.messageLeft : styles.messageRight)
-                : (isCurrentUser ? styles.messageRight : styles.messageLeft),
+                ? isCurrentUser
+                  ? styles.messageLeft
+                  : styles.messageRight
+                : isCurrentUser
+                  ? styles.messageRight
+                  : styles.messageLeft,
             ]}
           >
             <View
@@ -400,8 +454,12 @@ export default function ConversationScreen(): React.JSX.Element {
                 // User messages: white background, on left in RTL (use left margins), on right in LTR (use right margins)
                 // Received messages: primaryLight background, on right in RTL (use right margins), on left in LTR (use left margins)
                 isRTL
-                  ? (isCurrentUser ? styles.messageBubbleLeft : styles.messageBubbleRight)
-                  : (isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft),
+                  ? isCurrentUser
+                    ? styles.messageBubbleLeft
+                    : styles.messageBubbleRight
+                  : isCurrentUser
+                    ? styles.messageBubbleRight
+                    : styles.messageBubbleLeft,
                 // Override background color to maintain: user messages = white, received = primaryLight
                 {
                   backgroundColor: isCurrentUser ? "#fff" : COLORS.primaryLight,
@@ -409,7 +467,12 @@ export default function ConversationScreen(): React.JSX.Element {
               ]}
             >
               {renderMessageText(item.text, !isCurrentUser)}
-              <Text style={[styles.timeText, !isCurrentUser && styles.receivedTimeText]}>
+              <Text
+                style={[
+                  styles.timeText,
+                  !isCurrentUser && styles.receivedTimeText,
+                ]}
+              >
                 {formatTime(item.createdAt, t, isRTL)}
               </Text>
             </View>
@@ -417,7 +480,7 @@ export default function ConversationScreen(): React.JSX.Element {
         </View>
       );
     },
-    [messages, renderMessageText, t, isRTL]
+    [messages, renderMessageText, t, isRTL],
   );
 
   const keyExtractor = useCallback((item: ChatMessage) => String(item._id), []);
@@ -429,7 +492,7 @@ export default function ConversationScreen(): React.JSX.Element {
       </View>
     );
   }
-  
+
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
@@ -453,7 +516,9 @@ export default function ConversationScreen(): React.JSX.Element {
         marginRight: isRTL ? wp(2.5) : 0,
       },
       menuButton: {
-        alignItems: (isRTL ? "flex-start" : "flex-end") as "flex-start" | "flex-end",
+        alignItems: (isRTL ? "flex-start" : "flex-end") as
+          | "flex-start"
+          | "flex-end",
       },
       inputContainer: {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
@@ -480,14 +545,18 @@ export default function ConversationScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
       blockModalContent: {
-        alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        alignItems: (isRTL ? "flex-end" : "flex-start") as
+          | "flex-start"
+          | "flex-end",
       },
       blockModalText: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
       blockModalButtons: {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-        justifyContent: (isRTL ? "flex-end" : "flex-end") as "flex-start" | "flex-end",
+        justifyContent: (isRTL ? "flex-end" : "flex-end") as
+          | "flex-start"
+          | "flex-end",
       },
       blockModalCancelText: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -496,152 +565,170 @@ export default function ConversationScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.headerWrapper, { paddingTop: Math.max(insets.top, hp(1.5)) }]}>
-          <View style={[styles.customHeader, rtlStyles.customHeader]}>
-            <View style={[styles.headerLeft, rtlStyles.headerLeft]}>
-              {handleBackPress && (
-                <TouchableOpacity
-                  style={[styles.backButton, rtlStyles.backButton]}
-                  onPress={handleBackPress}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons 
-                    name={isRTL ? "arrow-forward" : "arrow-back"} 
-                    size={wp(7)} 
-                    color={COLORS.backButton} 
-                  />
-                </TouchableOpacity>
-              )}
-              {conversation?.userAvatar && (
-                <View style={[styles.headerAvatarContainer, rtlStyles.headerAvatarContainer]}>
-                  <Image
-                    source={typeof conversation.userAvatar === "string" ? { uri: conversation.userAvatar } : conversation.userAvatar}
-                    style={styles.headerAvatar}
-                    resizeMode="cover"
-                  />
-                </View>
-              )}
-              <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
-                {(() => {
-                  // For admin, always show Arabic name
-                  if (conversation && isAdminUser(conversation.userId)) {
-                    return "تطبيق العقارات";
+      <View
+        style={[
+          styles.headerWrapper,
+          { paddingTop: Math.max(insets.top, hp(1.5)) },
+        ]}
+      >
+        <View style={[styles.customHeader, rtlStyles.customHeader]}>
+          <View style={[styles.headerLeft, rtlStyles.headerLeft]}>
+            {handleBackPress && (
+              <TouchableOpacity
+                style={[styles.backButton, rtlStyles.backButton]}
+                onPress={handleBackPress}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
+                  size={wp(7)}
+                  color={COLORS.backButton}
+                />
+              </TouchableOpacity>
+            )}
+            {conversation?.userAvatar && (
+              <View
+                style={[
+                  styles.headerAvatarContainer,
+                  rtlStyles.headerAvatarContainer,
+                ]}
+              >
+                <Image
+                  source={
+                    typeof conversation.userAvatar === "string"
+                      ? { uri: conversation.userAvatar }
+                      : conversation.userAvatar
                   }
-                  // For others, use stored name or fallback - no translation
-                  return conversation?.userName || advertiserName || "Property Owner";
-                })()}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.menuButton, rtlStyles.menuButton]}
-              onPress={handleMenuPress}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="ellipsis-vertical"
-                size={wp(6)}
-                color={COLORS.backButton}
-              />
-            </TouchableOpacity>
+                  style={styles.headerAvatar}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
+            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
+              {(() => {
+                // For admin, always show Arabic name
+                if (conversation && isAdminUser(conversation.userId)) {
+                  return "تطبيق العقارات";
+                }
+                // For others, use stored name or fallback - no translation
+                return (
+                  conversation?.userName || advertiserName || "Property Owner"
+                );
+              })()}
+            </Text>
           </View>
+          <TouchableOpacity
+            style={[styles.menuButton, rtlStyles.menuButton]}
+            onPress={handleMenuPress}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="ellipsis-vertical"
+              size={wp(6)}
+              color={COLORS.backButton}
+            />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Chat Messages */}
+      {/* Chat Messages */}
+      <Animated.View
+        style={[
+          styles.messagesContainer,
+          {
+            marginBottom: keyboardHeight,
+          },
+          // isAdminChat && { paddingBottom: Math.max(insets.bottom, hp(0.5)) },
+        ]}
+      >
+        {messages.length > 0 ? (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={keyExtractor}
+            contentContainerStyle={[
+              styles.messagesList,
+              isAdminChat && { paddingBottom: Math.max(insets.bottom, hp(1)) },
+            ]}
+            inverted={false}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={handleContentSizeChange}
+            initialNumToRender={15}
+            maxToRenderPerBatch={5}
+            windowSize={5}
+            removeClippedSubviews={true}
+          />
+        ) : (
+          <View style={styles.emptyMessagesContainer}>
+            <Text style={styles.emptyMessagesText}>
+              {t("chat.noMessagesYet")}
+            </Text>
+            <Text style={styles.emptyMessagesSubtext}>
+              {t("chat.startConversation")}
+            </Text>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Input Bar - Hidden for admin chat */}
+      {!isAdminChat && (
         <Animated.View
           style={[
-            styles.messagesContainer,
+            styles.inputContainer,
+            rtlStyles.inputContainer,
             {
-              marginBottom: keyboardHeight,
+              paddingBottom: Math.max(insets.bottom, hp(1)),
+              transform: [
+                {
+                  translateY: keyboardHeight.interpolate({
+                    inputRange: [0, 1000],
+                    outputRange: [0, -1000],
+                    extrapolate: "clamp",
+                  }) as any,
+                },
+              ],
             },
-            // isAdminChat && { paddingBottom: Math.max(insets.bottom, hp(0.5)) },
           ]}
         >
-          {messages.length > 0 ? (
-            <FlatList
-              ref={flatListRef}
-              data={messages}
-              renderItem={renderMessage}
-              keyExtractor={keyExtractor}
-              contentContainerStyle={[
-                styles.messagesList,
-                isAdminChat && { paddingBottom: Math.max(insets.bottom, hp(1)) },
-              ]}
-              inverted={false}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              onContentSizeChange={handleContentSizeChange}
-              initialNumToRender={15}
-              maxToRenderPerBatch={5}
-              windowSize={5}
-              removeClippedSubviews={true}
-            />
-          ) : (
-            <View style={styles.emptyMessagesContainer}>
-              <Text style={styles.emptyMessagesText}>{t("chat.noMessagesYet")}</Text>
-              <Text style={styles.emptyMessagesSubtext}>
-                {t("chat.startConversation")}
-              </Text>
-            </View>
-          )}
-        </Animated.View>
-
-        {/* Input Bar - Hidden for admin chat */}
-        {!isAdminChat && (
-          <Animated.View
+          <View
             style={[
-              styles.inputContainer,
-              rtlStyles.inputContainer,
-              {
-                paddingBottom: Math.max(insets.bottom, hp(1)),
-                transform: [
-                  {
-                    translateY: keyboardHeight.interpolate({
-                      inputRange: [0, 1000],
-                      outputRange: [0, -1000],
-                      extrapolate: 'clamp',
-                    }) as any,
-                  },
-                ],
-              },
+              styles.inputWrapper,
+              isInputFocused && styles.inputWrapperFocused,
             ]}
           >
-            <View
-              style={[
-                styles.inputWrapper,
-                isInputFocused && styles.inputWrapperFocused,
-              ]}
-            >
-              <TextInput
-                style={[styles.textInput, rtlStyles.textInput]}
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder={t("chat.typeMessage")}
-                multiline
-                placeholderTextColor="#9ca3af"
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-              />
-            </View>
-            <TouchableOpacity
-              style={[styles.sendButton, rtlStyles.sendButton]}
-              onPress={handleSend}
-              disabled={!inputText.trim()}
-            >
-              <Ionicons
-                name="send-sharp"
-                size={wp(6)}
-                color={inputText.trim() ? "#0ab63a" : "#9ca3af"}
-                style={{ transform: [{ rotate: isRTL ? '0deg' : '-180deg' }] }}
-              />
-            </TouchableOpacity>
-          </Animated.View>
-        )}
+            <TextInput
+              style={[styles.textInput, rtlStyles.textInput]}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder={t("chat.typeMessage")}
+              multiline
+              placeholderTextColor="#9ca3af"
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
+            />
+          </View>
+          <TouchableOpacity
+            style={[styles.sendButton, rtlStyles.sendButton]}
+            onPress={handleSend}
+            disabled={!inputText.trim()}
+          >
+            <Ionicons
+              name="send-sharp"
+              size={wp(6)}
+              color={inputText.trim() ? "#0ab63a" : "#9ca3af"}
+              style={{ transform: [{ rotate: isRTL ? "0deg" : "-180deg" }] }}
+            />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* Options Modal */}
       <Modal
@@ -675,41 +762,46 @@ export default function ConversationScreen(): React.JSX.Element {
                 },
               ]}
             >
-            {/* Header */}
-            <View style={[styles.modalHeader, rtlStyles.modalHeader]}>
-              <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={handleCloseOptionsModal}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isRTL ? "arrow-forward" : "arrow-back"}
-                  size={wp(6)}
-                  color={COLORS.arrows}
-                />
-              </TouchableOpacity>
-              <Text style={[styles.modalTitle, rtlStyles.modalTitle]}>
-                {t("chat.options")}
-              </Text>
-              <View style={styles.modalHeaderSpacer} />
-            </View>
-            <View style={styles.modalSeparator} />
-
-            {/* Options List */}
-            <View style={styles.modalOptionsListContainer}>
-              <View style={styles.modalOptionsList}>
+              {/* Header */}
+              <View style={[styles.modalHeader, rtlStyles.modalHeader]}>
                 <TouchableOpacity
-                  style={[styles.modalOptionItem, rtlStyles.modalOptionItem]}
-                  onPress={handleBlockUser}
+                  style={styles.modalBackButton}
+                  onPress={handleCloseOptionsModal}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.modalOptionText, rtlStyles.modalOptionText]}>
-                    {isBlocked ? t("chat.unblockUser") : t("chat.blockUser")}
-                  </Text>
+                  <Ionicons
+                    name={isRTL ? "arrow-forward" : "arrow-back"}
+                    size={wp(6)}
+                    color={COLORS.arrows}
+                  />
                 </TouchableOpacity>
+                <Text style={[styles.modalTitle, rtlStyles.modalTitle]}>
+                  {t("chat.options")}
+                </Text>
+                <View style={styles.modalHeaderSpacer} />
               </View>
               <View style={styles.modalSeparator} />
-            </View>
+
+              {/* Options List */}
+              <View style={styles.modalOptionsListContainer}>
+                <View style={styles.modalOptionsList}>
+                  <TouchableOpacity
+                    style={[styles.modalOptionItem, rtlStyles.modalOptionItem]}
+                    onPress={handleBlockUser}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        rtlStyles.modalOptionText,
+                      ]}
+                    >
+                      {isBlocked ? t("chat.unblockUser") : t("chat.blockUser")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.modalSeparator} />
+              </View>
             </Animated.View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -727,13 +819,20 @@ export default function ConversationScreen(): React.JSX.Element {
             <Text style={[styles.blockModalText, rtlStyles.blockModalText]}>
               {t("chat.blockUserConfirmation")}
             </Text>
-            <View style={[styles.blockModalButtons, rtlStyles.blockModalButtons]}>
+            <View
+              style={[styles.blockModalButtons, rtlStyles.blockModalButtons]}
+            >
               <TouchableOpacity
                 style={styles.blockModalCancelButton}
                 onPress={handleBlockCancel}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.blockModalCancelText, rtlStyles.blockModalCancelText]}>
+                <Text
+                  style={[
+                    styles.blockModalCancelText,
+                    rtlStyles.blockModalCancelText,
+                  ]}
+                >
                   {t("common.cancel")}
                 </Text>
               </TouchableOpacity>
@@ -742,7 +841,9 @@ export default function ConversationScreen(): React.JSX.Element {
                 onPress={handleBlockConfirm}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.blockModalOkText, rtlStyles.blockModalOkText]}>
+                <Text
+                  style={[styles.blockModalOkText, rtlStyles.blockModalOkText]}
+                >
                   {t("common.ok")}
                 </Text>
               </TouchableOpacity>

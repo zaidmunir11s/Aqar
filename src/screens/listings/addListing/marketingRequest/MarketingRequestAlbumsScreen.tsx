@@ -30,12 +30,12 @@ type Mode = "photos" | "videos";
 type RouteParams = {
   mode: Mode;
   selectedCategory?: string;
-  attachments?: Array<{
+  attachments?: {
     id: string;
     uri: string;
     mediaType?: "photo" | "video" | "unknown";
     note?: string;
-  }>;
+  }[];
   virtualTourLink?: string;
 };
 
@@ -77,7 +77,7 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const openSettings = useCallback(async () => {
@@ -136,7 +136,7 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
               // totalCount here is for the selected media mode only
               modeCount: assetsRes.totalCount ?? 0,
             };
-          })
+          }),
         );
         if (mounted) {
           // Keep only albums that actually contain assets for the active mode.
@@ -165,7 +165,13 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
         ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
       });
     },
-    [mode, navigation, params.attachments, params.selectedCategory, params.virtualTourLink]
+    [
+      mode,
+      navigation,
+      params.attachments,
+      params.selectedCategory,
+      params.virtualTourLink,
+    ],
   );
 
   const renderAlbum = useCallback(
@@ -189,7 +195,7 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
         </View>
       </TouchableOpacity>
     ),
-    [handleAlbumPress, rtlStyles.text, rtlStyles.titleWrap]
+    [handleAlbumPress, rtlStyles.text, rtlStyles.titleWrap],
   );
 
   const keyExtractor = useCallback((item: AlbumWithCover) => item.album.id, []);
@@ -228,7 +234,10 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
         animationType="fade"
         onRequestClose={handlePermissionLater}
       >
-        <Pressable style={styles.permissionModalOverlay} onPress={handlePermissionLater}>
+        <Pressable
+          style={styles.permissionModalOverlay}
+          onPress={handlePermissionLater}
+        >
           <Pressable style={styles.permissionModalCard}>
             <Text style={[styles.permissionModalTitle, rtlStyles.modalText]}>
               {t("common.appName")}
@@ -236,7 +245,9 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
             <Text style={[styles.permissionModalMessage, rtlStyles.modalText]}>
               {t("listings.mediaPermissionDeniedModal")}
             </Text>
-            <View style={[styles.permissionModalButtons, rtlStyles.modalButtons]}>
+            <View
+              style={[styles.permissionModalButtons, rtlStyles.modalButtons]}
+            >
               <TouchableOpacity
                 style={styles.permissionModalButton}
                 onPress={handlePermissionLater}
@@ -251,7 +262,9 @@ export default function MarketingRequestAlbumsScreen(): React.JSX.Element {
                 onPress={handlePermissionOk}
                 activeOpacity={0.7}
               >
-                <Text style={styles.permissionModalOkText}>{t("common.ok")}</Text>
+                <Text style={styles.permissionModalOkText}>
+                  {t("common.ok")}
+                </Text>
               </TouchableOpacity>
             </View>
           </Pressable>

@@ -30,12 +30,12 @@ type RouteParams = {
   albumTitle: string;
   mode: Mode;
   selectedCategory?: string;
-  attachments?: Array<{
+  attachments?: {
     id: string;
     uri: string;
     mediaType?: "photo" | "video" | "unknown";
     note?: string;
-  }>;
+  }[];
   virtualTourLink?: string;
 };
 
@@ -58,7 +58,7 @@ export default function MarketingRequestAlbumAssetsScreen(): React.JSX.Element {
       params.mode === "photos"
         ? [MediaLibrary.MediaType.photo]
         : [MediaLibrary.MediaType.video],
-    [params.mode]
+    [params.mode],
   );
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function MarketingRequestAlbumAssetsScreen(): React.JSX.Element {
         return [...prev, assetId];
       });
     },
-    [maxAllowed]
+    [maxAllowed],
   );
 
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -123,9 +123,15 @@ export default function MarketingRequestAlbumAssetsScreen(): React.JSX.Element {
       uri: asset.uri,
       mediaType: asset.mediaType === "video" ? "video" : "photo",
     }));
-    const mergedMap = new Map<string, { id: string; uri: string; mediaType: "photo" | "video" }>();
+    const mergedMap = new Map<
+      string,
+      { id: string; uri: string; mediaType: "photo" | "video" }
+    >();
     [...existingAttachments, ...newAttachments].forEach((item) => {
-      mergedMap.set(item.id, item as { id: string; uri: string; mediaType: "photo" | "video" });
+      mergedMap.set(
+        item.id,
+        item as { id: string; uri: string; mediaType: "photo" | "video" },
+      );
     });
     const merged = Array.from(mergedMap.values());
     navigation.navigate("MarketingRequestAttachments", {
@@ -134,7 +140,13 @@ export default function MarketingRequestAlbumAssetsScreen(): React.JSX.Element {
       virtualTourLink: params.virtualTourLink,
       ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
-  }, [navigation, params.attachments, params.selectedCategory, params.virtualTourLink, selectedAssets]);
+  }, [
+    navigation,
+    params.attachments,
+    params.selectedCategory,
+    params.virtualTourLink,
+    selectedAssets,
+  ]);
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<MediaLibrary.Asset>) => {
@@ -157,7 +169,7 @@ export default function MarketingRequestAlbumAssetsScreen(): React.JSX.Element {
         </TouchableOpacity>
       );
     },
-    [selectedIndexMap, toggleSelect]
+    [selectedIndexMap, toggleSelect],
   );
 
   const keyExtractor = useCallback((item: MediaLibrary.Asset) => item.id, []);

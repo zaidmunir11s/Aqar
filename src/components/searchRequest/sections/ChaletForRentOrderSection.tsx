@@ -1,12 +1,19 @@
 import React, { memo } from "react";
-import { PriceInputSection, RentPaymentFrequencyChips, ToggleGroup } from "../../index";
+import {
+  PriceInputSection,
+  RentPaymentFrequencyChips,
+  ToggleGroup,
+} from "../../index";
 import {
   getRentSearchPriceLabel,
   type RentPaymentFrequency,
   type RentPaymentFrequencyChoice,
 } from "../../../constants/orderFormOptions";
 
-type Translate = (key: string, options?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  options?: Record<string, string | number>,
+) => string;
 
 interface ChaletForRentOrderSectionProps {
   t: Translate;
@@ -41,7 +48,7 @@ interface ChaletForRentOrderSectionProps {
 }
 
 function ChaletForRentOrderSectionComponent(
-  props: ChaletForRentOrderSectionProps
+  props: ChaletForRentOrderSectionProps,
 ): React.JSX.Element {
   const {
     t,
@@ -77,7 +84,10 @@ function ChaletForRentOrderSectionComponent(
 
   return (
     <>
-      <RentPaymentFrequencyChips selectedFrequency={chaletRentRentPeriod} onSelect={onRentPeriodSelect} />
+      <RentPaymentFrequencyChips
+        selectedFrequency={chaletRentRentPeriod}
+        onSelect={onRentPeriodSelect}
+      />
 
       <PriceInputSection
         label={getRentSearchPriceLabel(chaletRentRentPeriod, t)}
@@ -99,19 +109,57 @@ function ChaletForRentOrderSectionComponent(
 
       <ToggleGroup
         toggles={[
-          { label: t("listings.pool"), value: chaletRentPool, onValueChange: onPoolChange },
-          { label: t("listings.footballPitch"), value: chaletFootballPitch, onValueChange: onFootballPitchChange },
-          { label: t("listings.volleyballCourt"), value: chaletVolleyballCourt, onValueChange: onVolleyballCourtChange },
-          { label: t("listings.tent"), value: chaletRentTent, onValueChange: onTentChange },
-          { label: t("listings.kitchen"), value: chaletRentKitchen, onValueChange: onKitchenChange },
-          { label: t("listings.playground"), value: chaletPlayground, onValueChange: onPlaygroundChange },
-          { label: t("listings.nearBus"), value: nearBus, onValueChange: onNearBusChange },
-          { label: t("listings.nearMetro"), value: nearMetro, onValueChange: onNearMetroChange },
-          { label: t("listings.familySection"), value: familySection, onValueChange: onFamilySectionChange },
+          {
+            label: t("listings.pool"),
+            value: chaletRentPool,
+            onValueChange: onPoolChange,
+          },
+          {
+            label: t("listings.footballPitch"),
+            value: chaletFootballPitch,
+            onValueChange: onFootballPitchChange,
+          },
+          {
+            label: t("listings.volleyballCourt"),
+            value: chaletVolleyballCourt,
+            onValueChange: onVolleyballCourtChange,
+          },
+          {
+            label: t("listings.tent"),
+            value: chaletRentTent,
+            onValueChange: onTentChange,
+          },
+          {
+            label: t("listings.kitchen"),
+            value: chaletRentKitchen,
+            onValueChange: onKitchenChange,
+          },
+          {
+            label: t("listings.playground"),
+            value: chaletPlayground,
+            onValueChange: onPlaygroundChange,
+          },
+          {
+            label: t("listings.nearBus"),
+            value: nearBus,
+            onValueChange: onNearBusChange,
+          },
+          {
+            label: t("listings.nearMetro"),
+            value: nearMetro,
+            onValueChange: onNearMetroChange,
+          },
+          {
+            label: t("listings.familySection"),
+            value: familySection,
+            onValueChange: onFamilySectionChange,
+          },
         ]}
       />
     </>
   );
 }
 
-export const ChaletForRentOrderSection = memo(ChaletForRentOrderSectionComponent);
+export const ChaletForRentOrderSection = memo(
+  ChaletForRentOrderSectionComponent,
+);

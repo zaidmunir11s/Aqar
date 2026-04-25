@@ -43,12 +43,12 @@ const CancelModal = memo<CancelModalProps>(
     alignBodyToStart = false,
   }) => {
     const { t, isRTL } = useLocalization();
-    
+
     // Use translations as defaults if not provided
     const defaultTitle = t("common.cancelAddingAds");
     const defaultBackText = t("common.back");
     const defaultConfirmText = t("common.yes");
-    
+
     const finalTitle = title ?? defaultTitle;
     const finalBackText = backText ?? defaultBackText;
     const finalConfirmText = confirmText ?? defaultConfirmText;
@@ -79,7 +79,7 @@ const CancelModal = memo<CancelModalProps>(
             }
           : {},
       }),
-      [isRTL, alignBodyToStart]
+      [isRTL, alignBodyToStart],
     );
 
     const contentStyle = alignBodyToStart
@@ -123,17 +123,21 @@ const CancelModal = memo<CancelModalProps>(
                 onPress={onConfirm}
                 activeOpacity={0.7}
               >
-                <Text style={[
-                  styles.modalYesButtonText,
-                  confirmButtonColor && { color: confirmButtonColor }
-                ]}>{finalConfirmText}</Text>
+                <Text
+                  style={[
+                    styles.modalYesButtonText,
+                    confirmButtonColor && { color: confirmButtonColor },
+                  ]}
+                >
+                  {finalConfirmText}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
     );
-  }
+  },
 );
 
 CancelModal.displayName = "CancelModal";
@@ -206,5 +210,3 @@ const styles = StyleSheet.create({
 });
 
 export default CancelModal;
-
-

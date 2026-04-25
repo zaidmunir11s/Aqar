@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import ToggleRow from "../../orderForm/ToggleRow";
 import OptionChips from "../shared/OptionChips";
 import SliderWithInput from "../shared/SliderWithInput";
@@ -37,7 +40,7 @@ export default function OfficeForRentDetailsForm({
 
   const directionOptions = useMemo(
     () => STREET_DIRECTION_OPTIONS.map((opt) => getDirectionLabel(opt, t)),
-    [t]
+    [t],
   );
   const isStreetDirectionValid = streetDirection !== "Not Defined";
 
@@ -47,13 +50,40 @@ export default function OfficeForRentDetailsForm({
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "navigate", label: t("listings.streetDirection"), value: getDirectionLabel(streetDirection, t) },
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
-      { type: "value", icon: "time", label: t("listings.realEstateAge"), value: formatRealEstateAgeLabel(ageLessThan, t) },
-      { type: "toggle", label: t("listings.furnished"), enabled: toggles.furnished },
+      {
+        type: "value",
+        icon: "navigate",
+        label: t("listings.streetDirection"),
+        value: getDirectionLabel(streetDirection, t),
+      },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
+      {
+        type: "value",
+        icon: "time",
+        label: t("listings.realEstateAge"),
+        value: formatRealEstateAgeLabel(ageLessThan, t),
+      },
+      {
+        type: "toggle",
+        label: t("listings.furnished"),
+        enabled: toggles.furnished,
+      },
       { type: "toggle", label: t("listings.water"), enabled: toggles.water },
-      { type: "toggle", label: t("listings.electricity"), enabled: toggles.electricity },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: toggles.drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: toggles.electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: toggles.drainageAvailability,
+      },
     ]);
   }, [
     ageLessThan,
@@ -74,7 +104,9 @@ export default function OfficeForRentDetailsForm({
         options={directionOptions}
         selectedValue={getDirectionLabel(streetDirection, t)}
         onSelect={(value) => {
-          const original = STREET_DIRECTION_OPTIONS.find((opt) => getDirectionLabel(opt, t) === value);
+          const original = STREET_DIRECTION_OPTIONS.find(
+            (opt) => getDirectionLabel(opt, t) === value,
+          );
           setStreetDirection(original ?? "Not Defined");
         }}
         scrollable
@@ -84,7 +116,12 @@ export default function OfficeForRentDetailsForm({
             : undefined
         }
       />
-      <SliderWithInput label={t("listings.streetWidth")} value={streetWidth} onChangeValue={setStreetWidth} max={100} />
+      <SliderWithInput
+        label={t("listings.streetWidth")}
+        value={streetWidth}
+        onChangeValue={setStreetWidth}
+        max={100}
+      />
       <InlineWheelPickerField
         label={t("listings.ageLessThan")}
         value={ageLessThan}
@@ -93,18 +130,19 @@ export default function OfficeForRentDetailsForm({
         modalTitle={t("listings.ageLessThan")}
         onChangeValue={setAgeLessThan}
       />
-      {["furnished", "water", "electricity", "drainageAvailability"].map((k) => (
-        <ToggleRow
-          key={k}
-          label={t(`listings.${k}`)}
-          value={toggles[k]}
-          onValueChange={(v) => setToggles((p) => ({ ...p, [k]: v }))}
-          trackWidth={TOGGLE_TRACK_WIDTH}
-          trackHeight={TOGGLE_TRACK_HEIGHT}
-          thumbSize={TOGGLE_THUMB_SIZE}
-        />
-      ))}
+      {["furnished", "water", "electricity", "drainageAvailability"].map(
+        (k) => (
+          <ToggleRow
+            key={k}
+            label={t(`listings.${k}`)}
+            value={toggles[k]}
+            onValueChange={(v) => setToggles((p) => ({ ...p, [k]: v }))}
+            trackWidth={TOGGLE_TRACK_WIDTH}
+            trackHeight={TOGGLE_TRACK_HEIGHT}
+            thumbSize={TOGGLE_THUMB_SIZE}
+          />
+        ),
+      )}
     </>
   );
 }
-

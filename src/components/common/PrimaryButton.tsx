@@ -29,9 +29,16 @@ export interface PrimaryButtonProps {
  * Reusable primary button component
  */
 const PrimaryButton = memo<PrimaryButtonProps>(
-  ({ onPress, text, disabled = false, style, textStyle, showArrow = false }) => {
+  ({
+    onPress,
+    text,
+    disabled = false,
+    style,
+    textStyle,
+    showArrow = false,
+  }) => {
     const { isRTL } = useLocalization();
-    
+
     const rtlStyles = useMemo(
       () => ({
         arrowContainer: {
@@ -39,9 +46,9 @@ const PrimaryButton = memo<PrimaryButtonProps>(
           left: isRTL ? wp(1) : undefined,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
-    
+
     return (
       <TouchableOpacity
         style={[styles.button, disabled && styles.buttonDisabled, style]}
@@ -49,23 +56,27 @@ const PrimaryButton = memo<PrimaryButtonProps>(
         activeOpacity={0.8}
         disabled={disabled}
       >
-        <Text style={[
-          styles.buttonText, 
-          disabled && styles.buttonTextDisabled,
-          textStyle
-        ]}>{text}</Text>
+        <Text
+          style={[
+            styles.buttonText,
+            disabled && styles.buttonTextDisabled,
+            textStyle,
+          ]}
+        >
+          {text}
+        </Text>
         {showArrow && (
           <View style={[styles.arrowContainer, rtlStyles.arrowContainer]}>
-            <Ionicons 
-              name={isRTL ? "arrow-back" : "arrow-forward"} 
-              size={wp(5)} 
-              color={disabled ? "#9ca3af" : COLORS.primary} 
+            <Ionicons
+              name={isRTL ? "arrow-back" : "arrow-forward"}
+              size={wp(5)}
+              color={disabled ? "#9ca3af" : COLORS.primary}
             />
           </View>
         )}
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 PrimaryButton.displayName = "PrimaryButton";

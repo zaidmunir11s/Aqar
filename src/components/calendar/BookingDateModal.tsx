@@ -52,8 +52,10 @@ function getMonthDays(year: number, month: number): (number | null)[] {
 }
 
 // Helper function to get 6 months starting from current month (current + next 5)
-const getSixMonths = (t: any): Array<{ year: number; month: number; label: string }> => {
-  const months: Array<{ year: number; month: number; label: string }> = [];
+const getSixMonths = (
+  t: any,
+): { year: number; month: number; label: string }[] => {
+  const months: { year: number; month: number; label: string }[] = [];
   const today = new Date();
   const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -63,7 +65,7 @@ const getSixMonths = (t: any): Array<{ year: number; month: number; label: strin
     month.setMonth(currentMonth.getMonth() + i);
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
-    
+
     const monthKeys = [
       "january",
       "february",
@@ -78,7 +80,7 @@ const getSixMonths = (t: any): Array<{ year: number; month: number; label: strin
       "november",
       "december",
     ];
-    
+
     months.push({
       year,
       month: monthIndex,
@@ -92,48 +94,56 @@ const getSixMonths = (t: any): Array<{ year: number; month: number; label: strin
 const BookingDateModal = memo<BookingDateModalProps>(
   ({ visible, onClose, onSearch, selectedDates, onDayPress }) => {
     const { t, isRTL } = useLocalization();
-    const [months, setMonths] = useState<Array<{ year: number; month: number; label: string }>>(
-      getSixMonths(t)
-    );
+    const [months, setMonths] = useState<
+      { year: number; month: number; label: string }[]
+    >(getSixMonths(t));
     const hasInitialized = useRef<boolean>(false);
     const hasSetTomorrow = useRef<boolean>(false);
 
     // Week days with translations
-    const WEEK_DAYS = useMemo(() => [
-      t("listings.calendar.weekdays.sun"),
-      t("listings.calendar.weekdays.mon"),
-      t("listings.calendar.weekdays.tue"),
-      t("listings.calendar.weekdays.wed"),
-      t("listings.calendar.weekdays.thu"),
-      t("listings.calendar.weekdays.fri"),
-      t("listings.calendar.weekdays.sat"),
-    ], [t]);
+    const WEEK_DAYS = useMemo(
+      () => [
+        t("listings.calendar.weekdays.sun"),
+        t("listings.calendar.weekdays.mon"),
+        t("listings.calendar.weekdays.tue"),
+        t("listings.calendar.weekdays.wed"),
+        t("listings.calendar.weekdays.thu"),
+        t("listings.calendar.weekdays.fri"),
+        t("listings.calendar.weekdays.sat"),
+      ],
+      [t],
+    );
 
     // Initialize with today and tomorrow selected when modal first opens
     useEffect(() => {
-      if (visible && !hasInitialized.current && !selectedDates.startDate && !selectedDates.endDate) {
+      if (
+        visible &&
+        !hasInitialized.current &&
+        !selectedDates.startDate &&
+        !selectedDates.endDate
+      ) {
         hasInitialized.current = true;
-        
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
+
         const formatDateString = (date: Date): string => {
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, "0");
           const day = String(date.getDate()).padStart(2, "0");
           return `${year}-${month}-${day}`;
         };
-        
+
         const todayStr = formatDateString(today);
         const tomorrowStr = formatDateString(tomorrow);
-        
+
         // Set default dates - first set today, then tomorrow
         // The hook will handle setting startDate first, then endDate
         onDayPress({ dateString: todayStr });
       }
-      
+
       // Reset initialization flags when modal closes
       if (!visible) {
         hasInitialized.current = false;
@@ -154,14 +164,14 @@ const BookingDateModal = memo<BookingDateModalProps>(
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
+
         const formatDateString = (date: Date): string => {
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, "0");
           const day = String(date.getDate()).padStart(2, "0");
           return `${year}-${month}-${day}`;
         };
-        
+
         // Parse the startDate to check if it's today
         const parseDateString = (dateStr: string): Date => {
           const [year, month, day] = dateStr.split("-").map(Number);
@@ -169,9 +179,9 @@ const BookingDateModal = memo<BookingDateModalProps>(
           date.setHours(0, 0, 0, 0);
           return date;
         };
-        
+
         const startDate = parseDateString(selectedDates.startDate);
-        
+
         // Only set tomorrow if startDate is today and we haven't set it yet
         if (isSameDay(startDate, today)) {
           hasSetTomorrow.current = true;
@@ -215,7 +225,7 @@ const BookingDateModal = memo<BookingDateModalProps>(
     // Parse start and end dates - parse from YYYY-MM-DD string to avoid timezone issues
     const [startDate, endDate] = useMemo(() => {
       if (!selectedDates.startDate) return [null, null];
-      
+
       // Parse YYYY-MM-DD string directly
       const parseDateString = (dateStr: string): Date => {
         const [year, month, day] = dateStr.split("-").map(Number);
@@ -223,13 +233,13 @@ const BookingDateModal = memo<BookingDateModalProps>(
         date.setHours(0, 0, 0, 0);
         return date;
       };
-      
+
       const start = parseDateString(selectedDates.startDate);
-      
+
       if (!selectedDates.endDate) return [start, null];
-      
+
       const end = parseDateString(selectedDates.endDate);
-      
+
       // Ensure start is before end
       return start < end ? [start, end] : [end, start];
     }, [selectedDates]);
@@ -277,13 +287,13 @@ const BookingDateModal = memo<BookingDateModalProps>(
 
       // Format date string directly to avoid timezone issues
       const dateString = formatDateString(date);
-      
+
       // Handle clicking the same date when only startDate is selected
       // Just ignore it - don't do anything, keep the selection as is
       if (startDate && !endDate && isSameDay(date, startDate)) {
         return; // Don't do anything, keep the start date selected
       }
-      
+
       // Normal date selection - the hook handles the rest
       onDayPress({ dateString });
     };
@@ -327,29 +337,37 @@ const BookingDateModal = memo<BookingDateModalProps>(
 
                     <View style={[styles.weekRow, isRTL && styles.weekRowRTL]}>
                       {WEEK_DAYS.map((d) => (
-                        <Text key={d} style={[styles.weekText, isRTL && styles.weekTextRTL]}>
+                        <Text
+                          key={d}
+                          style={[styles.weekText, isRTL && styles.weekTextRTL]}
+                        >
                           {d}
                         </Text>
                       ))}
                     </View>
 
-                     <View style={[styles.daysGrid, isRTL && styles.daysGridRTL]}>
-                       {days.map((day, idx) => {
-                         if (day === null) {
-                           return <View key={idx} style={styles.dayCell} />;
-                         }
+                    <View
+                      style={[styles.daysGrid, isRTL && styles.daysGridRTL]}
+                    >
+                      {days.map((day, idx) => {
+                        if (day === null) {
+                          return <View key={idx} style={styles.dayCell} />;
+                        }
 
-                         // Create date at local midnight to avoid timezone issues
-                         const date = new Date(m.year, m.month, day);
-                         date.setHours(0, 0, 0, 0);
-                         
-                         const past = isPast(date);
-                         const inRange = isInRange(date);
-                         const start = isStart(date);
-                         const end = isEnd(date);
-                         const todayDate = isToday(date);
-                         // Only show connectors when there's a range AND start and end are different dates
-                         const hasRange = startDate && endDate && !isSameDay(startDate, endDate);
+                        // Create date at local midnight to avoid timezone issues
+                        const date = new Date(m.year, m.month, day);
+                        date.setHours(0, 0, 0, 0);
+
+                        const past = isPast(date);
+                        const inRange = isInRange(date);
+                        const start = isStart(date);
+                        const end = isEnd(date);
+                        const todayDate = isToday(date);
+                        // Only show connectors when there's a range AND start and end are different dates
+                        const hasRange =
+                          startDate &&
+                          endDate &&
+                          !isSameDay(startDate, endDate);
 
                         return (
                           <TouchableOpacity
@@ -360,10 +378,20 @@ const BookingDateModal = memo<BookingDateModalProps>(
                           >
                             {/* CONNECTORS - Visual range connection - only show when there's a range */}
                             {hasRange && (inRange || end) && (
-                              <View style={[styles.leftConnector, isRTL && styles.leftConnectorRTL]} />
+                              <View
+                                style={[
+                                  styles.leftConnector,
+                                  isRTL && styles.leftConnectorRTL,
+                                ]}
+                              />
                             )}
                             {hasRange && (inRange || start) && (
-                              <View style={[styles.rightConnector, isRTL && styles.rightConnectorRTL]} />
+                              <View
+                                style={[
+                                  styles.rightConnector,
+                                  isRTL && styles.rightConnectorRTL,
+                                ]}
+                              />
                             )}
 
                             {/* DAY CIRCLE */}
@@ -372,7 +400,11 @@ const BookingDateModal = memo<BookingDateModalProps>(
                                 styles.circle,
                                 (start || end) && styles.edgeCircle,
                                 inRange && styles.midCircle,
-                                todayDate && !start && !end && !inRange && styles.todayCircle,
+                                todayDate &&
+                                  !start &&
+                                  !end &&
+                                  !inRange &&
+                                  styles.todayCircle,
                               ]}
                             >
                               <Text
@@ -380,7 +412,11 @@ const BookingDateModal = memo<BookingDateModalProps>(
                                   styles.dayText,
                                   past && styles.mutedText,
                                   (start || end) && styles.edgeText,
-                                  todayDate && !start && !end && !inRange && styles.todayText,
+                                  todayDate &&
+                                    !start &&
+                                    !end &&
+                                    !inRange &&
+                                    styles.todayText,
                                 ]}
                               >
                                 {day}
@@ -408,7 +444,7 @@ const BookingDateModal = memo<BookingDateModalProps>(
         </View>
       </Modal>
     );
-  }
+  },
 );
 
 BookingDateModal.displayName = "BookingDateModal";
@@ -584,4 +620,3 @@ const styles = StyleSheet.create({
 });
 
 export default BookingDateModal;
-

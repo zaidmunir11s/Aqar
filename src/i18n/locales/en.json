@@ -21,6 +21,7 @@
     "clear": "Clear",
     "apply": "Apply",
     "close": "Close",
+    "select": "Select",
     "submit": "Submit",
     "retry": "Retry",
     "ok": "OK",
@@ -166,6 +167,7 @@
     "pleaseSelectStreetDirection": "Please select a correct street direction",
     "streetWidth": "Street Width",
     "streetWidthWithMeter": "{{value}} meter",
+    "meterUnit": "meter",
     "paymentOptions": "Payment options",
     "firstFloor": "First Floor",
     "secondFloor": "Second Floor",
@@ -294,6 +296,16 @@
     "brokerGetFreeLicenseTitle": "Get a free license",
     "brokerFreeLicenseIntro": "Aqar platform allows licensed brokers to issue a free ad license and publish it within the platform",
     "brokerFreeLicenseReqBrokerage": "Brokerage contract.",
+    "brokerIssueAdLicenseTitle": "Issuing an ad license",
+    "brokerageContractNumber": "Brokerage contract number",
+    "brokerageContractNumberError": "Brokerage contract number must be 10 digits starting with 61 or 62",
+    "deedNumberDigitsError": "Deed number must be either 12 or 16 digits",
+    "propertyPrice": "Property price",
+    "adType": "Ad Type",
+    "pleaseMakeSelection": "Please make a selection...",
+    "areYouAnAgent": "Are you an agent?",
+    "attorneyNumber": "Attorney number",
+    "adLicenseAgreement": "I agree to use this license only on Aqar platform, and if it is found to be used on another platform, Aqar platform has the right to delete the ad.",
     "addImagesAndVideos": "Add Images and Videos",
     "addPhotosOrVideosOfProperty": "Add photos or videos of the property",
     "addingVideoRaisesPriority": "Adding a video to your listing will raise the priority of your listing",
@@ -492,6 +504,7 @@
     "unitsMatchSearch": "Units match your search",
     "showMap": "Show map",
     "projectNotFound": "Project not found",
+    "hasPhotos": "Has photos",
     "city": "City",
     "selectCity": "Select City",
     "chooseCity": "Choose City",
@@ -673,8 +686,8 @@
     "commission": "Commission",
     "riyals": "Riyals",
     "averageForRent": "Average {{propertyType}} for rent Rooms {{rooms}} in {{location}}",
-    "averageForSale": "Average Villa for sale Area ({{minArea}} - {{maxArea}})m² in {{location}}",
-    "averageForSaleNoRange": "Average Villa for sale in {{location}}",
+    "averageForSale": "Average {{propertyType}} for sale Area ({{minArea}} - {{maxArea}})m² in {{location}}",
+    "averageForSaleNoRange": "Average {{propertyType}} for sale in {{location}}",
     "averagePriceInArea": "Average price in area",
     "priceTable": "Price Table",
     "chartDataSource": "Based on the data of the ads published on Aqark Syria platform",
@@ -970,7 +983,13 @@
       "harassment": "Harassment",
       "inappropriate": "Inappropriate content",
       "other": "Other"
-    }
+    },
+    "financialInformation": "Financial Information",
+    "payments": "Payments",
+    "financialSettings": "Financial Settings",
+    "manageCards": "Manage Cards",
+    "promotionServicesTitle": "Promotion Services",
+    "promotionServicesSubtitle": "Services that help you speed up the sale and rental of the property"
   },
   "chat": {
     "title": "Chat",
@@ -989,6 +1008,20 @@
     "blockUser": "Block User",
     "unblockUser": "Unblock User",
     "blockUserConfirmation": "You will not receive any message from this user. Block this user?"
+  },
+  "rentalUnit": {
+    "addBookableUnitTitle": "Add bookable unit",
+    "addBookableUnitCta": "Add bookable unit",
+    "description": "A service that makes it easy for you to list your unit\nfor daily or monthly booking instantly through the\nAqar platform, with guaranteed rights for both\nparties.",
+    "benefitsTitle": "Benefits of reservations on Aqar platform",
+    "learnMore": "Learn more about the service",
+    "benefits": {
+      "commissionFreePrices": "Commission Free Prices!",
+      "earnMoreReferral": "Earn 5% more on every booking by sharing your referral link with guests",
+      "verifiedBookings": "Bookings verified through National Authentication",
+      "managementSystem": "Comprehensive booking management system (set minimum booking duration, add discounts, update prices and booked days, special rates for events, etc.)",
+      "weeklyPayments": "Weekly disbursement of payments every Tuesday"
+    }
   },
   "projects": {
     "title": "Projects",
@@ -1077,7 +1110,10 @@
     "networkError": "Network error. Please check your connection.",
     "unauthorized": "You are not authorized to perform this action.",
     "notFound": "The requested resource was not found.",
-    "serverError": "Server error. Please try again later."
+    "serverError": "Server error. Please try again later.",
+    "unexpectedTitle": "Oops! Something went wrong",
+    "unexpectedMessage": "We're sorry for the inconvenience. An unexpected error has occurred.",
+    "errorDetails": "Error Details:"
   },
   "validation": {
     "required": "This field is required",

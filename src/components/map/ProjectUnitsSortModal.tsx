@@ -1,11 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -49,17 +43,14 @@ export default function ProjectUnitsSortModal({
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
 
-  const sortOptions = useMemo(
-    () => optionsProp ?? SORT_OPTIONS,
-    [optionsProp]
-  );
+  const sortOptions = useMemo(() => optionsProp ?? SORT_OPTIONS, [optionsProp]);
 
   const handleSelect = useCallback(
     (option: ProjectUnitsSortOption) => {
       onSelect(option);
       onClose();
     },
-    [onSelect, onClose]
+    [onSelect, onClose],
   );
 
   const rtlStyles = useMemo(
@@ -79,7 +70,7 @@ export default function ProjectUnitsSortModal({
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
@@ -95,7 +86,12 @@ export default function ProjectUnitsSortModal({
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContainerWrapper, { paddingBottom: Math.max(insets.bottom, hp(2)) }]}>
+        <View
+          style={[
+            styles.modalContainerWrapper,
+            { paddingBottom: Math.max(insets.bottom, hp(2)) },
+          ]}
+        >
           <View style={styles.modalContainer}>
             {/* Header - same pattern as ProjectUnitsFilterModal */}
             <View style={[styles.header, rtlStyles.header]}>

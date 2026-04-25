@@ -1,10 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,12 +19,12 @@ export default function AttachMediaScreen(): React.JSX.Element {
   const { t, isRTL } = useLocalization();
   const params = (route.params ?? {}) as {
     selectedCategory?: string;
-    attachments?: Array<{
+    attachments?: {
       id: string;
       uri: string;
       mediaType?: "photo" | "video" | "unknown";
       note?: string;
-    }>;
+    }[];
     virtualTourLink?: string;
   };
 
@@ -44,7 +39,7 @@ export default function AttachMediaScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = useCallback(() => {
@@ -59,7 +54,12 @@ export default function AttachMediaScreen(): React.JSX.Element {
       virtualTourLink: params.virtualTourLink,
       ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
-  }, [navigation, params.attachments, params.selectedCategory, params.virtualTourLink]);
+  }, [
+    navigation,
+    params.attachments,
+    params.selectedCategory,
+    params.virtualTourLink,
+  ]);
 
   const handleAttachVideo = useCallback(async () => {
     navigation.navigate("MarketingRequestAlbums", {
@@ -69,7 +69,12 @@ export default function AttachMediaScreen(): React.JSX.Element {
       virtualTourLink: params.virtualTourLink,
       ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     });
-  }, [navigation, params.attachments, params.selectedCategory, params.virtualTourLink]);
+  }, [
+    navigation,
+    params.attachments,
+    params.selectedCategory,
+    params.virtualTourLink,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -97,7 +102,11 @@ export default function AttachMediaScreen(): React.JSX.Element {
           onPress={handleAttachVideo}
           activeOpacity={0.85}
         >
-          <Ionicons name="videocam" size={wp(5.6)} color={COLORS.textTertiary} />
+          <Ionicons
+            name="videocam"
+            size={wp(5.6)}
+            color={COLORS.textTertiary}
+          />
           <Text style={[styles.optionText, rtlStyles.text]}>
             {t("listings.attachVideo")}
           </Text>

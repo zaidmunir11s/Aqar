@@ -2362,7 +2362,8 @@ export const PROPERTY_DATA: Property[] = [
     projectName: "ألين 118",
     projectNameArabic: "ألين 118",
     developerName: "Aleen",
-    developerLogo: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+    developerLogo:
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
     verified: true,
     area: 104,
     usage: "family",
@@ -2461,7 +2462,8 @@ export const PROPERTY_DATA: Property[] = [
     projectName: "ALMA",
     projectNameArabic: "ألما",
     developerName: "ALMA",
-    developerLogo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+    developerLogo:
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
     verified: true,
     area: 95,
     usage: "family",
@@ -2524,7 +2526,8 @@ export const PROPERTY_DATA: Property[] = [
     projectName: "YS200 كلايا",
     projectNameArabic: "YS200 كلايا",
     developerName: "YS200",
-    developerLogo: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
+    developerLogo:
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
     verified: false,
     area: 85,
     usage: "family",
@@ -2577,7 +2580,8 @@ export const PROPERTY_DATA: Property[] = [
     projectName: "دينار 29",
     projectNameArabic: "دينار 29",
     developerName: "Dinar",
-    developerLogo: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+    developerLogo:
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
     verified: true,
     area: 120,
     usage: "family",
@@ -2633,7 +2637,8 @@ export const PROPERTY_DATA: Property[] = [
     projectName: "ادوار اساس",
     projectNameArabic: "ادوار اساس",
     developerName: "Asas",
-    developerLogo: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+    developerLogo:
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
     verified: true,
     area: 95,
     usage: "family",
@@ -2684,7 +2689,8 @@ export const PROPERTY_DATA: Property[] = [
     projectName: "بالنسيم المروج",
     projectNameArabic: "بالنسيم المروج",
     developerName: "Al Naseem",
-    developerLogo: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
+    developerLogo:
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
     verified: true,
     area: 110,
     usage: "family",

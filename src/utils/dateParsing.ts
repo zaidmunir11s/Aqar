@@ -10,8 +10,7 @@ export function parseBackendDateMs(raw: unknown): number | null {
   //
   // JS Date parsing is inconsistent across platforms for the non-ISO variants,
   // so normalize first.
-  const normalized =
-    s.includes("T") ? s : s.replace(" ", "T");
+  const normalized = s.includes("T") ? s : s.replace(" ", "T");
 
   // If there is no timezone marker, assume UTC to keep ordering consistent.
   const hasTz = /[zZ]|[+-]\d{2}(:?\d{2})?$/.test(normalized);
@@ -20,4 +19,3 @@ export function parseBackendDateMs(raw: unknown): number | null {
   const ms = Date.parse(iso);
   return Number.isFinite(ms) ? ms : null;
 }
-

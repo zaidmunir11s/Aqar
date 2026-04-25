@@ -14,15 +14,20 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader, ListingFooter, CancelModal } from "../../../../components";
+import {
+  ScreenHeader,
+  ListingFooter,
+  CancelModal,
+} from "../../../../components";
 import { navigateToMapScreen } from "../../../../utils";
-import { COLORS } from "@/constants";
-import { FOR_BOOKING_CATEGORIES as CATEGORIES } from "@/constants";
+import { COLORS, FOR_BOOKING_CATEGORIES as CATEGORIES } from "@/constants";
+import { useLocalization } from "../../../../hooks/useLocalization";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function ChooseCategoryScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
+  const { t } = useLocalization();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -55,7 +60,7 @@ export default function ChooseCategoryScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Choose category"
+        title={t("listings.chooseCategory")}
         onBackPress={handleBackPress}
         showRightSide={true}
         rightComponent={
@@ -86,11 +91,14 @@ export default function ChooseCategoryScreen(): React.JSX.Element {
                 style={[
                   styles.categoryItem,
                   // Base alternating background
-                  index % 2 === 0 ? styles.categoryItemWhite : styles.categoryItemAlt,
+                  index % 2 === 0
+                    ? styles.categoryItemWhite
+                    : styles.categoryItemAlt,
                   // Selected state overrides everything
                   selected && styles.categoryItemSelected,
                   // Border except last item
-                  index < CATEGORIES.length - 1 && styles.categoryItemWithBorder,
+                  index < CATEGORIES.length - 1 &&
+                    styles.categoryItemWithBorder,
                 ]}
                 onPress={() => handleCategoryPress(category.id)}
                 activeOpacity={0.5}

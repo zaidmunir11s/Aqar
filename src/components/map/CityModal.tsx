@@ -52,140 +52,143 @@ export default function CityModal({
   const insets = useSafeAreaInsets();
 
   // Helper function to translate city name
-  const translateCityName = useCallback((cityName: string): string => {
-    if (!cityName || cityName === "City") {
-      return t("listings.city");
-    }
-    
-    // Normalize city name for key matching
-    const normalized = cityName
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "")
-      .replace(/`/g, "")
-      .replace(/'/g, "")
-      .replace(/al\s+/gi, "al");
-    
-    // Map of city names to their translation keys
-    const cityKeyMap: { [key: string]: string } = {
-      // Major cities
-      "riyadh": "riyadh",
-      "jeddah": "jeddah",
-      "dammam": "dammam",
-      "alkhobar": "khobar",
-      "medina": "medina",
-      "macca": "mecca",
-      "buraydah": "buraidah",
-      "taif": "taif",
-      "jazan": "jazan",
-      "abha": "abha",
-      "khamismushait": "khamisMushait",
-      "hail": "hail",
-      "najran": "najran",
-      "yanbu": "yanbu",
-      "aljubail": "alJubail",
-      "tabuk": "tabuk",
-      "qatif": "qatif",
-      "alkharj": "kharj",
-      "hafralbatin": "hafrAlBatin",
-      "riyadhalkhabra": "riyadhAlKhabra",
-      // Additional cities
-      "alhofuf": "alHofuf",
-      "unayzah": "unayzah",
-      "albukayriyah": "albukayriyah",
-      "addiriyah": "addiriyah",
-      "dhahran": "dhahran",
-      "almajmaah": "almajmaah",
-      "ahadrufaidah": "ahadrufaidah",
-      "thadiq": "thadiq",
-      "alquwaiiyah": "alquwaiiyah",
-      "abuarish": "abuArish",
-      "albahah": "albahah",
-      "shaqra": "shaqra",
-      "thuwal": "thuwal",
-      "azzulfi": "azzulfi",
-      "arrass": "arrass",
-      "albadayea": "albadayea",
-      "buqayq": "buqayq",
-      "alduwadimi": "alduwadimi",
-      "nairyah": "nairyah",
-      "safwa": "safwa",
-      "muhayil": "muhayil",
-      "kingabdullaheconomiccity": "kingabdullaheconomiccity",
-      "rabigh": "rabigh",
-      "alhenakiyah": "alhenakiyah",
-      "almajaridah": "almajaridah",
-      "sabya": "sabya",
-      "annabhaniyah": "annabhaniyah",
-      "alqunfudhah": "alqunfudhah",
-      "baish": "baish",
-      "alhayathem": "alhayathem",
-      "alshinana": "alshinana",
-      "baqaa": "baqaa",
-      "alghazalah": "alghazalah",
-      "bisha": "bisha",
-      "howtatbanitamin": "howtatbanitamin",
-      "rumah": "rumah",
-      "saihat": "saihat",
-      "khafji": "khafji",
-      "arar": "arar",
-      "ahadalmasrihah": "ahad almasrihah",
-      "alghat": "alghat",
-      "almithnab": "al mithnab",
-      "alqatif": "qatif",
-      "aljumum": "aljumum",
-      "samtah": "samtah",
-      "addilam": "addilam",
-      "afif": "afif",
-      "ashshimasiyah": "ashshimasiyah",
-      "dumahaljandal": "dumah aljandal",
-      "rastanura": "rastanura",
-      "sakaka": "sakaka",
-      "turbah": "turbah",
-      "assulayyil": "assulayyil",
-      "allith": "allith",
-      "billasmar": "billasmar",
-      "tayma": "tayma",
-      "mahdadhahab": "mahd adhdhahab",
-      "aluyun": "aluyun",
-      "alkamil": "alkamil",
-      "tarout": "tarout",
-      "rafha": "rafha",
-      "sharorah": "sharorah",
-      "alula": "alula",
-      "turaif": "turaif",
-      "duba": "duba",
-      "alhariq": "alhariq",
-      "alkhurma": "alkhurma",
-      "tathleeth": "tathleeth",
-      "ranyah": "ranyah",
-      "alqurayyat": "alqurayyat",
-      "anak": "anak",
-      "alwajh": "alwajh",
-      "umluj": "umluj",
-      "alwadiah": "alwadiah",
-      "khaybar": "khaybar",
-      "badr": "badr",
-    };
-    
-    const translationKey = cityKeyMap[normalized];
-    if (translationKey) {
-      const translated = t(`listings.cities.${translationKey}`);
-      // If translation exists and is different from the key, use it
-      if (translated && translated !== `listings.cities.${translationKey}`) {
-        return translated;
+  const translateCityName = useCallback(
+    (cityName: string): string => {
+      if (!cityName || cityName === "City") {
+        return t("listings.city");
       }
-    }
-    
-    // Fallback: try direct lookup with normalized name
-    const directKey = `listings.cities.${normalized}`;
-    const directTranslation = t(directKey);
-    if (directTranslation && directTranslation !== directKey) {
-      return directTranslation;
-    }
-    
-    return cityName;
-  }, [t]);
+
+      // Normalize city name for key matching
+      const normalized = cityName
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/`/g, "")
+        .replace(/'/g, "")
+        .replace(/al\s+/gi, "al");
+
+      // Map of city names to their translation keys
+      const cityKeyMap: { [key: string]: string } = {
+        // Major cities
+        riyadh: "riyadh",
+        jeddah: "jeddah",
+        dammam: "dammam",
+        alkhobar: "khobar",
+        medina: "medina",
+        macca: "mecca",
+        buraydah: "buraidah",
+        taif: "taif",
+        jazan: "jazan",
+        abha: "abha",
+        khamismushait: "khamisMushait",
+        hail: "hail",
+        najran: "najran",
+        yanbu: "yanbu",
+        aljubail: "alJubail",
+        tabuk: "tabuk",
+        qatif: "qatif",
+        alkharj: "kharj",
+        hafralbatin: "hafrAlBatin",
+        riyadhalkhabra: "riyadhAlKhabra",
+        // Additional cities
+        alhofuf: "alHofuf",
+        unayzah: "unayzah",
+        albukayriyah: "albukayriyah",
+        addiriyah: "addiriyah",
+        dhahran: "dhahran",
+        almajmaah: "almajmaah",
+        ahadrufaidah: "ahadrufaidah",
+        thadiq: "thadiq",
+        alquwaiiyah: "alquwaiiyah",
+        abuarish: "abuArish",
+        albahah: "albahah",
+        shaqra: "shaqra",
+        thuwal: "thuwal",
+        azzulfi: "azzulfi",
+        arrass: "arrass",
+        albadayea: "albadayea",
+        buqayq: "buqayq",
+        alduwadimi: "alduwadimi",
+        nairyah: "nairyah",
+        safwa: "safwa",
+        muhayil: "muhayil",
+        kingabdullaheconomiccity: "kingabdullaheconomiccity",
+        rabigh: "rabigh",
+        alhenakiyah: "alhenakiyah",
+        almajaridah: "almajaridah",
+        sabya: "sabya",
+        annabhaniyah: "annabhaniyah",
+        alqunfudhah: "alqunfudhah",
+        baish: "baish",
+        alhayathem: "alhayathem",
+        alshinana: "alshinana",
+        baqaa: "baqaa",
+        alghazalah: "alghazalah",
+        bisha: "bisha",
+        howtatbanitamin: "howtatbanitamin",
+        rumah: "rumah",
+        saihat: "saihat",
+        khafji: "khafji",
+        arar: "arar",
+        ahadalmasrihah: "ahad almasrihah",
+        alghat: "alghat",
+        almithnab: "al mithnab",
+        alqatif: "qatif",
+        aljumum: "aljumum",
+        samtah: "samtah",
+        addilam: "addilam",
+        afif: "afif",
+        ashshimasiyah: "ashshimasiyah",
+        dumahaljandal: "dumah aljandal",
+        rastanura: "rastanura",
+        sakaka: "sakaka",
+        turbah: "turbah",
+        assulayyil: "assulayyil",
+        allith: "allith",
+        billasmar: "billasmar",
+        tayma: "tayma",
+        mahdadhahab: "mahd adhdhahab",
+        aluyun: "aluyun",
+        alkamil: "alkamil",
+        tarout: "tarout",
+        rafha: "rafha",
+        sharorah: "sharorah",
+        alula: "alula",
+        turaif: "turaif",
+        duba: "duba",
+        alhariq: "alhariq",
+        alkhurma: "alkhurma",
+        tathleeth: "tathleeth",
+        ranyah: "ranyah",
+        alqurayyat: "alqurayyat",
+        anak: "anak",
+        alwajh: "alwajh",
+        umluj: "umluj",
+        alwadiah: "alwadiah",
+        khaybar: "khaybar",
+        badr: "badr",
+      };
+
+      const translationKey = cityKeyMap[normalized];
+      if (translationKey) {
+        const translated = t(`listings.cities.${translationKey}`);
+        // If translation exists and is different from the key, use it
+        if (translated && translated !== `listings.cities.${translationKey}`) {
+          return translated;
+        }
+      }
+
+      // Fallback: try direct lookup with normalized name
+      const directKey = `listings.cities.${normalized}`;
+      const directTranslation = t(directKey);
+      if (directTranslation && directTranslation !== directKey) {
+        return directTranslation;
+      }
+
+      return cityName;
+    },
+    [t],
+  );
 
   // Load last locations from storage
   useEffect(() => {
@@ -197,10 +200,13 @@ export default function CityModal({
 
   const loadLastLocations = async () => {
     try {
-      const res = await backendRequest<{ success: boolean; data: { locations: any[] } }>(
-        `/me/recent-locations?limit=${MAX_LAST_LOCATIONS}`
+      const res = await backendRequest<{
+        success: boolean;
+        data: { locations: any[] };
+      }>(`/me/recent-locations?limit=${MAX_LAST_LOCATIONS}`);
+      setLastLocations(
+        (res.data.locations ?? []).map((r: any) => String(r.city)),
       );
-      setLastLocations((res.data.locations ?? []).map((r: any) => String(r.city)));
     } catch (error) {
       console.error("Error loading last locations:", error);
       setLastLocations([]);
@@ -209,17 +215,17 @@ export default function CityModal({
 
   const saveLocation = async (city: string) => {
     if (!city || city.trim() === "") return;
-    
+
     try {
       await backendRequest("/me/recent-locations", {
         method: "POST",
         body: { city: city.trim() },
       });
 
-      const updated = [city, ...lastLocations.filter((loc) => loc !== city)].slice(
-        0,
-        MAX_LAST_LOCATIONS
-      );
+      const updated = [
+        city,
+        ...lastLocations.filter((loc) => loc !== city),
+      ].slice(0, MAX_LAST_LOCATIONS);
       setLastLocations(updated);
     } catch (error) {
       console.error("Error saving location:", error);
@@ -230,14 +236,17 @@ export default function CityModal({
     setShowLocationSearch(true);
   }, []);
 
-  const handleLocationSelect = useCallback(async (city: string) => {
-    setInputValue(city);
-    setShowLocationSearch(false);
-    // Directly search and close the modal when city is selected
-    await saveLocation(city);
-    onSearch(city);
-    onClose();
-  }, [onSearch, onClose]);
+  const handleLocationSelect = useCallback(
+    async (city: string) => {
+      setInputValue(city);
+      setShowLocationSearch(false);
+      // Directly search and close the modal when city is selected
+      await saveLocation(city);
+      onSearch(city);
+      onClose();
+    },
+    [onSearch, onClose],
+  );
 
   const handleLastLocationPress = useCallback((city: string) => {
     setInputValue(city);
@@ -279,7 +288,7 @@ export default function CityModal({
         animationType="slide"
         onRequestClose={onClose}
       >
-          <View style={styles.modalOverlay}>
+        <View style={styles.modalOverlay}>
           <TouchableOpacity
             style={styles.modalBackdrop}
             activeOpacity={1}
@@ -289,13 +298,15 @@ export default function CityModal({
             {/* Header */}
             <View style={[styles.header, isRTL && styles.headerRTL]}>
               <TouchableOpacity onPress={onClose} style={styles.backButton}>
-                <Ionicons 
-                  name={isRTL ? "arrow-forward" : "arrow-back"} 
-                  size={wp(6)} 
-                  color={COLORS.arrows} 
+                <Ionicons
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
+                  size={wp(6)}
+                  color={COLORS.arrows}
                 />
               </TouchableOpacity>
-              <Text style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}>
+              <Text
+                style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}
+              >
                 {t("listings.chooseCity")}
               </Text>
               <View style={styles.headerSpacer} />
@@ -313,29 +324,46 @@ export default function CityModal({
                 onPress={handleInputPress}
                 activeOpacity={0.8}
               >
-                <Text style={[
-                  styles.inputButtonText, 
-                  !inputValue && styles.inputButtonPlaceholder,
-                  isRTL && styles.inputButtonTextRTL
-                ]}>
-                  {inputValue ? translateCityName(inputValue) : t("listings.enterHere...")}
+                <Text
+                  style={[
+                    styles.inputButtonText,
+                    !inputValue && styles.inputButtonPlaceholder,
+                    isRTL && styles.inputButtonTextRTL,
+                  ]}
+                >
+                  {inputValue
+                    ? translateCityName(inputValue)
+                    : t("listings.enterHere...")}
                 </Text>
               </TouchableOpacity>
 
               {/* Last Locations Section */}
               {lastLocations.length > 0 && (
                 <View style={styles.lastLocationsSection}>
-                  <Text style={[styles.lastLocationsTitle, isRTL && styles.lastLocationsTitleRTL]}>
+                  <Text
+                    style={[
+                      styles.lastLocationsTitle,
+                      isRTL && styles.lastLocationsTitleRTL,
+                    ]}
+                  >
                     {t("listings.lastLocations")}
                   </Text>
                   {lastLocations.map((location, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.locationItem, isRTL && styles.locationItemRTL]}
+                      style={[
+                        styles.locationItem,
+                        isRTL && styles.locationItemRTL,
+                      ]}
                       onPress={() => handleLastLocationPress(location)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.locationText, isRTL && styles.locationTextRTL]}>
+                      <Text
+                        style={[
+                          styles.locationText,
+                          isRTL && styles.locationTextRTL,
+                        ]}
+                      >
                         {translateCityName(location)}
                       </Text>
                     </TouchableOpacity>
@@ -355,18 +383,34 @@ export default function CityModal({
             )} */}
 
             {/* Bottom Buttons */}
-            <View style={[
-              styles.buttonContainer, 
-              isRTL && styles.buttonContainerRTL,
-              { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? hp(2) : hp(1)) }
-            ]}>
+            <View
+              style={[
+                styles.buttonContainer,
+                isRTL && styles.buttonContainerRTL,
+                {
+                  paddingBottom: Math.max(
+                    insets.bottom,
+                    Platform.OS === "ios" ? hp(2) : hp(1),
+                  ),
+                },
+              ]}
+            >
               <TouchableOpacity
-                style={[styles.locateMeButton, isRTL && styles.locateMeButtonRTL]}
+                style={[
+                  styles.locateMeButton,
+                  isRTL && styles.locateMeButtonRTL,
+                ]}
                 onPress={handleLocateMe}
                 activeOpacity={0.7}
               >
-                <FontAwesome6 name="location-crosshairs" size={wp(5)} color="#333" />
-                <Text style={[styles.locateMeText, isRTL && styles.locateMeTextRTL]}>
+                <FontAwesome6
+                  name="location-crosshairs"
+                  size={wp(5)}
+                  color="#333"
+                />
+                <Text
+                  style={[styles.locateMeText, isRTL && styles.locateMeTextRTL]}
+                >
                   {t("listings.locateMe")}
                 </Text>
               </TouchableOpacity>
@@ -375,7 +419,9 @@ export default function CityModal({
                 onPress={handleSearch}
                 activeOpacity={0.8}
               >
-                <Text style={styles.searchButtonText}>{t("common.search")}</Text>
+                <Text style={styles.searchButtonText}>
+                  {t("common.search")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -573,4 +619,3 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 });
-

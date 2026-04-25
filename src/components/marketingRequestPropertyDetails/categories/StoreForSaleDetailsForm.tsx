@@ -12,7 +12,10 @@ import {
   getDirectionLabel,
   formatRealEstateAgeLabel,
 } from "../shared/propertyDetailsOptions";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 
 const TOGGLE_TRACK_WIDTH = wp(9);
 const TOGGLE_TRACK_HEIGHT = hp(1.5);
@@ -32,7 +35,7 @@ export default function StoreForSaleDetailsForm({
 
   const streetDirectionOptions = useMemo(
     () => STREET_DIRECTION_OPTIONS.map((opt) => getDirectionLabel(opt, t)),
-    [t]
+    [t],
   );
 
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -49,12 +52,35 @@ export default function StoreForSaleDetailsForm({
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "navigate", label: t("listings.streetDirection"), value: getDirectionLabel(streetDirection, t) },
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
-      { type: "value", icon: "time", label: t("listings.realEstateAge"), value: formatRealEstateAgeLabel(ageLessThan, t) },
+      {
+        type: "value",
+        icon: "navigate",
+        label: t("listings.streetDirection"),
+        value: getDirectionLabel(streetDirection, t),
+      },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
+      {
+        type: "value",
+        icon: "time",
+        label: t("listings.realEstateAge"),
+        value: formatRealEstateAgeLabel(ageLessThan, t),
+      },
       { type: "toggle", label: t("listings.water"), enabled: toggles.water },
-      { type: "toggle", label: t("listings.electricity"), enabled: toggles.electricity },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: toggles.drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: toggles.electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: toggles.drainageAvailability,
+      },
     ]);
   }, [
     ageLessThan,
@@ -74,7 +100,9 @@ export default function StoreForSaleDetailsForm({
         options={streetDirectionOptions}
         selectedValue={getDirectionLabel(streetDirection, t)}
         onSelect={(value) => {
-          const original = STREET_DIRECTION_OPTIONS.find((opt) => getDirectionLabel(opt, t) === value);
+          const original = STREET_DIRECTION_OPTIONS.find(
+            (opt) => getDirectionLabel(opt, t) === value,
+          );
           setStreetDirection(original ?? "Not Defined");
         }}
         scrollable
@@ -85,7 +113,12 @@ export default function StoreForSaleDetailsForm({
         }
       />
 
-      <SliderWithInput label={t("listings.streetWidth")} value={streetWidth} onChangeValue={setStreetWidth} max={100} />
+      <SliderWithInput
+        label={t("listings.streetWidth")}
+        value={streetWidth}
+        onChangeValue={setStreetWidth}
+        max={100}
+      />
 
       <InlineWheelPickerField
         label={t("listings.ageLessThan")}
@@ -115,7 +148,9 @@ export default function StoreForSaleDetailsForm({
       <ToggleRow
         label={t("listings.drainageAvailability")}
         value={toggles.drainageAvailability}
-        onValueChange={(v) => setToggles((p) => ({ ...p, drainageAvailability: v }))}
+        onValueChange={(v) =>
+          setToggles((p) => ({ ...p, drainageAvailability: v }))
+        }
         trackWidth={TOGGLE_TRACK_WIDTH}
         trackHeight={TOGGLE_TRACK_HEIGHT}
         thumbSize={TOGGLE_THUMB_SIZE}
@@ -123,4 +158,3 @@ export default function StoreForSaleDetailsForm({
     </>
   );
 }
-

@@ -12,7 +12,11 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -65,31 +69,38 @@ export default function BookingListScreen(): React.JSX.Element {
   // This prevents the params useEffect from firing on every render.
   const params = useMemo(
     () => (route.params ?? {}) as BookingListRouteParams,
-    [route.params]
+    [route.params],
   );
   const navigation = useNavigation<NavigationProp>();
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
 
-  const preservedFilter = useAppSelector((s) => s.listingsFilters.preservedFilter);
-  const preservedCityFromStore = useAppSelector((s) => s.listingsFilters.preservedCity);
-  const preservedSearchFilters = useAppSelector(
-    (s) => s.listingsFilters.preservedSearchFilters
+  const preservedFilter = useAppSelector(
+    (s) => s.listingsFilters.preservedFilter,
   );
-  const preservedDates = useAppSelector((s) => s.listingsFilters.preservedDates);
-  const preservedRegion = useAppSelector((s) => s.listingsFilters.preservedRegion);
+  const preservedCityFromStore = useAppSelector(
+    (s) => s.listingsFilters.preservedCity,
+  );
+  const preservedSearchFilters = useAppSelector(
+    (s) => s.listingsFilters.preservedSearchFilters,
+  );
+  const preservedDates = useAppSelector(
+    (s) => s.listingsFilters.preservedDates,
+  );
+  const preservedRegion = useAppSelector(
+    (s) => s.listingsFilters.preservedRegion,
+  );
   const { getCurrentLocation } = useLocation();
   const { t, isRTL } = useLocalization();
 
   // ─── State — initialized once from params (params take priority over Redux) ───
   const [selectedFilter, setSelectedFilter] = useState<string | null>(
-    params?.selectedFilter ?? preservedFilter ?? null
+    params?.selectedFilter ?? preservedFilter ?? null,
   );
   const [selectedCity, setSelectedCity] = useState<string>(() => {
     const city =
       params?.selectedCity ||
-      (preservedCityFromStore &&
-      preservedCityFromStore !== "Current Location"
+      (preservedCityFromStore && preservedCityFromStore !== "Current Location"
         ? preservedCityFromStore
         : "");
     return city || t("listings.city");
@@ -97,14 +108,14 @@ export default function BookingListScreen(): React.JSX.Element {
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
     params?.searchFilters !== undefined
       ? (params.searchFilters ?? null)
-      : (preservedSearchFilters ?? null)
+      : (preservedSearchFilters ?? null),
   );
   /**
    * When non-null: restrict displayed list to these property IDs (from map viewport).
    * Cleared whenever the user manually changes city, dates, or search filters.
    */
   const [visiblePropertyIds, setVisiblePropertyIds] = useState<number[] | null>(
-    params?.visiblePropertyIds ?? null
+    params?.visiblePropertyIds ?? null,
   );
 
   const [cityModalVisible, setCityModalVisible] = useState(false);
@@ -115,10 +126,10 @@ export default function BookingListScreen(): React.JSX.Element {
   const hasInitializedLocationRef = useRef(false);
   const hasShownCalendarOnMount = useRef(false);
 
-  const initialDates =
-    params?.selectedDates ??
+  const initialDates = params?.selectedDates ??
     preservedDates ?? { startDate: null, endDate: null };
-  const { selectedDates, handleDateSelect, setSelectedDates } = useCalendar(initialDates);
+  const { selectedDates, handleDateSelect, setSelectedDates } =
+    useCalendar(initialDates);
   const {
     modalVisible: bookingDateModalVisible,
     openModal: openBookingDateModal,
@@ -133,7 +144,6 @@ export default function BookingListScreen(): React.JSX.Element {
     getCurrentLocation().then((result) => {
       if (result.region) dispatch(setPreservedRegion(result.region));
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, getCurrentLocation, preservedRegion]);
 
   // ─── Params → local state (ONLY reacts to param reference changes, not Redux) ──
@@ -203,7 +213,7 @@ export default function BookingListScreen(): React.JSX.Element {
       // previous "Show List" navigation don't persist when the user returns via tab or
       // back button. If user returns via "Show List", the params effect will re-set it.
       return () => setVisiblePropertyIds(null);
-    }, [])
+    }, []),
   );
 
   // ─── Calendar dates → Redux (one-way — Redux never writes local dates back) ─
@@ -232,7 +242,7 @@ export default function BookingListScreen(): React.JSX.Element {
         selectedDates.startDate,
         selectedDates.endDate,
         t,
-        isRTL
+        isRTL,
       );
     }
     return t("listings.chooseReservation");
@@ -243,18 +253,28 @@ export default function BookingListScreen(): React.JSX.Element {
       startDate: selectedDates?.startDate ?? null,
       endDate: selectedDates?.endDate ?? null,
     }),
-    [selectedDates?.startDate, selectedDates?.endDate]
+    [selectedDates?.startDate, selectedDates?.endDate],
   );
 
   const filteredPropertiesForModal = useMemo(
-    () => filterDailyPropertiesByCityAndDates(PROPERTY_DATA, selectedCity, filterDates),
-    [selectedCity, filterDates.startDate, filterDates.endDate]
+    () =>
+      filterDailyPropertiesByCityAndDates(
+        PROPERTY_DATA,
+        selectedCity,
+        filterDates,
+      ),
+    [selectedCity, filterDates.startDate, filterDates.endDate],
   );
 
   const filteredProperties = useMemo(
     () =>
-      getFilteredDailyProperties(PROPERTY_DATA, selectedCity, filterDates, searchFilters),
-    [selectedCity, filterDates.startDate, filterDates.endDate, searchFilters]
+      getFilteredDailyProperties(
+        PROPERTY_DATA,
+        selectedCity,
+        filterDates,
+        searchFilters,
+      ),
+    [selectedCity, filterDates.startDate, filterDates.endDate, searchFilters],
   );
 
   const getNumericPrice = useCallback((property: Property) => {
@@ -281,7 +301,7 @@ export default function BookingListScreen(): React.JSX.Element {
    */
   const hasExplicitCity = useMemo(
     () => !!selectedCity && selectedCity !== t("listings.city"),
-    [selectedCity, t]
+    [selectedCity, t],
   );
 
   /**
@@ -309,10 +329,11 @@ export default function BookingListScreen(): React.JSX.Element {
       const start = new Date(selectedDates.startDate);
       const end = new Date(selectedDates.endDate);
       const days =
-        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
       return ((property as any).dailyPrice || 0) * days;
     },
-    [selectedDates]
+    [selectedDates],
   );
 
   const activeFilterCount = useMemo(() => {
@@ -327,11 +348,26 @@ export default function BookingListScreen(): React.JSX.Element {
       if (searchFilters.wc !== "") count++;
       if (searchFilters.villaType !== null) count++;
       const booleanFilters = [
-        "furnished", "carEntrance", "airConditioned", "privateRoof",
-        "apartmentInVilla", "twoEntrances", "specialEntrances", "nearBus",
-        "nearMetro", "pool", "footballPitch", "volleyballCourt", "tent",
-        "kitchen", "playground", "familySection", "stairs", "driverRoom",
-        "maidRoom", "basement",
+        "furnished",
+        "carEntrance",
+        "airConditioned",
+        "privateRoof",
+        "apartmentInVilla",
+        "twoEntrances",
+        "specialEntrances",
+        "nearBus",
+        "nearMetro",
+        "pool",
+        "footballPitch",
+        "volleyballCourt",
+        "tent",
+        "kitchen",
+        "playground",
+        "familySection",
+        "stairs",
+        "driverRoom",
+        "maidRoom",
+        "basement",
       ];
       booleanFilters.forEach((key) => {
         if (searchFilters[key as keyof SearchFilterState] === true) count++;
@@ -349,7 +385,7 @@ export default function BookingListScreen(): React.JSX.Element {
       dispatch(setPreservedCity(city));
       setVisiblePropertyIds(null); // user changed city → show full filtered results
     },
-    [dispatch]
+    [dispatch],
   );
 
   /** Locate-me in city modal → save region; city label stays unchanged */
@@ -360,16 +396,23 @@ export default function BookingListScreen(): React.JSX.Element {
   }, [getCurrentLocation, dispatch]);
 
   const handleSearchFilters = useCallback(
-    (filters: SearchFilterState | null, _count: number, shouldClose?: boolean) => {
+    (
+      filters: SearchFilterState | null,
+      _count: number,
+      shouldClose?: boolean,
+    ) => {
       dispatch(setPreservedSearchFilters(filters));
       setSearchFilters(filters);
       setVisiblePropertyIds(null); // user changed filters → show full filtered results
       if (shouldClose) setFilterModalVisible(false);
     },
-    [dispatch]
+    [dispatch],
   );
 
-  const handleChooseReservation = useCallback(() => openBookingDateModal(), [openBookingDateModal]);
+  const handleChooseReservation = useCallback(
+    () => openBookingDateModal(),
+    [openBookingDateModal],
+  );
 
   /** Confirm date selection → clear viewport restriction */
   const handleSearchBookingDate = useCallback(() => {
@@ -391,7 +434,7 @@ export default function BookingListScreen(): React.JSX.Element {
       if (calculatedPrice != null) navParams.calculatedPrice = calculatedPrice;
       navigation.navigate("DailyDetails", navParams);
     },
-    [displayedProperties, selectedDates, calculateDailyPrice, navigation]
+    [displayedProperties, selectedDates, calculateDailyPrice, navigation],
   );
 
   const handleBackPress = useCallback(() => {
@@ -406,7 +449,10 @@ export default function BookingListScreen(): React.JSX.Element {
     navigation.navigate("DailyMap", mapParams);
   }, [navigation, selectedCity, selectedDates, searchFilters, t]);
 
-  const handleAddPress = useCallback(() => navigation.navigate("AddListing"), [navigation]);
+  const handleAddPress = useCallback(
+    () => navigation.navigate("AddListing"),
+    [navigation],
+  );
   const handleCityPress = useCallback(() => setCityModalVisible(true), []);
   const handleFiltersPress = useCallback(() => setFilterModalVisible(true), []);
   const closeCityModal = useCallback(() => setCityModalVisible(false), []);
@@ -448,7 +494,7 @@ export default function BookingListScreen(): React.JSX.Element {
         />
       );
     },
-    [calculateDailyPrice, handlePropertyPress, t]
+    [calculateDailyPrice, handlePropertyPress, t],
   );
 
   const keyExtractor = useCallback((item: Property) => item.id.toString(), []);
@@ -456,18 +502,25 @@ export default function BookingListScreen(): React.JSX.Element {
   const listHeaderComponent = useMemo(
     () => (
       <View style={styles.unitsCountContainer}>
-        <Text style={[styles.unitsCountText, isRTL && styles.unitsCountTextRTL]}>
+        <Text
+          style={[styles.unitsCountText, isRTL && styles.unitsCountTextRTL]}
+        >
           {displayedProperties.length} {t("listings.unitsMatchSearch")}
         </Text>
       </View>
     ),
-    [displayedProperties.length, t, isRTL]
+    [displayedProperties.length, t, isRTL],
   );
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <View style={[styles.dailyHeaderFixedContainer, { paddingTop: insets.top + hp(1) }]}>
+      <View
+        style={[
+          styles.dailyHeaderFixedContainer,
+          { paddingTop: insets.top + hp(1) },
+        ]}
+      >
         <DailyHeaderBoxes
           reservationText={reservationText}
           onReservationPress={handleChooseReservation}
@@ -516,9 +569,16 @@ export default function BookingListScreen(): React.JSX.Element {
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="map-sharp" size={Math.min(wp(6), 24)} color="#617381" />
+          <Ionicons
+            name="map-sharp"
+            size={Math.min(wp(6), 24)}
+            color="#617381"
+          />
           {!isScrolling && (
-            <Text style={[styles.showMapText, isRTL && styles.showMapTextRTL]} numberOfLines={1}>
+            <Text
+              style={[styles.showMapText, isRTL && styles.showMapTextRTL]}
+              numberOfLines={1}
+            >
               {t("listings.showMap")}
             </Text>
           )}
@@ -548,7 +608,9 @@ export default function BookingListScreen(): React.JSX.Element {
         onClose={closeCityModal}
         onSearch={handleCitySearch}
         onLocateMe={handleCityLocateMe}
-        selectedCity={selectedCity !== t("listings.city") ? selectedCity : undefined}
+        selectedCity={
+          selectedCity !== t("listings.city") ? selectedCity : undefined
+        }
       />
 
       <SearchFilterModal

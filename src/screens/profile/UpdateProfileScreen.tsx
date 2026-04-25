@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -50,7 +56,7 @@ export default function UpdateProfileScreen(): React.JSX.Element {
     const checkPendingResult = async () => {
       try {
         const result = await ImagePicker.getPendingResultAsync();
-        if (result && 'assets' in result && result.assets && result.assets[0]) {
+        if (result && "assets" in result && result.assets && result.assets[0]) {
           setProfileImage(result.assets[0].uri);
         }
       } catch (error) {
@@ -67,11 +73,17 @@ export default function UpdateProfileScreen(): React.JSX.Element {
     const nextName =
       me && (me.firstName || me.lastName)
         ? `${me.firstName ?? ""} ${me.lastName ?? ""}`.trim()
-        : (clerkUser?.fullName?.trim() ||
-            [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ").trim() ||
-            "");
-    const nextEmail =
-      (me?.email ?? clerkUser?.primaryEmailAddress?.emailAddress ?? "").trim();
+        : clerkUser?.fullName?.trim() ||
+          [clerkUser?.firstName, clerkUser?.lastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
+          "";
+    const nextEmail = (
+      me?.email ??
+      clerkUser?.primaryEmailAddress?.emailAddress ??
+      ""
+    ).trim();
     const nextBio = (me as any)?.bio ?? "";
     const nextProfileImage =
       (me?.profileImage ?? clerkUser?.imageUrl ?? null) || null;
@@ -94,7 +106,7 @@ export default function UpdateProfileScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false, // Can't use native driver for bottom positioning
         }).start();
-      }
+      },
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -106,7 +118,7 @@ export default function UpdateProfileScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -121,11 +133,12 @@ export default function UpdateProfileScreen(): React.JSX.Element {
 
   const handleImagePicker = useCallback(async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "We need access to your photos to set a profile picture."
+          "We need access to your photos to set a profile picture.",
         );
         return;
       }
@@ -151,24 +164,34 @@ export default function UpdateProfileScreen(): React.JSX.Element {
     if (isSaving) return;
     const full = name.trim();
     if (!full) {
-      Alert.alert(t("common.error", { defaultValue: "Error" }), t("profile.nameRequired", { defaultValue: "Name is required" }));
+      Alert.alert(
+        t("common.error", { defaultValue: "Error" }),
+        t("profile.nameRequired", { defaultValue: "Name is required" }),
+      );
       return;
     }
 
     let profileImageUrl: string | null = profileImage;
     try {
-      if (profileImageUrl && !profileImageUrl.startsWith("http://") && !profileImageUrl.startsWith("https://")) {
+      if (
+        profileImageUrl &&
+        !profileImageUrl.startsWith("http://") &&
+        !profileImageUrl.startsWith("https://")
+      ) {
         const uploaded = await uploadListingMediaToSupabase(
           supabase,
           [{ uri: profileImageUrl, order: 0, mediaType: "photo" }],
-          { prefix: "profiles" }
+          { prefix: "profiles" },
         );
         profileImageUrl = uploaded[0]?.url ?? null;
       }
     } catch (e: any) {
       Alert.alert(
         t("common.error", { defaultValue: "Error" }),
-        e?.message || t("profile.profileImageUploadFailed", { defaultValue: "Failed to upload profile image." })
+        e?.message ||
+          t("profile.profileImageUploadFailed", {
+            defaultValue: "Failed to upload profile image.",
+          }),
       );
       return;
     }
@@ -185,22 +208,30 @@ export default function UpdateProfileScreen(): React.JSX.Element {
         profileImage: profileImageUrl,
         bio: bio.trim() || null,
       }).unwrap();
-      Alert.alert(t("common.success", { defaultValue: "Success" }), t("profile.profileUpdated", { defaultValue: "Profile updated" }));
+      Alert.alert(
+        t("common.success", { defaultValue: "Success" }),
+        t("profile.profileUpdated", { defaultValue: "Profile updated" }),
+      );
       navigation.goBack();
     } catch (e: any) {
       Alert.alert(
         t("common.error", { defaultValue: "Error" }),
-        e?.message || t("profile.updateFailed", { defaultValue: "Failed to update profile." })
+        e?.message ||
+          t("profile.updateFailed", {
+            defaultValue: "Failed to update profile.",
+          }),
       );
     }
   }, [name, profileImage, updateMe, email, bio, t, navigation, isSaving]);
   const rtlStyles = useMemo(
     () => ({
       profilePictureSection: { flexDirection: isRTL ? "row-reverse" : "row" },
-      label: { textAlign: isRTL ? "right" : "left", flexDirection: isRTL ? "row-reverse" : "row" },
-      
+      label: {
+        textAlign: isRTL ? "right" : "left",
+        flexDirection: isRTL ? "row-reverse" : "row",
+      },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
@@ -247,13 +278,17 @@ export default function UpdateProfileScreen(): React.JSX.Element {
               )}
             </TouchableOpacity>
             <Text style={styles.profilePictureText}>
-              {t("profile.clickToAddProfilePicture", { defaultValue: "Click to add a profile picture" })}
+              {t("profile.clickToAddProfilePicture", {
+                defaultValue: "Click to add a profile picture",
+              })}
             </Text>
           </View>
 
           {/* Name Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.name", { defaultValue: "Name" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.name", { defaultValue: "Name" })}
+            </Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -265,7 +300,9 @@ export default function UpdateProfileScreen(): React.JSX.Element {
 
           {/* Email Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.email", { defaultValue: "Email" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.email", { defaultValue: "Email" })}
+            </Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -278,11 +315,15 @@ export default function UpdateProfileScreen(): React.JSX.Element {
 
           {/* Bio Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.bio", { defaultValue: "Bio" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.bio", { defaultValue: "Bio" })}
+            </Text>
             <TextInput
               value={bio}
               onChangeText={setBio}
-              placeholder={t("profile.enterHere", { defaultValue: "Enter here" })}
+              placeholder={t("profile.enterHere", {
+                defaultValue: "Enter here",
+              })}
               multiline={true}
               numberOfLines={4}
               showFocusStates={true}
@@ -291,14 +332,16 @@ export default function UpdateProfileScreen(): React.JSX.Element {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      
+
       <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
         <SingleButtonFooter
           fixed={false}
           label={t("profile.save", { defaultValue: "Save" })}
           onPress={handleSave}
           disabled={isSaving}
-          icon={isSaving ? <ActivityIndicator color={COLORS.white} /> : undefined}
+          icon={
+            isSaving ? <ActivityIndicator color={COLORS.white} /> : undefined
+          }
         />
       </Animated.View>
     </View>
@@ -345,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: COLORS.border
+    borderColor: COLORS.border,
   },
   profilePictureText: {
     fontSize: wp(3.5),
@@ -370,4 +413,3 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
-

@@ -13,6 +13,7 @@ import {
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
 import SectionHeader from "./SectionHeader";
+import { useLocalization } from "../../hooks/useLocalization";
 
 export interface FinancialInformationSectionProps {
   onPaymentsPress?: () => void;
@@ -25,16 +26,20 @@ export interface FinancialInformationSectionProps {
  */
 const FinancialInformationSection = memo<FinancialInformationSectionProps>(
   ({ onPaymentsPress, onFinancialSettingsPress, onManageCardsPress }) => {
+    const { t } = useLocalization();
     return (
       <View style={styles.container}>
-        <SectionHeader title="Financial Information" iconName="card" />
+        <SectionHeader
+          title={t("profile.financialInformation")}
+          iconName="card"
+        />
         <View style={styles.card}>
           <TouchableOpacity
             style={styles.menuItem}
             onPress={onPaymentsPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.menuItemText}>Payments</Text>
+            <Text style={styles.menuItemText}>{t("profile.payments")}</Text>
             <Ionicons
               name="chevron-forward"
               size={wp(5)}
@@ -48,7 +53,9 @@ const FinancialInformationSection = memo<FinancialInformationSectionProps>(
             onPress={onFinancialSettingsPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.menuItemText}>Financial Settings</Text>
+            <Text style={styles.menuItemText}>
+              {t("profile.financialSettings")}
+            </Text>
             <Ionicons
               name="chevron-forward"
               size={wp(5)}
@@ -62,7 +69,7 @@ const FinancialInformationSection = memo<FinancialInformationSectionProps>(
             onPress={onManageCardsPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.menuItemText}>Manage Cards</Text>
+            <Text style={styles.menuItemText}>{t("profile.manageCards")}</Text>
             <Ionicons
               name="chevron-forward"
               size={wp(5)}
@@ -73,7 +80,7 @@ const FinancialInformationSection = memo<FinancialInformationSectionProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 FinancialInformationSection.displayName = "FinancialInformationSection";

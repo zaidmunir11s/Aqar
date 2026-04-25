@@ -102,14 +102,20 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
     onSpecialEntrancesChange,
   }) => {
     const { t } = useLocalization();
-    const showAnnualPriceBlock = rentPeriod != null && isRentAnnualPriceFrequency(rentPeriod);
+    const showAnnualPriceBlock =
+      rentPeriod != null && isRentAnnualPriceFrequency(rentPeriod);
     const isMonthly = rentPeriod === "Monthly";
     const showPriceSection = !rentPeriod;
-    const priceLabel = isMonthly ? t("listings.priceMonthly") : t("listings.annualPrice");
+    const priceLabel = isMonthly
+      ? t("listings.priceMonthly")
+      : t("listings.annualPrice");
 
     return (
       <>
-        <RentPaymentFrequencyChips selectedFrequency={rentPeriod} onSelect={onRentPeriodChange} />
+        <RentPaymentFrequencyChips
+          selectedFrequency={rentPeriod}
+          onSelect={onRentPeriodChange}
+        />
 
         {showAnnualPriceBlock && (
           <PriceInputSection
@@ -118,20 +124,20 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
             toValue={toPrice}
             onFromChange={onFromPriceChange}
             onToChange={onToPriceChange}
-            fromPlaceholder="From price"
-            toPlaceholder="To price"
+            fromPlaceholder={t("listings.fromPrice")}
+            toPlaceholder={t("listings.toPrice")}
           />
         )}
 
         {showPriceSection && (
           <PriceInputSection
-            label="Price"
+            label={t("listings.price")}
             fromValue={priceFrom}
             toValue={priceTo}
             onFromChange={onPriceFromChange}
             onToChange={onPriceToChange}
-            fromPlaceholder="From price"
-            toPlaceholder="To price"
+            fromPlaceholder={t("listings.fromPrice")}
+            toPlaceholder={t("listings.toPrice")}
           />
         )}
 
@@ -142,82 +148,82 @@ const ApartmentForRentSection = memo<ApartmentForRentSectionProps>(
         />
 
         <TabBarSection
-          label="Bedrooms"
+          label={t("listings.bedrooms")}
           options={BEDROOM_OPTIONS}
           selectedValue={selectedBedroom}
           onSelect={onBedroomChange}
         />
 
         <TabBarSection
-          label="Living Rooms"
+          label={t("listings.livingRooms")}
           options={LIVING_ROOM_OPTIONS}
           selectedValue={selectedLivingRoom}
           onSelect={onLivingRoomChange}
         />
 
         <TabBarSection
-          label="WC"
+          label={t("listings.wc")}
           options={WC_OPTIONS}
           selectedValue={selectedWc}
           onSelect={onWcChange}
         />
 
         <FieldWithModal
-          label="Floor"
+          label={t("listings.floor")}
           value={floor}
-          placeholder="Select floor"
+          placeholder={t("listings.selectFloor")}
           onPress={onFloorPress}
           backgroundColor="background"
         />
 
         <FieldWithModal
-          label="Age"
+          label={t("listings.age")}
           value={age}
-          placeholder="Select age"
+          placeholder={t("listings.selectAge")}
           onPress={onAgePress}
           backgroundColor="background"
         />
 
         <View style={styles.section}>
           <ToggleRow
-            label="Furnished"
+            label={t("listings.furnished")}
             value={furnished}
             onValueChange={onFurnishedChange}
           />
           <ToggleRow
-            label="Car entrance"
+            label={t("listings.carEntrance")}
             value={carEntrance}
             onValueChange={onCarEntranceChange}
           />
           <ToggleRow
-            label="Air conditioned"
+            label={t("listings.airConditioned")}
             value={airConditioned}
             onValueChange={onAirConditionedChange}
           />
           <ToggleRow
-            label="Private roof"
+            label={t("listings.privateRoof")}
             value={privateRoof}
             onValueChange={onPrivateRoofChange}
           />
           <ToggleRow
-            label="Apartment in villa"
+            label={t("listings.apartmentInVilla")}
             value={apartmentInVilla}
             onValueChange={onApartmentInVillaChange}
           />
           <ToggleRow
-            label="Two entrances"
+            label={t("listings.twoEntrances")}
             value={twoEntrances}
             onValueChange={onTwoEntrancesChange}
           />
           <ToggleRow
-            label="Special entrances"
+            label={t("listings.specialEntrances")}
             value={specialEntrances}
             onValueChange={onSpecialEntrancesChange}
           />
         </View>
       </>
     );
-  }
+  },
 );
 
 ApartmentForRentSection.displayName = "ApartmentForRentSection";

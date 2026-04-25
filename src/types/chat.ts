@@ -31,7 +31,3 @@ export interface ChatConversation {
   propertyId?: number; // Related property ID
   propertyAdNumber?: string; // Property ad number for reference
 }
-
-
-
-

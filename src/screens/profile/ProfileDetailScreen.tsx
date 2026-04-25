@@ -9,7 +9,11 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  CommonActions,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   widthPercentageToDP as wp,
@@ -57,12 +61,21 @@ export default function ProfileDetailScreen(): React.JSX.Element {
 
   const { navigateToListings } = useTabNavigation();
   const { data: meData } = useGetMeQuery();
-  const [profilePhoneDisplay, setProfilePhoneDisplay] = useState<string | undefined>(undefined);
-  const [profileDisplayName, setProfileDisplayName] = useState<string | undefined>(undefined);
+  const [profilePhoneDisplay, setProfilePhoneDisplay] = useState<
+    string | undefined
+  >(undefined);
+  const [profileDisplayName, setProfileDisplayName] = useState<
+    string | undefined
+  >(undefined);
   const [profileAvatarUri, setProfileAvatarUri] = useState<string | null>(null);
 
   const handleBackPress = useCallback(() => {
-    const AUTH_SCREENS = ["Login", "CreateAccount", "ForgotPassword", "VerifyPhoneNumber"];
+    const AUTH_SCREENS = [
+      "Login",
+      "CreateAccount",
+      "ForgotPassword",
+      "VerifyPhoneNumber",
+    ];
     const state = navigation.getState();
     const routes = state?.routes ?? [];
     const currentIndex = state?.index ?? 0;
@@ -82,9 +95,12 @@ export default function ProfileDetailScreen(): React.JSX.Element {
         handleBackPress();
         return true;
       };
-      const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      const sub = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
       return () => sub.remove();
-    }, [handleBackPress])
+    }, [handleBackPress]),
   );
 
   useFocusEffect(
@@ -106,7 +122,7 @@ export default function ProfileDetailScreen(): React.JSX.Element {
           setProfilePhoneDisplay(
             effectivePhone
               ? formatSaudiPhoneForDisplay(effectivePhone)
-              : t("profile.phoneNotOnProfile")
+              : t("profile.phoneNotOnProfile"),
           );
           setProfileDisplayName(rawName?.trim() ? rawName.trim() : undefined);
           setProfileAvatarUri(rawUri && rawUri.length > 0 ? rawUri : null);
@@ -120,7 +136,7 @@ export default function ProfileDetailScreen(): React.JSX.Element {
       return () => {
         active = false;
       };
-    }, [t, meData?.user?.phoneNumber])
+    }, [t, meData?.user?.phoneNumber]),
   );
 
   const handlePhonePress = useCallback(() => {
@@ -169,7 +185,7 @@ export default function ProfileDetailScreen(): React.JSX.Element {
       CommonActions.reset({
         index: 0,
         routes: [{ name: "Login" }],
-      })
+      }),
     );
   }, [navigation, setHasBackendSession, clerkSignOut]);
 
@@ -181,7 +197,10 @@ export default function ProfileDetailScreen(): React.JSX.Element {
           "This will permanently delete your account and all associated data. This action cannot be undone.",
       }),
       [
-        { text: t("common.cancel", { defaultValue: "Cancel" }), style: "cancel" },
+        {
+          text: t("common.cancel", { defaultValue: "Cancel" }),
+          style: "cancel",
+        },
         {
           text: t("profile.deleteAccount", { defaultValue: "Delete account" }),
           style: "destructive",
@@ -192,7 +211,9 @@ export default function ProfileDetailScreen(): React.JSX.Element {
               Alert.alert(
                 t("common.error", { defaultValue: "Error" }),
                 e?.message ||
-                  t("profile.deleteAccountFailed", { defaultValue: "Failed to delete account." })
+                  t("profile.deleteAccountFailed", {
+                    defaultValue: "Failed to delete account.",
+                  }),
               );
               return;
             }
@@ -212,11 +233,11 @@ export default function ProfileDetailScreen(): React.JSX.Element {
               CommonActions.reset({
                 index: 0,
                 routes: [{ name: "Login" }],
-              })
+              }),
             );
           },
         },
-      ]
+      ],
     );
   }, [t, navigation, setHasBackendSession, clerkSignOut]);
 

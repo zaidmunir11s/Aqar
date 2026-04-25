@@ -18,14 +18,14 @@ export const useLocalization = () => {
   const language = useAppSelector((state) => state.localization.language);
   const isRTL = useAppSelector((state) => state.localization.isRTL);
   const isInitialized = useAppSelector(
-    (state) => state.localization.isInitialized
+    (state) => state.localization.isInitialized,
   );
 
   const changeLanguage = useCallback(
     (lang: SupportedLanguage) => {
       dispatch(setLanguage(lang));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const toggleLanguage = useCallback(() => {
@@ -42,6 +42,6 @@ export const useLocalization = () => {
       toggleLanguage,
       isInitialized,
     }),
-    [t, i18n, language, isRTL, changeLanguage, toggleLanguage, isInitialized]
+    [t, i18n, language, isRTL, changeLanguage, toggleLanguage, isInitialized],
   );
 };

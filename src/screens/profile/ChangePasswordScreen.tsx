@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -22,7 +28,10 @@ import {
 import { COLORS } from "../../constants";
 import { ScreenHeader, TextInput, SingleButtonFooter } from "../../components";
 import { useLocalization } from "../../hooks/useLocalization";
-import { useChangeMyPasswordMutation, useGetMeQuery } from "@/redux/api/userApi";
+import {
+  useChangeMyPasswordMutation,
+  useGetMeQuery,
+} from "@/redux/api/userApi";
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -37,14 +46,15 @@ export default function ChangePasswordScreen(): React.JSX.Element {
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
   const [oldPasswordTouched, setOldPasswordTouched] = useState<boolean>(false);
   const [newPasswordTouched, setNewPasswordTouched] = useState<boolean>(false);
-  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState<boolean>(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] =
+    useState<boolean>(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   const rtlStyles = useMemo(
     () => ({
       label: { textAlign: isRTL ? "right" : "left" },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Validation functions
@@ -67,12 +77,15 @@ export default function ChangePasswordScreen(): React.JSX.Element {
 
   const oldPasswordError = validatePassword(oldPassword);
   const newPasswordError = validatePassword(newPassword);
-  const confirmPasswordError = validateConfirmPassword(confirmPassword, newPassword);
+  const confirmPasswordError = validateConfirmPassword(
+    confirmPassword,
+    newPassword,
+  );
 
   // Check if all fields have input
-  const isFormValid = 
-    oldPassword.trim().length > 0 && 
-    newPassword.trim().length > 0 && 
+  const isFormValid =
+    oldPassword.trim().length > 0 &&
+    newPassword.trim().length > 0 &&
     confirmPassword.trim().length > 0;
 
   // Listen to keyboard show/hide events
@@ -87,7 +100,7 @@ export default function ChangePasswordScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false, // Can't use native driver for bottom positioning
         }).start();
-      }
+      },
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -99,7 +112,7 @@ export default function ChangePasswordScreen(): React.JSX.Element {
           duration: event.duration || 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -131,7 +144,9 @@ export default function ChangePasswordScreen(): React.JSX.Element {
     if (!meData?.user?.hasPassword) {
       Alert.alert(
         t("common.error", { defaultValue: "Error" }),
-        t("profile.passwordNotSet", { defaultValue: "This account does not have a password (SSO sign-in)." })
+        t("profile.passwordNotSet", {
+          defaultValue: "This account does not have a password (SSO sign-in).",
+        }),
       );
       return;
     }
@@ -139,16 +154,30 @@ export default function ChangePasswordScreen(): React.JSX.Element {
     changePassword({ oldPassword, newPassword })
       .unwrap()
       .then(() => {
-        Alert.alert(t("common.success", { defaultValue: "Success" }), t("profile.passwordUpdated", { defaultValue: "Password updated" }));
+        Alert.alert(
+          t("common.success", { defaultValue: "Success" }),
+          t("profile.passwordUpdated", { defaultValue: "Password updated" }),
+        );
         navigation.goBack();
       })
       .catch((e: any) => {
         Alert.alert(
           t("common.error", { defaultValue: "Error" }),
-          e?.message || t("profile.passwordUpdateFailed", { defaultValue: "Failed to update password." })
+          e?.message ||
+            t("profile.passwordUpdateFailed", {
+              defaultValue: "Failed to update password.",
+            }),
         );
       });
-  }, [oldPassword, newPassword, confirmPassword, changePassword, navigation, t, meData]);
+  }, [
+    oldPassword,
+    newPassword,
+    confirmPassword,
+    changePassword,
+    navigation,
+    t,
+    meData,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -173,12 +202,16 @@ export default function ChangePasswordScreen(): React.JSX.Element {
         >
           {/* Old Password Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.oldPassword", { defaultValue: "Old password" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.oldPassword", { defaultValue: "Old password" })}
+            </Text>
             <TextInput
               value={oldPassword}
               onChangeText={setOldPassword}
               onBlur={() => setOldPasswordTouched(true)}
-              placeholder={t("profile.enterOldPassword", { defaultValue: "Enter old password" })}
+              placeholder={t("profile.enterOldPassword", {
+                defaultValue: "Enter old password",
+              })}
               isPassword={true}
               showFocusStates={true}
               containerStyle={styles.inputContainer}
@@ -189,12 +222,16 @@ export default function ChangePasswordScreen(): React.JSX.Element {
 
           {/* New Password Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.newPassword", { defaultValue: "New password" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.newPassword", { defaultValue: "New password" })}
+            </Text>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
               onBlur={() => setNewPasswordTouched(true)}
-              placeholder={t("profile.enterNewPassword", { defaultValue: "Enter new password" })}
+              placeholder={t("profile.enterNewPassword", {
+                defaultValue: "Enter new password",
+              })}
               isPassword={true}
               showFocusStates={true}
               containerStyle={styles.inputContainer}
@@ -205,12 +242,18 @@ export default function ChangePasswordScreen(): React.JSX.Element {
 
           {/* Confirm Password Input */}
           <View style={styles.inputSection}>
-            <Text style={[styles.label, rtlStyles.label as TextStyle]}>{t("profile.confirmPassword", { defaultValue: "Confirm password" })}</Text>
+            <Text style={[styles.label, rtlStyles.label as TextStyle]}>
+              {t("profile.confirmPassword", {
+                defaultValue: "Confirm password",
+              })}
+            </Text>
             <TextInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               onBlur={() => setConfirmPasswordTouched(true)}
-              placeholder={t("profile.confirmNewPassword", { defaultValue: "Confirm new password" })}
+              placeholder={t("profile.confirmNewPassword", {
+                defaultValue: "Confirm new password",
+              })}
               isPassword={true}
               showFocusStates={true}
               containerStyle={styles.inputContainer}
@@ -220,14 +263,16 @@ export default function ChangePasswordScreen(): React.JSX.Element {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      
+
       <Animated.View style={[styles.footerWrapper, { bottom: keyboardHeight }]}>
         <SingleButtonFooter
           fixed={false}
           label={t("profile.save", { defaultValue: "Save" })}
           onPress={handleSave}
           disabled={!isFormValid || isLoading}
-          icon={isLoading ? <ActivityIndicator color={COLORS.white} /> : undefined}
+          icon={
+            isLoading ? <ActivityIndicator color={COLORS.white} /> : undefined
+          }
         />
       </Animated.View>
     </View>
@@ -271,4 +316,3 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
-

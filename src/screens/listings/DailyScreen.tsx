@@ -5,9 +5,21 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { View, StyleSheet, Animated, Platform, TouchableOpacity, Text, ActivityIndicator } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Animated,
+  Platform,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+} from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,12 +27,14 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import {
-  PROPERTY_DATA,
-  DAILY_FILTER_OPTIONS,
-} from "../../data/propertyData";
+import { PROPERTY_DATA, DAILY_FILTER_OPTIONS } from "../../data/propertyData";
 import { RIYADH_REGION, COLORS, CITY_REGIONS } from "../../constants";
-import { useLocation, useCalendar, useDailyPrice, useBookingModal } from "../../hooks";
+import {
+  useLocation,
+  useCalendar,
+  useDailyPrice,
+  useBookingModal,
+} from "../../hooks";
 import type { CalendarDates } from "../../hooks/useCalendar";
 import {
   formatDateRange,
@@ -73,10 +87,7 @@ function isValidLongitude(value: number | undefined | null): boolean {
 
 // Helper function to check if property has valid coordinates
 function hasValidCoordinates(property: Property): boolean {
-  return (
-    isValidCoordinate(property.lat) &&
-    isValidLongitude(property.lng)
-  );
+  return isValidCoordinate(property.lat) && isValidLongitude(property.lng);
 }
 
 export default function DailyScreen(): React.JSX.Element {
@@ -85,54 +96,82 @@ export default function DailyScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const preservedCity = useAppSelector((s) => s.listingsFilters.preservedCity);
   const preservedSearchFilters = useAppSelector(
-    (s) => s.listingsFilters.preservedSearchFilters
+    (s) => s.listingsFilters.preservedSearchFilters,
   );
-  const preservedFilter = useAppSelector((s) => s.listingsFilters.preservedFilter);
-  const preservedDates = useAppSelector((s) => s.listingsFilters.preservedDates);
-  const preservedRegion = useAppSelector((s) => s.listingsFilters.preservedRegion);
+  const preservedFilter = useAppSelector(
+    (s) => s.listingsFilters.preservedFilter,
+  );
+  const preservedDates = useAppSelector(
+    (s) => s.listingsFilters.preservedDates,
+  );
+  const preservedRegion = useAppSelector(
+    (s) => s.listingsFilters.preservedRegion,
+  );
   const { t, isRTL } = useLocalization();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const counterFadeAnim = useRef(new Animated.Value(1)).current;
   const mapMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const locateMeErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markerPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const locateMeErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const lastMarkerPressTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
 
   // Initial region: prefer preservedRegion (user's location), then city from params/preserved, else null
   const initialRegionFromParams = useMemo(() => {
-    if (preservedRegion && typeof preservedRegion.latitude === "number" && typeof preservedRegion.longitude === "number") {
+    if (
+      preservedRegion &&
+      typeof preservedRegion.latitude === "number" &&
+      typeof preservedRegion.longitude === "number"
+    ) {
       return preservedRegion;
     }
     const params = route.params as { selectedCity?: string } | undefined;
     const city = params?.selectedCity || preservedCity;
-    return (city && CITY_REGIONS[city]) ? CITY_REGIONS[city] : null;
+    return city && CITY_REGIONS[city] ? CITY_REGIONS[city] : null;
   }, [route.params, preservedCity, preservedRegion]);
 
   // Determine if map can render immediately (we have a known region) or must wait for location
-  const [isMapReady, setIsMapReady] = useState<boolean>(() => initialRegionFromParams !== null);
-  const [region, setRegion] = useState(initialRegionFromParams ?? RIYADH_REGION);
-  const [homeRegion, setHomeRegion] = useState(initialRegionFromParams ?? RIYADH_REGION);
+  const [isMapReady, setIsMapReady] = useState<boolean>(
+    () => initialRegionFromParams !== null,
+  );
+  const [region, setRegion] = useState(
+    initialRegionFromParams ?? RIYADH_REGION,
+  );
+  const [homeRegion, setHomeRegion] = useState(
+    initialRegionFromParams ?? RIYADH_REGION,
+  );
   const hasCenteredOnMountRef = useRef<boolean>(false);
   const [cityModalVisible, setCityModalVisible] = useState<boolean>(false);
   const [showLocationError, setShowLocationError] = useState<boolean>(false);
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
-  
+
   // Initialize from params or preserved values
-  const routeParamsForInit = route.params as { selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
+  const routeParamsForInit = route.params as
+    | { selectedCity?: string; searchFilters?: SearchFilterState | null }
+    | undefined;
   const [selectedCity, setSelectedCity] = useState<string>(
     routeParamsForInit?.selectedCity ||
-    (preservedCity && preservedCity !== "Current Location" ? preservedCity : "") ||
-    "City"
+      (preservedCity && preservedCity !== "Current Location"
+        ? preservedCity
+        : "") ||
+      "City",
   );
   const [searchFilters, setSearchFilters] = useState<SearchFilterState | null>(
-    routeParamsForInit?.searchFilters || preservedSearchFilters
+    routeParamsForInit?.searchFilters || preservedSearchFilters,
   );
-  
+
   // Check if we should zoom out or navigate to city when navigating from list screen
   useEffect(() => {
-    const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string; searchFilters?: SearchFilterState | null };
+    const params = route.params as {
+      shouldZoomOut?: boolean;
+      selectedCity?: string;
+      searchFilters?: SearchFilterState | null;
+    };
     if (params?.shouldZoomOut && mapRef.current) {
       // If city is provided, navigate to that city, otherwise zoom out to default region
       if (params.selectedCity) {
@@ -159,7 +198,7 @@ export default function DailyScreen(): React.JSX.Element {
         setSelectedCity(params.selectedCity);
       }
     }
-    
+
     // Sync searchFilters from params
     if (params?.searchFilters !== undefined) {
       dispatch(setPreservedSearchFilters(params.searchFilters));
@@ -192,7 +231,8 @@ export default function DailyScreen(): React.JSX.Element {
       } else if (result.error) {
         setIsMapReady(true);
         setShowLocationError(true);
-        if (locateMeErrorTimeoutRef.current) clearTimeout(locateMeErrorTimeoutRef.current);
+        if (locateMeErrorTimeoutRef.current)
+          clearTimeout(locateMeErrorTimeoutRef.current);
         locateMeErrorTimeoutRef.current = setTimeout(() => {
           if (isMountedRef.current) setShowLocationError(false);
         }, 2000);
@@ -200,7 +240,8 @@ export default function DailyScreen(): React.JSX.Element {
     } catch {
       setIsMapReady(true);
       setShowLocationError(true);
-      if (locateMeErrorTimeoutRef.current) clearTimeout(locateMeErrorTimeoutRef.current);
+      if (locateMeErrorTimeoutRef.current)
+        clearTimeout(locateMeErrorTimeoutRef.current);
       locateMeErrorTimeoutRef.current = setTimeout(() => {
         if (isMountedRef.current) setShowLocationError(false);
       }, 2000);
@@ -217,19 +258,37 @@ export default function DailyScreen(): React.JSX.Element {
     if (city && CITY_REGIONS[city]) return;
     centerOnCurrentLocation();
   }, [centerOnCurrentLocation, route.params, preservedCity, preservedRegion]);
-  
+
   // Get selectedDates and selectedFilter from route params if available
-  const routeParams = route.params as { shouldZoomOut?: boolean; selectedDates?: CalendarDates; selectedFilter?: string | null; selectedCity?: string; searchFilters?: SearchFilterState | null } | undefined;
-  const initialDates = routeParams?.selectedDates || preservedDates || { startDate: null, endDate: null };
-  
-  const { selectedDates, markedDates, handleDateSelect, resetDates, setSelectedDates } =
-    useCalendar(initialDates);
+  const routeParams = route.params as
+    | {
+        shouldZoomOut?: boolean;
+        selectedDates?: CalendarDates;
+        selectedFilter?: string | null;
+        selectedCity?: string;
+        searchFilters?: SearchFilterState | null;
+      }
+    | undefined;
+  const initialDates = routeParams?.selectedDates ||
+    preservedDates || { startDate: null, endDate: null };
+
+  const {
+    selectedDates,
+    markedDates,
+    handleDateSelect,
+    resetDates,
+    setSelectedDates,
+  } = useCalendar(initialDates);
   const { calculatePrice: calculateDailyPrice } = useDailyPrice(selectedDates);
-  const { modalVisible, openModal: openBookingDateModal, closeModal: closeBookingDateModal } = useBookingModal();
-  
+  const {
+    modalVisible,
+    openModal: openBookingDateModal,
+    closeModal: closeBookingDateModal,
+  } = useBookingModal();
+
   // Track if we've shown the calendar modal on first visit
   const hasShownCalendarOnMount = useRef<boolean>(false);
-  
+
   // Sync selectedDates when route params change (when navigating from list screen)
   useEffect(() => {
     if (routeParams?.selectedDates) {
@@ -258,8 +317,11 @@ export default function DailyScreen(): React.JSX.Element {
   };
   useFocusEffect(
     useCallback(() => {
-      const { preservedCity: city, preservedSearchFilters: filters, preservedDates: dates } =
-        preservedRef.current;
+      const {
+        preservedCity: city,
+        preservedSearchFilters: filters,
+        preservedDates: dates,
+      } = preservedRef.current;
       if (filters !== undefined) {
         const next = JSON.stringify(filters);
         if (next !== lastFiltersStringRef.current) {
@@ -269,7 +331,7 @@ export default function DailyScreen(): React.JSX.Element {
       }
       if (city && city !== "Current Location") setSelectedCity(city);
       if (dates?.startDate && dates?.endDate) setSelectedDates(dates);
-    }, [])
+    }, []),
   );
 
   // When coming from BookingList via "Show Map", animate map to selected city after a short delay.
@@ -280,7 +342,9 @@ export default function DailyScreen(): React.JSX.Element {
   // → map snaps back to the old route.params.selectedCity. Bug fixed by reading via ref.
   useFocusEffect(
     useCallback(() => {
-      const params = route.params as { shouldZoomOut?: boolean; selectedCity?: string } | undefined;
+      const params = route.params as
+        | { shouldZoomOut?: boolean; selectedCity?: string }
+        | undefined;
       if (!params?.shouldZoomOut) return;
       const city = params.selectedCity || preservedRef.current.preservedCity;
       if (!city || !CITY_REGIONS[city]) return;
@@ -294,9 +358,9 @@ export default function DailyScreen(): React.JSX.Element {
         }
       }, 150);
       return () => clearTimeout(timer);
-    }, [route.params, dispatch])  // preservedCity intentionally removed from deps
+    }, [route.params, dispatch]), // preservedCity intentionally removed from deps
   );
-  
+
   // Track component mount state and cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
@@ -319,7 +383,11 @@ export default function DailyScreen(): React.JSX.Element {
 
   // Show calendar modal automatically on first visit if no dates are selected
   useEffect(() => {
-    if (!hasShownCalendarOnMount.current && !selectedDates.startDate && !selectedDates.endDate) {
+    if (
+      !hasShownCalendarOnMount.current &&
+      !selectedDates.startDate &&
+      !selectedDates.endDate
+    ) {
       hasShownCalendarOnMount.current = true;
       // Small delay to ensure the screen is fully mounted
       setTimeout(() => {
@@ -333,7 +401,7 @@ export default function DailyScreen(): React.JSX.Element {
     const base = filterDailyPropertiesByCityAndDates(
       PROPERTY_DATA,
       selectedCity,
-      { startDate: selectedDates.startDate, endDate: selectedDates.endDate }
+      { startDate: selectedDates.startDate, endDate: selectedDates.endDate },
     );
     return base.filter(hasValidCoordinates);
   }, [selectedDates.startDate, selectedDates.endDate, selectedCity]);
@@ -344,7 +412,7 @@ export default function DailyScreen(): React.JSX.Element {
       PROPERTY_DATA,
       selectedCity,
       { startDate: selectedDates.startDate, endDate: selectedDates.endDate },
-      searchFilters
+      searchFilters,
     ).filter(hasValidCoordinates);
   }, [
     selectedDates.startDate,
@@ -381,7 +449,7 @@ export default function DailyScreen(): React.JSX.Element {
         p.lat >= region.latitude - latHalf &&
         p.lat <= region.latitude + latHalf &&
         p.lng >= region.longitude - lngHalf &&
-        p.lng <= region.longitude + lngHalf
+        p.lng <= region.longitude + lngHalf,
     );
   }, [regularPropertiesOnly, region]);
 
@@ -395,7 +463,12 @@ export default function DailyScreen(): React.JSX.Element {
   // Get reservation text to display
   const reservationText = useMemo(() => {
     if (selectedDates.startDate && selectedDates.endDate) {
-      return formatDateRange(selectedDates.startDate, selectedDates.endDate, t, isRTL);
+      return formatDateRange(
+        selectedDates.startDate,
+        selectedDates.endDate,
+        t,
+        isRTL,
+      );
     }
     return t("listings.chooseReservation");
   }, [selectedDates, t, isRTL]);
@@ -413,52 +486,49 @@ export default function DailyScreen(): React.JSX.Element {
 
   const selectedProperty = useMemo(
     () => regularPropertiesOnly.find((p) => p.id === selectedId) || null,
-    [regularPropertiesOnly, selectedId]
+    [regularPropertiesOnly, selectedId],
   );
 
   // Handlers
 
-  const handleMarkerPress = useCallback(
-    (property: Property) => {
-      // Prevent rapid clicks (debounce - minimum 300ms between clicks)
-      const now = Date.now();
-      if (now - lastMarkerPressTimeRef.current < 300) {
-        return;
-      }
-      lastMarkerPressTimeRef.current = now;
+  const handleMarkerPress = useCallback((property: Property) => {
+    // Prevent rapid clicks (debounce - minimum 300ms between clicks)
+    const now = Date.now();
+    if (now - lastMarkerPressTimeRef.current < 300) {
+      return;
+    }
+    lastMarkerPressTimeRef.current = now;
 
-      // Clear any pending marker press timeout
-      if (markerPressTimeoutRef.current) {
-        clearTimeout(markerPressTimeoutRef.current);
-        markerPressTimeoutRef.current = null;
-      }
+    // Clear any pending marker press timeout
+    if (markerPressTimeoutRef.current) {
+      clearTimeout(markerPressTimeoutRef.current);
+      markerPressTimeoutRef.current = null;
+    }
 
-      // Don't handle marker press if component is unmounted
+    // Don't handle marker press if component is unmounted
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    // Use timeout to ensure map state is stable before state update
+    markerPressTimeoutRef.current = setTimeout(() => {
+      // Double-check component is still mounted
       if (!isMountedRef.current) {
         return;
       }
 
-      // Use timeout to ensure map state is stable before state update
-      markerPressTimeoutRef.current = setTimeout(() => {
-        // Double-check component is still mounted
-        if (!isMountedRef.current) {
-          return;
-        }
-
-        try {
-          setSelectedId(property.id);
-          setVisitedIds((prev) => {
-            const next = new Set(prev);
-            next.add(property.id);
-            return next;
-          });
-        } catch (error) {
-          console.warn("Error handling marker press:", error);
-        }
-      }, 100);
-    },
-    []
-  );
+      try {
+        setSelectedId(property.id);
+        setVisitedIds((prev) => {
+          const next = new Set(prev);
+          next.add(property.id);
+          return next;
+        });
+      } catch (error) {
+        console.warn("Error handling marker press:", error);
+      }
+    }, 100);
+  }, []);
 
   const handleMapPress = useCallback(() => {
     setSelectedId(null);
@@ -479,7 +549,7 @@ export default function DailyScreen(): React.JSX.Element {
     ) {
       params.selectedDates = selectedDates;
       params.calculatedPrice = calculateDailyPrice(
-        selectedProperty as DailyProperty
+        selectedProperty as DailyProperty,
       );
     }
 
@@ -533,12 +603,12 @@ export default function DailyScreen(): React.JSX.Element {
       ) {
         setRegion(newRegion);
       }
-      
+
       mapMoveTimeoutRef.current = setTimeout(() => {
         setIsMapMoving(false);
       }, 500);
     },
-    []
+    [],
   );
 
   const handleShowList = useCallback(() => {
@@ -552,7 +622,14 @@ export default function DailyScreen(): React.JSX.Element {
       visiblePropertyIds: visibleProperties.map((p) => p.id),
     };
     navigation.navigate("BookingList", params);
-  }, [selectedDates, navigation, selectedCity, searchFilters, preservedFilter, visibleProperties]);
+  }, [
+    selectedDates,
+    navigation,
+    selectedCity,
+    searchFilters,
+    preservedFilter,
+    visibleProperties,
+  ]);
 
   const handleCityPress = useCallback(() => {
     setCityModalVisible(true);
@@ -568,7 +645,7 @@ export default function DailyScreen(): React.JSX.Element {
         setRegion(cityRegion);
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleCityLocateMe = useCallback(async () => {
@@ -594,59 +671,78 @@ export default function DailyScreen(): React.JSX.Element {
   const closeFilterModal = useCallback(() => setFilterModalVisible(false), []);
 
   const handleSearchFilters = useCallback(
-    (filters: SearchFilterState | null, count: number, shouldClose?: boolean) => {
+    (
+      filters: SearchFilterState | null,
+      count: number,
+      shouldClose?: boolean,
+    ) => {
       dispatch(setPreservedSearchFilters(filters));
       setSearchFilters(filters);
       if (shouldClose) {
         setFilterModalVisible(false);
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Count active filters - price range counts as 1, property type counts as 1, all sub-options count separately
   const activeFilterCount = useMemo(() => {
     if (!searchFilters) return 0;
     let count = 0;
-    
+
     // Price range counts as 1 filter (if either from or to is set)
     if (searchFilters.fromPrice !== "" || searchFilters.toPrice !== "") {
       count++;
     }
-    
+
     // Property type counts as 1 filter
     if (searchFilters.selectedPropertyType !== null) {
       count++;
-      
+
       // Only count sub-options if property type is selected
       // Usage type
       if (searchFilters.usageType !== null) count++;
-      
+
       // Bedrooms (including "All" — user has made a selection)
       if (searchFilters.bedrooms !== "") count++;
-      
+
       // Living rooms (including "All")
       if (searchFilters.livingRooms !== "") count++;
-      
+
       // WC (including "All")
       if (searchFilters.wc !== "") count++;
-      
+
       // Villa type
       if (searchFilters.villaType !== null) count++;
-      
+
       // Count boolean filters
       const booleanFilters = [
-        "furnished", "carEntrance", "airConditioned", "privateRoof",
-        "apartmentInVilla", "twoEntrances", "specialEntrances", "nearBus",
-        "nearMetro", "pool", "footballPitch", "volleyballCourt", "tent",
-        "kitchen", "playground", "familySection", "stairs", "driverRoom",
-        "maidRoom", "basement"
+        "furnished",
+        "carEntrance",
+        "airConditioned",
+        "privateRoof",
+        "apartmentInVilla",
+        "twoEntrances",
+        "specialEntrances",
+        "nearBus",
+        "nearMetro",
+        "pool",
+        "footballPitch",
+        "volleyballCourt",
+        "tent",
+        "kitchen",
+        "playground",
+        "familySection",
+        "stairs",
+        "driverRoom",
+        "maidRoom",
+        "basement",
       ];
-      booleanFilters.forEach(key => {
+      booleanFilters.forEach((key) => {
         if (searchFilters[key as keyof SearchFilterState] === true) count++;
       });
     }
-    
+
     return count;
   }, [searchFilters]);
 
@@ -678,7 +774,7 @@ export default function DailyScreen(): React.JSX.Element {
 
       return (
         <Marker
-          key={`${p.id}-${isSelected ? 'selected' : 'unselected'}-${isVisited ? 'visited' : 'unvisited'}-${calculatedPriceValue || 'no-price'}`}
+          key={`${p.id}-${isSelected ? "selected" : "unselected"}-${isVisited ? "visited" : "unvisited"}-${calculatedPriceValue || "no-price"}`}
           coordinate={{ latitude: p.lat, longitude: p.lng }}
           anchor={{ x: 0.5, y: 1 }}
           onPress={() => handleMarkerPress(p)}
@@ -694,7 +790,7 @@ export default function DailyScreen(): React.JSX.Element {
         </Marker>
       );
     },
-    [selectedId, visitedIds, calculateDailyPrice, handleMarkerPress]
+    [selectedId, visitedIds, calculateDailyPrice, handleMarkerPress],
   );
 
   const cardVisible = !!selectedProperty;
@@ -724,7 +820,12 @@ export default function DailyScreen(): React.JSX.Element {
       )}
 
       {/* Daily Listing Header - Three Fixed White Boxes (Fixed at top, below status bar) */}
-      <View style={[styles.dailyHeaderFixedContainer, { paddingTop: insets.top + hp(1) }]}>
+      <View
+        style={[
+          styles.dailyHeaderFixedContainer,
+          { paddingTop: insets.top + hp(1) },
+        ]}
+      >
         <DailyHeaderBoxes
           reservationText={reservationText}
           onReservationPress={openBookingDateModal}
@@ -772,8 +873,7 @@ export default function DailyScreen(): React.JSX.Element {
         listingType="daily"
         filterOptions={DAILY_FILTER_OPTIONS}
         calculatedPrice={
-          selectedProperty &&
-          selectedProperty.listingType === "daily"
+          selectedProperty && selectedProperty.listingType === "daily"
             ? calculateDailyPrice(selectedProperty as DailyProperty)
             : null
         }
@@ -850,4 +950,3 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 });
-

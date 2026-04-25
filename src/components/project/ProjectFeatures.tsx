@@ -115,14 +115,19 @@ const getFeatureIcon = (featureName: string): FeatureIconConfig => {
  */
 const getFeatureTranslationKey = (featureName: string): string => {
   const lowerName = featureName.toLowerCase();
-  if (lowerName.includes("location") || lowerName.includes("special")) return "location";
+  if (lowerName.includes("location") || lowerName.includes("special"))
+    return "location";
   if (lowerName.includes("parking")) return "parking";
   if (lowerName.includes("security")) return "security";
-  if (lowerName.includes("garden") || lowerName.includes("green")) return "garden";
-  if (lowerName.includes("pool") || lowerName.includes("swimming")) return "pool";
+  if (lowerName.includes("garden") || lowerName.includes("green"))
+    return "garden";
+  if (lowerName.includes("pool") || lowerName.includes("swimming"))
+    return "pool";
   if (lowerName.includes("gym") || lowerName.includes("fitness")) return "gym";
-  if (lowerName.includes("kids") || lowerName.includes("playground")) return "kids";
-  if (lowerName.includes("design") || lowerName.includes("modern")) return "design";
+  if (lowerName.includes("kids") || lowerName.includes("playground"))
+    return "kids";
+  if (lowerName.includes("design") || lowerName.includes("modern"))
+    return "design";
   if (lowerName.includes("luxury")) return "luxury";
   if (lowerName.includes("prime")) return "prime";
   if (lowerName.includes("central")) return "central";
@@ -161,7 +166,7 @@ const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const featureList = features ?? [];
@@ -175,7 +180,10 @@ const ProjectFeatures = memo<ProjectFeaturesProps>(({ features = [] }) => {
         {featureList.map((feature, index) => {
           const iconConfig = getFeatureIcon(feature);
           return (
-            <View key={index} style={[styles.featureItem, rtlStyles.featureItem]}>
+            <View
+              key={index}
+              style={[styles.featureItem, rtlStyles.featureItem]}
+            >
               <View style={[styles.featureIconBox, rtlStyles.featureIconBox]}>
                 <View
                   style={[

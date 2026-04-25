@@ -25,7 +25,7 @@ const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 if (!publishableKey) {
   throw new Error(
-    "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
+    "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env",
   );
 }
 
@@ -35,7 +35,7 @@ const LocalizationInitializer: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const isInitialized = useAppSelector(
-    (state) => state.localization.isInitialized
+    (state) => state.localization.isInitialized,
   );
 
   useEffect(() => {
@@ -59,25 +59,28 @@ export default function App(): React.JSX.Element {
     <GestureHandlerRootView style={styles.flex}>
       <ErrorBoundary>
         <Provider store={store}>
-        <I18nextProvider i18n={i18n}>
-          <LocalizationInitializer>
-            <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-              <AuthProvider>
-                <SafeAreaProvider>
-                  <SupabaseProvider>
-                  {/* <SafeAreaView> */}
-                    <SearchRequestProvider>
-                      <NavigationContainer>
-                        <AppNavigator />
-                      </NavigationContainer>
-                    </SearchRequestProvider>
-                    {/* </SafeAreaView> */}
-                  </SupabaseProvider>
-                </SafeAreaProvider>
-              </AuthProvider>
-            </ClerkProvider>
-          </LocalizationInitializer>
-        </I18nextProvider>
+          <I18nextProvider i18n={i18n}>
+            <LocalizationInitializer>
+              <ClerkProvider
+                publishableKey={publishableKey}
+                tokenCache={tokenCache}
+              >
+                <AuthProvider>
+                  <SafeAreaProvider>
+                    <SupabaseProvider>
+                      {/* <SafeAreaView> */}
+                      <SearchRequestProvider>
+                        <NavigationContainer>
+                          <AppNavigator />
+                        </NavigationContainer>
+                      </SearchRequestProvider>
+                      {/* </SafeAreaView> */}
+                    </SupabaseProvider>
+                  </SafeAreaProvider>
+                </AuthProvider>
+              </ClerkProvider>
+            </LocalizationInitializer>
+          </I18nextProvider>
         </Provider>
       </ErrorBoundary>
     </GestureHandlerRootView>

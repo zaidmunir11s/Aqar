@@ -7,11 +7,7 @@ import {
   Image,
   Platform,
 } from "react-native";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-  Feather,
-} from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -43,7 +39,13 @@ function PropertyInfoMetaIcon({
   }
   const color = "#9ca3af";
   if (spec.library === "MaterialCommunityIcons") {
-    return <MaterialCommunityIcons name={spec.name as any} size={size} color={color} />;
+    return (
+      <MaterialCommunityIcons
+        name={spec.name as any}
+        size={size}
+        color={color}
+      />
+    );
   }
   if (spec.library === "Feather") {
     return <Feather name={spec.name as any} size={size} color={color} />;
@@ -53,7 +55,7 @@ function PropertyInfoMetaIcon({
 
 function formatBottomCardDetailValue(
   row: PropertyDetailInfoRow,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string {
   if (row.label === t("listings.area")) {
     const trimmed = row.value.trim();
@@ -85,17 +87,23 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
     const rtlStyles = useMemo(
       () => ({
         contentRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         bottomCardImage: {
           marginRight: isRTL ? 0 : wp(3),
           marginLeft: isRTL ? wp(3) : 0,
         },
         bottomMetaRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         bottomMetaItem: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
           marginRight: isRTL ? 0 : wp(4),
           marginLeft: isRTL ? wp(4) : 0,
         },
@@ -113,7 +121,7 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     const mapMetaRows = useMemo(() => {
@@ -140,7 +148,9 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
           {/* Price on top */}
           <View style={styles.priceContainer}>
             <Text style={[styles.bottomPrice, rtlStyles.bottomPrice]}>
-              {t("listings.from")} {property.projectDetails.minPrice.toLocaleString()} {t("listings.sar")}
+              {t("listings.from")}{" "}
+              {property.projectDetails.minPrice.toLocaleString()}{" "}
+              {t("listings.sar")}
             </Text>
           </View>
 
@@ -160,7 +170,9 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
               <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
                 <View style={[styles.bottomMetaItem, rtlStyles.bottomMetaItem]}>
                   <Ionicons name="business" size={wp(4)} color="#9ca3af" />
-                  <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
+                  <Text
+                    style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                  >
                     {property.projectDetails.unitCount} {t("listings.units")}
                   </Text>
                 </View>
@@ -170,14 +182,19 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
                     size={wp(4)}
                     color="#9ca3af"
                   />
-                  <Text style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}>
+                  <Text
+                    style={[styles.bottomMetaText, rtlStyles.bottomMetaText]}
+                  >
                     {property.projectDetails.minArea}-
                     {property.projectDetails.maxArea} {t("listings.m2")}
                   </Text>
                 </View>
               </View>
 
-              <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.bottomAddress]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.bottomAddress, rtlStyles.bottomAddress]}
+              >
                 {translateAddress(property.address, t)}
               </Text>
             </View>
@@ -187,19 +204,22 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
     }
 
     // Helper function to translate property type
-    const getTranslatedTypeLabel = (type: string, filterOptions: FilterOption[]): string => {
+    const getTranslatedTypeLabel = (
+      type: string,
+      filterOptions: FilterOption[],
+    ): string => {
       const opt = filterOptions.find((o) => o.type === type);
       if (!opt) return type;
-      
+
       // Try to find translation in propertyTypes
       const translationKey = `listings.propertyTypes.${type}`;
       const translated = t(translationKey);
-      
+
       // If translation exists and is different from the key, use it
       if (translated && translated !== translationKey) {
         return translated;
       }
-      
+
       // Fallback to filter option label
       return opt.label;
     };
@@ -216,9 +236,10 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
         priceLine = `${calculatedPrice} ${t("listings.sar")}`;
       } else {
         const dailyProperty = property as any;
-        priceLine = dailyProperty.bookingType === "daily" 
-          ? t("listings.daily") 
-          : t("listings.monthly");
+        priceLine =
+          dailyProperty.bookingType === "daily"
+            ? t("listings.daily")
+            : t("listings.monthly");
       }
     } else if (listingType === "rent") {
       title = `${typeLabel} ${t("listings.forRent")}`;
@@ -265,7 +286,9 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
           />
 
           <View style={styles.bottomCardContent}>
-            <Text style={[styles.bottomTitle, rtlStyles.bottomTitle]}>{title}</Text>
+            <Text style={[styles.bottomTitle, rtlStyles.bottomTitle]}>
+              {title}
+            </Text>
 
             {mapMetaRows.length > 0 ? (
               <View style={[styles.bottomMetaRow, rtlStyles.bottomMetaRow]}>
@@ -287,14 +310,17 @@ const BottomPropertyCard = memo<BottomPropertyCardProps>(
               </View>
             ) : null}
 
-            <Text numberOfLines={1} style={[styles.bottomAddress, rtlStyles.bottomAddress]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.bottomAddress, rtlStyles.bottomAddress]}
+            >
               {translateAddress(property.address, t)}
             </Text>
           </View>
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 BottomPropertyCard.displayName = "BottomPropertyCard";

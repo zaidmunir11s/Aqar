@@ -50,22 +50,35 @@ export default function LocationPickerBottomSheet({
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const dimensionsSub = Dimensions.addEventListener("change", ({ window }) => {
-      windowHeightRef.current = window.height;
-    });
+    const dimensionsSub = Dimensions.addEventListener(
+      "change",
+      ({ window }) => {
+        windowHeightRef.current = window.height;
+      },
+    );
 
     const onShow = (event: any) => {
       const screenY = event?.endCoordinates?.screenY;
       const eventHeight = event?.endCoordinates?.height;
       const overlapFromScreenY =
-        typeof screenY === "number" ? Math.max(0, windowHeightRef.current - screenY) : 0;
-      const overlapFromHeight = typeof eventHeight === "number" ? Math.max(0, eventHeight) : 0;
+        typeof screenY === "number"
+          ? Math.max(0, windowHeightRef.current - screenY)
+          : 0;
+      const overlapFromHeight =
+        typeof eventHeight === "number" ? Math.max(0, eventHeight) : 0;
       const overlapFromMetrics = Keyboard.metrics?.()?.height ?? 0;
-      const keyboardHeight = Math.max(overlapFromScreenY, overlapFromHeight, overlapFromMetrics);
-      const compensatedHeight = keyboardHeight + (Platform.OS === "android" ? insets.bottom : 0);
+      const keyboardHeight = Math.max(
+        overlapFromScreenY,
+        overlapFromHeight,
+        overlapFromMetrics,
+      );
+      const compensatedHeight =
+        keyboardHeight + (Platform.OS === "android" ? insets.bottom : 0);
       setIsKeyboardVisible(true);
       Animated.timing(keyboardOffset, {
         toValue: compensatedHeight,
@@ -93,7 +106,7 @@ export default function LocationPickerBottomSheet({
 
   const bottomPadding = useMemo(
     () => (isKeyboardVisible ? hp(1) : insets.bottom + hp(1)),
-    [insets.bottom, isKeyboardVisible]
+    [insets.bottom, isKeyboardVisible],
   );
 
   const rtlStyles = useMemo(
@@ -117,14 +130,24 @@ export default function LocationPickerBottomSheet({
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <Animated.View style={[styles.sheet, { marginBottom: keyboardOffset, paddingBottom: bottomPadding }]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            { marginBottom: keyboardOffset, paddingBottom: bottomPadding },
+          ]}
+        >
           <View style={[styles.header, rtlStyles.header]}>
             <TouchableOpacity onPress={onClose} style={styles.headerIconButton}>
               <Ionicons
@@ -133,7 +156,9 @@ export default function LocationPickerBottomSheet({
                 color={COLORS.primary}
               />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>{title}</Text>
+            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
+              {title}
+            </Text>
           </View>
 
           <View style={[styles.searchWrap, rtlStyles.searchWrap]}>
@@ -145,7 +170,10 @@ export default function LocationPickerBottomSheet({
               style={[styles.searchInput, rtlStyles.searchInput]}
             />
             {searchValue ? (
-              <TouchableOpacity onPress={() => onSearchChange("")} style={styles.searchAction}>
+              <TouchableOpacity
+                onPress={() => onSearchChange("")}
+                style={styles.searchAction}
+              >
                 <Ionicons name="close" size={wp(5)} color="#6b7280" />
               </TouchableOpacity>
             ) : null}
@@ -158,10 +186,18 @@ export default function LocationPickerBottomSheet({
             contentContainerStyle={styles.listContent}
             renderItem={({ item, index }) => (
               <View>
-                <TouchableOpacity style={styles.listItem} activeOpacity={0.75} onPress={() => onSelect(item)}>
-                  <Text style={[styles.listItemText, rtlStyles.listItemText]}>{item}</Text>
+                <TouchableOpacity
+                  style={styles.listItem}
+                  activeOpacity={0.75}
+                  onPress={() => onSelect(item)}
+                >
+                  <Text style={[styles.listItemText, rtlStyles.listItemText]}>
+                    {item}
+                  </Text>
                 </TouchableOpacity>
-                {index < options.length - 1 ? <View style={styles.divider} /> : null}
+                {index < options.length - 1 ? (
+                  <View style={styles.divider} />
+                ) : null}
               </View>
             )}
           />

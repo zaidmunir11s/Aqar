@@ -40,7 +40,7 @@ export interface FieldConfig {
   options?: string[];
   placeholder?: string;
   modalOptions?: string[];
-  toggles?: Array<{ label: string; valueKey: string }>;
+  toggles?: { label: string; valueKey: string }[];
   fromValueKey?: string;
   toValueKey?: string;
   valueKey?: string;
@@ -70,13 +70,21 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
           return (
             <PriceInputSection
               key={index}
-              label={field.label || "Price"}
+              label={field.label || t("listings.price")}
               fromValue={state[field.fromValueKey || ""] || ""}
               toValue={state[field.toValueKey || ""] || ""}
-              onFromChange={handlers[`set${field.fromValueKey?.charAt(0).toUpperCase()}${field.fromValueKey?.slice(1)}`] || (() => {})}
-              onToChange={handlers[`set${field.toValueKey?.charAt(0).toUpperCase()}${field.toValueKey?.slice(1)}`] || (() => {})}
-              fromPlaceholder={field.fromPlaceholder || "From price"}
-              toPlaceholder={field.toPlaceholder || "To price"}
+              onFromChange={
+                handlers[
+                  `set${field.fromValueKey?.charAt(0).toUpperCase()}${field.fromValueKey?.slice(1)}`
+                ] || (() => {})
+              }
+              onToChange={
+                handlers[
+                  `set${field.toValueKey?.charAt(0).toUpperCase()}${field.toValueKey?.slice(1)}`
+                ] || (() => {})
+              }
+              fromPlaceholder={field.fromPlaceholder || t("listings.fromPrice")}
+              toPlaceholder={field.toPlaceholder || t("listings.toPrice")}
             />
           );
 
@@ -84,13 +92,21 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
           return (
             <PriceInputSection
               key={index}
-              label={field.label || "Area (m²)"}
+              label={field.label || t("listings.areaM2")}
               fromValue={state[field.fromValueKey || ""] || ""}
               toValue={state[field.toValueKey || ""] || ""}
-              onFromChange={handlers[`set${field.fromValueKey?.charAt(0).toUpperCase()}${field.fromValueKey?.slice(1)}`] || (() => {})}
-              onToChange={handlers[`set${field.toValueKey?.charAt(0).toUpperCase()}${field.toValueKey?.slice(1)}`] || (() => {})}
-              fromPlaceholder={field.fromPlaceholder || "From area"}
-              toPlaceholder={field.toPlaceholder || "To area"}
+              onFromChange={
+                handlers[
+                  `set${field.fromValueKey?.charAt(0).toUpperCase()}${field.fromValueKey?.slice(1)}`
+                ] || (() => {})
+              }
+              onToChange={
+                handlers[
+                  `set${field.toValueKey?.charAt(0).toUpperCase()}${field.toValueKey?.slice(1)}`
+                ] || (() => {})
+              }
+              fromPlaceholder={field.fromPlaceholder || t("listings.fromArea")}
+              toPlaceholder={field.toPlaceholder || t("listings.toArea")}
             />
           );
 
@@ -101,7 +117,11 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
               label={field.label}
               options={field.options || []}
               selectedValue={state[field.selectedValueKey || ""] || null}
-              onSelect={handlers[`handle${field.selectedValueKey?.charAt(0).toUpperCase()}${field.selectedValueKey?.slice(1)}Press`] || (() => {})}
+              onSelect={
+                handlers[
+                  `handle${field.selectedValueKey?.charAt(0).toUpperCase()}${field.selectedValueKey?.slice(1)}Press`
+                ] || (() => {})
+              }
             />
           );
 
@@ -111,7 +131,7 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
               key={index}
               label={field.label || ""}
               value={state[field.valueKey || ""] || ""}
-              placeholder={field.placeholder || "Select"}
+              placeholder={field.placeholder || t("common.select")}
               onPress={modalHandlers[field.valueKey || ""] || (() => {})}
               backgroundColor={field.backgroundColor || "white"}
             />
@@ -125,7 +145,10 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
               toggles={field.toggles.map((toggle) => ({
                 label: toggle.label,
                 value: state[toggle.valueKey] ?? true,
-                onValueChange: handlers[`set${toggle.valueKey.charAt(0).toUpperCase()}${toggle.valueKey.slice(1)}`] || (() => {}),
+                onValueChange:
+                  handlers[
+                    `set${toggle.valueKey.charAt(0).toUpperCase()}${toggle.valueKey.slice(1)}`
+                  ] || (() => {}),
               }))}
             />
           );
@@ -135,7 +158,11 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
             <RentPaymentFrequencyChips
               key={index}
               selectedFrequency={state[field.valueKey || "rentPeriod"] ?? null}
-              onSelect={handlers[`handle${field.valueKey?.charAt(0).toUpperCase()}${field.valueKey?.slice(1)}Press`] || (() => {})}
+              onSelect={
+                handlers[
+                  `handle${field.valueKey?.charAt(0).toUpperCase()}${field.valueKey?.slice(1)}Press`
+                ] || (() => {})
+              }
             />
           );
 
@@ -144,8 +171,14 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
             <PaymentChips
               key={index}
               label={t("listings.paymentOptions")}
-              selectedPayment={state[field.selectedValueKey || "selectedPayment"] || null}
-              onSelect={handlers[`handle${field.selectedValueKey?.charAt(0).toUpperCase()}${field.selectedValueKey?.slice(1)}Press`] || (() => {})}
+              selectedPayment={
+                state[field.selectedValueKey || "selectedPayment"] || null
+              }
+              onSelect={
+                handlers[
+                  `handle${field.selectedValueKey?.charAt(0).toUpperCase()}${field.selectedValueKey?.slice(1)}Press`
+                ] || (() => {})
+              }
             />
           );
 
@@ -155,7 +188,7 @@ const CategorySectionRenderer = memo<CategorySectionRendererProps>(
     };
 
     return <>{fields.map((field, index) => renderField(field, index))}</>;
-  }
+  },
 );
 
 CategorySectionRenderer.displayName = "CategorySectionRenderer";
@@ -172,4 +205,3 @@ const styles = StyleSheet.create({
 });
 
 export default CategorySectionRenderer;
-

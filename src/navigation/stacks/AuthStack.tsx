@@ -30,7 +30,10 @@ export default function AuthStack(): React.JSX.Element {
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
-      <Stack.Screen name="VerifyPhoneNumber" component={VerifyPhoneNumberScreen} />
+      <Stack.Screen
+        name="VerifyPhoneNumber"
+        component={VerifyPhoneNumberScreen}
+      />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} />
       <Stack.Screen name="UpdateProfile" component={UpdateProfileScreen} />

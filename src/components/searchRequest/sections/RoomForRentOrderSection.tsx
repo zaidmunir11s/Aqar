@@ -1,5 +1,9 @@
 import React, { memo } from "react";
-import { RentPaymentFrequencyChips, PriceInputSection, ToggleGroup } from "../../index";
+import {
+  RentPaymentFrequencyChips,
+  PriceInputSection,
+  ToggleGroup,
+} from "../../index";
 import {
   getRentSearchPriceLabel,
   type RentPaymentFrequency,
@@ -24,15 +28,40 @@ interface Props {
 }
 
 function Comp(p: Props): React.JSX.Element {
-  return <>
-    <RentPaymentFrequencyChips selectedFrequency={p.roomRentRentPeriod} onSelect={p.onRentPeriodSelect} />
-    <PriceInputSection label={getRentSearchPriceLabel(p.roomRentRentPeriod, p.t)} fromValue={p.roomRentPriceFrom} toValue={p.roomRentPriceTo} onFromChange={p.onPriceFromChange} onToChange={p.onPriceToChange} />
-    <ToggleGroup toggles={[
-      { label: p.t("listings.kitchen"), value: p.roomRentKitchen, onValueChange: p.onKitchenChange },
-      { label: p.t("listings.nearBus"), value: p.nearBus, onValueChange: p.onNearBusChange },
-      { label: p.t("listings.nearMetro"), value: p.nearMetro, onValueChange: p.onNearMetroChange },
-    ]} />
-  </>;
+  return (
+    <>
+      <RentPaymentFrequencyChips
+        selectedFrequency={p.roomRentRentPeriod}
+        onSelect={p.onRentPeriodSelect}
+      />
+      <PriceInputSection
+        label={getRentSearchPriceLabel(p.roomRentRentPeriod, p.t)}
+        fromValue={p.roomRentPriceFrom}
+        toValue={p.roomRentPriceTo}
+        onFromChange={p.onPriceFromChange}
+        onToChange={p.onPriceToChange}
+      />
+      <ToggleGroup
+        toggles={[
+          {
+            label: p.t("listings.kitchen"),
+            value: p.roomRentKitchen,
+            onValueChange: p.onKitchenChange,
+          },
+          {
+            label: p.t("listings.nearBus"),
+            value: p.nearBus,
+            onValueChange: p.onNearBusChange,
+          },
+          {
+            label: p.t("listings.nearMetro"),
+            value: p.nearMetro,
+            onValueChange: p.onNearMetroChange,
+          },
+        ]}
+      />
+    </>
+  );
 }
 
 export const RoomForRentOrderSection = memo(Comp);

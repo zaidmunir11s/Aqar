@@ -24,7 +24,7 @@ export default function AppNavigator(): React.JSX.Element {
 
   const profileTabListeners = React.useMemo(
     () => createProfileTabListeners(isLoaded, isAuthenticated),
-    [isLoaded, isAuthenticated]
+    [isLoaded, isAuthenticated],
   );
 
   return (
@@ -41,7 +41,9 @@ export default function AppNavigator(): React.JSX.Element {
         component={AuthStack}
         options={{
           tabBarLabel: t("navigation.profile"),
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={wp(6)} color={color} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" size={wp(6)} color={color} />
+          ),
         }}
         listeners={profileTabListeners}
       />
@@ -51,7 +53,9 @@ export default function AppNavigator(): React.JSX.Element {
         component={ListingsStack}
         options={{
           tabBarLabel: t("navigation.listings"),
-          tabBarIcon: ({ color }) => <Ionicons name="albums" size={wp(6)} color={color} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="albums" size={wp(6)} color={color} />
+          ),
         }}
       />
 
@@ -154,7 +158,11 @@ export default function AppNavigator(): React.JSX.Element {
         options={{
           tabBarLabel: t("navigation.services"),
           tabBarIcon: ({ color }) => (
-            <ServicesTabIcon color={color} isRTL={isRTL} newLabel={t("navigation.new")} />
+            <ServicesTabIcon
+              color={color}
+              isRTL={isRTL}
+              newLabel={t("navigation.new")}
+            />
           ),
         }}
       />

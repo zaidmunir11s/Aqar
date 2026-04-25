@@ -33,7 +33,7 @@ const Stack = createNativeStackNavigator();
 
 export default function DailyStack(): React.JSX.Element {
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       screenOptions={{ headerShown: false }}
       initialRouteName="BookingList"
     >
@@ -49,16 +49,43 @@ export default function DailyStack(): React.JSX.Element {
       <Stack.Screen name="AddListing" component={AddListingScreen} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} />
       <Stack.Screen name="Licence" component={Step1LicenseScreen} />
-      <Stack.Screen name="BrokerIssueAdLicense" component={BrokerIssueAdLicenseScreen} />
-      <Stack.Screen name="PublishLicenseAdvertisement" component={PublishLicenseAdvertisementScreen} />
-      <Stack.Screen name="DeedOwnerInformation" component={DeedOwnerInformationScreen} />
-      <Stack.Screen name="MarketingRequestPlaceholder" component={MarketingRequestPlaceholderScreen} />
-      <Stack.Screen name="MarketingRequestMedia" component={MarketingRequestMediaScreen} />
+      <Stack.Screen
+        name="BrokerIssueAdLicense"
+        component={BrokerIssueAdLicenseScreen}
+      />
+      <Stack.Screen
+        name="PublishLicenseAdvertisement"
+        component={PublishLicenseAdvertisementScreen}
+      />
+      <Stack.Screen
+        name="DeedOwnerInformation"
+        component={DeedOwnerInformationScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestPlaceholder"
+        component={MarketingRequestPlaceholderScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestMedia"
+        component={MarketingRequestMediaScreen}
+      />
       <Stack.Screen name="AttachMedia" component={AttachMediaScreen} />
-      <Stack.Screen name="MarketingRequestAlbums" component={MarketingRequestAlbumsScreen} />
-      <Stack.Screen name="MarketingRequestAlbumAssets" component={MarketingRequestAlbumAssetsScreen} />
-      <Stack.Screen name="MarketingRequestAttachments" component={MarketingRequestAttachmentsScreen} />
-      <Stack.Screen name="AddRentalUnitOnboarding" component={AddRentalUnitOnboardingScreen} />
+      <Stack.Screen
+        name="MarketingRequestAlbums"
+        component={MarketingRequestAlbumsScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestAlbumAssets"
+        component={MarketingRequestAlbumAssetsScreen}
+      />
+      <Stack.Screen
+        name="MarketingRequestAttachments"
+        component={MarketingRequestAttachmentsScreen}
+      />
+      <Stack.Screen
+        name="AddRentalUnitOnboarding"
+        component={AddRentalUnitOnboardingScreen}
+      />
       <Stack.Screen name="ChooseCategory" component={ChooseCategoryScreen} />
       <Stack.Screen name="SearchRequest" component={SearchRequestScreen} />
       <Stack.Screen name="NewOrder" component={NewOrderScreen} />
@@ -68,4 +95,3 @@ export default function DailyStack(): React.JSX.Element {
     </Stack.Navigator>
   );
 }
-

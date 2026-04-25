@@ -33,14 +33,16 @@ const ProjectsCard = memo<ProjectsCardProps>(
         projectsCard: {
           left: isRTL ? undefined : wp(4),
           right: isRTL ? wp(4) : undefined,
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         projectIconContainer: {
           marginRight: isRTL ? 0 : wp(3),
           marginLeft: isRTL ? wp(3) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -48,12 +50,14 @@ const ProjectsCard = memo<ProjectsCardProps>(
         style={[
           showBelow ? styles.projectsCardBelow : styles.projectsCard,
           rtlStyles.projectsCard,
-          { top: hp(17) + top }
+          { top: hp(17) + top },
         ]}
         onPress={onPress}
         activeOpacity={0.8}
       >
-        <View style={[styles.projectIconContainer, rtlStyles.projectIconContainer]}>
+        <View
+          style={[styles.projectIconContainer, rtlStyles.projectIconContainer]}
+        >
           <Ionicons name="business" size={wp(8)} color="#d97706" />
         </View>
         <View>
@@ -64,7 +68,7 @@ const ProjectsCard = memo<ProjectsCardProps>(
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ProjectsCard.displayName = "ProjectsCard";

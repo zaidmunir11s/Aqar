@@ -3,21 +3,56 @@ import type { Property, PropertyType } from "../types/property";
 /** Max chips on map bottom card (target 2–3 core fields). */
 export const MAP_CARD_MAX_CORE_FIELDS = 3;
 
-const RESIDENTIAL = ["listings.area", "listings.bedrooms", "listings.restrooms"] as const;
-const LAND = ["listings.area", "listings.streetWidth", "listings.landType"] as const;
-const STORE = ["listings.area", "listings.streetDirection", "listings.streetWidth"] as const;
-const ROOM = ["listings.area", "listings.streetWidth", "listings.realEstateAge"] as const;
-const OFFICE = ["listings.area", "listings.streetDirection", "listings.streetWidth"] as const;
-const BUILDING = ["listings.area", "listings.rooms", "listings.streetWidth"] as const;
-const FARM = ["listings.area", "listings.streetWidth", "listings.well"] as const;
+const RESIDENTIAL = [
+  "listings.area",
+  "listings.bedrooms",
+  "listings.restrooms",
+] as const;
+const LAND = [
+  "listings.area",
+  "listings.streetWidth",
+  "listings.landType",
+] as const;
+const STORE = [
+  "listings.area",
+  "listings.streetDirection",
+  "listings.streetWidth",
+] as const;
+const ROOM = [
+  "listings.area",
+  "listings.streetWidth",
+  "listings.realEstateAge",
+] as const;
+const OFFICE = [
+  "listings.area",
+  "listings.streetDirection",
+  "listings.streetWidth",
+] as const;
+const BUILDING = [
+  "listings.area",
+  "listings.rooms",
+  "listings.streetWidth",
+] as const;
+const FARM = [
+  "listings.area",
+  "listings.streetWidth",
+  "listings.well",
+] as const;
 const TENT_ONLY = ["listings.area"] as const;
-const FLOOR_SALE = ["listings.area", "listings.bedrooms", "listings.floor"] as const;
+const FLOOR_SALE = [
+  "listings.area",
+  "listings.bedrooms",
+  "listings.floor",
+] as const;
 
 /**
  * Core Property Information fields to surface on the map card, in order.
  * Matches marketing-request category forms (`rent-1` … `sale-9`).
  */
-export const MARKETING_CATEGORY_CORE_FIELD_KEYS: Record<string, readonly string[]> = {
+export const MARKETING_CATEGORY_CORE_FIELD_KEYS: Record<
+  string,
+  readonly string[]
+> = {
   "rent-1": [...RESIDENTIAL],
   "rent-2": [...RESIDENTIAL],
   "rent-3": [...RESIDENTIAL],
@@ -64,7 +99,9 @@ const TYPE_FALLBACK: Partial<Record<PropertyType, readonly string[]>> = {
   other: [...RESIDENTIAL],
 };
 
-export function resolveMapCardCoreFieldKeys(property: Property): readonly string[] {
+export function resolveMapCardCoreFieldKeys(
+  property: Property,
+): readonly string[] {
   const cid = property.categoryId?.trim();
   if (cid && MARKETING_CATEGORY_CORE_FIELD_KEYS[cid]) {
     return MARKETING_CATEGORY_CORE_FIELD_KEYS[cid];

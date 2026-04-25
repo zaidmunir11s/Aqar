@@ -8,7 +8,7 @@ import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 
 export interface ProfileTabsProps {
-  tabs?: string[];                    // English/default keys, e.g. ["Ads", "Deals", "Reviews"]
+  tabs?: string[]; // English/default keys, e.g. ["Ads", "Deals", "Reviews"]
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -35,7 +35,9 @@ const ProfileTabs = memo<ProfileTabsProps>(
       };
 
       const translationKey = keyMap[tabKey];
-      return translationKey ? t(translationKey, { defaultValue: tabKey }) : tabKey;
+      return translationKey
+        ? t(translationKey, { defaultValue: tabKey })
+        : tabKey;
     };
 
     return (
@@ -81,7 +83,7 @@ const ProfileTabs = memo<ProfileTabsProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 ProfileTabs.displayName = "ProfileTabs";

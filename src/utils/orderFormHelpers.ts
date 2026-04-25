@@ -5,9 +5,14 @@
 /**
  * Creates a toggle handler for tab bar selections
  */
+import type {
+  RentPaymentFrequency,
+  RentPaymentFrequencyChoice,
+} from "../constants/orderFormOptions";
+
 export function createToggleHandler<T>(
   currentValue: T | null,
-  setValue: (value: T | null) => void
+  setValue: (value: T | null) => void,
 ) {
   return (value: T) => {
     if (currentValue === value) {
@@ -18,15 +23,13 @@ export function createToggleHandler<T>(
   };
 }
 
-import type { RentPaymentFrequency, RentPaymentFrequencyChoice } from "../constants/orderFormOptions";
-
 /**
  * Creates a rent payment-frequency handler (Yearly / Semi Annual / Quarterly / Monthly).
  */
 export function createRentPeriodHandler(
   currentPeriod: RentPaymentFrequency,
   setPeriod: (period: RentPaymentFrequency) => void,
-  setPayment?: (payment: string | null) => void
+  setPayment?: (payment: string | null) => void,
 ) {
   return (period: RentPaymentFrequencyChoice) => {
     if (currentPeriod === period) {
@@ -37,4 +40,3 @@ export function createRentPeriodHandler(
     }
   };
 }
-

@@ -35,7 +35,9 @@ const ServiceCard = memo<ServiceCardProps>(
           />
         );
       }
-      return <Ionicons name={iconName as any} size={wp(8)} color={COLORS.primary} />;
+      return (
+        <Ionicons name={iconName as any} size={wp(8)} color={COLORS.primary} />
+      );
     };
 
     return (
@@ -48,7 +50,7 @@ const ServiceCard = memo<ServiceCardProps>(
         <Text style={styles.serviceCardTitle}>{title}</Text>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ServiceCard.displayName = "ServiceCard";
@@ -69,7 +71,7 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         shadowOffset: { width: 0, height: 2 },
       },
-      android: { 
+      android: {
         elevation: 2,
         backgroundColor: "#ffffff",
       },

@@ -1,5 +1,11 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  useWindowDimensions,
+} from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -32,7 +38,7 @@ const ProfileAdsTabs = memo<ProfileAdsTabsProps>(
           marginHorizontal: -LIST_CONTENT_HORIZONTAL_PADDING,
         },
       ],
-      [windowWidth]
+      [windowWidth],
     );
 
     const tabs = useMemo(
@@ -47,7 +53,7 @@ const ProfileAdsTabs = memo<ProfileAdsTabsProps>(
             label: t("profile.archivedAdsWithCount", { count: archivedCount }),
           },
         ] as const,
-      [t, currentCount, archivedCount]
+      [t, currentCount, archivedCount],
     );
 
     return (
@@ -90,7 +96,7 @@ const ProfileAdsTabs = memo<ProfileAdsTabsProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 ProfileAdsTabs.displayName = "ProfileAdsTabs";

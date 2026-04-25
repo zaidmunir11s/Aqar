@@ -27,10 +27,15 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         rentPeriodContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         rentPeriodText: {
-          textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
+          textAlign: (isRTL ? "right" : "center") as
+            | "left"
+            | "right"
+            | "center",
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         firstSegment: {
@@ -39,7 +44,10 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
           borderTopRightRadius: isRTL ? wp(1.5) : 0,
           borderBottomRightRadius: isRTL ? wp(1.5) : 0,
           // Divider between Yearly and Monthly
-          ...(!isRTL && { borderRightWidth: 1, borderRightColor: COLORS.border }),
+          ...(!isRTL && {
+            borderRightWidth: 1,
+            borderRightColor: COLORS.border,
+          }),
           ...(isRTL && { borderLeftWidth: 1, borderLeftColor: COLORS.border }),
         },
         lastSegment: {
@@ -51,13 +59,17 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
           borderLeftWidth: 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
       <View style={styles.section}>
-        <Text style={[styles.label, rtlStyles.label]}>{t("listings.rentPeriod")}</Text>
-        <View style={[styles.rentPeriodContainer, rtlStyles.rentPeriodContainer]}>
+        <Text style={[styles.label, rtlStyles.label]}>
+          {t("listings.rentPeriod")}
+        </Text>
+        <View
+          style={[styles.rentPeriodContainer, rtlStyles.rentPeriodContainer]}
+        >
           <TouchableOpacity
             style={[
               styles.rentPeriodSegment,
@@ -101,7 +113,7 @@ const RentPeriodTabBar = memo<RentPeriodTabBarProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 RentPeriodTabBar.displayName = "RentPeriodTabBar";
@@ -159,4 +171,3 @@ const styles = StyleSheet.create({
 });
 
 export default RentPeriodTabBar;
-

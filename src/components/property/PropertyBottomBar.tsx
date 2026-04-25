@@ -41,10 +41,12 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
     const rtlStyles = useMemo(
       () => ({
         bottomBar: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -114,7 +116,7 @@ const PropertyBottomBar = memo<PropertyBottomBarProps>(
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 PropertyBottomBar.displayName = "PropertyBottomBar";

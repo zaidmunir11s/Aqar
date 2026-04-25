@@ -20,7 +20,7 @@ export type ListingMediaKindApi = "PHOTO" | "VIDEO";
 
 function inferListingMediaKind(
   uri: string,
-  mediaType?: string
+  mediaType?: string,
 ): ListingMediaKindApi {
   if (mediaType === "video") return "VIDEO";
   if (mediaType === "photo") return "PHOTO";
@@ -94,7 +94,7 @@ export type UploadedListingMedia = {
 export async function uploadListingMediaToSupabase(
   supabase: SupabaseClient,
   items: UploadMediaItem[],
-  options?: { bucket?: string; prefix?: string }
+  options?: { bucket?: string; prefix?: string },
 ): Promise<UploadedListingMedia[]> {
   const bucket = options?.bucket ?? DEFAULT_LISTING_IMAGES_BUCKET;
   const prefix = options?.prefix ?? "listings";
@@ -112,12 +112,16 @@ export async function uploadListingMediaToSupabase(
     // iOS Photos URIs (`ph://...`) aren't fetchable. Resolve to a local file URI via MediaLibrary.
     if (trimmed.startsWith("ph://")) {
       if (!assetId) {
-        throw new Error("Could not read iOS photo. Missing assetId for ph:// URI.");
+        throw new Error(
+          "Could not read iOS photo. Missing assetId for ph:// URI.",
+        );
       }
       const info = await MediaLibrary.getAssetInfoAsync(assetId);
       const resolved = info.localUri || info.uri;
       if (!resolved || resolved.startsWith("ph://")) {
-        throw new Error("Could not access iOS photo file. Please re-select the media.");
+        throw new Error(
+          "Could not access iOS photo file. Please re-select the media.",
+        );
       }
       trimmed = resolved;
     }
@@ -125,11 +129,10 @@ export async function uploadListingMediaToSupabase(
     // iOS often provides HEIC; convert to JPEG so it renders everywhere.
     let ext = extFromUriAndType(trimmed, mediaType);
     if (kind === "PHOTO" && ext === "heic") {
-      const manipulated = await ImageManipulator.manipulateAsync(
-        trimmed,
-        [],
-        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
-      );
+      const manipulated = await ImageManipulator.manipulateAsync(trimmed, [], {
+        compress: 0.9,
+        format: ImageManipulator.SaveFormat.JPEG,
+      });
       trimmed = manipulated.uri;
       ext = "jpg";
     }
@@ -138,22 +141,25 @@ export async function uploadListingMediaToSupabase(
     const contentType = contentTypeForExt(ext);
 
     // Prefer FileSystem for local URIs (more reliable than fetch(file://...) on iOS).
-    const payload: Blob | ArrayBuffer =
-      trimmed.startsWith("file://")
-        ? await readFileUriAsArrayBuffer(trimmed)
-        : await (async () => {
-            const res = await fetch(trimmed);
-            if (!res.ok) {
-              throw new Error(`Could not read file (${res.status})`);
-            }
-            const blob = await res.blob();
-            // If the blob is empty, fall back to FileSystem if possible.
-            const size = (blob as any)?.size;
-            if (typeof size === "number" && size <= 0 && trimmed.startsWith("file://")) {
-              return await readFileUriAsArrayBuffer(trimmed);
-            }
-            return blob;
-          })();
+    const payload: Blob | ArrayBuffer = trimmed.startsWith("file://")
+      ? await readFileUriAsArrayBuffer(trimmed)
+      : await (async () => {
+          const res = await fetch(trimmed);
+          if (!res.ok) {
+            throw new Error(`Could not read file (${res.status})`);
+          }
+          const blob = await res.blob();
+          // If the blob is empty, fall back to FileSystem if possible.
+          const size = (blob as any)?.size;
+          if (
+            typeof size === "number" &&
+            size <= 0 &&
+            trimmed.startsWith("file://")
+          ) {
+            return await readFileUriAsArrayBuffer(trimmed);
+          }
+          return blob;
+        })();
 
     const { error: upErr } = await supabase.storage
       .from(bucket)

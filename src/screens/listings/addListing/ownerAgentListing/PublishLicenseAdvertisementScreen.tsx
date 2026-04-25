@@ -38,7 +38,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
       t("listings.licenseStep3"),
       t("listings.licenseStep4"),
     ],
-    [t]
+    [t],
   );
 
   const requirements = useMemo(
@@ -47,7 +47,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
       t("listings.licenseReq2"),
       t("listings.licenseReq3"),
     ],
-    [t]
+    [t],
   );
 
   // RTL-aware styles
@@ -76,7 +76,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = () => {
@@ -135,7 +135,11 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
       >
         <View style={styles.card}>
           <View style={[styles.noticeCard, rtlStyles.noticeRow]}>
-            <Ionicons name="checkmark-circle" size={wp(5)} color={COLORS.primary} />
+            <Ionicons
+              name="checkmark-circle"
+              size={wp(5)}
+              color={COLORS.primary}
+            />
             <Text style={[styles.noticeText, rtlStyles.noticeText]}>
               {t("listings.licenseExemptNotice")}
             </Text>
@@ -149,9 +153,7 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
             />
           </View>
 
-          <Text style={styles.heading}>
-            {t("listings.baytIssuesLicenses")}
-          </Text>
+          <Text style={styles.heading}>{t("listings.baytIssuesLicenses")}</Text>
 
           <View style={styles.stepsContainer}>
             <Text style={[styles.stepsTitle, rtlStyles.stepsTitle]}>
@@ -160,7 +162,9 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
             {steps.map((step, index) => (
               <View key={index} style={[styles.stepItem, rtlStyles.stepItem]}>
                 <View style={[styles.bullet, rtlStyles.bullet]} />
-                <Text style={[styles.stepText, rtlStyles.stepText]}>{step}</Text>
+                <Text style={[styles.stepText, rtlStyles.stepText]}>
+                  {step}
+                </Text>
               </View>
             ))}
           </View>
@@ -172,7 +176,9 @@ export default function PublishLicenseAdvertisementScreen(): React.JSX.Element {
             {requirements.map((item, index) => (
               <View key={index} style={[styles.stepItem, rtlStyles.stepItem]}>
                 <View style={[styles.bullet, rtlStyles.bullet]} />
-                <Text style={[styles.stepText, rtlStyles.stepText]}>{item}</Text>
+                <Text style={[styles.stepText, rtlStyles.stepText]}>
+                  {item}
+                </Text>
               </View>
             ))}
           </View>
@@ -310,5 +316,3 @@ const styles = StyleSheet.create({
     marginTop: hp(0.8),
   },
 });
-
-

@@ -118,14 +118,16 @@ const TextInput = memo<TextInputProps>(
     // Determine if we should show password toggle
     const shouldShowPasswordToggle = isPassword && showPasswordToggle;
     const actualSecureTextEntry = isPassword ? !showPassword : secureTextEntry;
-    
+
     // RTL-aware styles - only apply to password inputs (for show/hide button)
     // Phone number inputs should stay LTR (prefix on left)
     const rtlStyles = useMemo(
       () => ({
         inputWrapper: {
           // Only reverse for password inputs with toggle
-          flexDirection: (isRTL && shouldShowPasswordToggle ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL && shouldShowPasswordToggle
+            ? "row-reverse"
+            : "row") as "row" | "row-reverse",
         },
         input: {
           // Shift cursor to right for RTL
@@ -143,7 +145,7 @@ const TextInput = memo<TextInputProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL, shouldShowPasswordToggle]
+      [isRTL, shouldShowPasswordToggle],
     );
 
     // Render label icon
@@ -322,17 +324,23 @@ const TextInput = memo<TextInputProps>(
           />
 
           {/* Suffix */}
-          {suffix && <Text style={[styles.suffix, rtlStyles.suffix, suffixStyle]}>{suffix}</Text>}
+          {suffix && (
+            <Text style={[styles.suffix, rtlStyles.suffix, suffixStyle]}>
+              {suffix}
+            </Text>
+          )}
 
           {/* Right Action */}
           {renderRightAction()}
         </View>
 
         {/* Error Message */}
-        {hasError && <Text style={[styles.errorText, rtlStyles.errorText]}>{error}</Text>}
+        {hasError && (
+          <Text style={[styles.errorText, rtlStyles.errorText]}>{error}</Text>
+        )}
       </View>
     );
-  }
+  },
 );
 
 TextInput.displayName = "TextInput";

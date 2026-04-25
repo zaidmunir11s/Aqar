@@ -113,7 +113,7 @@ export const COLORS = {
   arrows: "#0e856a",
   todayDate: "#0e856a",
 
-  //modal button background color like Reserve button, 
+  //modal button background color like Reserve button,
   modalButton: "#1A253D",
 
   //Login and other button diasable

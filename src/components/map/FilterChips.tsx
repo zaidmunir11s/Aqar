@@ -27,7 +27,13 @@ export interface FilterChipsProps {
  * Filter chips component for map screen
  */
 const FilterChips = memo<FilterChipsProps>(
-  ({ filterOptions, activeFilter, onFilterChange, onSearchPress, variant = "map" }) => {
+  ({
+    filterOptions,
+    activeFilter,
+    onFilterChange,
+    onSearchPress,
+    variant = "map",
+  }) => {
     const { t, isRTL } = useLocalization();
     const scrollViewRef = useRef<ScrollView>(null);
     const insets = useSafeAreaInsets();
@@ -36,17 +42,23 @@ const FilterChips = memo<FilterChipsProps>(
     const getTranslatedLabel = useMemo(() => {
       return (filter: FilterOption): string => {
         // Handle "All For Rent" - check both label and id
-        if (filter.label === "All For Rent" || (filter.id === "all" && filter.label.toLowerCase().includes("rent"))) {
+        if (
+          filter.label === "All For Rent" ||
+          (filter.id === "all" && filter.label.toLowerCase().includes("rent"))
+        ) {
           const translated = t("listings.allForRent");
           return translated;
         }
-        
+
         // Handle "All For Sale" - check both label and id
-        if (filter.label === "All For Sale" || (filter.id === "all" && filter.label.toLowerCase().includes("sale"))) {
+        if (
+          filter.label === "All For Sale" ||
+          (filter.id === "all" && filter.label.toLowerCase().includes("sale"))
+        ) {
           const translated = t("listings.allForSale");
           return translated;
         }
-        
+
         // Handle "All"
         if (filter.label === "All" && filter.id === "all") {
           const translated = t("listings.all");
@@ -59,7 +71,10 @@ const FilterChips = memo<FilterChipsProps>(
         }
 
         // Handle booking variants (they have "for booking" in the label)
-        if (filter.label.toLowerCase().includes("for booking") && filter.id !== "all") {
+        if (
+          filter.label.toLowerCase().includes("for booking") &&
+          filter.id !== "all"
+        ) {
           const typeKey = filter.type || filter.id;
           if (typeKey) {
             const bookingKey = `${typeKey}ForBooking`;
@@ -81,7 +96,7 @@ const FilterChips = memo<FilterChipsProps>(
             return translated;
           }
         }
-        
+
         // Fallback to original label
         return filter.label;
       };
@@ -89,8 +104,8 @@ const FilterChips = memo<FilterChipsProps>(
 
     // Create a unique key for filterOptions to track changes
     const filterOptionsKey = useMemo(
-      () => filterOptions.map(f => f.id).join('-'),
-      [filterOptions]
+      () => filterOptions.map((f) => f.id).join("-"),
+      [filterOptions],
     );
 
     // Reset scroll position when filterOptions change (tab switch)
@@ -127,10 +142,14 @@ const FilterChips = memo<FilterChipsProps>(
     const rtlStyles = useMemo(
       () => ({
         chipsContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         searchButton: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
           marginRight: isRTL ? 0 : wp(2),
           marginLeft: isRTL ? wp(2) : 0,
         },
@@ -139,20 +158,32 @@ const FilterChips = memo<FilterChipsProps>(
           marginLeft: isRTL ? wp(2) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
-      <View style={[styles.chipsContainer, rtlStyles.chipsContainer, variant === "list" && styles.chipsContainerList, { top: hp(10) + top }]}>
-        <TouchableOpacity style={[styles.searchButton, rtlStyles.searchButton]} onPress={onSearchPress}>
+      <View
+        style={[
+          styles.chipsContainer,
+          rtlStyles.chipsContainer,
+          variant === "list" && styles.chipsContainerList,
+          { top: hp(10) + top },
+        ]}
+      >
+        <TouchableOpacity
+          style={[styles.searchButton, rtlStyles.searchButton]}
+          onPress={onSearchPress}
+        >
           <Text style={styles.searchText}>{t("common.search")}</Text>
           <Ionicons name="search" size={wp(4.5)} color="#fff" />
         </TouchableOpacity>
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
-          horizontal 
+          horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={isRTL ? { flexDirection: "row-reverse" as const } : undefined}
+          contentContainerStyle={
+            isRTL ? { flexDirection: "row-reverse" as const } : undefined
+          }
         >
           {filterOptions.map((filter) => (
             <TouchableOpacity
@@ -178,7 +209,7 @@ const FilterChips = memo<FilterChipsProps>(
         </ScrollView>
       </View>
     );
-  }
+  },
 );
 
 FilterChips.displayName = "FilterChips";

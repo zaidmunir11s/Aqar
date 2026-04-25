@@ -30,7 +30,7 @@ export function clearApiListingProperties(): void {
 }
 
 export function getPropertyByServerListingId(
-  serverId: string
+  serverId: string,
 ): Property | undefined {
   return apiListingByServerId.get(serverId);
 }

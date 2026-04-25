@@ -33,7 +33,7 @@ const ActionButtons = memo<ActionButtonsProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -43,11 +43,7 @@ const ActionButtons = memo<ActionButtonsProps>(
           onPress={onFavoritesPress}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name="heart"
-            size={wp(5)}
-            color={COLORS.textSecondary}
-          />
+          <Ionicons name="heart" size={wp(5)} color={COLORS.textSecondary} />
           <Text style={[styles.buttonText, rtlStyles.text]}>
             {t("common.favorites", { defaultValue: "Favorites" })}
           </Text>
@@ -69,7 +65,7 @@ const ActionButtons = memo<ActionButtonsProps>(
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 ActionButtons.displayName = "ActionButtons";

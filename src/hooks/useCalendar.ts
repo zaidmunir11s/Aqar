@@ -23,7 +23,7 @@ export interface MarkedDates {
  * @returns Calendar state and functions
  */
 export function useCalendar(
-  initialDates: CalendarDates = { startDate: null, endDate: null }
+  initialDates: CalendarDates = { startDate: null, endDate: null },
 ) {
   const [selectedDates, setSelectedDates] =
     useState<CalendarDates>(initialDates);
@@ -63,17 +63,17 @@ export function useCalendar(
             endDate: selectedDates.startDate,
           });
           setMarkedDates(
-            generateMarkedDates(dateString, selectedDates.startDate)
+            generateMarkedDates(dateString, selectedDates.startDate),
           );
         } else {
           setSelectedDates({ ...selectedDates, endDate: dateString });
           setMarkedDates(
-            generateMarkedDates(selectedDates.startDate, dateString)
+            generateMarkedDates(selectedDates.startDate, dateString),
           );
         }
       }
     },
-    [selectedDates]
+    [selectedDates],
   );
 
   const resetDates = useCallback(() => {
@@ -98,7 +98,7 @@ export function useCalendar(
  */
 function generateMarkedDates(
   startDateStr: string,
-  endDateStr: string
+  endDateStr: string,
 ): MarkedDates {
   const newMarked: MarkedDates = {};
   let currentDate = new Date(startDateStr);
@@ -129,7 +129,7 @@ function generateMarkedDates(
  */
 export function generatePeriodMarkedDates(
   startDateStr: string,
-  endDateStr: string
+  endDateStr: string,
 ): MarkedDates {
   const newMarked: MarkedDates = {};
   let currentDate = new Date(startDateStr);

@@ -10,7 +10,6 @@ import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { SlidersHorizontal } from "lucide-react-native";
 
-
 interface DailyHeaderBoxesProps {
   reservationText: string;
   onReservationPress: () => void;
@@ -49,18 +48,28 @@ export default function DailyHeaderBoxes({
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
-    <View style={[styles.container, containerStyle, { paddingHorizontal: Math.max(insets.left, insets.right) }]}>
+    <View
+      style={[
+        styles.container,
+        containerStyle,
+        { paddingHorizontal: Math.max(insets.left, insets.right) },
+      ]}
+    >
       <View style={[styles.boxes, rtlStyles.boxes]}>
         <TouchableOpacity
           style={[styles.box, styles.boxFirst, rtlStyles.box]}
           onPress={onReservationPress}
           activeOpacity={0.7}
         >
-          <MaterialIcons name="calendar-month" size={wp(5)} color={COLORS.textSecondary} />
+          <MaterialIcons
+            name="calendar-month"
+            size={wp(5)}
+            color={COLORS.textSecondary}
+          />
           <Text
             style={[styles.boxText, rtlStyles.boxText]}
             numberOfLines={1}
@@ -75,7 +84,11 @@ export default function DailyHeaderBoxes({
           onPress={onCityPress}
           activeOpacity={0.7}
         >
-          <MaterialCommunityIcons name="map-marker-radius-outline" size={wp(5)} color={COLORS.textSecondary} />
+          <MaterialCommunityIcons
+            name="map-marker-radius-outline"
+            size={wp(5)}
+            color={COLORS.textSecondary}
+          />
           <Text
             style={[styles.boxText, rtlStyles.boxText]}
             numberOfLines={1}
@@ -101,14 +114,14 @@ export default function DailyHeaderBoxes({
               if (translated === translationKey) {
                 // Handle "Al Khobar" -> "khobar", "Macca" -> "mecca", etc.
                 const cityVariations: { [key: string]: string } = {
-                  "alkhobar": "khobar",
-                  "macca": "mecca",
-                  "buraydah": "buraidah",
-                  "khamismushait": "khamisMushait",
-                  "alkharj": "kharj",
-                  "hafralbatin": "hafrAlBatin",
-                  "riyadhalkhabra": "riyadhAlKhabra",
-                  "aljubail": "alJubail",
+                  alkhobar: "khobar",
+                  macca: "mecca",
+                  buraydah: "buraidah",
+                  khamismushait: "khamisMushait",
+                  alkharj: "kharj",
+                  hafralbatin: "hafrAlBatin",
+                  riyadhalkhabra: "riyadhAlKhabra",
+                  aljubail: "alJubail",
                 };
 
                 const variation = cityVariations[cityKey];
@@ -129,7 +142,7 @@ export default function DailyHeaderBoxes({
             styles.box,
             rtlStyles.box,
             filterCount > 0 && styles.boxWithFilters,
-            filterCount > 0 && { borderColor: COLORS.primary, borderWidth: 2 }
+            filterCount > 0 && { borderColor: COLORS.primary, borderWidth: 2 },
           ]}
           onPress={onFiltersPress}
           activeOpacity={0.7}
@@ -149,10 +162,12 @@ export default function DailyHeaderBoxes({
             </Text>
           </View>
           {filterCount > 0 && (
-            <View style={[
-              styles.filterBadge,
-              isRTL ? styles.filterBadgeRTL : styles.filterBadgeLTR
-            ]}>
+            <View
+              style={[
+                styles.filterBadge,
+                isRTL ? styles.filterBadgeRTL : styles.filterBadgeLTR,
+              ]}
+            >
               <Text style={styles.filterBadgeText}>{filterCount}</Text>
             </View>
           )}
@@ -227,4 +242,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

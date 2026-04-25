@@ -22,7 +22,9 @@ const ActionOptionCard = memo<ActionOptionCardProps>(
     const rtlStyles = useMemo(
       () => ({
         row: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         textWrap: {
           marginLeft: isRTL ? 0 : wp(3),
@@ -32,20 +34,31 @@ const ActionOptionCard = memo<ActionOptionCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
-      <TouchableOpacity style={[styles.card, rtlStyles.row]} activeOpacity={0.85} onPress={onPress}>
+      <TouchableOpacity
+        style={[styles.card, rtlStyles.row]}
+        activeOpacity={0.85}
+        onPress={onPress}
+      >
         <View style={styles.iconWrap}>
-          <MaterialCommunityIcons name={icon} size={wp(7)} color={COLORS.primary} />
+          <MaterialCommunityIcons
+            name={icon}
+            size={wp(7)}
+            color={COLORS.primary}
+          />
         </View>
 
         <View style={[styles.textWrap, rtlStyles.textWrap]}>
           <Text style={[styles.title, rtlStyles.textAlign]} numberOfLines={1}>
             {title}
           </Text>
-          <Text style={[styles.description, rtlStyles.textAlign]} numberOfLines={2}>
+          <Text
+            style={[styles.description, rtlStyles.textAlign]}
+            numberOfLines={2}
+          >
             {description}
           </Text>
         </View>
@@ -57,7 +70,7 @@ const ActionOptionCard = memo<ActionOptionCardProps>(
         />
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ActionOptionCard.displayName = "ActionOptionCard";

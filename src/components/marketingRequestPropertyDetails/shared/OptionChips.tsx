@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -46,7 +52,11 @@ export default function OptionChips({
     const lw = layoutWidthRef.current;
     const cw = contentWidthRef.current;
     if (cw > lw) {
-      scrollRef.current?.scrollTo({ x: Math.max(0, cw - lw), y: 0, animated: false });
+      scrollRef.current?.scrollTo({
+        x: Math.max(0, cw - lw),
+        y: 0,
+        animated: false,
+      });
     }
   }, [isRTL, scrollable]);
 
@@ -71,7 +81,7 @@ export default function OptionChips({
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const chips = options.map((option) => {
@@ -110,7 +120,10 @@ export default function OptionChips({
           ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContentBase, rtlStyles.scrollContent]}
+          contentContainerStyle={[
+            styles.scrollContentBase,
+            rtlStyles.scrollContent,
+          ]}
           onLayout={(e) => {
             layoutWidthRef.current = e.nativeEvent.layout.width;
             alignRtlScrollStart();

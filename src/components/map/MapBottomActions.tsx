@@ -63,17 +63,21 @@ const MapBottomActions = memo<MapBottomActionsProps>(
           right: isRTL ? wp(4) : undefined,
         },
         bottomActions: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         showListBtn: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         showListText: {
           marginLeft: isRTL ? 0 : wp(2),
           marginRight: isRTL ? wp(2) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -81,10 +85,15 @@ const MapBottomActions = memo<MapBottomActionsProps>(
         {/* Counter badge */}
         {totalCount > 0 && (
           <Animated.View
-            style={[styles.counterBadge, rtlStyles.counterBadge, { opacity: counterFadeAnim }]}
+            style={[
+              styles.counterBadge,
+              rtlStyles.counterBadge,
+              { opacity: counterFadeAnim },
+            ]}
           >
             <Text style={styles.counterText}>
-              {visibleCount} {t("listings.of")} {totalCount} {t("listings.shown")}
+              {visibleCount} {t("listings.of")} {totalCount}{" "}
+              {t("listings.shown")}
             </Text>
           </Animated.View>
         )}
@@ -131,8 +140,8 @@ const MapBottomActions = memo<MapBottomActionsProps>(
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.addBtn, { borderColor: addBtnBorderColor }]} 
+          <TouchableOpacity
+            style={[styles.addBtn, { borderColor: addBtnBorderColor }]}
             onPress={onAddPress}
           >
             <Text style={[styles.plusIcon, { color: addBtnTextColor }]}>+</Text>
@@ -143,7 +152,7 @@ const MapBottomActions = memo<MapBottomActionsProps>(
         </View>
       </>
     );
-  }
+  },
 );
 
 MapBottomActions.displayName = "MapBottomActions";

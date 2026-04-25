@@ -24,14 +24,14 @@ interface SearchRequestOrderModalsProps {
     originalValue: string | null,
     reverseMap: Record<string, string>,
     translatedOptions: string[],
-    originalOptions?: string[]
+    originalOptions?: string[],
   ) => string;
   streetDirectionModalValue: string;
   streetWidthModalValue: string;
 }
 
 export default function SearchRequestOrderModals(
-  props: SearchRequestOrderModalsProps
+  props: SearchRequestOrderModalsProps,
 ): React.JSX.Element {
   const {
     form,
@@ -60,7 +60,7 @@ export default function SearchRequestOrderModals(
         onSelect={(translatedValue: string) => {
           const originalValue =
             Object.keys(categoryTranslationMap).find(
-              (key) => categoryTranslationMap[key] === translatedValue
+              (key) => categoryTranslationMap[key] === translatedValue,
             ) || translatedValue;
           form.handleCategorySelect(originalValue);
         }}
@@ -74,7 +74,8 @@ export default function SearchRequestOrderModals(
         visible={form.showFloorModal}
         onClose={() => form.setShowFloorModal(false)}
         onSelect={(translatedValue: string) => {
-          const originalValue = floorReverseMap[translatedValue] || translatedValue;
+          const originalValue =
+            floorReverseMap[translatedValue] || translatedValue;
           form.handleFloorSelect(originalValue);
         }}
         title={t("listings.selectFloor")}
@@ -83,7 +84,7 @@ export default function SearchRequestOrderModals(
           form.floor,
           floorReverseMap,
           translatedFloorOptions,
-          FLOOR_OPTIONS
+          FLOOR_OPTIONS,
         )}
       />
 
@@ -92,7 +93,8 @@ export default function SearchRequestOrderModals(
         visible={form.showAgeModal}
         onClose={() => form.setShowAgeModal(false)}
         onSelect={(translatedValue: string) => {
-          const originalValue = ageReverseMap[translatedValue] || translatedValue;
+          const originalValue =
+            ageReverseMap[translatedValue] || translatedValue;
           form.handleAgeSelect(originalValue);
         }}
         title={t("listings.selectAge")}
@@ -101,7 +103,7 @@ export default function SearchRequestOrderModals(
           form.age,
           ageReverseMap,
           translatedAgeOptions,
-          AGE_OPTIONS
+          AGE_OPTIONS,
         )}
       />
 
@@ -119,7 +121,7 @@ export default function SearchRequestOrderModals(
         initialValue={getTranslatedInitialValue(
           streetDirectionModalValue,
           streetDirectionReverseMap,
-          translatedStreetDirectionOptions
+          translatedStreetDirectionOptions,
         )}
       />
 
@@ -128,7 +130,8 @@ export default function SearchRequestOrderModals(
         visible={form.showStreetWidthModal}
         onClose={() => form.setShowStreetWidthModal(false)}
         onSelect={(translatedValue: string) => {
-          const originalValue = streetWidthReverseMap[translatedValue] || translatedValue;
+          const originalValue =
+            streetWidthReverseMap[translatedValue] || translatedValue;
           form.handleStreetWidthSelect(originalValue);
         }}
         title={t("listings.selectStreetWidth")}
@@ -136,7 +139,7 @@ export default function SearchRequestOrderModals(
         initialValue={getTranslatedInitialValue(
           streetWidthModalValue,
           streetWidthReverseMap,
-          translatedStreetWidthOptions
+          translatedStreetWidthOptions,
         )}
       />
 
@@ -153,9 +156,10 @@ export default function SearchRequestOrderModals(
         }}
         title={t("listings.selectStores")}
         options={STORES_OPTIONS}
-        initialValue={form.isBuildingForSale ? form.stores : form.buildingRentStores}
+        initialValue={
+          form.isBuildingForSale ? form.stores : form.buildingRentStores
+        }
       />
     </>
   );
 }
-

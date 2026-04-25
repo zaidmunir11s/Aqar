@@ -45,11 +45,14 @@ const listingsFiltersSlice = createSlice({
     },
     setPreservedSearchFilters: (
       state,
-      action: PayloadAction<SearchFilterState | null>
+      action: PayloadAction<SearchFilterState | null>,
     ) => {
       state.preservedSearchFilters = action.payload;
     },
-    setPreservedRegion: (state, action: PayloadAction<PreservedRegion | null>) => {
+    setPreservedRegion: (
+      state,
+      action: PayloadAction<PreservedRegion | null>,
+    ) => {
       state.preservedRegion = action.payload;
     },
   },

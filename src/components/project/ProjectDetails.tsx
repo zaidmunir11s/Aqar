@@ -27,7 +27,9 @@ const ProjectDetails = memo<ProjectDetailsProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         detailItem: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         detailIconContainer: {
           marginRight: isRTL ? 0 : wp(3),
@@ -40,7 +42,7 @@ const ProjectDetails = memo<ProjectDetailsProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -50,7 +52,9 @@ const ProjectDetails = memo<ProjectDetailsProps>(
         </Text>
 
         <View style={[styles.detailItem, rtlStyles.detailItem]}>
-          <View style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}>
+          <View
+            style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}
+          >
             <MaterialCommunityIcons
               name="office-building"
               size={wp(6)}
@@ -68,7 +72,9 @@ const ProjectDetails = memo<ProjectDetailsProps>(
         </View>
 
         <View style={[styles.detailItem, rtlStyles.detailItem]}>
-          <View style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}>
+          <View
+            style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}
+          >
             <MaterialCommunityIcons
               name="floor-plan"
               size={wp(6)}
@@ -80,13 +86,16 @@ const ProjectDetails = memo<ProjectDetailsProps>(
               {t("projects.areas")}
             </Text>
             <Text style={[styles.detailValue, rtlStyles.detailValue]}>
-              {t("projects.from")} {projectDetails.minArea} {t("listings.m2")} {t("projects.to")} {projectDetails.maxArea} {t("listings.m2")}
+              {t("projects.from")} {projectDetails.minArea} {t("listings.m2")}{" "}
+              {t("projects.to")} {projectDetails.maxArea} {t("listings.m2")}
             </Text>
           </View>
         </View>
 
         <View style={[styles.detailItem, rtlStyles.detailItem]}>
-          <View style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}>
+          <View
+            style={[styles.detailIconContainer, rtlStyles.detailIconContainer]}
+          >
             <MaterialCommunityIcons
               name="cash-multiple"
               size={wp(6)}
@@ -98,14 +107,15 @@ const ProjectDetails = memo<ProjectDetailsProps>(
               {t("projects.prices")}
             </Text>
             <Text style={[styles.detailValue, rtlStyles.detailValue]}>
-              {t("projects.from")} {projectDetails.minPrice.toLocaleString()} {t("listings.sar")} {t("projects.to")}{" "}
+              {t("projects.from")} {projectDetails.minPrice.toLocaleString()}{" "}
+              {t("listings.sar")} {t("projects.to")}{" "}
               {projectDetails.maxPrice.toLocaleString()} {t("listings.sar")}
             </Text>
           </View>
         </View>
       </View>
     );
-  }
+  },
 );
 
 ProjectDetails.displayName = "ProjectDetails";

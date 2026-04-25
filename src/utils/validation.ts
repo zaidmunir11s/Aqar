@@ -44,7 +44,7 @@ type PasswordValidationMode = "detailed" | "generic";
  */
 export function getPasswordValidationError(
   password: string,
-  mode: PasswordValidationMode = "detailed"
+  mode: PasswordValidationMode = "detailed",
 ): string {
   const getRuleKey = (detailedKey: string): string =>
     mode === "detailed" ? detailedKey : "auth.invalidPassword";

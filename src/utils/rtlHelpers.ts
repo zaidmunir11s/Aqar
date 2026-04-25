@@ -1,4 +1,4 @@
-import { I18nManager } from 'react-native';
+import { I18nManager } from "react-native";
 
 // Explicitly disable auto-flipping - we handle RTL manually through styles
 // This prevents React Native from automatically flipping the entire layout
@@ -10,27 +10,27 @@ I18nManager.swapLeftAndRightInRTL(false); // Disable automatic left/right swappi
 /**
  * Get RTL-aware flex direction
  */
-export const getFlexDirection = (isRTL: boolean): 'row' | 'row-reverse' => {
-  return isRTL ? 'row-reverse' : 'row';
+export const getFlexDirection = (isRTL: boolean): "row" | "row-reverse" => {
+  return isRTL ? "row-reverse" : "row";
 };
 
 /**
  * Get RTL-aware text align
  */
-export const getTextAlign = (isRTL: boolean): 'left' | 'right' => {
-  return isRTL ? 'right' : 'left';
+export const getTextAlign = (isRTL: boolean): "left" | "right" => {
+  return isRTL ? "right" : "left";
 };
 
 /**
  * Get RTL-aware margin/padding start
  */
-export const getStart = (isRTL: boolean): 'marginLeft' | 'marginRight' => {
-  return isRTL ? 'marginRight' : 'marginLeft';
+export const getStart = (isRTL: boolean): "marginLeft" | "marginRight" => {
+  return isRTL ? "marginRight" : "marginLeft";
 };
 
 /**
  * Get RTL-aware margin/padding end
  */
-export const getEnd = (isRTL: boolean): 'marginLeft' | 'marginRight' => {
-  return isRTL ? 'marginLeft' : 'marginRight';
+export const getEnd = (isRTL: boolean): "marginLeft" | "marginRight" => {
+  return isRTL ? "marginLeft" : "marginRight";
 };

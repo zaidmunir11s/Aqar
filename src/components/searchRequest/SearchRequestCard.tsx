@@ -1,11 +1,10 @@
 import React, { memo, useMemo, useState, useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
-import { Ionicons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -40,11 +39,15 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const listingType = useMemo(() => {
-      const lt = request?.category ? getListingTypeFromCategory(request.category) : null;
+      const lt = request?.category
+        ? getListingTypeFromCategory(request.category)
+        : null;
       return lt;
     }, [request?.category]);
     const propertyType = useMemo(() => {
-      const pt = request?.category ? getPropertyTypeFromCategory(request.category) : null;
+      const pt = request?.category
+        ? getPropertyTypeFromCategory(request.category)
+        : null;
       return pt;
     }, [request?.category]);
 
@@ -56,7 +59,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
             listingType: listingType === "sale" ? "SALE" : "RENT",
             ...(propertyType ? { propertyType } : {}),
           }
-        : { page: 1, limit: 200 }
+        : { page: 1, limit: 200 },
     );
 
     const candidateProperties = useMemo(() => {
@@ -66,102 +69,166 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
 
     const matchCount = useMemo(() => {
       if (!request) return 0;
-      return findMatchingPropertiesFromList(candidateProperties, request).length;
+      return findMatchingPropertiesFromList(candidateProperties, request)
+        .length;
     }, [candidateProperties, request]);
 
     // Helper function to translate street direction
-    const translateStreetDirection = useCallback((direction: string): string => {
-      if (!direction) return "";
-      if (direction === "North") return t("listings.address.north");
-      if (direction === "East") return t("listings.address.east");
-      if (direction === "West") return t("listings.address.west");
-      if (direction === "South") return t("listings.address.south");
-      if (direction === "Northeast") return t("listings.northeast");
-      if (direction === "Southeast") return t("listings.southeast");
-      if (direction === "Southwest") return t("listings.southwest");
-      if (direction === "Northwest") return t("listings.northwest");
-      if (direction === "3 Streets") return t("listings.threeStreets");
-      if (direction === "4 Streets") return t("listings.fourStreets");
-      return direction;
-    }, [t]);
+    const translateStreetDirection = useCallback(
+      (direction: string): string => {
+        if (!direction) return "";
+        if (direction === "North") return t("listings.address.north");
+        if (direction === "East") return t("listings.address.east");
+        if (direction === "West") return t("listings.address.west");
+        if (direction === "South") return t("listings.address.south");
+        if (direction === "Northeast") return t("listings.northeast");
+        if (direction === "Southeast") return t("listings.southeast");
+        if (direction === "Southwest") return t("listings.southwest");
+        if (direction === "Northwest") return t("listings.northwest");
+        if (direction === "3 Streets") return t("listings.threeStreets");
+        if (direction === "4 Streets") return t("listings.fourStreets");
+        return direction;
+      },
+      [t],
+    );
 
     // Helper function to translate villa type
-    const translateVillaType = useCallback((type: string): string => {
-      if (!type) return "";
-      if (type === "Standalone") return t("listings.standalone");
-      if (type === "Duplex") return t("listings.duplex");
-      if (type === "Townhouse") return t("listings.townhouse");
-      return type;
-    }, [t]);
+    const translateVillaType = useCallback(
+      (type: string): string => {
+        if (!type) return "";
+        if (type === "Standalone") return t("listings.standalone");
+        if (type === "Duplex") return t("listings.duplex");
+        if (type === "Townhouse") return t("listings.townhouse");
+        return type;
+      },
+      [t],
+    );
 
-    const translateRentPaymentFrequency = useCallback((period: string): string => {
-      if (!period) return "";
-      if (period === "Yearly") return t("listings.yearly");
-      if (period === "Semi Annual") return t("listings.semiAnnual");
-      if (period === "Quarterly") return t("listings.quarterly");
-      if (period === "Monthly") return t("listings.monthly");
-      return period;
-    }, [t]);
+    const translateRentPaymentFrequency = useCallback(
+      (period: string): string => {
+        if (!period) return "";
+        if (period === "Yearly") return t("listings.yearly");
+        if (period === "Semi Annual") return t("listings.semiAnnual");
+        if (period === "Quarterly") return t("listings.quarterly");
+        if (period === "Monthly") return t("listings.monthly");
+        return period;
+      },
+      [t],
+    );
 
-    const translateApartmentRentTenant = useCallback((value: string): string => {
-      if (value === "Singles") return t("listings.singles");
-      if (value === "Families") return t("listings.families");
-      return value;
-    }, [t]);
+    const translateApartmentRentTenant = useCallback(
+      (value: string): string => {
+        if (value === "Singles") return t("listings.singles");
+        if (value === "Families") return t("listings.families");
+        return value;
+      },
+      [t],
+    );
 
     // Helper function to translate street width (handles "More than X" format)
-    const translateStreetWidth = useCallback((width: string): string => {
-      if (!width) return "";
-      if (width.startsWith("More than")) {
-        const widthValue = width.match(/\d+/)?.[0] || "";
-        return t("listings.moreThan", { width: widthValue });
-      }
-      return width;
-    }, [t]);
+    const translateStreetWidth = useCallback(
+      (width: string): string => {
+        if (!width) return "";
+        if (width.startsWith("More than")) {
+          const widthValue = width.match(/\d+/)?.[0] || "";
+          return t("listings.moreThan", { width: widthValue });
+        }
+        return width;
+      },
+      [t],
+    );
 
     // Helper function to translate "All" option
-    const translateAll = useCallback((value: string): string => {
-      if (value === "ALL" || value === "All") {
-        return t("listings.all");
-      }
-      return value;
-    }, [t]);
+    const translateAll = useCallback(
+      (value: string): string => {
+        if (value === "ALL" || value === "All") {
+          return t("listings.all");
+        }
+        return value;
+      },
+      [t],
+    );
 
     // Helper function to translate floor for card display
-    const translateFloor = useCallback((floor: string): string => {
-      if (!floor) return "";
-      if (floor === "All") return t("listings.all");
-      if (floor === "First floor") return t("listings.firstFloor");
-      if (floor === "Second floor") return t("listings.secondFloor");
-      return floor; // numeric floor (3, 4, ...)
-    }, [t]);
+    const translateFloor = useCallback(
+      (floor: string): string => {
+        if (!floor) return "";
+        if (floor === "All") return t("listings.all");
+        if (floor === "First floor") return t("listings.firstFloor");
+        if (floor === "Second floor") return t("listings.secondFloor");
+        return floor; // numeric floor (3, 4, ...)
+      },
+      [t],
+    );
 
     const priceRange = useMemo(() => {
       const orderData = request.orderFormData || {};
-      if (orderData.fromPrice || orderData.toPrice || orderData.priceFrom || orderData.priceTo || 
-          orderData.villaPriceFrom || orderData.villaPriceTo || orderData.apartmentSalePriceFrom || 
-          orderData.apartmentSalePriceTo || orderData.bigFlatPriceFrom || orderData.bigFlatPriceTo ||
-          orderData.loungePriceFrom || orderData.loungePriceTo || orderData.smallHousePriceFrom ||
-          orderData.smallHousePriceTo || orderData.storePriceFrom || orderData.storePriceTo ||
-          orderData.buildingPriceFrom || orderData.buildingPriceTo || orderData.landPriceFrom ||
-          orderData.landPriceTo || orderData.roomPriceFrom || orderData.roomPriceTo ||
-          orderData.officePriceFrom || orderData.officePriceTo || orderData.tentPriceFrom ||
-          orderData.tentPriceTo || orderData.warehousePriceFrom || orderData.warehousePriceTo ||
-          orderData.chaletPriceFrom || orderData.chaletPriceTo) {
-        const from = orderData.fromPrice || orderData.priceFrom || orderData.villaPriceFrom || 
-                     orderData.apartmentSalePriceFrom || orderData.bigFlatPriceFrom || 
-                     orderData.loungePriceFrom || orderData.smallHousePriceFrom || 
-                     orderData.storePriceFrom || orderData.buildingPriceFrom || 
-                     orderData.landPriceFrom || orderData.roomPriceFrom || 
-                     orderData.officePriceFrom || orderData.tentPriceFrom || 
-                     orderData.warehousePriceFrom || orderData.chaletPriceFrom || "0";
-        const to = orderData.toPrice || orderData.priceTo || orderData.villaPriceTo || 
-                   orderData.apartmentSalePriceTo || orderData.bigFlatPriceTo || 
-                   orderData.loungePriceTo || orderData.smallHousePriceTo || 
-                   orderData.storePriceTo || orderData.buildingPriceTo || 
-                   orderData.landPriceTo || orderData.roomPriceTo || 
-                   orderData.officePriceTo || orderData.tentPriceTo || 
-                   orderData.warehousePriceTo || orderData.chaletPriceTo || "∞";
+      if (
+        orderData.fromPrice ||
+        orderData.toPrice ||
+        orderData.priceFrom ||
+        orderData.priceTo ||
+        orderData.villaPriceFrom ||
+        orderData.villaPriceTo ||
+        orderData.apartmentSalePriceFrom ||
+        orderData.apartmentSalePriceTo ||
+        orderData.bigFlatPriceFrom ||
+        orderData.bigFlatPriceTo ||
+        orderData.loungePriceFrom ||
+        orderData.loungePriceTo ||
+        orderData.smallHousePriceFrom ||
+        orderData.smallHousePriceTo ||
+        orderData.storePriceFrom ||
+        orderData.storePriceTo ||
+        orderData.buildingPriceFrom ||
+        orderData.buildingPriceTo ||
+        orderData.landPriceFrom ||
+        orderData.landPriceTo ||
+        orderData.roomPriceFrom ||
+        orderData.roomPriceTo ||
+        orderData.officePriceFrom ||
+        orderData.officePriceTo ||
+        orderData.tentPriceFrom ||
+        orderData.tentPriceTo ||
+        orderData.warehousePriceFrom ||
+        orderData.warehousePriceTo ||
+        orderData.chaletPriceFrom ||
+        orderData.chaletPriceTo
+      ) {
+        const from =
+          orderData.fromPrice ||
+          orderData.priceFrom ||
+          orderData.villaPriceFrom ||
+          orderData.apartmentSalePriceFrom ||
+          orderData.bigFlatPriceFrom ||
+          orderData.loungePriceFrom ||
+          orderData.smallHousePriceFrom ||
+          orderData.storePriceFrom ||
+          orderData.buildingPriceFrom ||
+          orderData.landPriceFrom ||
+          orderData.roomPriceFrom ||
+          orderData.officePriceFrom ||
+          orderData.tentPriceFrom ||
+          orderData.warehousePriceFrom ||
+          orderData.chaletPriceFrom ||
+          "0";
+        const to =
+          orderData.toPrice ||
+          orderData.priceTo ||
+          orderData.villaPriceTo ||
+          orderData.apartmentSalePriceTo ||
+          orderData.bigFlatPriceTo ||
+          orderData.loungePriceTo ||
+          orderData.smallHousePriceTo ||
+          orderData.storePriceTo ||
+          orderData.buildingPriceTo ||
+          orderData.landPriceTo ||
+          orderData.roomPriceTo ||
+          orderData.officePriceTo ||
+          orderData.tentPriceTo ||
+          orderData.warehousePriceTo ||
+          orderData.chaletPriceTo ||
+          "∞";
         return `${from} - ${to} ${t("listings.riyals")}`;
       }
       return null;
@@ -242,54 +309,99 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       }
 
       // Apartments (TabBar – show any selected option: Apartment for rent, Building for sale/rent)
-      const apartmentsValue = orderData.selectedApartment || orderData.buildingApartments || orderData.buildingRentApartments;
+      const apartmentsValue =
+        orderData.selectedApartment ||
+        orderData.buildingApartments ||
+        orderData.buildingRentApartments;
       if (apartmentsValue) {
         chips.push({
-          label: t("listings.apartmentsLabel", { value: translateAll(apartmentsValue) }),
+          label: t("listings.apartmentsLabel", {
+            value: translateAll(apartmentsValue),
+          }),
           icon: "albums-outline",
           iconLibrary: "Ionicons",
         });
       }
 
       // Street direction – only show when not first option (All)
-      const streetDirectionValue = orderData.streetDirection || orderData.landStreetDirection ||
-          orderData.smallHouseStreetDirection || orderData.buildingStreetDirection ||
-          orderData.villaRentStreetDirection || orderData.smallHouseRentStreetDirection ||
-          orderData.buildingRentStreetDirection || orderData.landRentStreetDirection;
-      if (streetDirectionValue && streetDirectionValue !== STREET_DIRECTION_OPTIONS[0]) {
-        const translatedDirection = translateStreetDirection(streetDirectionValue);
-        chips.push({ label: t("listings.streetDirectionLabel", { direction: translatedDirection }) });
+      const streetDirectionValue =
+        orderData.streetDirection ||
+        orderData.landStreetDirection ||
+        orderData.smallHouseStreetDirection ||
+        orderData.buildingStreetDirection ||
+        orderData.villaRentStreetDirection ||
+        orderData.smallHouseRentStreetDirection ||
+        orderData.buildingRentStreetDirection ||
+        orderData.landRentStreetDirection;
+      if (
+        streetDirectionValue &&
+        streetDirectionValue !== STREET_DIRECTION_OPTIONS[0]
+      ) {
+        const translatedDirection =
+          translateStreetDirection(streetDirectionValue);
+        chips.push({
+          label: t("listings.streetDirectionLabel", {
+            direction: translatedDirection,
+          }),
+        });
       }
 
       // Street width – only show when not first option (All)
-      const streetWidthValue = orderData.streetWidth || orderData.landStreetWidth ||
-          orderData.smallHouseStreetWidth || orderData.loungeStreetWidth ||
-          orderData.storeStreetWidth || orderData.villaRentStreetWidth ||
-          orderData.smallHouseRentStreetWidth || orderData.storeRentStreetWidth ||
-          orderData.buildingRentStreetWidth || orderData.landRentStreetWidth ||
-          orderData.officeRentStreetWidth || orderData.warehouseRentStreetWidth;
+      const streetWidthValue =
+        orderData.streetWidth ||
+        orderData.landStreetWidth ||
+        orderData.smallHouseStreetWidth ||
+        orderData.loungeStreetWidth ||
+        orderData.storeStreetWidth ||
+        orderData.villaRentStreetWidth ||
+        orderData.smallHouseRentStreetWidth ||
+        orderData.storeRentStreetWidth ||
+        orderData.buildingRentStreetWidth ||
+        orderData.landRentStreetWidth ||
+        orderData.officeRentStreetWidth ||
+        orderData.warehouseRentStreetWidth;
       if (streetWidthValue && streetWidthValue !== STREET_WIDTH_OPTIONS[0]) {
         const translatedWidth = translateStreetWidth(streetWidthValue);
-        chips.push({ label: t("listings.streetWidthLabel", { width: translatedWidth }) });
+        chips.push({
+          label: t("listings.streetWidthLabel", { width: translatedWidth }),
+        });
       }
 
       // Villa Type
       if (orderData.selectedVillaType) {
-        const translatedVillaType = translateVillaType(orderData.selectedVillaType);
-        chips.push({ label: t("listings.villaTypeLabel", { type: translatedVillaType }) });
+        const translatedVillaType = translateVillaType(
+          orderData.selectedVillaType,
+        );
+        chips.push({
+          label: t("listings.villaTypeLabel", { type: translatedVillaType }),
+        });
       }
 
       // Features (individual chips)
       if (orderData.stairs) chips.push({ label: t("listings.stairs") });
-      if (orderData.pool || orderData.loungeRentPool || orderData.chaletRentPool) {
+      if (
+        orderData.pool ||
+        orderData.loungeRentPool ||
+        orderData.chaletRentPool
+      ) {
         chips.push({ label: t("listings.pool") });
       }
-      if (orderData.kitchen || orderData.loungeRentKitchen || orderData.smallHouseRentKitchen ||
-          orderData.roomRentKitchen || orderData.chaletRentKitchen) {
+      if (
+        orderData.kitchen ||
+        orderData.loungeRentKitchen ||
+        orderData.smallHouseRentKitchen ||
+        orderData.roomRentKitchen ||
+        orderData.chaletRentKitchen
+      ) {
         chips.push({ label: t("listings.kitchen") });
       }
-      if (orderData.furnished || orderData.villaFurnished || orderData.smallHouseFurnished ||
-          orderData.smallHouseRentFurnished || orderData.officeRentFurnished) {
+      if (
+        orderData.furnished ||
+        orderData.villaFurnished ||
+        orderData.smallHouseFurnished ||
+        orderData.smallHouseRentFurnished ||
+        orderData.officeRentFurnished
+      ) {
         chips.push({ label: t("listings.furnished") });
       }
       if (orderData.maidRoom || orderData.villaRentMaidRoom) {
@@ -301,8 +413,12 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
       if (orderData.driverRoom || orderData.villaRentDriverRoom) {
         chips.push({ label: t("listings.driverRoom") });
       }
-      if (orderData.airConditioned || orderData.villaRentAirConditioned ||
-          orderData.bigFlatAirConditioned || orderData.apartmentSaleAirConditioned) {
+      if (
+        orderData.airConditioned ||
+        orderData.villaRentAirConditioned ||
+        orderData.bigFlatAirConditioned ||
+        orderData.apartmentSaleAirConditioned
+      ) {
         chips.push({
           label: t("listings.airConditioned"),
           icon: "snow-outline",
@@ -368,7 +484,9 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
     const rtlStyles = useMemo(
       () => ({
         topRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         description: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -376,13 +494,19 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
           marginLeft: isRTL ? wp(2) : 0,
         },
         chipsContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         chip: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         matchedSection: {
-          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+          alignItems: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-start"
+            | "flex-end",
         },
         matchedLabel: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -391,21 +515,23 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         matchedChip: {
-          alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+          alignSelf: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-start"
+            | "flex-end",
         },
         priceRange: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     const renderIcon = (chip: ChipData) => {
       if (!chip.icon) return null;
-      
+
       const iconSize = wp(3.5);
       const iconColor = "#6b7280";
-      
+
       if (chip.iconLibrary === "MaterialCommunityIcons") {
         return (
           <MaterialCommunityIcons
@@ -424,11 +550,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         );
       } else {
         return (
-          <Ionicons
-            name={chip.icon as any}
-            size={iconSize}
-            color={iconColor}
-          />
+          <Ionicons name={chip.icon as any} size={iconSize} color={iconColor} />
         );
       }
     };
@@ -438,7 +560,10 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         {/* Top Row: Description and Delete Button */}
         <View style={[styles.topRow, rtlStyles.topRow]}>
           {request.description ? (
-            <Text style={[styles.description, rtlStyles.description]} numberOfLines={2}>
+            <Text
+              style={[styles.description, rtlStyles.description]}
+              numberOfLines={2}
+            >
               {request.description}
             </Text>
           ) : (
@@ -449,14 +574,20 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
               onPress={handleDeletePress}
               style={styles.deleteButton}
             >
-              <MaterialCommunityIcons name="delete" size={wp(6)} color={COLORS.error} />
+              <MaterialCommunityIcons
+                name="delete"
+                size={wp(6)}
+                color={COLORS.error}
+              />
             </TouchableOpacity>
           )}
         </View>
 
         {/* Price Range - Only show if available */}
         {priceRange && (
-          <Text style={[styles.priceRange, rtlStyles.priceRange]}>{priceRange}</Text>
+          <Text style={[styles.priceRange, rtlStyles.priceRange]}>
+            {priceRange}
+          </Text>
         )}
 
         {/* Chips */}
@@ -473,7 +604,9 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
 
         {/* Matched Listings */}
         <View style={[styles.matchedSection, rtlStyles.matchedSection]}>
-          <Text style={[styles.matchedLabel, rtlStyles.matchedLabel]}>{t("listings.matchedListings")}</Text>
+          <Text style={[styles.matchedLabel, rtlStyles.matchedLabel]}>
+            {t("listings.matchedListings")}
+          </Text>
           {matchCount > 0 ? (
             <TouchableOpacity
               style={[styles.matchedChip, rtlStyles.matchedChip]}
@@ -481,10 +614,14 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
               activeOpacity={0.5}
             >
               <Ionicons name="list-outline" size={wp(5.5)} color={"#fff000"} />
-              <Text style={styles.matchedChipText}>{t("listings.all")}({matchCount})</Text>
+              <Text style={styles.matchedChipText}>
+                {t("listings.all")}({matchCount})
+              </Text>
             </TouchableOpacity>
           ) : (
-            <Text style={[styles.matchedValue, rtlStyles.matchedValue]}>{t("listings.notAvailable")}</Text>
+            <Text style={[styles.matchedValue, rtlStyles.matchedValue]}>
+              {t("listings.notAvailable")}
+            </Text>
           )}
         </View>
 
@@ -496,7 +633,7 @@ const SearchRequestCard = memo<SearchRequestCardProps>(
         />
       </View>
     );
-  }
+  },
 );
 
 SearchRequestCard.displayName = "SearchRequestCard";

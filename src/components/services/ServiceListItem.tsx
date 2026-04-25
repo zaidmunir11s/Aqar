@@ -25,10 +25,14 @@ const ServiceListItem = memo<ServiceListItemProps>(
         onPress={onPress}
       >
         <Text style={styles.listItemText}>{text}</Text>
-        <Ionicons name="chevron-forward" size={wp(5)} color={COLORS.textTertiary} />
+        <Ionicons
+          name="chevron-forward"
+          size={wp(5)}
+          color={COLORS.textTertiary}
+        />
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ServiceListItem.displayName = "ServiceListItem";

@@ -38,138 +38,141 @@ export default function LocationSearchModal({
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
   // Helper function to translate city name
-  const translateCityName = useCallback((cityName: string): string => {
-    if (!cityName) return cityName;
-    
-    // Normalize city name for key matching
-    const normalized = cityName
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "")
-      .replace(/`/g, "")
-      .replace(/'/g, "")
-      .replace(/al\s+/gi, "al");
-    
-    // Map of city names to their translation keys
-    const cityKeyMap: { [key: string]: string } = {
-      // Major cities
-      "riyadh": "riyadh",
-      "jeddah": "jeddah",
-      "dammam": "dammam",
-      "alkhobar": "khobar",
-      "medina": "medina",
-      "macca": "mecca",
-      "buraydah": "buraidah",
-      "taif": "taif",
-      "jazan": "jazan",
-      "abha": "abha",
-      "khamismushait": "khamisMushait",
-      "hail": "hail",
-      "najran": "najran",
-      "yanbu": "yanbu",
-      "aljubail": "alJubail",
-      "tabuk": "tabuk",
-      "qatif": "qatif",
-      "alkharj": "kharj",
-      "hafralbatin": "hafrAlBatin",
-      "riyadhalkhabra": "riyadhAlKhabra",
-      // Additional cities
-      "alhofuf": "alHofuf",
-      "unayzah": "unayzah",
-      "albukayriyah": "albukayriyah",
-      "addiriyah": "addiriyah",
-      "dhahran": "dhahran",
-      "almajmaah": "almajmaah",
-      "ahadrufaidah": "ahadrufaidah",
-      "thadiq": "thadiq",
-      "alquwaiiyah": "alquwaiiyah",
-      "abuarish": "abuArish",
-      "albahah": "albahah",
-      "shaqra": "shaqra",
-      "thuwal": "thuwal",
-      "azzulfi": "azzulfi",
-      "arrass": "arrass",
-      "albadayea": "albadayea",
-      "buqayq": "buqayq",
-      "alduwadimi": "alduwadimi",
-      "nairyah": "nairyah",
-      "safwa": "safwa",
-      "muhayil": "muhayil",
-      "kingabdullaheconomiccity": "kingabdullaheconomiccity",
-      "rabigh": "rabigh",
-      "alhenakiyah": "alhenakiyah",
-      "almajaridah": "almajaridah",
-      "sabya": "sabya",
-      "annabhaniyah": "annabhaniyah",
-      "alqunfudhah": "alqunfudhah",
-      "baish": "baish",
-      "alhayathem": "alhayathem",
-      "alshinana": "alshinana",
-      "baqaa": "baqaa",
-      "alghazalah": "alghazalah",
-      "bisha": "bisha",
-      "howtatbanitamin": "howtatbanitamin",
-      "rumah": "rumah",
-      "saihat": "saihat",
-      "khafji": "khafji",
-      "arar": "arar",
-      "ahadalmasrihah": "ahad almasrihah",
-      "alghat": "alghat",
-      "almithnab": "al mithnab",
-      "alqatif": "qatif",
-      "aljumum": "aljumum",
-      "samtah": "samtah",
-      "addilam": "addilam",
-      "afif": "afif",
-      "ashshimasiyah": "ashshimasiyah",
-      "dumahaljandal": "dumah aljandal",
-      "rastanura": "rastanura",
-      "sakaka": "sakaka",
-      "turbah": "turbah",
-      "assulayyil": "assulayyil",
-      "allith": "allith",
-      "billasmar": "billasmar",
-      "tayma": "tayma",
-      "mahdadhahab": "mahd adhdhahab",
-      "aluyun": "aluyun",
-      "alkamil": "alkamil",
-      "tarout": "tarout",
-      "rafha": "rafha",
-      "sharorah": "sharorah",
-      "alula": "alula",
-      "turaif": "turaif",
-      "duba": "duba",
-      "alhariq": "alhariq",
-      "alkhurma": "alkhurma",
-      "tathleeth": "tathleeth",
-      "ranyah": "ranyah",
-      "alqurayyat": "alqurayyat",
-      "anak": "anak",
-      "alwajh": "alwajh",
-      "umluj": "umluj",
-      "alwadiah": "alwadiah",
-      "khaybar": "khaybar",
-      "badr": "badr",
-    };
-    
-    const translationKey = cityKeyMap[normalized];
-    if (translationKey) {
-      const translated = t(`listings.cities.${translationKey}`);
-      // If translation exists and is different from the key, use it
-      if (translated && translated !== `listings.cities.${translationKey}`) {
-        return translated;
+  const translateCityName = useCallback(
+    (cityName: string): string => {
+      if (!cityName) return cityName;
+
+      // Normalize city name for key matching
+      const normalized = cityName
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/`/g, "")
+        .replace(/'/g, "")
+        .replace(/al\s+/gi, "al");
+
+      // Map of city names to their translation keys
+      const cityKeyMap: { [key: string]: string } = {
+        // Major cities
+        riyadh: "riyadh",
+        jeddah: "jeddah",
+        dammam: "dammam",
+        alkhobar: "khobar",
+        medina: "medina",
+        macca: "mecca",
+        buraydah: "buraidah",
+        taif: "taif",
+        jazan: "jazan",
+        abha: "abha",
+        khamismushait: "khamisMushait",
+        hail: "hail",
+        najran: "najran",
+        yanbu: "yanbu",
+        aljubail: "alJubail",
+        tabuk: "tabuk",
+        qatif: "qatif",
+        alkharj: "kharj",
+        hafralbatin: "hafrAlBatin",
+        riyadhalkhabra: "riyadhAlKhabra",
+        // Additional cities
+        alhofuf: "alHofuf",
+        unayzah: "unayzah",
+        albukayriyah: "albukayriyah",
+        addiriyah: "addiriyah",
+        dhahran: "dhahran",
+        almajmaah: "almajmaah",
+        ahadrufaidah: "ahadrufaidah",
+        thadiq: "thadiq",
+        alquwaiiyah: "alquwaiiyah",
+        abuarish: "abuArish",
+        albahah: "albahah",
+        shaqra: "shaqra",
+        thuwal: "thuwal",
+        azzulfi: "azzulfi",
+        arrass: "arrass",
+        albadayea: "albadayea",
+        buqayq: "buqayq",
+        alduwadimi: "alduwadimi",
+        nairyah: "nairyah",
+        safwa: "safwa",
+        muhayil: "muhayil",
+        kingabdullaheconomiccity: "kingabdullaheconomiccity",
+        rabigh: "rabigh",
+        alhenakiyah: "alhenakiyah",
+        almajaridah: "almajaridah",
+        sabya: "sabya",
+        annabhaniyah: "annabhaniyah",
+        alqunfudhah: "alqunfudhah",
+        baish: "baish",
+        alhayathem: "alhayathem",
+        alshinana: "alshinana",
+        baqaa: "baqaa",
+        alghazalah: "alghazalah",
+        bisha: "bisha",
+        howtatbanitamin: "howtatbanitamin",
+        rumah: "rumah",
+        saihat: "saihat",
+        khafji: "khafji",
+        arar: "arar",
+        ahadalmasrihah: "ahad almasrihah",
+        alghat: "alghat",
+        almithnab: "al mithnab",
+        alqatif: "qatif",
+        aljumum: "aljumum",
+        samtah: "samtah",
+        addilam: "addilam",
+        afif: "afif",
+        ashshimasiyah: "ashshimasiyah",
+        dumahaljandal: "dumah aljandal",
+        rastanura: "rastanura",
+        sakaka: "sakaka",
+        turbah: "turbah",
+        assulayyil: "assulayyil",
+        allith: "allith",
+        billasmar: "billasmar",
+        tayma: "tayma",
+        mahdadhahab: "mahd adhdhahab",
+        aluyun: "aluyun",
+        alkamil: "alkamil",
+        tarout: "tarout",
+        rafha: "rafha",
+        sharorah: "sharorah",
+        alula: "alula",
+        turaif: "turaif",
+        duba: "duba",
+        alhariq: "alhariq",
+        alkhurma: "alkhurma",
+        tathleeth: "tathleeth",
+        ranyah: "ranyah",
+        alqurayyat: "alqurayyat",
+        anak: "anak",
+        alwajh: "alwajh",
+        umluj: "umluj",
+        alwadiah: "alwadiah",
+        khaybar: "khaybar",
+        badr: "badr",
+      };
+
+      const translationKey = cityKeyMap[normalized];
+      if (translationKey) {
+        const translated = t(`listings.cities.${translationKey}`);
+        // If translation exists and is different from the key, use it
+        if (translated && translated !== `listings.cities.${translationKey}`) {
+          return translated;
+        }
       }
-    }
-    
-    // Fallback: try direct lookup with normalized name
-    const directKey = `listings.cities.${normalized}`;
-    const directTranslation = t(directKey);
-    if (directTranslation && directTranslation !== directKey) {
-      return directTranslation;
-    }
-    
-    return cityName;
-  }, [t]);
+
+      // Fallback: try direct lookup with normalized name
+      const directKey = `listings.cities.${normalized}`;
+      const directTranslation = t(directKey);
+      if (directTranslation && directTranslation !== directKey) {
+        return directTranslation;
+      }
+
+      return cityName;
+    },
+    [t],
+  );
 
   // Sync search query when modal opens — show translated city name in RTL
   useEffect(() => {
@@ -191,7 +194,7 @@ export default function LocationSearchModal({
       }
       return trimmed;
     },
-    [translateCityName]
+    [translateCityName],
   );
 
   const filteredCities = useMemo(
@@ -199,9 +202,11 @@ export default function LocationSearchModal({
       SAUDI_CITIES.filter(
         (city) =>
           city.toLowerCase().includes(searchText.toLowerCase()) ||
-          translateCityName(city).toLowerCase().includes(searchText.toLowerCase())
+          translateCityName(city)
+            .toLowerCase()
+            .includes(searchText.toLowerCase()),
       ),
-    [searchText, translateCityName]
+    [searchText, translateCityName],
   );
 
   const handleSelect = useCallback(
@@ -210,7 +215,7 @@ export default function LocationSearchModal({
       setSearchText("");
       onClose();
     },
-    [onSelect, onClose]
+    [onSelect, onClose],
   );
 
   const handleClose = useCallback(() => {
@@ -219,36 +224,43 @@ export default function LocationSearchModal({
   }, [onClose]);
 
   // Memoized city item component for better performance
-  const CityItem = memo<{ city: string; index: number; total: number; onSelect: (city: string) => void; translateCity: (city: string) => string; isRTL: boolean }>(
-    ({ city, index, total, onSelect, translateCity, isRTL }) => (
-      <View>
-        <TouchableOpacity
-          style={[styles.cityItem, isRTL && styles.cityItemRTL]}
-          onPress={() => onSelect(city)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.cityText, isRTL && styles.cityTextRTL]}>
-            {translateCity(city)}
-          </Text>
-        </TouchableOpacity>
-        {index < total - 1 && <View style={[styles.divider, isRTL && styles.dividerRTL]} />}
-      </View>
-    )
-  );
+  const CityItem = memo<{
+    city: string;
+    index: number;
+    total: number;
+    onSelect: (city: string) => void;
+    translateCity: (city: string) => string;
+    isRTL: boolean;
+  }>(({ city, index, total, onSelect, translateCity, isRTL }) => (
+    <View>
+      <TouchableOpacity
+        style={[styles.cityItem, isRTL && styles.cityItemRTL]}
+        onPress={() => onSelect(city)}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.cityText, isRTL && styles.cityTextRTL]}>
+          {translateCity(city)}
+        </Text>
+      </TouchableOpacity>
+      {index < total - 1 && (
+        <View style={[styles.divider, isRTL && styles.dividerRTL]} />
+      )}
+    </View>
+  ));
   CityItem.displayName = "CityItem";
 
   const renderItem = useCallback(
     ({ item, index }: { item: string; index: number }) => (
-      <CityItem 
-        city={item} 
-        index={index} 
-        total={filteredCities.length} 
+      <CityItem
+        city={item}
+        index={index}
+        total={filteredCities.length}
         onSelect={handleSelect}
         translateCity={translateCityName}
         isRTL={isRTL}
       />
     ),
-    [filteredCities.length, handleSelect, translateCityName, isRTL]
+    [filteredCities.length, handleSelect, translateCityName, isRTL],
   );
 
   const keyExtractor = useCallback((item: string) => item, []);
@@ -259,7 +271,7 @@ export default function LocationSearchModal({
       offset: (hp(1.5) + 1 + hp(1.5)) * index,
       index,
     }),
-    []
+    [],
   );
 
   return (
@@ -277,11 +289,13 @@ export default function LocationSearchModal({
         />
         <View style={styles.modalContainer}>
           {/* Search Input */}
-          <View style={[
-            styles.searchContainer, 
-            isFocused && styles.searchContainerFocused,
-            isRTL && styles.searchContainerRTL
-          ]}>
+          <View
+            style={[
+              styles.searchContainer,
+              isFocused && styles.searchContainerFocused,
+              isRTL && styles.searchContainerRTL,
+            ]}
+          >
             <TextInput
               style={[styles.searchInput, isRTL && styles.searchInputRTL]}
               placeholder={t("listings.searchForCity")}
@@ -308,7 +322,10 @@ export default function LocationSearchModal({
                   handleSelect(getEnglishCityName(trimmed));
                 }
               }}
-              style={[styles.searchIconButton, isRTL && styles.searchIconButtonRTL]}
+              style={[
+                styles.searchIconButton,
+                isRTL && styles.searchIconButtonRTL,
+              ]}
             >
               <Ionicons name="search" size={wp(5)} color={COLORS.primary} />
             </TouchableOpacity>
@@ -446,5 +463,3 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 });
-
-

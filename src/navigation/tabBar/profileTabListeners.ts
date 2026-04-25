@@ -14,7 +14,7 @@ type ListenersParams = {
  */
 export function createProfileTabListeners(
   isLoaded: boolean,
-  isAuthenticated: boolean
+  isAuthenticated: boolean,
 ) {
   return ({ navigation }: ListenersParams) => ({
     tabPress: (e: EventArg<"tabPress", true, undefined>) => {

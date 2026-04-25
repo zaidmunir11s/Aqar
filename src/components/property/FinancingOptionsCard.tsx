@@ -17,7 +17,7 @@ export interface FinancingOptionsCardProps {
  */
 const FinancingOptionsCard = memo<FinancingOptionsCardProps>(({ onPress }) => {
   const { t, isRTL } = useLocalization();
-  
+
   // RTL-aware styles
   const rtlStyles = useMemo(
     () => ({
@@ -30,9 +30,9 @@ const FinancingOptionsCard = memo<FinancingOptionsCardProps>(({ onPress }) => {
         marginLeft: isRTL ? wp(3) : 0,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
-  
+
   return (
     <View style={[styles.card, rtlStyles.card]}>
       <Text style={[styles.questionText, rtlStyles.questionText]}>

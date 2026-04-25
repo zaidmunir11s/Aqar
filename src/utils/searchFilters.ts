@@ -15,12 +15,12 @@ export interface DailyFilterDates {
 export function filterDailyPropertiesByCityAndDates(
   properties: Property[],
   selectedCity: string,
-  dates: DailyFilterDates
+  dates: DailyFilterDates,
 ): Property[] {
   let filtered = properties.filter(
     (p) =>
       p.listingType === "daily" &&
-      !("isProject" in p && (p as { isProject?: boolean }).isProject)
+      !("isProject" in p && (p as { isProject?: boolean }).isProject),
   );
 
   if (
@@ -38,7 +38,11 @@ export function filterDailyPropertiesByCityAndDates(
     const days = calculateDays(dates.startDate, dates.endDate);
     if (days < 30) {
       filtered = filtered.filter(
-        (p) => !("bookingType" in p && (p as { bookingType?: string }).bookingType === "monthly")
+        (p) =>
+          !(
+            "bookingType" in p &&
+            (p as { bookingType?: string }).bookingType === "monthly"
+          ),
       );
     }
     if (days < 7) {
@@ -60,12 +64,12 @@ export function getFilteredDailyProperties(
   properties: Property[],
   selectedCity: string,
   dates: DailyFilterDates,
-  searchFilters: SearchFilterState | null
+  searchFilters: SearchFilterState | null,
 ): Property[] {
   let filtered = filterDailyPropertiesByCityAndDates(
     properties,
     selectedCity,
-    dates
+    dates,
   );
   if (searchFilters) {
     filtered = applySearchFilters(filtered, searchFilters);
@@ -78,9 +82,40 @@ export function getFilteredDailyProperties(
  */
 export function applySearchFilters(
   properties: Property[],
-  filters: SearchFilterState
+  filters: SearchFilterState,
 ): Property[] {
   let filtered = [...properties];
+
+  const parsePrice = (p: Property): number | null => {
+    // Daily listings can have numeric price fields.
+    if (p.listingType === "daily" && "dailyPrice" in p) {
+      const n = Number((p as any).dailyPrice);
+      return Number.isFinite(n) ? n : null;
+    }
+    if (p.listingType === "daily" && "monthlyPrice" in p) {
+      const n = Number((p as any).monthlyPrice);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    // Rent/Sale listings store price as a compact string (e.g. "55,700", "1.2 M", "950 K").
+    const raw = (p as any)?.price;
+    if (typeof raw !== "string") return null;
+    const s = raw.trim();
+    if (!s || s === "---") return null;
+
+    const compact = s.match(/^([\d.,]+)\s*([kKmM])$/);
+    if (compact) {
+      const amount = Number.parseFloat(compact[1].replace(/,/g, ""));
+      if (!Number.isFinite(amount)) return null;
+      const mult = compact[2].toLowerCase() === "m" ? 1_000_000 : 1_000;
+      return amount * mult;
+    }
+
+    const digitsOnly = s.replace(/[^\d.]/g, "");
+    if (!digitsOnly) return null;
+    const n = Number.parseFloat(digitsOnly);
+    return Number.isFinite(n) ? n : null;
+  };
 
   if (filters.selectedPropertyType) {
     filtered = filtered.filter((p) => p.type === filters.selectedPropertyType);
@@ -88,14 +123,7 @@ export function applySearchFilters(
 
   if (filters.fromPrice || filters.toPrice) {
     filtered = filtered.filter((p) => {
-      let price: number | null = null;
-
-      if (p.listingType === "daily" && "dailyPrice" in p) {
-        price = p.dailyPrice;
-      } else if (p.listingType === "daily" && "monthlyPrice" in p) {
-        price = p.monthlyPrice;
-      }
-
+      const price = parsePrice(p);
       if (price === null) return false;
 
       const fromPrice = filters.fromPrice ? parseFloat(filters.fromPrice) : 0;
@@ -110,7 +138,11 @@ export function applySearchFilters(
     filtered = filtered.filter((p) => p.usage === usage);
   }
 
-  if (filters.bedrooms && filters.bedrooms !== "" && filters.bedrooms !== "All") {
+  if (
+    filters.bedrooms &&
+    filters.bedrooms !== "" &&
+    filters.bedrooms !== "All"
+  ) {
     if (filters.bedrooms === "6+") {
       filtered = filtered.filter((p) => p.bedrooms >= 6);
     } else {
@@ -121,7 +153,11 @@ export function applySearchFilters(
     }
   }
 
-  if (filters.livingRooms && filters.livingRooms !== "" && filters.livingRooms !== "All") {
+  if (
+    filters.livingRooms &&
+    filters.livingRooms !== "" &&
+    filters.livingRooms !== "All"
+  ) {
     const livingRooms = parseInt(filters.livingRooms.replace("+", ""), 10);
     if (!Number.isNaN(livingRooms)) {
       filtered = filtered.filter((p) => p.livingRooms >= livingRooms);
@@ -161,7 +197,7 @@ export function applySearchFilters(
   Object.entries(featureFilters).forEach(([key, featureName]) => {
     if (filters[key as keyof SearchFilterState] === true) {
       filtered = filtered.filter(
-        (p) => p.features && p.features.includes(featureName)
+        (p) => p.features && p.features.includes(featureName),
       );
     }
   });

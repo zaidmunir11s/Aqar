@@ -1,8 +1,8 @@
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import i18n from '../../i18n/config';
-import { getInitialLanguage, saveLanguage } from '../../utils/languageStorage';
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import i18n from "../../i18n/config";
+import { getInitialLanguage, saveLanguage } from "../../utils/languageStorage";
 
-export type SupportedLanguage = 'en' | 'ar';
+export type SupportedLanguage = "en" | "ar";
 
 interface LocalizationState {
   language: SupportedLanguage;
@@ -13,30 +13,30 @@ interface LocalizationState {
 
 // Async thunk to initialize language from storage or device
 export const initializeLanguage = createAsyncThunk(
-  'localization/initializeLanguage',
+  "localization/initializeLanguage",
   async () => {
     const language = await getInitialLanguage();
     return language;
-  }
+  },
 );
 
 // Note: I18nManager auto-flipping is disabled in config.ts
 // Components handle RTL manually through styles
 
 const initialState: LocalizationState = {
-  language: 'en',
+  language: "en",
   isRTL: false,
   isInitialized: false,
   isLoading: true,
 };
 
 const localizationSlice = createSlice({
-  name: 'localization',
+  name: "localization",
   initialState,
   reducers: {
     setLanguage: (state, action: PayloadAction<SupportedLanguage>) => {
       const newLanguage = action.payload;
-      const newIsRTL = newLanguage === 'ar';
+      const newIsRTL = newLanguage === "ar";
       state.language = newLanguage;
       state.isRTL = newIsRTL;
       // Change i18n language
@@ -46,8 +46,9 @@ const localizationSlice = createSlice({
       saveLanguage(newLanguage);
     },
     toggleLanguage: (state) => {
-      const newLanguage: SupportedLanguage = state.language === 'en' ? 'ar' : 'en';
-      const newIsRTL = newLanguage === 'ar';
+      const newLanguage: SupportedLanguage =
+        state.language === "en" ? "ar" : "en";
+      const newIsRTL = newLanguage === "ar";
       state.language = newLanguage;
       state.isRTL = newIsRTL;
       i18n.changeLanguage(newLanguage);
@@ -63,7 +64,7 @@ const localizationSlice = createSlice({
       })
       .addCase(initializeLanguage.fulfilled, (state, action) => {
         const language = action.payload;
-        const newIsRTL = language === 'ar';
+        const newIsRTL = language === "ar";
         state.language = language;
         state.isRTL = newIsRTL;
         state.isInitialized = true;
@@ -76,11 +77,11 @@ const localizationSlice = createSlice({
         }
       })
       .addCase(initializeLanguage.rejected, (state) => {
-        state.language = 'en';
+        state.language = "en";
         state.isRTL = false;
         state.isInitialized = true;
         state.isLoading = false;
-        i18n.changeLanguage('en');
+        i18n.changeLanguage("en");
         // Don't auto-flip I18nManager - components handle RTL manually
       });
   },

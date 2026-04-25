@@ -19,14 +19,17 @@ export interface UseTabNavigationReturn {
   /** Navigate to Listings tab, optionally to a specific screen with params */
   navigateToListings: (
     screen?: string,
-    params?: Record<string, unknown>
+    params?: Record<string, unknown>,
   ) => void;
   /** Navigate to Projects tab */
-  navigateToProjects: (screen?: string, params?: Record<string, unknown>) => void;
+  navigateToProjects: (
+    screen?: string,
+    params?: Record<string, unknown>,
+  ) => void;
   /** Navigate to Bookings tab */
   navigateToBookings: (
     screen?: string,
-    params?: Record<string, unknown>
+    params?: Record<string, unknown>,
   ) => void;
   /** Navigate to Chat tab, optionally to a specific screen */
   navigateToChat: (screen?: string, params?: Record<string, unknown>) => void;
@@ -36,7 +39,7 @@ export interface UseTabNavigationReturn {
   navigateToTab: (
     tab: TabTarget,
     screen?: string,
-    params?: Record<string, unknown>
+    params?: Record<string, unknown>,
   ) => void;
 }
 
@@ -48,7 +51,9 @@ export interface UseTabNavigationReturn {
 export function useTabNavigation(): UseTabNavigationReturn {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
 
-  const getTabNavigator = useCallback((): NavigationProp<RootTabParamList> | undefined => {
+  const getTabNavigator = useCallback(():
+    | NavigationProp<RootTabParamList>
+    | undefined => {
     return navigation.getParent<NavigationProp<RootTabParamList>>();
   }, [navigation]);
 
@@ -61,13 +66,13 @@ export function useTabNavigation(): UseTabNavigationReturn {
             CommonActions.navigate({
               name: tab,
               params: { screen, params },
-            })
+            }),
           );
         } else {
           parent.dispatch(
             CommonActions.navigate({
               name: tab,
-            })
+            }),
           );
         }
       } else {
@@ -76,18 +81,18 @@ export function useTabNavigation(): UseTabNavigationReturn {
             CommonActions.navigate({
               name: screen,
               params,
-            })
+            }),
           );
         } else {
           navigation.dispatch(
             CommonActions.navigate({
               name: tab,
-            })
+            }),
           );
         }
       }
     },
-    [getTabNavigator, navigation]
+    [getTabNavigator, navigation],
   );
 
   const navigateToProfile = useCallback(
@@ -95,35 +100,35 @@ export function useTabNavigation(): UseTabNavigationReturn {
       const target = screen ?? "ProfileDetail";
       navigateToTab("ProfileTab", target);
     },
-    [navigateToTab]
+    [navigateToTab],
   );
 
   const navigateToListings = useCallback(
     (screen?: string, params?: Record<string, unknown>) => {
       navigateToTab("Listings", screen, params);
     },
-    [navigateToTab]
+    [navigateToTab],
   );
 
   const navigateToProjects = useCallback(
     (screen?: string, params?: Record<string, unknown>) => {
       navigateToTab("Projects", screen, params);
     },
-    [navigateToTab]
+    [navigateToTab],
   );
 
   const navigateToBookings = useCallback(
     (screen?: string, params?: Record<string, unknown>) => {
       navigateToTab("Bookings", screen, params);
     },
-    [navigateToTab]
+    [navigateToTab],
   );
 
   const navigateToChat = useCallback(
     (screen?: string, params?: Record<string, unknown>) => {
       navigateToTab("Chat", screen, params);
     },
-    [navigateToTab]
+    [navigateToTab],
   );
 
   const navigateToServices = useCallback(() => {

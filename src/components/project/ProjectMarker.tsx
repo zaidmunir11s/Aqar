@@ -15,14 +15,17 @@ export interface ProjectMarkerProps {
 /**
  * Format price string that may contain K or M to translated version
  */
-const translatePriceString = (priceStr: string, t: (key: string) => string): string => {
+const translatePriceString = (
+  priceStr: string,
+  t: (key: string) => string,
+): string => {
   if (!priceStr) return priceStr;
-  
+
   // Replace K with translated thousand
   let translated = priceStr.replace(/\s*K\b/g, ` ${t("listings.thousand")}`);
   // Replace M with translated million
   translated = translated.replace(/\s*M\b/g, ` ${t("listings.million")}`);
-  
+
   return translated;
 };
 
@@ -32,7 +35,7 @@ const translatePriceString = (priceStr: string, t: (key: string) => string): str
  */
 const ProjectMarker = memo<ProjectMarkerProps>(({ project }) => {
   const { t, isRTL } = useLocalization();
-  
+
   // Validate project exists
   if (!project) {
     return null;
@@ -42,15 +45,17 @@ const ProjectMarker = memo<ProjectMarkerProps>(({ project }) => {
   const markerColor = project.markerColor || COLORS.markerProject || "#8b5cf6";
 
   // Display project name or price if available
-  let displayText = project.projectName || project.price || t("listings.project");
-  
+  let displayText =
+    project.projectName || project.price || t("listings.project");
+
   // If it's a price string, translate K and M
   if (project.price && !project.projectName) {
     displayText = translatePriceString(displayText, t);
   }
 
   // Ensure displayText is a string
-  const safeDisplayText = typeof displayText === "string" ? displayText : t("listings.project");
+  const safeDisplayText =
+    typeof displayText === "string" ? displayText : t("listings.project");
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -59,7 +64,7 @@ const ProjectMarker = memo<ProjectMarkerProps>(({ project }) => {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (

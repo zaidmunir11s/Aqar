@@ -2,16 +2,12 @@ import type {
   BaseQueryFn,
   EndpointBuilder,
   FetchBaseQueryError,
+  FetchArgs,
 } from "@reduxjs/toolkit/query";
-import type { FetchArgs } from "@reduxjs/toolkit/query";
 import { baseApi } from "@/redux/api/baseApi";
 import type { ApiListingDto } from "@/utils/apiListingMapper";
 
-type BaseQuery = BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
->;
+type BaseQuery = BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError>;
 type ApiTagTypes =
   | "User"
   | "Auth"
@@ -65,7 +61,15 @@ export const userApi = baseApi.injectEndpoints({
       },
       providesTags: ["User"],
     }),
-    updateMe: builder.mutation<{ user: MeUser }, Partial<Pick<MeUser, "firstName" | "lastName" | "email" | "profileImage" | "bio">>>({
+    updateMe: builder.mutation<
+      { user: MeUser },
+      Partial<
+        Pick<
+          MeUser,
+          "firstName" | "lastName" | "email" | "profileImage" | "bio"
+        >
+      >
+    >({
       query: (body) => ({
         url: "/api/me",
         method: "PATCH",
@@ -78,22 +82,32 @@ export const userApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["User"],
     }),
-    changeMyPassword: builder.mutation<void, { oldPassword: string; newPassword: string }>({
+    changeMyPassword: builder.mutation<
+      void,
+      { oldPassword: string; newPassword: string }
+    >({
       query: (body) => ({
         url: "/api/me/password",
         method: "POST",
         body,
       }),
     }),
-    requestPhoneChangeOtp: builder.mutation<{ otp?: string }, { phoneNumber: string }>({
+    requestPhoneChangeOtp: builder.mutation<
+      { otp?: string },
+      { phoneNumber: string }
+    >({
       query: (body) => ({
         url: "/api/me/phone/request-otp",
         method: "POST",
         body,
       }),
-      transformResponse: (response: SuccessEnvelope<{ otp?: string }>) => response?.data ?? {},
+      transformResponse: (response: SuccessEnvelope<{ otp?: string }>) =>
+        response?.data ?? {},
     }),
-    confirmPhoneChange: builder.mutation<{ user: MeUser }, { phoneNumber: string; code: string }>({
+    confirmPhoneChange: builder.mutation<
+      { user: MeUser },
+      { phoneNumber: string; code: string }
+    >({
       query: (body) => ({
         url: "/api/me/phone/confirm",
         method: "POST",
@@ -116,15 +130,17 @@ export const userApi = baseApi.injectEndpoints({
       },
     }),
 
-    getPublicUserListings: builder.query<{ listings: ApiListingDto[] }, string>({
-      query: (id) => `/api/users/${encodeURIComponent(id)}/listings`,
-      transformResponse: (
-        response: SuccessEnvelope<{ listings: ApiListingDto[] }>
-      ) => ({
-        listings: response?.data?.listings ?? [],
-      }),
-      providesTags: [{ type: "Property", id: "LIST" }],
-    }),
+    getPublicUserListings: builder.query<{ listings: ApiListingDto[] }, string>(
+      {
+        query: (id) => `/api/users/${encodeURIComponent(id)}/listings`,
+        transformResponse: (
+          response: SuccessEnvelope<{ listings: ApiListingDto[] }>,
+        ) => ({
+          listings: response?.data?.listings ?? [],
+        }),
+        providesTags: [{ type: "Property", id: "LIST" }],
+      },
+    ),
 
     hideAdvertiser: builder.mutation<void, { advertiserId: string }>({
       query: ({ advertiserId }) => ({

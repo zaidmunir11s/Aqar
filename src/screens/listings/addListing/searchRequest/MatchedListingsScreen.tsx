@@ -39,12 +39,16 @@ export default function MatchedListingsScreen(): React.JSX.Element {
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const listingType = useMemo(() => {
-    const lt = request?.category ? getListingTypeFromCategory(request.category) : null;
+    const lt = request?.category
+      ? getListingTypeFromCategory(request.category)
+      : null;
     return lt;
   }, [request?.category]);
 
   const propertyType = useMemo(() => {
-    const pt = request?.category ? getPropertyTypeFromCategory(request.category) : null;
+    const pt = request?.category
+      ? getPropertyTypeFromCategory(request.category)
+      : null;
     return pt;
   }, [request?.category]);
 
@@ -56,7 +60,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
           listingType: listingType === "sale" ? "SALE" : "RENT",
           ...(propertyType ? { propertyType } : {}),
         }
-      : { page: 1, limit: 200 }
+      : { page: 1, limit: 200 },
   );
 
   const candidateProperties = useMemo(() => {
@@ -77,7 +81,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
 
   const matchedPropertyIds = useMemo(
     () => matchedProperties.map((p) => p.id),
-    [matchedProperties]
+    [matchedProperties],
   );
 
   const handleBackPress = () => {
@@ -127,54 +131,64 @@ export default function MatchedListingsScreen(): React.JSX.Element {
     }
   }, [matchedProperties, selectedFilter, getNumericPrice]);
 
-  const handlePropertyPress = useCallback((property: Property) => {
-    // Navigate to DailyDetails for daily listings, PropertyDetails for rent/sale
-    const screenName = property.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
-    navigation.navigate(screenName, {
-      propertyId: property.id,
-      visiblePropertyIds: matchedPropertyIds,
-      listingType: property.listingType,
-    });
-  }, [matchedPropertyIds, navigation]);
+  const handlePropertyPress = useCallback(
+    (property: Property) => {
+      // Navigate to DailyDetails for daily listings, PropertyDetails for rent/sale
+      const screenName =
+        property.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
+      navigation.navigate(screenName, {
+        propertyId: property.id,
+        visiblePropertyIds: matchedPropertyIds,
+        listingType: property.listingType,
+      });
+    },
+    [matchedPropertyIds, navigation],
+  );
 
-  const renderPropertyCard = useCallback(({ item }: { item: Property }) => {
-    // Use translated property type label
-    const title = getTranslatedPropertyTypeLabel(
-      item.type,
-      item.listingType as "rent" | "sale" | "daily",
-      t
-    ) || t("listings.property");
-    
-    let priceLine = "";
+  const renderPropertyCard = useCallback(
+    ({ item }: { item: Property }) => {
+      // Use translated property type label
+      const title =
+        getTranslatedPropertyTypeLabel(
+          item.type,
+          item.listingType as "rent" | "sale" | "daily",
+          t,
+        ) || t("listings.property");
 
-    if (item.listingType === "daily") {
-      const dailyProperty = item as any;
-      const dailyPrice = dailyProperty.dailyPrice || 0;
-      priceLine = `${formatPrice(dailyPrice.toString())} ${t("listings.sar")} / ${t("common.day")}`;
-    } else if (item.listingType === "rent") {
-      priceLine = "";
-    } else {
-      const saleProperty = item as any;
-      const formattedPrice = saleProperty.price
-        ? formatPrice(saleProperty.price)
-        : "0";
-      priceLine = `${formattedPrice} ${t("listings.sar")}`;
-    }
+      let priceLine = "";
 
-    // Calculate matched criteria
-    const matchedCriteria = request ? getMatchedCriteria(item, request) : undefined;
+      if (item.listingType === "daily") {
+        const dailyProperty = item as any;
+        const dailyPrice = dailyProperty.dailyPrice || 0;
+        priceLine = `${formatPrice(dailyPrice.toString())} ${t("listings.sar")} / ${t("common.day")}`;
+      } else if (item.listingType === "rent") {
+        priceLine = "";
+      } else {
+        const saleProperty = item as any;
+        const formattedPrice = saleProperty.price
+          ? formatPrice(saleProperty.price)
+          : "0";
+        priceLine = `${formattedPrice} ${t("listings.sar")}`;
+      }
 
-    return (
-      <PropertyCard
-        property={item}
-        onPress={() => handlePropertyPress(item)}
-        title={title}
-        priceLine={priceLine}
-        listingType={item.listingType}
-        matchedCriteria={matchedCriteria}
-      />
-    );
-  }, [t, handlePropertyPress, request]);
+      // Calculate matched criteria
+      const matchedCriteria = request
+        ? getMatchedCriteria(item, request, t)
+        : undefined;
+
+      return (
+        <PropertyCard
+          property={item}
+          onPress={() => handlePropertyPress(item)}
+          title={title}
+          priceLine={priceLine}
+          listingType={item.listingType}
+          matchedCriteria={matchedCriteria}
+        />
+      );
+    },
+    [t, handlePropertyPress, request],
+  );
 
   const keyExtractor = useCallback((item: Property) => item.id.toString(), []);
 
@@ -184,7 +198,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
       { value: "price", label: t("listings.price") },
       { value: "nearest", label: t("listings.nearest") },
     ],
-    [t]
+    [t],
   );
 
   const rtlStyles = useMemo(
@@ -193,7 +207,7 @@ export default function MatchedListingsScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
@@ -221,7 +235,9 @@ export default function MatchedListingsScreen(): React.JSX.Element {
         removeClippedSubviews={true}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, rtlStyles.emptyText]}>{t("listings.noMatchingProperties")}</Text>
+            <Text style={[styles.emptyText, rtlStyles.emptyText]}>
+              {t("listings.noMatchingProperties")}
+            </Text>
           </View>
         }
       />

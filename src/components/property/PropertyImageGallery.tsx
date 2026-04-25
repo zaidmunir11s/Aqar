@@ -1,4 +1,11 @@
-import React, { memo, useCallback, useMemo, useState, useRef, useEffect } from "react";
+import React, {
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -73,7 +80,9 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
     const { t, isRTL } = useLocalization();
     const [showScrollBar, setShowScrollBar] = useState(false);
     const [scrollPosition, setScrollPosition] = useState(0);
-    const hideScrollBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hideScrollBarTimer = useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
     const scrollBarOpacity = useRef(new Animated.Value(0)).current;
 
     const validImages = images && images.length > 0 ? images : [];
@@ -81,7 +90,7 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
 
     const plainPlaceholderOnly = useMemo(
       () => isOnlyDefaultPropertyPlaceholderImages(validImages),
-      [validImages]
+      [validImages],
     );
 
     const slides: PropertyImageGallerySlide[] = useMemo(() => {
@@ -93,7 +102,7 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
 
     const showCaptionRail = useMemo(
       () => imageCaptions != null && slides.some((s) => s.caption.length > 0),
-      [imageCaptions, slides]
+      [imageCaptions, slides],
     );
 
     const [listCrossAxisSize, setListCrossAxisSize] = useState(IMAGE_AREA_H);
@@ -111,10 +120,13 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
         const h = Math.ceil(e.nativeEvent.layout.height);
         slideHeightsRef.current[index] = h;
         const reported = slideHeightsRef.current.filter((x) => x > 0);
-        const maxSlide = reported.length > 0 ? Math.max(IMAGE_AREA_H, ...reported) : IMAGE_AREA_H;
+        const maxSlide =
+          reported.length > 0
+            ? Math.max(IMAGE_AREA_H, ...reported)
+            : IMAGE_AREA_H;
         setListCrossAxisSize(maxSlide);
       },
-      [showCaptionRail]
+      [showCaptionRail],
     );
 
     const galleryHeight = showCaptionRail ? listCrossAxisSize : IMAGE_AREA_H;
@@ -136,7 +148,13 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
         return (reversedIndex / (slides.length - 1)) * maxPosition;
       }
       return (rawIndex / (slides.length - 1)) * maxPosition;
-    }, [scrollPosition, slides.length, isRTL, scrollBarTrackWidth, scrollBarWidth]);
+    }, [
+      scrollPosition,
+      slides.length,
+      isRTL,
+      scrollBarTrackWidth,
+      scrollBarWidth,
+    ]);
 
     useEffect(() => {
       Animated.timing(scrollBarOpacity, {
@@ -170,7 +188,7 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
         handleScrollBegin();
         handleScrollEnd();
       },
-      [onImageScroll, handleScrollBegin, handleScrollEnd]
+      [onImageScroll, handleScrollBegin, handleScrollEnd],
     );
 
     useEffect(() => {
@@ -183,31 +201,51 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
 
     const renderSlide = useCallback(
       ({ item, index }: ListRenderItemInfo<PropertyImageGallerySlide>) => (
-        <View style={styles.slidePage} onLayout={(e) => handleSlideLayout(index, e)}>
+        <View
+          style={styles.slidePage}
+          onLayout={(e) => handleSlideLayout(index, e)}
+        >
           <View style={styles.imageWrapper}>
             <TouchableOpacity activeOpacity={0.9} onPress={onImageViewerOpen}>
-              <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" />
+              <Image
+                source={{ uri: item.uri }}
+                style={styles.image}
+                resizeMode="cover"
+              />
             </TouchableOpacity>
           </View>
           {showCaptionRail && item.caption.length > 0 ? (
             <View style={[styles.captionSlot, styles.captionSlotFilled]}>
-              <Text style={[styles.captionText, isRTL && styles.captionTextRtlWriting]}>{item.caption}</Text>
+              <Text
+                style={[
+                  styles.captionText,
+                  isRTL && styles.captionTextRtlWriting,
+                ]}
+              >
+                {item.caption}
+              </Text>
             </View>
           ) : null}
         </View>
       ),
-      [onImageViewerOpen, showCaptionRail, isRTL, handleSlideLayout]
+      [onImageViewerOpen, showCaptionRail, isRTL, handleSlideLayout],
     );
 
-    const keyExtractor = useCallback((_item: PropertyImageGallerySlide, index: number) => index.toString(), []);
+    const keyExtractor = useCallback(
+      (_item: PropertyImageGallerySlide, index: number) => index.toString(),
+      [],
+    );
 
     const getItemLayout = useCallback(
-      (_data: ArrayLike<PropertyImageGallerySlide> | null | undefined, index: number) => ({
+      (
+        _data: ArrayLike<PropertyImageGallerySlide> | null | undefined,
+        index: number,
+      ) => ({
         length: SCREEN_WIDTH,
         offset: SCREEN_WIDTH * index,
         index,
       }),
-      []
+      [],
     );
 
     const scrollThumbTop = IMAGE_AREA_H - 3;
@@ -215,8 +253,18 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
 
     if (plainPlaceholderOnly && validImages[0]) {
       return (
-        <View style={[styles.imageSection, styles.plainPlaceholderSection, { height: IMAGE_AREA_H }]}>
-          <Image source={{ uri: validImages[0] }} style={styles.image} resizeMode="cover" />
+        <View
+          style={[
+            styles.imageSection,
+            styles.plainPlaceholderSection,
+            { height: IMAGE_AREA_H },
+          ]}
+        >
+          <Image
+            source={{ uri: validImages[0] }}
+            style={styles.image}
+            resizeMode="cover"
+          />
         </View>
       );
     }
@@ -244,7 +292,9 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
           disableIntervalMomentum
           bounces={false}
           style={{ height: galleryHeight }}
-          contentContainerStyle={showCaptionRail ? styles.listContentWithCaptions : undefined}
+          contentContainerStyle={
+            showCaptionRail ? styles.listContentWithCaptions : undefined
+          }
           {...(showCaptionRail && slides.length > 0 && slides.length <= 24
             ? {
                 initialNumToRender: slides.length,
@@ -289,14 +339,19 @@ const PropertyImageGallery = memo<PropertyImageGalleryProps>(
             onPress={onImageViewerOpen}
           >
             <Ionicons name="images" size={wp(4.5)} color="#fff" />
-            <Text style={[styles.seeAllPhotosText, isRTL && styles.seeAllPhotosTextRTL]}>
+            <Text
+              style={[
+                styles.seeAllPhotosText,
+                isRTL && styles.seeAllPhotosTextRTL,
+              ]}
+            >
               {slides.length} {t("listings.seeAllPhotos")}
             </Text>
           </TouchableOpacity>
         )}
       </View>
     );
-  }
+  },
 );
 
 PropertyImageGallery.displayName = "PropertyImageGallery";

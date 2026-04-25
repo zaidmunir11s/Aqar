@@ -19,7 +19,12 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { useNavigation, useRoute, useFocusEffect, StackActions } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+  StackActions,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalization } from "../../hooks/useLocalization";
@@ -33,7 +38,11 @@ import {
 import type { ProjectUnitsSortOption } from "../../components";
 import { COLORS, RIYADH_REGION } from "@/constants";
 import { getDefaultImageUrl, openPhoneDialer } from "../../utils";
-import { PROPERTY_DATA, SALE_FILTER_OPTIONS, RENT_FILTER_OPTIONS } from "../../data/propertyData";
+import {
+  PROPERTY_DATA,
+  SALE_FILTER_OPTIONS,
+  RENT_FILTER_OPTIONS,
+} from "../../data/propertyData";
 import type { ProjectProperty, Property } from "../../types/property";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -87,7 +96,8 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
 
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [selectedSortOption, setSelectedSortOption] = useState<ProjectUnitsSortOption>("normalSort");
+  const [selectedSortOption, setSelectedSortOption] =
+    useState<ProjectUnitsSortOption>("normalSort");
   const [isScreenFocused, setIsScreenFocused] = useState(true);
   const headerTranslateY = useRef(new Animated.Value(-200)).current;
 
@@ -95,7 +105,7 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   const logoUri = developerLogo.trim()
@@ -105,7 +115,7 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
 
   const logoContainerMargin = useMemo(
     () => ({ marginRight: isRTL ? 0 : wp(3), marginLeft: isRTL ? wp(3) : 0 }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = useCallback(() => {
@@ -126,7 +136,9 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
     if (!name) return [];
     return PROPERTY_DATA.filter(
       (p): p is ProjectProperty =>
-        isProjectProperty(p) && hasValidCoordinates(p) && (p.developerName?.trim().toLowerCase() === name)
+        isProjectProperty(p) &&
+        hasValidCoordinates(p) &&
+        p.developerName?.trim().toLowerCase() === name,
     );
   }, [developerName]);
 
@@ -156,7 +168,7 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
 
   const DEVELOPER_PROJECTS_SORT_OPTIONS: ProjectUnitsSortOption[] = useMemo(
     () => ["normalSort", "priceHighToLow", "priceLowToHigh"],
-    []
+    [],
   );
 
   const sortedDeveloperProjects = useMemo(() => {
@@ -176,7 +188,7 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
       navigation.dispatch(StackActions.pop(2));
       navigation.navigate("ProjectDetails", { propertyId: project.id });
     },
-    [navigation]
+    [navigation],
   );
 
   const handleScroll = useCallback(
@@ -194,7 +206,7 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
         }).start();
       }
     },
-    [showStickyHeader, headerTranslateY, stickyHeaderHeight]
+    [showStickyHeader, headerTranslateY, stickyHeaderHeight],
   );
 
   return (
@@ -238,7 +250,10 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
         ]}
       >
         <Text
-          style={[styles.stickyHeaderTitle, isRTL && styles.stickyHeaderTitleRTL]}
+          style={[
+            styles.stickyHeaderTitle,
+            isRTL && styles.stickyHeaderTitleRTL,
+          ]}
           numberOfLines={1}
         >
           {displayName}
@@ -262,7 +277,9 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
 
         {/* Below image: same icon + company name — LTR: left; RTL: right */}
         <View style={[styles.titleSection, isRTL && styles.titleSectionRTL]}>
-          <View style={[styles.logoAndNameRow, isRTL && styles.logoAndNameRowRTL]}>
+          <View
+            style={[styles.logoAndNameRow, isRTL && styles.logoAndNameRowRTL]}
+          >
             <View style={[styles.logoContainer, logoContainerMargin]}>
               <Image
                 source={{ uri: logoUri }}
@@ -270,7 +287,10 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
                 resizeMode="cover"
               />
             </View>
-            <Text style={[styles.companyName, isRTL && styles.companyNameRTL]} numberOfLines={1}>
+            <Text
+              style={[styles.companyName, isRTL && styles.companyNameRTL]}
+              numberOfLines={1}
+            >
               {displayName}
             </Text>
           </View>
@@ -282,27 +302,43 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
             <View style={[styles.statCard, isRTL && styles.statCardRTL]}>
               <View style={styles.statIconBox}>
                 <View style={styles.statIconInner}>
-                  <Ionicons name="home" size={wp(5)} color={COLORS.textPrimary} />
+                  <Ionicons
+                    name="home"
+                    size={wp(5)}
+                    color={COLORS.textPrimary}
+                  />
                 </View>
               </View>
-              <View style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}>
+              <View
+                style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}
+              >
                 <Text style={[styles.statTitle, isRTL && styles.statTitleRTL]}>
                   {t("projects.units")}
                 </Text>
-                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>0+</Text>
+                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>
+                  0+
+                </Text>
               </View>
             </View>
             <View style={[styles.statCard, isRTL && styles.statCardRTL]}>
               <View style={styles.statIconBox}>
                 <View style={styles.statIconInner}>
-                  <MaterialCommunityIcons name="city-variant" size={wp(5)} color={COLORS.textPrimary} />
+                  <MaterialCommunityIcons
+                    name="city-variant"
+                    size={wp(5)}
+                    color={COLORS.textPrimary}
+                  />
                 </View>
               </View>
-              <View style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}>
+              <View
+                style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}
+              >
                 <Text style={[styles.statTitle, isRTL && styles.statTitleRTL]}>
                   {t("projects.projectsCount")}
                 </Text>
-                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>0+</Text>
+                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>
+                  0+
+                </Text>
               </View>
             </View>
           </View>
@@ -310,27 +346,43 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
             <View style={[styles.statCard, isRTL && styles.statCardRTL]}>
               <View style={styles.statIconBox}>
                 <View style={styles.statIconInner}>
-                  <MaterialCommunityIcons name="aspect-ratio" size={wp(5)} color={COLORS.textPrimary} />
+                  <MaterialCommunityIcons
+                    name="aspect-ratio"
+                    size={wp(5)}
+                    color={COLORS.textPrimary}
+                  />
                 </View>
               </View>
-              <View style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}>
+              <View
+                style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}
+              >
                 <Text style={[styles.statTitle, isRTL && styles.statTitleRTL]}>
                   {t("projects.totalArea")}
                 </Text>
-                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>+</Text>
+                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>
+                  +
+                </Text>
               </View>
             </View>
             <View style={[styles.statCard, isRTL && styles.statCardRTL]}>
               <View style={styles.statIconBox}>
                 <View style={styles.statIconInner}>
-                  <Ionicons name="people" size={wp(5)} color={COLORS.textPrimary} />
+                  <Ionicons
+                    name="people"
+                    size={wp(5)}
+                    color={COLORS.textPrimary}
+                  />
                 </View>
               </View>
-              <View style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}>
+              <View
+                style={[styles.statTextWrap, isRTL && styles.statTextWrapRTL]}
+              >
                 <Text style={[styles.statTitle, isRTL && styles.statTitleRTL]}>
                   {t("projects.population")}
                 </Text>
-                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>+</Text>
+                <Text style={[styles.statValue, isRTL && styles.statValueRTL]}>
+                  +
+                </Text>
               </View>
             </View>
           </View>
@@ -348,7 +400,9 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
 
         {/* Projects Map section */}
         <View style={[styles.mapSection, isRTL && styles.mapSectionRTL]}>
-          <Text style={[styles.mapSectionTitle, isRTL && styles.mapSectionTitleRTL]}>
+          <Text
+            style={[styles.mapSectionTitle, isRTL && styles.mapSectionTitleRTL]}
+          >
             {t("projects.projectsMap")}
           </Text>
           <View style={styles.mapWrapper}>
@@ -378,9 +432,24 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
         </View>
 
         {/* Projects section - same projects as map markers, with sort */}
-        <View style={[styles.projectsListSection, isRTL && styles.projectsListSectionRTL]}>
-          <View style={[styles.projectsListHeader, isRTL && styles.projectsListHeaderRTL]}>
-            <Text style={[styles.projectsListTitle, isRTL && styles.projectsListTitleRTL]}>
+        <View
+          style={[
+            styles.projectsListSection,
+            isRTL && styles.projectsListSectionRTL,
+          ]}
+        >
+          <View
+            style={[
+              styles.projectsListHeader,
+              isRTL && styles.projectsListHeaderRTL,
+            ]}
+          >
+            <Text
+              style={[
+                styles.projectsListTitle,
+                isRTL && styles.projectsListTitleRTL,
+              ]}
+            >
               {t("projects.projectsCount")}
             </Text>
             <TouchableOpacity
@@ -391,7 +460,11 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
               <ListFilter
                 size={wp(5.5)}
                 strokeWidth={3}
-                color={selectedSortOption !== "normalSort" ? COLORS.primary : COLORS.textSecondary}
+                color={
+                  selectedSortOption !== "normalSort"
+                    ? COLORS.primary
+                    : COLORS.textSecondary
+                }
               />
             </TouchableOpacity>
           </View>
@@ -400,7 +473,11 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
               key={p.id}
               project={p}
               onPress={() => handleProjectPress(p)}
-              filterOptions={p.listingType === "sale" ? SALE_FILTER_OPTIONS : RENT_FILTER_OPTIONS}
+              filterOptions={
+                p.listingType === "sale"
+                  ? SALE_FILTER_OPTIONS
+                  : RENT_FILTER_OPTIONS
+              }
               hideTypeTags
               hideDeveloperLogo
               availableBadgeVariant="orange"
@@ -423,12 +500,12 @@ export default function DeveloperProfileScreen(): React.JSX.Element {
         options={DEVELOPER_PROJECTS_SORT_OPTIONS}
       />
 
-        <SingleButtonFooter
-          fixed={false}
-          label={t("projects.call")}
-          onPress={handleCall}
-          icon={<Ionicons name="call" size={wp(5)} color={COLORS.white} />}
-        />
+      <SingleButtonFooter
+        fixed={false}
+        label={t("projects.call")}
+        onPress={handleCall}
+        icon={<Ionicons name="call" size={wp(5)} color={COLORS.white} />}
+      />
     </View>
   );
 }

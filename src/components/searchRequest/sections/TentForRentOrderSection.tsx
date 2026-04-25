@@ -1,5 +1,9 @@
 import React, { memo } from "react";
-import { RentPaymentFrequencyChips, PriceInputSection, ToggleGroup } from "../../index";
+import {
+  RentPaymentFrequencyChips,
+  PriceInputSection,
+  ToggleGroup,
+} from "../../index";
 import {
   getRentSearchPriceLabel,
   type RentPaymentFrequency,
@@ -24,25 +28,44 @@ interface Props {
 }
 
 function Comp(p: Props): React.JSX.Element {
-  return <>
-    <RentPaymentFrequencyChips selectedFrequency={p.tentRentRentPeriod} onSelect={p.onRentPeriodSelect} />
-    {p.tentRentRentPeriod != null && (
-      <PriceInputSection
-        label={getRentSearchPriceLabel(p.tentRentRentPeriod, p.t)}
-        fromValue={p.tentRentPriceFrom}
-        toValue={p.tentRentPriceTo}
-        onFromChange={p.onPriceFromChange}
-        onToChange={p.onPriceToChange}
-        fromPlaceholder={p.t("listings.fromPrice")}
-        toPlaceholder={p.t("listings.toPrice")}
+  return (
+    <>
+      <RentPaymentFrequencyChips
+        selectedFrequency={p.tentRentRentPeriod}
+        onSelect={p.onRentPeriodSelect}
       />
-    )}
-    <ToggleGroup toggles={[
-      { label: p.t("listings.nearBus"), value: p.nearBus, onValueChange: p.onNearBusChange },
-      { label: p.t("listings.nearMetro"), value: p.nearMetro, onValueChange: p.onNearMetroChange },
-      { label: p.t("listings.familySection"), value: p.familySection, onValueChange: p.onFamilySectionChange },
-    ]} />
-  </>;
+      {p.tentRentRentPeriod != null && (
+        <PriceInputSection
+          label={getRentSearchPriceLabel(p.tentRentRentPeriod, p.t)}
+          fromValue={p.tentRentPriceFrom}
+          toValue={p.tentRentPriceTo}
+          onFromChange={p.onPriceFromChange}
+          onToChange={p.onPriceToChange}
+          fromPlaceholder={p.t("listings.fromPrice")}
+          toPlaceholder={p.t("listings.toPrice")}
+        />
+      )}
+      <ToggleGroup
+        toggles={[
+          {
+            label: p.t("listings.nearBus"),
+            value: p.nearBus,
+            onValueChange: p.onNearBusChange,
+          },
+          {
+            label: p.t("listings.nearMetro"),
+            value: p.nearMetro,
+            onValueChange: p.onNearMetroChange,
+          },
+          {
+            label: p.t("listings.familySection"),
+            value: p.familySection,
+            onValueChange: p.onFamilySectionChange,
+          },
+        ]}
+      />
+    </>
+  );
 }
 
 export const TentForRentOrderSection = memo(Comp);

@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import ToggleRow from "../../orderForm/ToggleRow";
 import SliderWithInput from "../shared/SliderWithInput";
 import InlineWheelPickerField from "../shared/InlineWheelPickerField";
@@ -15,7 +18,9 @@ const TOGGLE_TRACK_WIDTH = wp(9);
 const TOGGLE_TRACK_HEIGHT = hp(1.5);
 const TOGGLE_THUMB_SIZE = wp(5.5);
 
-export default function RoomForRentDetailsForm({ onFormDataChange }: CategoryFormProps): React.JSX.Element {
+export default function RoomForRentDetailsForm({
+  onFormDataChange,
+}: CategoryFormProps): React.JSX.Element {
   const { t } = useLocalization();
   const [streetWidth, setStreetWidth] = useState(1);
   const [ageLessThan, setAgeLessThan] = useState("New");
@@ -31,13 +36,39 @@ export default function RoomForRentDetailsForm({ onFormDataChange }: CategoryFor
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
-      { type: "value", icon: "time", label: t("listings.realEstateAge"), value: formatRealEstateAgeLabel(ageLessThan, t) },
-      { type: "toggle", label: t("listings.furnished"), enabled: toggles.furnished },
-      { type: "toggle", label: t("listings.kitchen"), enabled: toggles.kitchen },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
+      {
+        type: "value",
+        icon: "time",
+        label: t("listings.realEstateAge"),
+        value: formatRealEstateAgeLabel(ageLessThan, t),
+      },
+      {
+        type: "toggle",
+        label: t("listings.furnished"),
+        enabled: toggles.furnished,
+      },
+      {
+        type: "toggle",
+        label: t("listings.kitchen"),
+        enabled: toggles.kitchen,
+      },
       { type: "toggle", label: t("listings.water"), enabled: toggles.water },
-      { type: "toggle", label: t("listings.electricity"), enabled: toggles.electricity },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: toggles.drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: toggles.electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: toggles.drainageAvailability,
+      },
     ]);
   }, [
     ageLessThan,
@@ -53,7 +84,12 @@ export default function RoomForRentDetailsForm({ onFormDataChange }: CategoryFor
 
   return (
     <>
-      <SliderWithInput label={t("listings.streetWidth")} value={streetWidth} onChangeValue={setStreetWidth} max={100} />
+      <SliderWithInput
+        label={t("listings.streetWidth")}
+        value={streetWidth}
+        onChangeValue={setStreetWidth}
+        max={100}
+      />
       <InlineWheelPickerField
         label={t("listings.ageLessThan")}
         value={ageLessThan}
@@ -62,7 +98,13 @@ export default function RoomForRentDetailsForm({ onFormDataChange }: CategoryFor
         modalTitle={t("listings.ageLessThan")}
         onChangeValue={setAgeLessThan}
       />
-      {["furnished", "kitchen", "water", "electricity", "drainageAvailability"].map((k) => (
+      {[
+        "furnished",
+        "kitchen",
+        "water",
+        "electricity",
+        "drainageAvailability",
+      ].map((k) => (
         <ToggleRow
           key={k}
           label={t(`listings.${k}`)}

@@ -11,4 +11,3 @@ export interface CategoryFormProps {
   onValidityChange?: (isValid: boolean) => void;
   onFormDataChange?: (items: PropertyDetailsDisplayItem[]) => void;
 }
-

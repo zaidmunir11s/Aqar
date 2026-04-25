@@ -49,7 +49,7 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
   const { t, isRTL } = useLocalization();
   const mapRef = useRef<MapView>(null);
   const appState = useRef(AppState.currentState);
-  
+
   // Validate coordinates and use fallback if invalid
   const isValidLat = isValidCoordinate(project.lat);
   const isValidLng = isValidLongitude(project.lng);
@@ -102,7 +102,7 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
         textAlign: (isRTL ? "right" : "center") as "left" | "right" | "center",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Don't render map if coordinates are completely invalid
@@ -160,13 +160,13 @@ const ProjectLocation = memo<ProjectLocationProps>(({ project }) => {
           <Polyline
             coordinates={[
               { latitude: lineStartLatitude, longitude }, // Bottom edge of circle
-              { latitude: lineEndLatitude, longitude },   // Extends downward
+              { latitude: lineEndLatitude, longitude }, // Extends downward
             ]}
             strokeColor={COLORS.getLocation}
             strokeWidth={polylineStrokeWidth}
           />
         </MapView>
-        
+
         <TouchableOpacity
           style={[styles.getLocationButton, rtlStyles.getLocationButton]}
           activeOpacity={0.8}

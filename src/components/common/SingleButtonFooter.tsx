@@ -84,7 +84,7 @@ const SingleButtonFooter = memo<SingleButtonFooterProps>(
       (): ViewStyle => ({
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -102,18 +102,14 @@ const SingleButtonFooter = memo<SingleButtonFooterProps>(
         >
           {icon != null && <View style={styles.iconWrap}>{icon}</View>}
           <Text
-            style={[
-              styles.label,
-              disabled && styles.labelDisabled,
-              labelStyle,
-            ]}
+            style={[styles.label, disabled && styles.labelDisabled, labelStyle]}
           >
             {label}
           </Text>
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 SingleButtonFooter.displayName = "SingleButtonFooter";

@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   StyleSheet,
@@ -22,21 +28,26 @@ import WheelPickerModal from "../../components/common/WheelPickerModal";
 import { COLORS, CITY_REGIONS } from "@/constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { translateCityName } from "@/utils/cityTranslation";
-import type { RentSaleProperty } from "@/types/property";
-import type { PropertyType } from "@/types/property";
+import type { RentSaleProperty, PropertyType } from "@/types/property";
 
 type TabType = "rent" | "sale";
 
 type RentPropertyType = "apartments" | "floors" | "villas";
 type SalePropertyType = "apartments" | "lands" | "floors" | "villas";
 
-const RENT_OPTIONS: { key: RentPropertyType; icon: keyof typeof Ionicons.glyphMap }[] = [
+const RENT_OPTIONS: {
+  key: RentPropertyType;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
   { key: "apartments", icon: "business-outline" },
   { key: "floors", icon: "layers-outline" },
   { key: "villas", icon: "home-outline" },
 ];
 
-const SALE_OPTIONS: { key: SalePropertyType; icon: keyof typeof Ionicons.glyphMap }[] = [
+const SALE_OPTIONS: {
+  key: SalePropertyType;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
   { key: "apartments", icon: "business-outline" },
   { key: "lands", icon: "map-outline" },
   { key: "floors", icon: "layers-outline" },
@@ -77,7 +88,9 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
   const [rooms, setRooms] = useState<string>("");
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [areaModalVisible, setAreaModalVisible] = useState(false);
-  const [selectedDirection, setSelectedDirection] = useState<string | null>(null);
+  const [selectedDirection, setSelectedDirection] = useState<string | null>(
+    null,
+  );
   const [directionModalVisible, setDirectionModalVisible] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [districtModalVisible, setDistrictModalVisible] = useState(false);
@@ -86,8 +99,10 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
 
   // Move footer above keyboard and allow scroll when keyboard is visible
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
     const showSub = Keyboard.addListener(showEvent, (event) => {
       const h = event.endCoordinates.height;
       setKeyboardHeightPx(h);
@@ -117,7 +132,10 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
 
   const rentLabel = t("listings.rent");
   const saleLabel = t("listings.sale");
-  const tabOptions = useMemo(() => [rentLabel, saleLabel], [rentLabel, saleLabel]);
+  const tabOptions = useMemo(
+    () => [rentLabel, saleLabel],
+    [rentLabel, saleLabel],
+  );
   const selectedTabValue = tab === "rent" ? rentLabel : saleLabel;
 
   const handleTabSelect = useCallback(
@@ -134,7 +152,7 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       setSelectedDirection(null);
       setSelectedDistrict(null);
     },
-    [rentLabel, saleLabel]
+    [rentLabel, saleLabel],
   );
 
   const propertyOptions = tab === "rent" ? RENT_OPTIONS : SALE_OPTIONS;
@@ -146,13 +164,13 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       setSelectedArea(null);
       setSelectedPropertyType(key);
     },
-    [selectedPropertyType]
+    [selectedPropertyType],
   );
 
   const cityOptions = useMemo(() => Object.keys(CITY_REGIONS), []);
   const translatedCityOptions = useMemo(
     () => cityOptions.map((city) => translateCityName(city, t)),
-    [cityOptions, t]
+    [cityOptions, t],
   );
 
   const handleCityPress = useCallback(() => {
@@ -162,7 +180,9 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
   const handleCitySelect = useCallback(
     (translatedCity: string) => {
       const originalCity =
-        cityOptions.find((city) => translateCityName(city, t) === translatedCity) ??
+        cityOptions.find(
+          (city) => translateCityName(city, t) === translatedCity,
+        ) ??
         translatedCity ??
         "";
       setSelectedCity(originalCity);
@@ -170,29 +190,29 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       setSelectedDistrict(null);
       setCityModalVisible(false);
     },
-    [cityOptions, t]
+    [cityOptions, t],
   );
 
   const displayCity = useMemo(
     () => translateCityName(selectedCity, t),
-    [selectedCity, t]
+    [selectedCity, t],
   );
 
   const directionOptions = useMemo(
     () => DIRECTION_KEYS.map((k) => t(`listings.${k}`)),
-    [t]
+    [t],
   );
   const districtOptions = useMemo(
     () => DISTRICT_KEYS.map((k) => t(`listings.${k}`)),
-    [t]
+    [t],
   );
   const displayDirection = useMemo(
     () => (selectedDirection ? t(`listings.${selectedDirection}`) : ""),
-    [selectedDirection, t]
+    [selectedDirection, t],
   );
   const displayDistrict = useMemo(
     () => (selectedDistrict ? t(`listings.${selectedDistrict}`) : ""),
-    [selectedDistrict, t]
+    [selectedDistrict, t],
   );
 
   // Direction/District filtering is not supported by our backend listing query today.
@@ -202,19 +222,25 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
   const handleDirectionPress = useCallback(() => {
     setDirectionModalVisible(true);
   }, []);
-  const handleDirectionSelect = useCallback((translated: string) => {
-    const key = DIRECTION_KEYS.find((k) => t(`listings.${k}`) === translated);
-    setSelectedDirection(key ?? null);
-    setDirectionModalVisible(false);
-  }, [t]);
+  const handleDirectionSelect = useCallback(
+    (translated: string) => {
+      const key = DIRECTION_KEYS.find((k) => t(`listings.${k}`) === translated);
+      setSelectedDirection(key ?? null);
+      setDirectionModalVisible(false);
+    },
+    [t],
+  );
   const handleDistrictPress = useCallback(() => {
     setDistrictModalVisible(true);
   }, []);
-  const handleDistrictSelect = useCallback((translated: string) => {
-    const key = DISTRICT_KEYS.find((k) => t(`listings.${k}`) === translated);
-    setSelectedDistrict(key ?? null);
-    setDistrictModalVisible(false);
-  }, [t]);
+  const handleDistrictSelect = useCallback(
+    (translated: string) => {
+      const key = DISTRICT_KEYS.find((k) => t(`listings.${k}`) === translated);
+      setSelectedDistrict(key ?? null);
+      setDistrictModalVisible(false);
+    },
+    [t],
+  );
 
   const showRoomsField =
     selectedPropertyType === "apartments" || selectedPropertyType === "floors";
@@ -253,12 +279,12 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
       lands: "land",
     };
     const addressParts = [selectedCity];
-    const areaNum = showAreaField && selectedArea
-      ? parseInt(selectedArea.split("-")[0] ?? "0", 10) || 200
-      : 0;
-    const bedroomsNum = showRoomsField && rooms.trim()
-      ? parseInt(rooms, 10) || 0
-      : 0;
+    const areaNum =
+      showAreaField && selectedArea
+        ? parseInt(selectedArea.split("-")[0] ?? "0", 10) || 200
+        : 0;
+    const bedroomsNum =
+      showRoomsField && rooms.trim() ? parseInt(rooms, 10) || 0 : 0;
     return {
       id: 0,
       lat: 0,
@@ -302,11 +328,14 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
         if (Number.isFinite(b) && b > 0) maxArea = b;
       }
     }
-    const bedrooms = showRoomsField ? (parseInt(rooms, 10) || undefined) : undefined;
+    const bedrooms = showRoomsField
+      ? parseInt(rooms, 10) || undefined
+      : undefined;
     const state = navigation.getState();
     const routes = state?.routes ?? [];
     const cameFromAveragePriceDetail =
-      routes.length >= 2 && routes[routes.length - 2].name === "AveragePriceDetail";
+      routes.length >= 2 &&
+      routes[routes.length - 2].name === "AveragePriceDetail";
     const nav = navigation as unknown as {
       replace: (name: string, params: object) => void;
       navigate: (name: string, params: object) => void;
@@ -336,7 +365,17 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
         },
       });
     }
-  }, [navigation, propertyForNavigation, canShowStats, tab, selectedArea, showAreaField, rooms, showRoomsField, selectedCity]);
+  }, [
+    navigation,
+    propertyForNavigation,
+    canShowStats,
+    tab,
+    selectedArea,
+    showAreaField,
+    rooms,
+    showRoomsField,
+    selectedCity,
+  ]);
 
   const handleAreaPress = useCallback(() => {
     setAreaModalVisible(true);
@@ -354,9 +393,11 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
       fieldText: { textAlign: (isRTL ? "right" : "left") as "left" | "right" },
-      cardRow: { flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse" },
+      cardRow: {
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+      },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
@@ -389,7 +430,10 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
             return (
               <TouchableOpacity
                 key={key}
-                style={[styles.propertyCard, isSelected && styles.propertyCardSelected]}
+                style={[
+                  styles.propertyCard,
+                  isSelected && styles.propertyCardSelected,
+                ]}
                 onPress={() => handlePropertySelect(key)}
                 activeOpacity={0.7}
               >
@@ -415,7 +459,13 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
         <View style={styles.citySection}>
           <View style={[styles.cityDirectionRow, rtlStyles.fieldContainer]}>
             <View style={styles.cityDirectionColumn}>
-              <Text style={[styles.sectionLabel, styles.columnLabel, rtlStyles.label]}>
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  styles.columnLabel,
+                  rtlStyles.label,
+                ]}
+              >
                 {t("listings.city")}
               </Text>
               <TouchableOpacity
@@ -423,7 +473,10 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
                 onPress={handleCityPress}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.fieldText, rtlStyles.fieldText]} numberOfLines={1}>
+                <Text
+                  style={[styles.fieldText, rtlStyles.fieldText]}
+                  numberOfLines={1}
+                >
                   {displayCity}
                 </Text>
                 <Ionicons
@@ -435,7 +488,13 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
             </View>
             {showDirectionDistrict && (
               <View style={styles.cityDirectionColumn}>
-                <Text style={[styles.sectionLabel, styles.columnLabel, rtlStyles.label]}>
+                <Text
+                  style={[
+                    styles.sectionLabel,
+                    styles.columnLabel,
+                    rtlStyles.label,
+                  ]}
+                >
                   {t("listings.direction")}
                 </Text>
                 <TouchableOpacity
@@ -443,7 +502,10 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
                   onPress={handleDirectionPress}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.fieldText, rtlStyles.fieldText]} numberOfLines={1}>
+                  <Text
+                    style={[styles.fieldText, rtlStyles.fieldText]}
+                    numberOfLines={1}
+                  >
                     {displayDirection}
                   </Text>
                   <Ionicons
@@ -465,7 +527,10 @@ export default function AqarResidentialStatsScreen(): React.JSX.Element {
                 onPress={handleDistrictPress}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.fieldText, rtlStyles.fieldText]} numberOfLines={1}>
+                <Text
+                  style={[styles.fieldText, rtlStyles.fieldText]}
+                  numberOfLines={1}
+                >
                   {displayDistrict}
                 </Text>
                 <Ionicons

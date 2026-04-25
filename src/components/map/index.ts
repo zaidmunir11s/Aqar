@@ -9,7 +9,10 @@ export { default as SearchFilterModal } from "./SearchFilterModal";
 export { default as ProjectSearchModal } from "./ProjectSearchModal";
 export { default as ProjectUnitsFilterModal } from "./ProjectUnitsFilterModal";
 export { default as ProjectUnitsSortModal } from "./ProjectUnitsSortModal";
-export type { SearchFilterState, SearchFilterModalProps } from "./SearchFilterModal";
+export type {
+  SearchFilterState,
+  SearchFilterModalProps,
+} from "./SearchFilterModal";
 export type {
   ProjectUnitsFilterModalProps,
   ProjectUnitsFilterState,

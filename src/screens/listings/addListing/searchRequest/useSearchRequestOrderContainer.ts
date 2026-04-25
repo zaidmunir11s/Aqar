@@ -14,27 +14,27 @@ interface Args {
 export function useSearchRequestOrderContainer({ form }: Args) {
   const openCategoryModal = useCallback(
     () => form.setShowCategoryModal(true),
-    [form.setShowCategoryModal]
+    [form.setShowCategoryModal],
   );
   const openFloorModal = useCallback(
     () => form.setShowFloorModal(true),
-    [form.setShowFloorModal]
+    [form.setShowFloorModal],
   );
   const openAgeModal = useCallback(
     () => form.setShowAgeModal(true),
-    [form.setShowAgeModal]
+    [form.setShowAgeModal],
   );
   const openStreetDirectionModal = useCallback(
     () => form.setShowStreetDirectionModal(true),
-    [form.setShowStreetDirectionModal]
+    [form.setShowStreetDirectionModal],
   );
   const openStreetWidthModal = useCallback(
     () => form.setShowStreetWidthModal(true),
-    [form.setShowStreetWidthModal]
+    [form.setShowStreetWidthModal],
   );
   const openStoresModal = useCallback(
     () => form.setShowStoresModal(true),
-    [form.setShowStoresModal]
+    [form.setShowStoresModal],
   );
 
   const streetDirectionModalValue = useMemo(
@@ -42,20 +42,20 @@ export function useSearchRequestOrderContainer({ form }: Args) {
       form.isVillaForSale
         ? form.streetDirection
         : form.isLandForSale
-        ? form.landStreetDirection
-        : form.isSmallHouseForSale
-        ? form.smallHouseStreetDirection
-        : form.isBuildingForSale
-        ? form.buildingStreetDirection
-        : form.isVillaForRent
-        ? form.villaRentStreetDirection
-        : form.isSmallHouseForRent
-        ? form.smallHouseRentStreetDirection
-        : form.isBuildingForRent
-        ? form.buildingRentStreetDirection
-        : form.isLandForRent
-        ? form.landRentStreetDirection
-        : "",
+          ? form.landStreetDirection
+          : form.isSmallHouseForSale
+            ? form.smallHouseStreetDirection
+            : form.isBuildingForSale
+              ? form.buildingStreetDirection
+              : form.isVillaForRent
+                ? form.villaRentStreetDirection
+                : form.isSmallHouseForRent
+                  ? form.smallHouseRentStreetDirection
+                  : form.isBuildingForRent
+                    ? form.buildingRentStreetDirection
+                    : form.isLandForRent
+                      ? form.landRentStreetDirection
+                      : "",
     [
       form.isVillaForSale,
       form.streetDirection,
@@ -73,7 +73,7 @@ export function useSearchRequestOrderContainer({ form }: Args) {
       form.buildingRentStreetDirection,
       form.isLandForRent,
       form.landRentStreetDirection,
-    ]
+    ],
   );
 
   const streetWidthModalValue = useMemo(
@@ -81,30 +81,30 @@ export function useSearchRequestOrderContainer({ form }: Args) {
       form.isVillaForSale
         ? form.streetWidth
         : form.isLandForSale
-        ? form.landStreetWidth
-        : form.isSmallHouseForSale
-        ? form.smallHouseStreetWidth
-        : form.isBuildingForSale
-        ? form.streetWidth
-        : form.isLoungeForSale
-        ? form.loungeStreetWidth
-        : form.isStoreForSale
-        ? form.storeStreetWidth
-        : form.isVillaForRent
-        ? form.villaRentStreetWidth
-        : form.isSmallHouseForRent
-        ? form.smallHouseRentStreetWidth
-        : form.isStoreForRent
-        ? form.storeRentStreetWidth
-        : form.isBuildingForRent
-        ? form.buildingRentStreetWidth
-        : form.isLandForRent
-        ? form.landRentStreetWidth
-        : form.isOfficeForRent
-        ? form.officeRentStreetWidth
-        : form.isWarehouseForRent
-        ? form.warehouseRentStreetWidth
-        : "",
+          ? form.landStreetWidth
+          : form.isSmallHouseForSale
+            ? form.smallHouseStreetWidth
+            : form.isBuildingForSale
+              ? form.streetWidth
+              : form.isLoungeForSale
+                ? form.loungeStreetWidth
+                : form.isStoreForSale
+                  ? form.storeStreetWidth
+                  : form.isVillaForRent
+                    ? form.villaRentStreetWidth
+                    : form.isSmallHouseForRent
+                      ? form.smallHouseRentStreetWidth
+                      : form.isStoreForRent
+                        ? form.storeRentStreetWidth
+                        : form.isBuildingForRent
+                          ? form.buildingRentStreetWidth
+                          : form.isLandForRent
+                            ? form.landRentStreetWidth
+                            : form.isOfficeForRent
+                              ? form.officeRentStreetWidth
+                              : form.isWarehouseForRent
+                                ? form.warehouseRentStreetWidth
+                                : "",
     [
       form.isVillaForSale,
       form.streetWidth,
@@ -131,7 +131,7 @@ export function useSearchRequestOrderContainer({ form }: Args) {
       form.officeRentStreetWidth,
       form.isWarehouseForRent,
       form.warehouseRentStreetWidth,
-    ]
+    ],
   );
 
   // Initialize picker defaults when category changes.
@@ -180,4 +180,3 @@ export function useSearchRequestOrderContainer({ form }: Args) {
     streetWidthModalValue,
   };
 }
-

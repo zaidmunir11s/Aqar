@@ -35,7 +35,7 @@ type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
-  const { isRTL } = useLocalization();
+  const { isRTL, t } = useLocalization();
 
   const [brokerageContract, setBrokerageContract] = useState("");
   const [deedNumber, setDeedNumber] = useState("");
@@ -75,7 +75,7 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = () => {
@@ -111,7 +111,7 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <View style={{ flex: 1 }}>
           <ScreenHeader
-            title="Issuing an ad license"
+            title={t("listings.brokerIssueAdLicenseTitle")}
             onBackPress={handleBackPress}
             showRightSide={true}
             rightComponent={
@@ -132,41 +132,53 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.contentContainer}>
-              <Text style={styles.sectionTitle}>Brokerage contract number</Text>
+              <Text style={styles.sectionTitle}>
+                {t("listings.brokerageContractNumber")}
+              </Text>
               <TextInput
-                style={[styles.textInput, brokerageFocused && styles.textInputFocused]}
+                style={[
+                  styles.textInput,
+                  brokerageFocused && styles.textInputFocused,
+                ]}
                 value={brokerageContract}
                 onChangeText={setBrokerageContract}
                 keyboardType="number-pad"
-                placeholder="Enter here..."
+                placeholder={t("listings.enterHere")}
                 maxLength={10}
                 onFocus={() => setBrokerageFocused(true)}
                 onBlur={() => setBrokerageFocused(false)}
               />
               {brokerageContract.length > 0 && !isValidBrokerage && (
                 <Text style={styles.errorText}>
-                  Brokerage contract number must be 10 digits starting with 61 or 62
+                  {t("listings.brokerageContractNumberError")}
                 </Text>
               )}
 
-              <Text style={styles.sectionTitle}>Deed number</Text>
+              <Text style={styles.sectionTitle}>
+                {t("listings.deedNumber")}
+              </Text>
               <TextInput
-                style={[styles.textInput, deedFocused && styles.textInputFocused]}
+                style={[
+                  styles.textInput,
+                  deedFocused && styles.textInputFocused,
+                ]}
                 value={deedNumber}
                 onChangeText={setDeedNumber}
                 keyboardType="number-pad"
-                placeholder="Enter here..."
+                placeholder={t("listings.enterHere")}
                 maxLength={16}
                 onFocus={() => setDeedFocused(true)}
                 onBlur={() => setDeedFocused(false)}
               />
               {deedNumber.length > 0 && !isValidDeed && (
                 <Text style={styles.errorText}>
-                  Deed number must be either 12 or 16 digits
+                  {t("listings.deedNumberDigitsError")}
                 </Text>
               )}
 
-              <Text style={styles.sectionTitle}>Property price</Text>
+              <Text style={styles.sectionTitle}>
+                {t("listings.propertyPrice")}
+              </Text>
               <View
                 style={[
                   styles.priceInputContainer,
@@ -178,39 +190,59 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
                   value={propertyPrice}
                   onChangeText={setPropertyPrice}
                   keyboardType="number-pad"
-                  placeholder="Enter here..."
+                  placeholder={t("listings.enterHere")}
                   onFocus={() => setPriceFocused(true)}
                   onBlur={() => setPriceFocused(false)}
                 />
-                <Text style={styles.sarText}>SAR</Text>
+                <Text style={styles.sarText}>{t("listings.sar")}</Text>
               </View>
 
-              <Text style={styles.sectionTitle}>Ad Type</Text>
+              <Text style={styles.sectionTitle}>{t("listings.adType")}</Text>
               <TouchableOpacity
                 style={[styles.selectField, adType && styles.selectFieldActive]}
                 onPress={() => setShowAdTypeModal(true)}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.selectFieldText, adType && styles.selectFieldTextActive]}>
-                  {adType || "Please make a selection..."}
+                <Text
+                  style={[
+                    styles.selectFieldText,
+                    adType && styles.selectFieldTextActive,
+                  ]}
+                >
+                  {adType
+                    ? adType === "Sale"
+                      ? t("listings.sale")
+                      : t("listings.rent")
+                    : t("listings.pleaseMakeSelection")}
                 </Text>
-                <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
+                <Ionicons
+                  name="chevron-down"
+                  size={wp(5)}
+                  color={COLORS.primary}
+                />
               </TouchableOpacity>
 
               <View style={styles.toggleRow}>
-                <Text style={styles.toggleLabel}>Are you an agent?</Text>
+                <Text style={styles.toggleLabel}>
+                  {t("listings.areYouAnAgent")}
+                </Text>
                 <ToggleSwitch value={isAgent} onValueChange={setIsAgent} />
               </View>
 
               {isAgent && (
                 <View style={styles.attorneyContainer}>
-                  <Text style={styles.sectionTitle}>Attorney number</Text>
+                  <Text style={styles.sectionTitle}>
+                    {t("listings.attorneyNumber")}
+                  </Text>
                   <TextInput
-                    style={[styles.textInput, attorneyFocused && styles.textInputFocused]}
+                    style={[
+                      styles.textInput,
+                      attorneyFocused && styles.textInputFocused,
+                    ]}
                     value={attorneyNumber}
                     onChangeText={setAttorneyNumber}
                     keyboardType="number-pad"
-                    placeholder="Enter here..."
+                    placeholder={t("listings.enterHere")}
                     onFocus={() => setAttorneyFocused(true)}
                     onBlur={() => setAttorneyFocused(false)}
                   />
@@ -222,14 +254,22 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
                 onPress={() => setAgreedToTerms(!agreedToTerms)}
                 activeOpacity={1}
               >
-                <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreedToTerms && styles.checkboxChecked,
+                  ]}
+                >
                   {agreedToTerms && (
-                    <Ionicons name="checkmark" size={wp(4.5)} color={COLORS.white} />
+                    <Ionicons
+                      name="checkmark"
+                      size={wp(4.5)}
+                      color={COLORS.white}
+                    />
                   )}
                 </View>
                 <Text style={[styles.checkboxText, rtlStyles.checkboxText]}>
-                  I agree to use this license only on Aqar platform, and if it is found to be
-                  used on another platform, Aqar platform has the right to delete the ad.
+                  {t("listings.adLicenseAgreement")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -245,13 +285,17 @@ export default function BrokerIssueAdLicenseScreen(): React.JSX.Element {
         nextDisabled={!canProceed}
       />
 
-      <CancelModal visible={showCancelModal} onBack={handleCancelBack} onConfirm={handleCancelYes} />
+      <CancelModal
+        visible={showCancelModal}
+        onBack={handleCancelBack}
+        onConfirm={handleCancelYes}
+      />
 
       <WheelPickerModal
         visible={showAdTypeModal}
         onClose={() => setShowAdTypeModal(false)}
         onSelect={handleAdTypeSelect}
-        title="Ad Type"
+        title={t("listings.adType")}
         options={["Sale", "Rent"]}
         initialValue={adType || undefined}
       />

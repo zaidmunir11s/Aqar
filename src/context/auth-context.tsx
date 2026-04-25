@@ -8,9 +8,8 @@ import React, {
 } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { STORAGE_KEYS } from "../constants";
-import { secureGet } from "@/utils/secureStore";
+import { secureGet, secureSet } from "@/utils/secureStore";
 import { API_CONFIG } from "@/constants/api";
-import { secureSet } from "@/utils/secureStore";
 
 /** Notify listeners when backend session is invalidated (e.g. 401 + refresh failed). */
 const sessionExpiredListeners: (() => void)[] = [];
@@ -69,7 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!clerkLoaded || !isSignedIn) return;
       if (hasBackendSession) return;
 
-      const existing = await secureGet(STORAGE_KEYS.authToken).catch(() => null);
+      const existing = await secureGet(STORAGE_KEYS.authToken).catch(
+        () => null,
+      );
       if (existing) {
         if (!cancelled) setHasBackendSession(true);
         return;
@@ -111,12 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isBackendCheckDone,
       setHasBackendSession,
     }),
-    [hasBackendSession, isBackendCheckDone]
+    [hasBackendSession, isBackendCheckDone],
   );
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuthContext(): AuthContextValue {
@@ -143,6 +142,6 @@ export function useIsAuthenticated(): {
 
   return useMemo(
     () => ({ isAuthenticated, isLoaded }),
-    [isAuthenticated, isLoaded]
+    [isAuthenticated, isLoaded],
   );
 }

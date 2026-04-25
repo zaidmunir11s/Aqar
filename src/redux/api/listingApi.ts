@@ -2,16 +2,12 @@ import type {
   BaseQueryFn,
   EndpointBuilder,
   FetchBaseQueryError,
+  FetchArgs,
 } from "@reduxjs/toolkit/query";
-import type { FetchArgs } from "@reduxjs/toolkit/query";
 import { baseApi } from "@/redux/api/baseApi";
 import type { ApiListingDto } from "@/utils/apiListingMapper";
 
-type BaseQuery = BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
->;
+type BaseQuery = BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError>;
 type ApiTagTypes =
   | "User"
   | "Auth"
@@ -93,7 +89,7 @@ export const listingApi = baseApi.injectEndpoints({
         params: params ?? {},
       }),
       transformResponse: (
-        response: SuccessEnvelope<{ listings: ApiListingDto[] }>
+        response: SuccessEnvelope<{ listings: ApiListingDto[] }>,
       ) => ({
         listings: response?.data?.listings ?? [],
       }),
@@ -124,7 +120,7 @@ export const listingApi = baseApi.injectEndpoints({
     getMyListings: builder.query<{ listings: ApiListingDto[] }, void>({
       query: () => "/api/listings/my",
       transformResponse: (
-        response: SuccessEnvelope<{ listings: ApiListingDto[] }>
+        response: SuccessEnvelope<{ listings: ApiListingDto[] }>,
       ) => ({
         listings: response?.data?.listings ?? [],
       }),
@@ -144,16 +140,13 @@ export const listingApi = baseApi.injectEndpoints({
         },
       }),
       transformResponse: (
-        response: SuccessEnvelope<{ listings: ApiListingDto[] }>
+        response: SuccessEnvelope<{ listings: ApiListingDto[] }>,
       ) => ({
         listings: response?.data?.listings ?? [],
       }),
     }),
 
-    createListing: builder.mutation<
-      ApiListingDto,
-      CreateListingRequest
-    >({
+    createListing: builder.mutation<ApiListingDto, CreateListingRequest>({
       query: (body) => ({
         url: "/api/listings",
         method: "POST",
@@ -166,7 +159,10 @@ export const listingApi = baseApi.injectEndpoints({
         }
         return row;
       },
-      invalidatesTags: [{ type: "Property", id: "LIST" }, { type: "Property", id: "MINE" }],
+      invalidatesTags: [
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "MINE" },
+      ],
     }),
 
     updateListing: builder.mutation<ApiListingDto, UpdateListingRequest>({
@@ -201,7 +197,10 @@ export const listingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    reportListing: builder.mutation<void, { listingId: string; reason: string; details?: string | null }>({
+    reportListing: builder.mutation<
+      void,
+      { listingId: string; reason: string; details?: string | null }
+    >({
       query: ({ listingId, reason, details }) => ({
         url: `/api/listings/${listingId}/report`,
         method: "POST",

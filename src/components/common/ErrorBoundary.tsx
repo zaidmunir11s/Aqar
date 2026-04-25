@@ -12,6 +12,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { COLORS } from "../../constants";
+import { i18n } from "@/i18n";
 
 interface Props {
   children: ReactNode;
@@ -87,16 +88,17 @@ class ErrorBoundary extends Component<Props, State> {
               />
             </View>
 
-            <Text style={styles.title}>Oops! Something went wrong</Text>
+            <Text style={styles.title}>{i18n.t("errors.unexpectedTitle")}</Text>
 
             <Text style={styles.message}>
-              We're sorry for the inconvenience. An unexpected error has
-              occurred.
+              {i18n.t("errors.unexpectedMessage")}
             </Text>
 
             {__DEV__ && this.state.error && (
               <View style={styles.errorDetails}>
-                <Text style={styles.errorDetailsTitle}>Error Details:</Text>
+                <Text style={styles.errorDetailsTitle}>
+                  {i18n.t("errors.errorDetails")}
+                </Text>
                 <Text style={styles.errorText}>
                   {this.state.error.toString()}
                 </Text>
@@ -113,7 +115,7 @@ class ErrorBoundary extends Component<Props, State> {
               onPress={this.handleReset}
               activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>Try Again</Text>
+              <Text style={styles.buttonText}>{i18n.t("common.retry")}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

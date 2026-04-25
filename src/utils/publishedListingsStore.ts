@@ -4,7 +4,10 @@ import type {
   ListingType,
   PropertyDetailItem,
 } from "@/types/property";
-import { getDefaultImageUrl, normalizeAdvertiserPhoneForTel } from "./propertyHelpers";
+import {
+  getDefaultImageUrl,
+  normalizeAdvertiserPhoneForTel,
+} from "./propertyHelpers";
 import {
   buildRentPaymentScheduleFromPublishForm,
   type UserRentPaymentPublishInput,
@@ -103,12 +106,15 @@ function nextPublishedSequence(): number {
   // Best-effort init; no need to await for UI-only sequence.
   void initPublishedSequenceOnce();
   publishedSequence += 1;
-  secureSet(STORAGE_KEYS.localPublishedSequenceV1, String(publishedSequence)).catch(() => {});
+  secureSet(
+    STORAGE_KEYS.localPublishedSequenceV1,
+    String(publishedSequence),
+  ).catch(() => {});
   return publishedSequence;
 }
 
 function publisherPhoneToAdvertiserField(
-  digitsRaw: string | undefined
+  digitsRaw: string | undefined,
 ): string | undefined {
   const trimmed = digitsRaw?.trim();
   if (!trimmed) return undefined;
@@ -137,7 +143,9 @@ export function getPublishedListings(): Property[] {
   return publishedListings;
 }
 
-export function addPublishedListingFromMarketingRequest(input: MarketingPublishInput): Property {
+export function addPublishedListingFromMarketingRequest(
+  input: MarketingPublishInput,
+): Property {
   const listingType = inferListingType(input.selectedCategory);
   const type = inferPropertyType(input.selectedCategory);
   const photoUris =
@@ -161,24 +169,27 @@ export function addPublishedListingFromMarketingRequest(input: MarketingPublishI
   const lat = input.selectedLocation?.latitude ?? 24.7136;
   const lng = input.selectedLocation?.longitude ?? 46.6753;
   const address =
-    input.locationDisplayName?.trim() ||
-    "Published from Marketing Request";
+    input.locationDisplayName?.trim() || "Published from Marketing Request";
 
   const sequence = nextPublishedSequence();
   const nowIso = new Date().toISOString();
 
-  let rentPaymentSchedule = buildRentPaymentScheduleFromPublishForm(input.rentPaymentOptions);
+  let rentPaymentSchedule = buildRentPaymentScheduleFromPublishForm(
+    input.rentPaymentOptions,
+  );
   if (listingType === "rent" && rentPaymentSchedule.length === 0) {
     const digits = (input.price ?? "").replace(/[^\d]/g, "");
     const n = digits ? Number(digits) : NaN;
     if (Number.isFinite(n) && n > 0) {
-      rentPaymentSchedule = buildRentPaymentScheduleFromPublishForm({ annualSar: n });
+      rentPaymentSchedule = buildRentPaymentScheduleFromPublishForm({
+        annualSar: n,
+      });
     }
   }
 
   const publisherName = input.publisherDisplayName?.trim() || undefined;
   const publisherPhone = publisherPhoneToAdvertiserField(
-    input.publisherPhoneDigits
+    input.publisherPhoneDigits,
   );
   const publisherDigits = (input.publisherPhoneDigits ?? "").replace(/\D/g, "");
 
@@ -235,7 +246,7 @@ function nationalDigitsFromStoredPhone(phone?: string): string {
 
 function publishedListingMatchesUser(
   p: Property,
-  userPhoneDigits: string | null | undefined
+  userPhoneDigits: string | null | undefined,
 ): boolean {
   if (p.id < 500000) return false;
   const u = (userPhoneDigits ?? "").replace(/\D/g, "");
@@ -255,10 +266,10 @@ function publishedListingMatchesUser(
  * When phone is missing, all in-app published listings (id ≥ 500000) are included (dev fallback).
  */
 export function getUserProfilePublishedAds(
-  userPhoneDigits: string | null | undefined
+  userPhoneDigits: string | null | undefined,
 ): { current: Property[]; archived: Property[] } {
   const mine = getPublishedListings().filter((p) =>
-    publishedListingMatchesUser(p, userPhoneDigits)
+    publishedListingMatchesUser(p, userPhoneDigits),
   );
   const current = mine.filter((p) => !p.isArchived);
   const archived = mine.filter((p) => Boolean(p.isArchived));
@@ -267,10 +278,9 @@ export function getUserProfilePublishedAds(
 
 export function setPublishedListingArchived(
   propertyId: number,
-  archived: boolean
+  archived: boolean,
 ): void {
   publishedListings = publishedListings.map((p) =>
-    p.id === propertyId ? { ...p, isArchived: archived } : p
+    p.id === propertyId ? { ...p, isArchived: archived } : p,
   );
 }
-

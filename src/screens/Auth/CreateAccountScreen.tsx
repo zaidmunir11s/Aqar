@@ -20,7 +20,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { secureSet } from "@/utils/secureStore";
 import { Header, PrimaryButton, TextInput } from "../../components";
 import { COLORS, STORAGE_KEYS } from "../../constants";
-import { useLocalization, useKeyboardHeight, useTabNavigation } from "../../hooks";
+import {
+  useLocalization,
+  useKeyboardHeight,
+  useTabNavigation,
+} from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import { useSignupMutation } from "@/redux/api";
 import {
@@ -32,7 +36,10 @@ import {
   setLoggedInDisplayName,
   setLoggedInProfileImageUri,
 } from "../../utils/loggedInPhoneStorage";
-import { syncAccountProfileMetaOnAuth, touchLastActiveAt } from "../../utils/accountActivityStorage";
+import {
+  syncAccountProfileMetaOnAuth,
+  touchLastActiveAt,
+} from "../../utils/accountActivityStorage";
 import type { AuthStackParamList } from "../../navigation/types";
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -68,15 +75,21 @@ export default function CreateAccountScreen(): React.JSX.Element {
   }, []);
 
   // Validation functions (Saudi Arabia: 9 digits, must start with 5)
-  const validatePhoneNumber = useCallback((phone: string): string => {
-    const key = getSaudiPhoneValidationError(phone);
-    return key ? t(key) : "";
-  }, [t]);
+  const validatePhoneNumber = useCallback(
+    (phone: string): string => {
+      const key = getSaudiPhoneValidationError(phone);
+      return key ? t(key) : "";
+    },
+    [t],
+  );
 
-  const validatePassword = useCallback((pwd: string): string => {
-    const key = getPasswordValidationError(pwd, "detailed");
-    return key ? t(key) : "";
-  }, [t]);
+  const validatePassword = useCallback(
+    (pwd: string): string => {
+      const key = getPasswordValidationError(pwd, "detailed");
+      return key ? t(key) : "";
+    },
+    [t],
+  );
 
   const phoneError = validatePhoneNumber(phoneNumber);
   const passwordError = validatePassword(password);
@@ -122,7 +135,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
       }).unwrap();
 
       await setLoggedInDisplayName(
-        `${firstName.trim()} ${lastName.trim()}`.trim()
+        `${firstName.trim()} ${lastName.trim()}`.trim(),
       );
       await setLoggedInProfileImageUri(profileImage || null);
 
@@ -175,7 +188,8 @@ export default function CreateAccountScreen(): React.JSX.Element {
       const errorMessage =
         err?.data?.message ??
         err?.message ??
-        (t("auth.failedToCreateAccount") ?? "Failed to create account. Please try again.");
+        t("auth.failedToCreateAccount") ??
+        "Failed to create account. Please try again.";
       Alert.alert(t("common.error"), errorMessage);
     }
   }, [
@@ -216,7 +230,7 @@ export default function CreateAccountScreen(): React.JSX.Element {
       if (status !== "granted") {
         Alert.alert(
           t("auth.permissionRequired"),
-          t("auth.photoAccessRequired")
+          t("auth.photoAccessRequired"),
         );
         return;
       }
@@ -270,19 +284,21 @@ export default function CreateAccountScreen(): React.JSX.Element {
       },
       linksInline: {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
-        justifyContent: (isRTL ? "flex-end" : "center") as "center" | "flex-end",
+        justifyContent: (isRTL ? "flex-end" : "center") as
+          | "center"
+          | "flex-end",
       },
       editIconContainer: {
         right: isRTL ? undefined : 0,
         left: isRTL ? 0 : undefined,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: hp(6) + keyboardHeight }],
-    [keyboardHeight]
+    [keyboardHeight],
   );
 
   return (
@@ -298,7 +314,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, rtlStyles.title]}>{t("auth.finishingSignUp")}</Text>
+          <Text style={[styles.title, rtlStyles.title]}>
+            {t("auth.finishingSignUp")}
+          </Text>
         </View>
 
         {/* Profile Picture Section */}
@@ -323,7 +341,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
                   />
                 </View>
               )}
-              <View style={[styles.editIconContainer, rtlStyles.editIconContainer]}>
+              <View
+                style={[styles.editIconContainer, rtlStyles.editIconContainer]}
+              >
                 <Ionicons
                   name={profileImage ? "pencil" : "camera"}
                   size={wp(4)}
@@ -336,7 +356,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Full Name Section */}
         <View style={styles.nameSection}>
-          <Text style={[styles.label, rtlStyles.label]}>{t("auth.fullName")}</Text>
+          <Text style={[styles.label, rtlStyles.label]}>
+            {t("auth.fullName")}
+          </Text>
           <TextInput
             value={firstName}
             onChangeText={setFirstName}
@@ -358,7 +380,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Phone Number Section */}
         <View style={styles.section}>
-          <Text style={[styles.label, rtlStyles.label]}>{t("auth.phoneNumber")}</Text>
+          <Text style={[styles.label, rtlStyles.label]}>
+            {t("auth.phoneNumber")}
+          </Text>
           <TextInput
             value={phoneNumber}
             onChangeText={handlePhoneChange}
@@ -374,7 +398,9 @@ export default function CreateAccountScreen(): React.JSX.Element {
 
         {/* Password Section */}
         <View style={styles.section}>
-          <Text style={[styles.label, rtlStyles.label]}>{t("auth.password")}</Text>
+          <Text style={[styles.label, rtlStyles.label]}>
+            {t("auth.password")}
+          </Text>
           <TextInput
             value={password}
             onChangeText={handlePasswordChange}
@@ -396,9 +422,14 @@ export default function CreateAccountScreen(): React.JSX.Element {
           </Text>
           <View style={[styles.linksInline, rtlStyles.linksInline]}>
             <TouchableOpacity onPress={handleTermsPress} activeOpacity={0.7}>
-              <Text style={styles.legalLink}>{t("auth.termsAndConditions")}</Text>
+              <Text style={styles.legalLink}>
+                {t("auth.termsAndConditions")}
+              </Text>
             </TouchableOpacity>
-            <Text style={[styles.legalText, rtlStyles.legalText]}> {t("auth.and")} </Text>
+            <Text style={[styles.legalText, rtlStyles.legalText]}>
+              {" "}
+              {t("auth.and")}{" "}
+            </Text>
             <TouchableOpacity onPress={handlePrivacyPress} activeOpacity={0.7}>
               <Text style={styles.legalLink}>{t("auth.privacyPolicy")}</Text>
             </TouchableOpacity>

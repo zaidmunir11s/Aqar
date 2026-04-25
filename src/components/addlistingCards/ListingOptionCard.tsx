@@ -22,18 +22,20 @@ export interface ListingOptionCardProps {
 }
 
 const ListingOptionCard = memo<ListingOptionCardProps>(
-  ({ icon, iconLibrary = "MaterialCommunityIcons", title, description, onPress }) => {
+  ({
+    icon,
+    iconLibrary = "MaterialCommunityIcons",
+    title,
+    description,
+    onPress,
+  }) => {
     const renderIcon = () => {
       const iconColor = COLORS.primary;
       const iconSize = wp(7);
 
       if (iconLibrary === "Ionicons") {
         return (
-          <Ionicons
-            name={icon as any}
-            size={iconSize}
-            color={iconColor}
-          />
+          <Ionicons name={icon as any} size={iconSize} color={iconColor} />
         );
       }
 
@@ -52,16 +54,14 @@ const ListingOptionCard = memo<ListingOptionCardProps>(
         activeOpacity={0.5}
         onPress={onPress}
       >
-        <View style={styles.iconContainer}>
-          {renderIcon()}
-        </View>
+        <View style={styles.iconContainer}>{renderIcon()}</View>
         <View style={styles.contentContainer}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ListingOptionCard.displayName = "ListingOptionCard";

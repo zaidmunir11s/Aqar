@@ -10,7 +10,10 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import {
   ScreenHeader,
   ListingFooter,
@@ -109,19 +112,81 @@ const SALE_VALIDATION_RULES: Record<string, SaleValidationRule> = {
 };
 
 const RENT_VALIDATION_RULES: Record<string, RentValidationRule> = {
-  "rent-1": { annualMin: 49, hasAnnualAmountField: true, hasInstallments: true }, // Apartment
-  "rent-2": { areaMin: 99, annualMin: 999, hasAnnualAmountField: true, hasInstallments: true }, // Villa
-  "rent-3": { annualMin: 999, hasAnnualAmountField: true, hasInstallments: true }, // Big flat
-  "rent-4": { areaMin: 49, annualMin: 99, hasAnnualAmountField: true, hasInstallments: true }, // Lounge
-  "rent-5": { areaMin: 49, annualMin: 999, hasAnnualAmountField: true, hasInstallments: true }, // Small house
-  "rent-6": { annualMin: 999, hasAnnualAmountField: true, hasInstallments: true }, // Store
-  "rent-7": { areaMin: 49, annualMin: 9999, hasAnnualAmountField: true, hasInstallments: true }, // Building
-  "rent-8": { areaMin: 9, hasAnnualAmountField: false, hasInstallments: false, hasMeterPriceField: true }, // Land
-  "rent-9": { annualMin: 99, hasAnnualAmountField: true, hasInstallments: true }, // Room
-  "rent-10": { areaMin: 19, annualMin: 1499, hasAnnualAmountField: true, hasInstallments: true, hasMeterPriceField: true }, // Office
-  "rent-11": { areaMin: 19, annualMin: 99, hasAnnualAmountField: true, hasInstallments: true }, // Tent
-  "rent-12": { areaMin: 9, annualMin: 79, hasAnnualAmountField: true, hasInstallments: true }, // Warehouse
-  "rent-13": { areaMin: 49, annualMin: 99, hasAnnualAmountField: true, hasInstallments: true }, // Chalet
+  "rent-1": {
+    annualMin: 49,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Apartment
+  "rent-2": {
+    areaMin: 99,
+    annualMin: 999,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Villa
+  "rent-3": {
+    annualMin: 999,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Big flat
+  "rent-4": {
+    areaMin: 49,
+    annualMin: 99,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Lounge
+  "rent-5": {
+    areaMin: 49,
+    annualMin: 999,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Small house
+  "rent-6": {
+    annualMin: 999,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Store
+  "rent-7": {
+    areaMin: 49,
+    annualMin: 9999,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Building
+  "rent-8": {
+    areaMin: 9,
+    hasAnnualAmountField: false,
+    hasInstallments: false,
+    hasMeterPriceField: true,
+  }, // Land
+  "rent-9": {
+    annualMin: 99,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Room
+  "rent-10": {
+    areaMin: 19,
+    annualMin: 1499,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+    hasMeterPriceField: true,
+  }, // Office
+  "rent-11": {
+    areaMin: 19,
+    annualMin: 99,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Tent
+  "rent-12": {
+    areaMin: 9,
+    annualMin: 79,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Warehouse
+  "rent-13": {
+    areaMin: 49,
+    annualMin: 99,
+    hasAnnualAmountField: true,
+    hasInstallments: true,
+  }, // Chalet
 };
 
 export default function MarketingRequestPricingCommissionScreen(): React.JSX.Element {
@@ -137,19 +202,25 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
   const saleMaxRule = SALE_MAX_RULES[selectedCategory];
   const rentMaxRule = RENT_MAX_RULES[selectedCategory];
   const maxRuleForCeiling = saleMaxRule ?? rentMaxRule;
-  const effectivePriceMaxExclusive = saleMaxRule?.priceMax ?? rentMaxRule?.annualMax;
+  const effectivePriceMaxExclusive =
+    saleMaxRule?.priceMax ?? rentMaxRule?.annualMax;
   /** Farm sale & office rent: annual/total amount syncs with area × meter price (same pattern as farm). */
   const isAreaMeterAnnualSyncCategory =
     selectedCategory === "sale-7" || selectedCategory === "rent-10";
   const isMeterPriceCategory = saleRule?.useMeterPriceLabel === true;
   const hasMeterPriceField =
-    saleRule?.hasMeterPriceField === true || rentRule?.hasMeterPriceField === true;
-  const hasAnnualAmountFieldForRent = isRentCategory ? rentRule?.hasAnnualAmountField !== false : false;
+    saleRule?.hasMeterPriceField === true ||
+    rentRule?.hasMeterPriceField === true;
+  const hasAnnualAmountFieldForRent = isRentCategory
+    ? rentRule?.hasAnnualAmountField !== false
+    : false;
 
   const [area, setArea] = useState("");
   const [price, setPrice] = useState("");
   const [hasCommission, setHasCommission] = useState(false);
-  const [commissionType, setCommissionType] = useState<"percentage" | "fixed">("percentage");
+  const [commissionType, setCommissionType] = useState<"percentage" | "fixed">(
+    "percentage",
+  );
   const [commissionValue, setCommissionValue] = useState("");
   const [meterPrice, setMeterPrice] = useState("");
   const [monthlyRentAmount, setMonthlyRentAmount] = useState("");
@@ -176,7 +247,7 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
   const commissionOptions = useMemo(
     () => [t("listings.percentage"), t("listings.fixed")],
-    [t]
+    [t],
   );
 
   const rtlStyles = useMemo(
@@ -196,7 +267,7 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const toNumber = (value: string): number => {
@@ -233,12 +304,16 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
   const normalizeCommissionForNavigate = (): string => {
     if (commissionType === "percentage") {
-      return normalizeCommissionPercentageInput(commissionValue).replace(/\.+$/, "");
+      return normalizeCommissionPercentageInput(commissionValue).replace(
+        /\.+$/,
+        "",
+      );
     }
     return normalizeNumericInput(commissionValue);
   };
 
-  const formatValidationNumber = (n: number): string => n.toLocaleString("en-US");
+  const formatValidationNumber = (n: number): string =>
+    n.toLocaleString("en-US");
 
   // Farm sale & office rent: area × meter → annual/total amount (`price`). Omit `price` from deps so typing price does not immediately reset before meter sync.
   useEffect(() => {
@@ -282,10 +357,15 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
     rentRule?.hasInstallments === true &&
     (hasAnnualAmountFieldForRent ? price.trim().length > 0 : false);
   const hasValidationRule = hasCategoryValidationRule || isRentCategory;
-  const effectiveAreaMin = hasCategoryValidationRule ? saleRule?.areaMin : rentRule?.areaMin;
-  const effectivePriceMin = hasCategoryValidationRule ? saleRule?.priceMin : rentRule?.annualMin;
+  const effectiveAreaMin = hasCategoryValidationRule
+    ? saleRule?.areaMin
+    : rentRule?.areaMin;
+  const effectivePriceMin = hasCategoryValidationRule
+    ? saleRule?.priceMin
+    : rentRule?.annualMin;
 
-  const areaRequiredError = submitAttempted && hasValidationRule && area.trim().length === 0;
+  const areaRequiredError =
+    submitAttempted && hasValidationRule && area.trim().length === 0;
   const areaMinError =
     submitAttempted &&
     hasValidationRule &&
@@ -320,7 +400,8 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
     effectivePriceMaxExclusive !== undefined &&
     price.trim().length > 0 &&
     priceNumber >= effectivePriceMaxExclusive &&
-    (hasCategoryValidationRule || (isRentCategory && hasAnnualAmountFieldForRent));
+    (hasCategoryValidationRule ||
+      (isRentCategory && hasAnnualAmountFieldForRent));
 
   const installmentAnnualCheckActive =
     isRentCategory &&
@@ -356,12 +437,11 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
   const priceMaxError = priceMaxInvalid;
 
   const commissionInvalid =
-    hasCommission && (commissionValue.trim().length === 0 || parseCommissionNumber() <= 0);
+    hasCommission &&
+    (commissionValue.trim().length === 0 || parseCommissionNumber() <= 0);
   const commissionRequiredError = submitAttempted && commissionInvalid;
   const meterPriceRequiredError =
-    submitAttempted &&
-    hasMeterPriceField &&
-    meterPrice.trim().length === 0;
+    submitAttempted && hasMeterPriceField && meterPrice.trim().length === 0;
   const monthlyPaymentRequiredError =
     submitAttempted &&
     isRentCategory &&
@@ -377,15 +457,18 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
     isRentCategory &&
     acceptSemiAnnualPayment &&
     semiAnnualRentAmount.trim().length === 0;
-  const monthlyAnnualTotal = acceptMonthlyPayment && monthlyRentAmount.trim().length > 0
-    ? monthlyRentNumber * 12
-    : null;
-  const quarterlyAnnualTotal = acceptQuarterlyPayment && quarterlyRentAmount.trim().length > 0
-    ? quarterlyRentNumber * 4
-    : null;
-  const semiAnnualTotal = acceptSemiAnnualPayment && semiAnnualRentAmount.trim().length > 0
-    ? semiAnnualRentNumber * 2
-    : null;
+  const monthlyAnnualTotal =
+    acceptMonthlyPayment && monthlyRentAmount.trim().length > 0
+      ? monthlyRentNumber * 12
+      : null;
+  const quarterlyAnnualTotal =
+    acceptQuarterlyPayment && quarterlyRentAmount.trim().length > 0
+      ? quarterlyRentNumber * 4
+      : null;
+  const semiAnnualTotal =
+    acceptSemiAnnualPayment && semiAnnualRentAmount.trim().length > 0
+      ? semiAnnualRentNumber * 2
+      : null;
 
   const formatAnnualTotal = (value: number | null): string => {
     if (value === null) return "---";
@@ -412,13 +495,20 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
     (hasCategoryValidationRule || hasAnnualAmountFieldForRent) &&
     price.trim().length > 0 &&
     priceNumber <= effectivePriceMin;
-  const meterPriceRequiredInvalid = hasMeterPriceField && meterPrice.trim().length === 0;
+  const meterPriceRequiredInvalid =
+    hasMeterPriceField && meterPrice.trim().length === 0;
   const monthlyPaymentRequiredInvalid =
-    isRentCategory && acceptMonthlyPayment && monthlyRentAmount.trim().length === 0;
+    isRentCategory &&
+    acceptMonthlyPayment &&
+    monthlyRentAmount.trim().length === 0;
   const quarterlyPaymentRequiredInvalid =
-    isRentCategory && acceptQuarterlyPayment && quarterlyRentAmount.trim().length === 0;
+    isRentCategory &&
+    acceptQuarterlyPayment &&
+    quarterlyRentAmount.trim().length === 0;
   const semiAnnualPaymentRequiredInvalid =
-    isRentCategory && acceptSemiAnnualPayment && semiAnnualRentAmount.trim().length === 0;
+    isRentCategory &&
+    acceptSemiAnnualPayment &&
+    semiAnnualRentAmount.trim().length === 0;
   const commissionRequiredInvalid = commissionInvalid;
   const termsNotAgreedInvalid = !agreedToTerms;
 
@@ -475,14 +565,31 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
     if (isMeterPriceCategory) {
       const m = moneyLabel(price);
-      if (m) items.push({ type: "value", label: t("listings.pricePerMeter"), value: m });
+      if (m)
+        items.push({
+          type: "value",
+          label: t("listings.pricePerMeter"),
+          value: m,
+        });
     } else if (hasMeterPriceField && meterPrice.trim()) {
       const m = moneyLabel(meterPrice);
-      if (m) items.push({ type: "value", label: t("listings.pricePerMeter"), value: m });
+      if (m)
+        items.push({
+          type: "value",
+          label: t("listings.pricePerMeter"),
+          value: m,
+        });
     }
 
     return items;
-  }, [hasMeterPriceField, i18n.language, isMeterPriceCategory, meterPrice, price, t]);
+  }, [
+    hasMeterPriceField,
+    i18n.language,
+    isMeterPriceCategory,
+    meterPrice,
+    price,
+    t,
+  ]);
 
   const handleNextPress = () => {
     setSubmitAttempted(true);
@@ -535,17 +642,20 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
                 ? {
                     acceptMonthly: acceptMonthlyPayment,
                     monthlyInstallmentSar:
-                      acceptMonthlyPayment && monthlyRentAmount.trim().length > 0
+                      acceptMonthlyPayment &&
+                      monthlyRentAmount.trim().length > 0
                         ? monthlyRentNumber
                         : undefined,
                     acceptQuarterly: acceptQuarterlyPayment,
                     quarterlyInstallmentSar:
-                      acceptQuarterlyPayment && quarterlyRentAmount.trim().length > 0
+                      acceptQuarterlyPayment &&
+                      quarterlyRentAmount.trim().length > 0
                         ? quarterlyRentNumber
                         : undefined,
                     acceptSemiAnnual: acceptSemiAnnualPayment,
                     semiAnnualInstallmentSar:
-                      acceptSemiAnnualPayment && semiAnnualRentAmount.trim().length > 0
+                      acceptSemiAnnualPayment &&
+                      semiAnnualRentAmount.trim().length > 0
                         ? semiAnnualRentNumber
                         : undefined,
                   }
@@ -569,7 +679,10 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
         onBackPress={() => navigation.goBack()}
         showRightSide
         rightComponent={
-          <TouchableOpacity onPress={handleClosePress} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={handleClosePress}
+            style={styles.closeButton}
+          >
             <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
           </TouchableOpacity>
         }
@@ -577,15 +690,22 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
         fontSize={wp(5)}
       />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={[styles.fieldRow, rtlStyles.fieldRow]}>
-          <Text style={[styles.label, rtlStyles.labelText]}>{t("listings.area")}</Text>
+          <Text style={[styles.label, rtlStyles.labelText]}>
+            {t("listings.area")}
+          </Text>
           <View style={[styles.inputBlock, isRTL && styles.inputBlockRTL]}>
             <View
               style={[
                 styles.inputWithSuffix,
                 rtlStyles.inputSuffixRow,
-                (areaRequiredError || areaMinError || areaMaxError) && styles.inputWithSuffixError,
+                (areaRequiredError || areaMinError || areaMaxError) &&
+                  styles.inputWithSuffixError,
                 areaFocused && styles.inputWithSuffixFocused,
               ]}
             >
@@ -602,38 +722,47 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               <Text style={styles.suffixText}>({t("listings.m2")})</Text>
             </View>
             {areaRequiredError ? (
-              <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
+              <Text
+                style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+              >
                 {t("listings.pleaseEnterArea")}
               </Text>
             ) : null}
             {areaMinError && effectiveAreaMin !== undefined ? (
-              <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
-                {t("listings.mustBeGreaterThan")} {formatValidationNumber(effectiveAreaMin)}
+              <Text
+                style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+              >
+                {t("listings.mustBeGreaterThan")}{" "}
+                {formatValidationNumber(effectiveAreaMin)}
               </Text>
             ) : null}
             {areaMaxError && maxRuleForCeiling?.areaMax !== undefined ? (
-              <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
-                {t("listings.mustBeLessThan")} {formatValidationNumber(maxRuleForCeiling.areaMax)}
+              <Text
+                style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+              >
+                {t("listings.mustBeLessThan")}{" "}
+                {formatValidationNumber(maxRuleForCeiling.areaMax)}
               </Text>
             ) : null}
           </View>
         </View>
 
-        {(hasCategoryValidationRule || hasAnnualAmountFieldForRent) ? (
+        {hasCategoryValidationRule || hasAnnualAmountFieldForRent ? (
           <View style={[styles.fieldRow, rtlStyles.fieldRow]}>
             <Text style={[styles.label, rtlStyles.labelText]}>
               {isRentCategory
                 ? t("listings.annualRentAmount")
                 : isMeterPriceCategory
-                ? t("listings.meterPrice")
-                : t("listings.price")}
+                  ? t("listings.meterPrice")
+                  : t("listings.price")}
             </Text>
             <View style={[styles.inputBlock, isRTL && styles.inputBlockRTL]}>
               <View
                 style={[
                   styles.inputWithSuffix,
                   rtlStyles.inputSuffixRow,
-                  (priceRequiredError || priceMinError || priceMaxError) && styles.inputWithSuffixError,
+                  (priceRequiredError || priceMinError || priceMaxError) &&
+                    styles.inputWithSuffixError,
                   priceFocused && styles.inputWithSuffixFocused,
                 ]}
               >
@@ -650,22 +779,30 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
                 <Text style={styles.suffixText}>{t("listings.sar")}</Text>
               </View>
               {priceRequiredError ? (
-                <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
+                <Text
+                  style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+                >
                   {isMeterPriceCategory
                     ? t("listings.pleaseEnterMeterPrice")
                     : isRentCategory
-                    ? t("listings.pleaseEnterAnnualRentAmount")
-                    : t("listings.pleaseEnterPrice")}
+                      ? t("listings.pleaseEnterAnnualRentAmount")
+                      : t("listings.pleaseEnterPrice")}
                 </Text>
               ) : null}
               {priceMinError && effectivePriceMin !== undefined ? (
-                <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
-                  {t("listings.mustBeGreaterThan")} {formatValidationNumber(effectivePriceMin)}
+                <Text
+                  style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+                >
+                  {t("listings.mustBeGreaterThan")}{" "}
+                  {formatValidationNumber(effectivePriceMin)}
                 </Text>
               ) : null}
               {priceMaxError && effectivePriceMaxExclusive !== undefined ? (
-                <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
-                  {t("listings.mustBeLessThan")} {formatValidationNumber(effectivePriceMaxExclusive)}
+                <Text
+                  style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+                >
+                  {t("listings.mustBeLessThan")}{" "}
+                  {formatValidationNumber(effectivePriceMaxExclusive)}
                 </Text>
               ) : null}
             </View>
@@ -674,7 +811,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
         {hasMeterPriceField ? (
           <View style={[styles.fieldRow, rtlStyles.fieldRow]}>
-            <Text style={[styles.label, rtlStyles.labelText]}>{t("listings.meterPrice")}</Text>
+            <Text style={[styles.label, rtlStyles.labelText]}>
+              {t("listings.meterPrice")}
+            </Text>
             <View style={[styles.inputBlock, isRTL && styles.inputBlockRTL]}>
               <View
                 style={[
@@ -686,7 +825,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               >
                 <TextInput
                   value={meterPrice}
-                  onChangeText={(text) => setMeterPrice(normalizeNumericInput(text))}
+                  onChangeText={(text) =>
+                    setMeterPrice(normalizeNumericInput(text))
+                  }
                   placeholder={t("listings.enterHere")}
                   style={[styles.input, isRTL && styles.inputRTL]}
                   keyboardType="number-pad"
@@ -697,7 +838,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
                 <Text style={styles.suffixText}>{t("listings.sar")}</Text>
               </View>
               {meterPriceRequiredError ? (
-                <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
+                <Text
+                  style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+                >
                   {t("listings.pleaseEnterMeterPrice")}
                 </Text>
               ) : null}
@@ -709,7 +852,11 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
           <View style={styles.rentInstallmentsContainer}>
             <View style={[styles.toggleRow, isRTL && styles.rowReverse]}>
               <Text
-                style={[styles.toggleLabel, styles.paymentToggleLabel, rtlStyles.labelText]}
+                style={[
+                  styles.toggleLabel,
+                  styles.paymentToggleLabel,
+                  rtlStyles.labelText,
+                ]}
               >
                 {t("listings.acceptMonthlyPayment")}
               </Text>
@@ -731,7 +878,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
             >
               <TextInput
                 value={monthlyRentAmount}
-                onChangeText={(text) => setMonthlyRentAmount(normalizeNumericInput(text))}
+                onChangeText={(text) =>
+                  setMonthlyRentAmount(normalizeNumericInput(text))
+                }
                 placeholder={t("listings.enterHere")}
                 style={[styles.input, isRTL && styles.inputRTL]}
                 keyboardType="number-pad"
@@ -743,7 +892,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               <Text style={styles.suffixText}>{t("listings.sar")}</Text>
             </View>
             {monthlyPaymentRequiredError ? (
-              <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
+              <Text
+                style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+              >
                 {t("listings.fillRentOrCloseOption")}
               </Text>
             ) : null}
@@ -775,7 +926,11 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
             <View style={[styles.toggleRow, isRTL && styles.rowReverse]}>
               <Text
-                style={[styles.toggleLabel, styles.paymentToggleLabel, rtlStyles.labelText]}
+                style={[
+                  styles.toggleLabel,
+                  styles.paymentToggleLabel,
+                  rtlStyles.labelText,
+                ]}
               >
                 {t("listings.acceptQuarterlyPayment")}
               </Text>
@@ -797,7 +952,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
             >
               <TextInput
                 value={quarterlyRentAmount}
-                onChangeText={(text) => setQuarterlyRentAmount(normalizeNumericInput(text))}
+                onChangeText={(text) =>
+                  setQuarterlyRentAmount(normalizeNumericInput(text))
+                }
                 placeholder={t("listings.enterHere")}
                 style={[styles.input, isRTL && styles.inputRTL]}
                 keyboardType="number-pad"
@@ -809,7 +966,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               <Text style={styles.suffixText}>{t("listings.sar")}</Text>
             </View>
             {quarterlyPaymentRequiredError ? (
-              <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
+              <Text
+                style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+              >
                 {t("listings.fillRentOrCloseOption")}
               </Text>
             ) : null}
@@ -828,7 +987,8 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               style={[
                 styles.rentSummaryText,
                 rtlStyles.errorAndHelperText,
-                quarterlyPaymentRequiredError && styles.rentSummaryTextWithError,
+                quarterlyPaymentRequiredError &&
+                  styles.rentSummaryTextWithError,
               ]}
             >
               {t("listings.totalAnnualRent")}:{" "}
@@ -841,7 +1001,11 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
 
             <View style={[styles.toggleRow, isRTL && styles.rowReverse]}>
               <Text
-                style={[styles.toggleLabel, styles.paymentToggleLabel, rtlStyles.labelText]}
+                style={[
+                  styles.toggleLabel,
+                  styles.paymentToggleLabel,
+                  rtlStyles.labelText,
+                ]}
               >
                 {t("listings.acceptSemiAnnualPayment")}
               </Text>
@@ -863,7 +1027,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
             >
               <TextInput
                 value={semiAnnualRentAmount}
-                onChangeText={(text) => setSemiAnnualRentAmount(normalizeNumericInput(text))}
+                onChangeText={(text) =>
+                  setSemiAnnualRentAmount(normalizeNumericInput(text))
+                }
                 placeholder={t("listings.enterHere")}
                 style={[styles.input, isRTL && styles.inputRTL]}
                 keyboardType="number-pad"
@@ -875,7 +1041,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               <Text style={styles.suffixText}>{t("listings.sar")}</Text>
             </View>
             {semiAnnualPaymentRequiredError ? (
-              <Text style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}>
+              <Text
+                style={[styles.inputErrorText, rtlStyles.errorAndHelperText]}
+              >
                 {t("listings.fillRentOrCloseOption")}
               </Text>
             ) : null}
@@ -894,7 +1062,8 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               style={[
                 styles.rentSummaryText,
                 rtlStyles.errorAndHelperText,
-                semiAnnualPaymentRequiredError && styles.rentSummaryTextWithError,
+                semiAnnualPaymentRequiredError &&
+                  styles.rentSummaryTextWithError,
               ]}
             >
               {t("listings.totalAnnualRent")}:{" "}
@@ -911,7 +1080,13 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
           <Text style={[styles.toggleLabel, rtlStyles.labelText]}>
             {t("listings.isThereCommission")}
           </Text>
-          <ToggleSwitch value={hasCommission} onValueChange={setHasCommission} thumbSize={wp(5.5)} trackWidth={wp(9)} trackHeight={hp(1.5)} />
+          <ToggleSwitch
+            value={hasCommission}
+            onValueChange={setHasCommission}
+            thumbSize={wp(5.5)}
+            trackWidth={wp(9)}
+            trackHeight={hp(1.5)}
+          />
         </View>
 
         {hasCommission ? (
@@ -920,7 +1095,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
               variant="large"
               options={commissionOptions}
               selectedIndex={commissionType === "percentage" ? 0 : 1}
-              onSelect={(index) => setCommissionType(index === 0 ? "percentage" : "fixed")}
+              onSelect={(index) =>
+                setCommissionType(index === 0 ? "percentage" : "fixed")
+              }
               segmentHeight={hp(5)}
             />
 
@@ -943,7 +1120,7 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
                   setCommissionValue(
                     commissionType === "percentage"
                       ? normalizeCommissionPercentageInput(text)
-                      : normalizeNumericInput(text)
+                      : normalizeNumericInput(text),
                   )
                 }
                 placeholder={
@@ -952,7 +1129,9 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
                     : t("listings.commissionAmount")
                 }
                 style={[styles.input, isRTL && styles.inputRTL]}
-                keyboardType={commissionType === "percentage" ? "decimal-pad" : "number-pad"}
+                keyboardType={
+                  commissionType === "percentage" ? "decimal-pad" : "number-pad"
+                }
                 placeholderTextColor={COLORS.textTertiary}
                 onFocus={() => setCommissionFocused(true)}
                 onBlur={() => setCommissionFocused(false)}
@@ -996,8 +1175,12 @@ export default function MarketingRequestPricingCommissionScreen(): React.JSX.Ele
           activeOpacity={0.9}
           onPress={() => setAgreedToTerms((v) => !v)}
         >
-          <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
-            {agreedToTerms ? <Ionicons name="checkmark" size={wp(4.2)} color="#fff" /> : null}
+          <View
+            style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}
+          >
+            {agreedToTerms ? (
+              <Ionicons name="checkmark" size={wp(4.2)} color="#fff" />
+            ) : null}
           </View>
           <Text style={[styles.checkboxText, rtlStyles.errorAndHelperText]}>
             {t("listings.agreeTo")}{" "}
@@ -1238,4 +1421,3 @@ const styles = StyleSheet.create({
     height: hp(2),
   },
 });
-

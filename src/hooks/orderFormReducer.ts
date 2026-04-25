@@ -2,7 +2,10 @@
  * useReducer for order form - replaces 80+ useState with batched updates.
  * Each dispatch batches; category reset is a single update instead of 80+ setState calls.
  */
-import type { ApartmentRentTenant, RentPaymentFrequency } from "../constants/orderFormOptions";
+import type {
+  ApartmentRentTenant,
+  RentPaymentFrequency,
+} from "../constants/orderFormOptions";
 
 /** @deprecated Use RentPaymentFrequency */
 export type RentPeriod = RentPaymentFrequency;
@@ -439,10 +442,19 @@ export const initialOrderFormState: OrderFormState = {
 };
 
 export type OrderFormAction =
-  | { type: "SET"; payload: { key: keyof OrderFormState; value: OrderFormState[keyof OrderFormState] } }
+  | {
+      type: "SET";
+      payload: {
+        key: keyof OrderFormState;
+        value: OrderFormState[keyof OrderFormState];
+      };
+    }
   | { type: "RESET_AND_SELECT_CATEGORY"; payload: string };
 
-export function orderFormReducer(state: OrderFormState, action: OrderFormAction): OrderFormState {
+export function orderFormReducer(
+  state: OrderFormState,
+  action: OrderFormAction,
+): OrderFormState {
   switch (action.type) {
     case "SET": {
       const { key, value } = action.payload;

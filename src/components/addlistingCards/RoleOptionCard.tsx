@@ -17,7 +17,13 @@ export interface RoleOptionCardProps {
 }
 
 const RoleOptionCard = memo<RoleOptionCardProps>(
-  ({ title, icon, iconLibrary = "MaterialCommunityIcons", selected = false, onPress }) => {
+  ({
+    title,
+    icon,
+    iconLibrary = "MaterialCommunityIcons",
+    selected = false,
+    onPress,
+  }) => {
     const { isRTL } = useLocalization();
 
     const rtlStyles = useMemo(
@@ -26,7 +32,7 @@ const RoleOptionCard = memo<RoleOptionCardProps>(
           textAlign: (isRTL ? "right" : "center") as "center" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -37,9 +43,17 @@ const RoleOptionCard = memo<RoleOptionCardProps>(
       >
         <View style={styles.iconWrap}>
           {iconLibrary === "FontAwesome6" ? (
-            <FontAwesome6 name={icon as any} size={wp(6.4)} color={COLORS.primary} />
+            <FontAwesome6
+              name={icon as any}
+              size={wp(6.4)}
+              color={COLORS.primary}
+            />
           ) : (
-            <MaterialCommunityIcons name={icon as any} size={wp(7)} color={COLORS.primary} />
+            <MaterialCommunityIcons
+              name={icon as any}
+              size={wp(7)}
+              color={COLORS.primary}
+            />
           )}
         </View>
         <Text style={[styles.title, rtlStyles.title]} numberOfLines={1}>
@@ -47,7 +61,7 @@ const RoleOptionCard = memo<RoleOptionCardProps>(
         </Text>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 RoleOptionCard.displayName = "RoleOptionCard";

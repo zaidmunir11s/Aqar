@@ -42,7 +42,8 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
     const { t, isRTL } = useLocalization();
 
     const displayName = advertiserName.trim();
-    const nameLabel = displayName.length > 0 ? displayName : t("listings.notAvailable");
+    const nameLabel =
+      displayName.length > 0 ? displayName : t("listings.notAvailable");
     const subtitleTrimmed = (advertiserSubtitle ?? "").trim();
     const showSubtitleRow = subtitleTrimmed.length > 0;
 
@@ -52,7 +53,9 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         advertiserHeader: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         advertiserLogo: {
           marginRight: isRTL ? 0 : wp(3),
@@ -62,14 +65,18 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         contactButtons: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         contactBtnText: {
           marginLeft: isRTL ? 0 : wp(2),
           marginRight: isRTL ? wp(2) : 0,
         },
         warningBox: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         warningText: {
           marginLeft: isRTL ? 0 : wp(2),
@@ -77,17 +84,26 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
-    const advertiserHeaderStyle = [styles.advertiserHeader, rtlStyles.advertiserHeader];
+    const advertiserHeaderStyle = [
+      styles.advertiserHeader,
+      rtlStyles.advertiserHeader,
+    ];
     const advertiserHeaderRow = (
       <>
         <View style={[styles.advertiserLogo, rtlStyles.advertiserLogo]}>
-          <MaterialCommunityIcons name="office-building" size={wp(8)} color="#3b82f6" />
+          <MaterialCommunityIcons
+            name="office-building"
+            size={wp(8)}
+            color="#3b82f6"
+          />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.advertiserName, rtlStyles.advertiserName]}>{nameLabel}</Text>
+          <Text style={[styles.advertiserName, rtlStyles.advertiserName]}>
+            {nameLabel}
+          </Text>
           {showSubtitleRow ? (
             <Text style={[styles.advertiserSubtitle, rtlStyles.advertiserName]}>
               {subtitleTrimmed}
@@ -165,10 +181,9 @@ const PropertyAdvertiser = memo<PropertyAdvertiserProps>(
             </View>
           </View>
         </View>
-
       </View>
     );
-  }
+  },
 );
 
 PropertyAdvertiser.displayName = "PropertyAdvertiser";

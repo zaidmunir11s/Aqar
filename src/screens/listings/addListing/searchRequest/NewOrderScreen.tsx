@@ -1,11 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -48,8 +42,7 @@ import { BuildingForRentOrderSection } from "../../../../components/searchReques
 import { ChaletForRentOrderSection } from "../../../../components/searchRequest/sections/ChaletForRentOrderSection";
 import SearchRequestOrderModals from "../../../../components/searchRequest/SearchRequestOrderModals";
 import { COLORS } from "@/constants";
-import {
-} from "@/constants/categories";
+import {} from "@/constants/categories";
 import {
   BEDROOM_OPTIONS,
   LIVING_ROOM_OPTIONS,
@@ -70,17 +63,19 @@ type NavigationProp = NativeStackNavigationProp<any>;
 export default function NewOrderScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t } = useLocalization();
-  
+
   const form = useOrderForm();
   const selectedCategory = String((form as any)?.selectedCategory ?? "");
 
   const listingType = useMemo(
-    () => (selectedCategory ? getListingTypeFromCategory(selectedCategory) : null),
-    [selectedCategory]
+    () =>
+      selectedCategory ? getListingTypeFromCategory(selectedCategory) : null,
+    [selectedCategory],
   );
   const propertyType = useMemo(
-    () => (selectedCategory ? getPropertyTypeFromCategory(selectedCategory) : null),
-    [selectedCategory]
+    () =>
+      selectedCategory ? getPropertyTypeFromCategory(selectedCategory) : null,
+    [selectedCategory],
   );
 
   const { data: publicListingsData } = useGetPublicListingsQuery(
@@ -91,17 +86,20 @@ export default function NewOrderScreen(): React.JSX.Element {
           listingType: listingType === "sale" ? "SALE" : "RENT",
           ...(propertyType ? { propertyType } : {}),
         }
-      : { page: 1, limit: 200 }
+      : { page: 1, limit: 200 },
   );
 
   const areaRangeHint = useMemo(() => {
     const rows = publicListingsData?.listings ?? [];
     const props = rows.map(mapApiListingToProperty);
-    const areas = props.map((p) => p.area).filter((a) => typeof a === "number" && a > 0);
+    const areas = props
+      .map((p) => p.area)
+      .filter((a) => typeof a === "number" && a > 0);
     if (areas.length < 2) return "";
     const min = Math.floor(Math.min(...areas));
     const max = Math.ceil(Math.max(...areas));
-    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0) return "";
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0)
+      return "";
     return `${t("listings.areaM2")}: ${min} - ${max}`;
   }, [publicListingsData, t]);
 
@@ -220,7 +218,11 @@ export default function NewOrderScreen(): React.JSX.Element {
           <VillaForSaleOrderSection
             t={t}
             translatedVillaTypeOptions={translatedVillaTypeOptions}
-            selectedVillaType={getTranslatedInitialValue(form.selectedVillaType, villaTypeReverseMap, translatedVillaTypeOptions)}
+            selectedVillaType={getTranslatedInitialValue(
+              form.selectedVillaType,
+              villaTypeReverseMap,
+              translatedVillaTypeOptions,
+            )}
             selectedApartment={form.selectedApartment}
             selectedBedroom={form.selectedBedroom}
             selectedLivingRoom={form.selectedLivingRoom}
@@ -256,9 +258,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             onAreaFromChange={form.setAreaFrom}
             onAreaToChange={form.setAreaTo}
             onVillaTypeSelect={(translatedValue: string) => {
-                const originalValue = villaTypeReverseMap[translatedValue] || translatedValue;
-                form.handleVillaTypePress(originalValue);
-              }}
+              const originalValue =
+                villaTypeReverseMap[translatedValue] || translatedValue;
+              form.handleVillaTypePress(originalValue);
+            }}
             onStairsChange={form.setStairs}
             onDriverRoomChange={form.setDriverRoom}
             onMaidRoomChange={form.setMaidRoom}
@@ -276,11 +279,13 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isLandForSale && (
           <LandForSaleOrderSection
             t={t}
-            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            translatedResidentialCommercialOptions={
+              translatedResidentialCommercialOptions
+            }
             selectedLandType={getTranslatedInitialValue(
               form.selectedLandType,
               residentialCommercialReverseMap,
-              translatedResidentialCommercialOptions
+              translatedResidentialCommercialOptions,
             )}
             getTranslatedPickerValue={getTranslatedPickerValue}
             landStreetDirection={form.landStreetDirection}
@@ -293,9 +298,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             nearMetro={form.nearMetro}
             onLandTypeSelect={(translatedValue: string) => {
               const originalValue =
-                residentialCommercialReverseMap[translatedValue] || translatedValue;
-                form.handleLandTypePress(originalValue);
-              }}
+                residentialCommercialReverseMap[translatedValue] ||
+                translatedValue;
+              form.handleLandTypePress(originalValue);
+            }}
             onOpenStreetDirection={openStreetDirectionModal}
             onOpenStreetWidth={openStreetWidthModal}
             onLandPriceFromChange={form.setLandPriceFrom}
@@ -352,14 +358,16 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isBuildingForSale && (
           <BuildingForSaleOrderSection
             t={t}
-            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            translatedResidentialCommercialOptions={
+              translatedResidentialCommercialOptions
+            }
             buildingPriceFrom={form.buildingPriceFrom}
             buildingPriceTo={form.buildingPriceTo}
             buildingApartments={form.buildingApartments}
             selectedBuildingType={getTranslatedInitialValue(
               form.selectedBuildingType,
               residentialCommercialReverseMap,
-              translatedResidentialCommercialOptions
+              translatedResidentialCommercialOptions,
             )}
             buildingStreetDirection={form.buildingStreetDirection}
             stores={form.stores}
@@ -375,9 +383,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             onBuildingApartmentsSelect={form.handleBuildingApartmentsPress}
             onBuildingTypeSelect={(translatedValue: string) => {
               const originalValue =
-                residentialCommercialReverseMap[translatedValue] || translatedValue;
-                form.handleBuildingTypePress(originalValue);
-              }}
+                residentialCommercialReverseMap[translatedValue] ||
+                translatedValue;
+              form.handleBuildingTypePress(originalValue);
+            }}
             onOpenStreetDirection={openStreetDirectionModal}
             onOpenStores={openStoresModal}
             onBuildingAreaFromChange={form.setBuildingAreaFrom}
@@ -527,7 +536,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             onPriceToChange={form.setVillaRentPriceTo}
             selectedBedroom={form.selectedBedroom}
             onBedroomChange={form.handleBedroomPress}
-            streetDirection={getTranslatedPickerValue(form.villaRentStreetDirection, "streetDirection")}
+            streetDirection={getTranslatedPickerValue(
+              form.villaRentStreetDirection,
+              "streetDirection",
+            )}
             onStreetDirectionPress={openStreetDirectionModal}
             selectedLivingRoom={form.selectedLivingRoom}
             onLivingRoomChange={form.handleLivingRoomPress}
@@ -537,7 +549,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             areaTo={form.villaRentAreaTo}
             onAreaFromChange={form.setVillaRentAreaFrom}
             onAreaToChange={form.setVillaRentAreaTo}
-            streetWidth={getTranslatedPickerValue(form.villaRentStreetWidth, "streetWidth")}
+            streetWidth={getTranslatedPickerValue(
+              form.villaRentStreetWidth,
+              "streetWidth",
+            )}
             onStreetWidthPress={openStreetWidthModal}
             stairs={form.villaRentStairs}
             onStairsChange={form.setVillaRentStairs}
@@ -710,14 +725,16 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isBuildingForRent && (
           <BuildingForRentOrderSection
             t={t}
-            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
+            translatedResidentialCommercialOptions={
+              translatedResidentialCommercialOptions
+            }
             buildingRentPriceFrom={form.buildingRentPriceFrom}
             buildingRentPriceTo={form.buildingRentPriceTo}
             buildingRentApartments={form.buildingRentApartments}
             selectedBuildingRentType={getTranslatedInitialValue(
               form.selectedBuildingRentType,
               residentialCommercialReverseMap,
-              translatedResidentialCommercialOptions
+              translatedResidentialCommercialOptions,
             )}
             buildingRentStreetDirection={form.buildingRentStreetDirection}
             buildingRentStores={form.buildingRentStores}
@@ -733,9 +750,10 @@ export default function NewOrderScreen(): React.JSX.Element {
             onApartmentsSelect={form.handleBuildingRentApartmentsPress}
             onTypeSelect={(translatedValue: string) => {
               const originalValue =
-                residentialCommercialReverseMap[translatedValue] || translatedValue;
-                form.handleBuildingRentTypePress(originalValue);
-              }}
+                residentialCommercialReverseMap[translatedValue] ||
+                translatedValue;
+              form.handleBuildingRentTypePress(originalValue);
+            }}
             onOpenStreetDirection={openStreetDirectionModal}
             onOpenStores={openStoresModal}
             onAreaFromChange={form.setBuildingRentAreaFrom}
@@ -751,8 +769,14 @@ export default function NewOrderScreen(): React.JSX.Element {
         {form.isLandForRent && (
           <LandForRentOrderSection
             t={t}
-            translatedResidentialCommercialOptions={translatedResidentialCommercialOptions}
-            selectedLandRentType={getTranslatedInitialValue(form.selectedLandRentType, residentialCommercialReverseMap, translatedResidentialCommercialOptions)}
+            translatedResidentialCommercialOptions={
+              translatedResidentialCommercialOptions
+            }
+            selectedLandRentType={getTranslatedInitialValue(
+              form.selectedLandRentType,
+              residentialCommercialReverseMap,
+              translatedResidentialCommercialOptions,
+            )}
             landRentStreetDirection={form.landRentStreetDirection}
             landRentAreaFrom={form.landRentAreaFrom}
             landRentAreaTo={form.landRentAreaTo}
@@ -762,9 +786,11 @@ export default function NewOrderScreen(): React.JSX.Element {
             nearMetro={form.nearMetro}
             getTranslatedPickerValue={getTranslatedPickerValue}
             onLandRentTypeSelect={(translatedValue: string) => {
-                const originalValue = residentialCommercialReverseMap[translatedValue] || translatedValue;
-                form.handleLandRentTypePress(originalValue);
-              }}
+              const originalValue =
+                residentialCommercialReverseMap[translatedValue] ||
+                translatedValue;
+              form.handleLandRentTypePress(originalValue);
+            }}
             onOpenStreetDirection={openStreetDirectionModal}
             onAreaFromChange={form.setLandRentAreaFrom}
             onAreaToChange={form.setLandRentAreaTo}
@@ -918,8 +944,16 @@ export default function NewOrderScreen(): React.JSX.Element {
 
             <ToggleGroup
               toggles={[
-                { label: t("listings.nearBus"), value: form.nearBus, onValueChange: form.setNearBus },
-                { label: t("listings.nearMetro"), value: form.nearMetro, onValueChange: form.setNearMetro },
+                {
+                  label: t("listings.nearBus"),
+                  value: form.nearBus,
+                  onValueChange: form.setNearBus,
+                },
+                {
+                  label: t("listings.nearMetro"),
+                  value: form.nearMetro,
+                  onValueChange: form.setNearMetro,
+                },
               ]}
             />
           </>

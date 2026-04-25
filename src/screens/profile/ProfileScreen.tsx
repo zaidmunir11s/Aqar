@@ -19,13 +19,17 @@ export default function ProfileScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "center") as "left" | "center" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, rtlStyles.title]}>{t("navigation.profile")}</Text>
-      <Text style={[styles.subtitle, rtlStyles.subtitle]}>{t("common.comingSoon")}</Text>
+      <Text style={[styles.title, rtlStyles.title]}>
+        {t("navigation.profile")}
+      </Text>
+      <Text style={[styles.subtitle, rtlStyles.subtitle]}>
+        {t("common.comingSoon")}
+      </Text>
     </View>
   );
 }

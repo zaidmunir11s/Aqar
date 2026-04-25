@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  memo,
+} from "react";
 import {
   View,
   Text,
@@ -56,7 +63,9 @@ const DeedOwnerTypeSection = memo(function DeedOwnerTypeSection({
 }) {
   return (
     <>
-      <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>{deedOwnerTypeLabel}</Text>
+      <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+        {deedOwnerTypeLabel}
+      </Text>
       <View style={styles.segmentedControlContainer}>
         <SegmentedControl
           options={deedOwnerOptions}
@@ -64,11 +73,15 @@ const DeedOwnerTypeSection = memo(function DeedOwnerTypeSection({
           onSelect={onDeedOwnerSelect}
         />
       </View>
-      <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>{ownerTypeLabel}</Text>
+      <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+        {ownerTypeLabel}
+      </Text>
       <View style={styles.segmentedControlContainer}>
         <SegmentedControl
           options={ownerTypeOptions}
-          selectedIndex={ownerType === "individual" ? 0 : ownerType === "multi-agent" ? 1 : 2}
+          selectedIndex={
+            ownerType === "individual" ? 0 : ownerType === "multi-agent" ? 1 : 2
+          }
           onSelect={onOwnerTypeSelect}
         />
       </View>
@@ -80,13 +93,18 @@ const ContactLink = memo(function ContactLink({
   rtlStyles,
   haveQuestionText,
 }: {
-  rtlStyles: { contactLink: { flexDirection: "row" | "row-reverse" }; contactLinkText: Record<string, number> };
+  rtlStyles: {
+    contactLink: { flexDirection: "row" | "row-reverse" };
+    contactLinkText: Record<string, number>;
+  };
   haveQuestionText: string;
 }) {
   return (
     <TouchableOpacity style={[styles.contactLink, rtlStyles.contactLink]}>
       <Ionicons name="chatbubble-outline" size={wp(5)} color="#3b82f6" />
-      <Text style={[styles.contactLinkText, rtlStyles.contactLinkText]}>{haveQuestionText}</Text>
+      <Text style={[styles.contactLinkText, rtlStyles.contactLinkText]}>
+        {haveQuestionText}
+      </Text>
     </TouchableOpacity>
   );
 });
@@ -123,7 +141,11 @@ const FormFieldRow = memo(function FormFieldRow({
   error: string;
   touched: boolean;
   isFocused: boolean;
-  onUpdateField: (name: keyof FormFields, value: string, validator?: (val: string) => string) => void;
+  onUpdateField: (
+    name: keyof FormFields,
+    value: string,
+    validator?: (val: string) => string,
+  ) => void;
   onFocus: (name: string) => void;
   onBlur: () => void;
   openDatePicker: (type: "owner" | "agent" | "company") => void;
@@ -138,7 +160,11 @@ const FormFieldRow = memo(function FormFieldRow({
   phoneValidator: (val: string) => string;
 }) {
   const errorKey = item.errorKey ?? item.fieldName;
-  if (item.kind === "text" && item.placeholder !== undefined && item.validator) {
+  if (
+    item.kind === "text" &&
+    item.placeholder !== undefined &&
+    item.validator
+  ) {
     return (
       <View style={styles.inputContainer}>
         <Text style={[styles.label, rtlStyles.label]}>{item.label}</Text>
@@ -151,7 +177,9 @@ const FormFieldRow = memo(function FormFieldRow({
           ]}
           placeholder={item.placeholder}
           value={value}
-          onChangeText={(val) => onUpdateField(item.fieldName, val, item.validator)}
+          onChangeText={(val) =>
+            onUpdateField(item.fieldName, val, item.validator)
+          }
           placeholderTextColor="#9ca3af"
           onFocus={() => onFocus(item.fieldName)}
           onBlur={onBlur}
@@ -174,7 +202,13 @@ const FormFieldRow = memo(function FormFieldRow({
           ]}
           onPress={() => openDatePicker(item.dateType!)}
         >
-          <Text style={[styles.dateText, rtlStyles.dateText, !value && styles.placeholderText]}>
+          <Text
+            style={[
+              styles.dateText,
+              rtlStyles.dateText,
+              !value && styles.placeholderText,
+            ]}
+          >
             {value || t("listings.selectDate")}
           </Text>
           <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
@@ -201,7 +235,9 @@ const FormFieldRow = memo(function FormFieldRow({
             style={styles.phoneInput}
             placeholder={t("listings.enterPhoneNumber")}
             value={value}
-            onChangeText={(val) => onUpdateField(item.fieldName, val, phoneValidator)}
+            onChangeText={(val) =>
+              onUpdateField(item.fieldName, val, phoneValidator)
+            }
             placeholderTextColor="#9ca3af"
             keyboardType="phone-pad"
             onFocus={() => onFocus(item.fieldName)}
@@ -275,7 +311,8 @@ interface FormFields {
 export default function DeedOwnerInformationScreen(): React.JSX.Element {
   const navigation = useNavigation<NavigationProp>();
   const { t, isRTL } = useLocalization();
-  const [deedOwnerType, setDeedOwnerType] = useState<DeedOwnerType>("electronic");
+  const [deedOwnerType, setDeedOwnerType] =
+    useState<DeedOwnerType>("electronic");
   const [ownerType, setOwnerType] = useState<OwnerType>("individual");
 
   // Unified form fields state
@@ -295,7 +332,9 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   });
 
   const [datePickerVisible, setDatePickerVisible] = useState(false);
-  const [activeCalendarType, setActiveCalendarType] = useState<"owner" | "agent" | "company">("owner");
+  const [activeCalendarType, setActiveCalendarType] = useState<
+    "owner" | "agent" | "company"
+  >("owner");
   const [datePickerTitle, setDatePickerTitle] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -316,107 +355,121 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
 
   const deedOwnerOptions = useMemo(
     () => [t("listings.electronicEyeRecord"), t("listings.other")],
-    [t]
+    [t],
   );
   const ownerTypeOptions = useMemo(
-    () => [t("listings.individual"), t("listings.multiAgent"), t("listings.company")],
-    [t]
+    () => [
+      t("listings.individual"),
+      t("listings.multiAgent"),
+      t("listings.company"),
+    ],
+    [t],
   );
 
   // Validation functions
-  const validators = useMemo(() => ({
-    deedNumber: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      const digitsOnly = value.replace(/\D/g, "");
-      if (digitsOnly.length === 12 || digitsOnly.length === 16) return "";
-      return t("listings.deedNumberError");
-    },
-    ownerId: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      const digitsOnly = value.replace(/\D/g, "");
-      if (digitsOnly.length === 10) return "";
-      return t("listings.ownerIdError");
-    },
-    poaAgentId: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      const digitsOnly = value.replace(/\D/g, "");
-      if (digitsOnly.length === 10) return "";
-      return t("listings.poaAgentIdError");
-    },
-    poaId: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      const digitsOnly = value.replace(/\D/g, "");
-      if (digitsOnly.length >= 7 && digitsOnly.length <= 12) return "";
-      return t("listings.poaIdError");
-    },
-    unifiedCrNumber: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      const digitsOnly = value.replace(/\D/g, "");
-      if (digitsOnly.length === 10) return "";
-      return t("listings.ownerIdError");
-    },
-    phone: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      return "";
-    },
-    birthdate: (value: string): string => {
-      if (!value.trim()) return t("listings.thisFieldRequired");
-      return "";
-    },
-  }), [t]);
+  const validators = useMemo(
+    () => ({
+      deedNumber: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length === 12 || digitsOnly.length === 16) return "";
+        return t("listings.deedNumberError");
+      },
+      ownerId: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length === 10) return "";
+        return t("listings.ownerIdError");
+      },
+      poaAgentId: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length === 10) return "";
+        return t("listings.poaAgentIdError");
+      },
+      poaId: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length >= 7 && digitsOnly.length <= 12) return "";
+        return t("listings.poaIdError");
+      },
+      unifiedCrNumber: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length === 10) return "";
+        return t("listings.ownerIdError");
+      },
+      phone: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        return "";
+      },
+      birthdate: (value: string): string => {
+        if (!value.trim()) return t("listings.thisFieldRequired");
+        return "";
+      },
+    }),
+    [t],
+  );
 
   // Update field with syncing logic
-  const updateField = useCallback((fieldName: keyof FormFields, value: string, validator?: (val: string) => string) => {
-    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+  const updateField = useCallback(
+    (
+      fieldName: keyof FormFields,
+      value: string,
+      validator?: (val: string) => string,
+    ) => {
+      setTouched((prev) => ({ ...prev, [fieldName]: true }));
 
-    // Validate if validator provided
-    if (validator) {
-      const error = validator(value);
-      setErrors((prev) => ({ ...prev, [fieldName]: error }));
-    }
-
-    setFields((prev) => {
-      const updated = { ...prev, [fieldName]: value };
-
-      // Sync ownerId <-> ownerIdNumber <-> unifiedCrNumber
-      if (fieldName === "ownerId") {
-        updated.ownerIdNumber = value;
-        updated.unifiedCrNumber = value;
-      } else if (fieldName === "ownerIdNumber") {
-        updated.ownerId = value;
-        updated.unifiedCrNumber = value;
-      } else if (fieldName === "unifiedCrNumber") {
-        updated.ownerId = value;
-        updated.ownerIdNumber = value;
+      // Validate if validator provided
+      if (validator) {
+        const error = validator(value);
+        setErrors((prev) => ({ ...prev, [fieldName]: error }));
       }
 
-      // Sync birthdate across all tabs
-      if (fieldName === "ownerBirthdate") {
-        updated.agentBirthdate = value;
-        updated.companyAgentBirthdate = value;
-      } else if (fieldName === "agentBirthdate") {
-        updated.ownerBirthdate = value;
-        updated.companyAgentBirthdate = value;
-      } else if (fieldName === "companyAgentBirthdate") {
-        updated.ownerBirthdate = value;
-        updated.agentBirthdate = value;
-      }
+      setFields((prev) => {
+        const updated = { ...prev, [fieldName]: value };
 
-      // Sync phone across all tabs
-      if (fieldName === "ownerPhone") {
-        updated.agentPhone = value;
-        updated.companyAgentPhone = value;
-      } else if (fieldName === "agentPhone") {
-        updated.ownerPhone = value;
-        updated.companyAgentPhone = value;
-      } else if (fieldName === "companyAgentPhone") {
-        updated.ownerPhone = value;
-        updated.agentPhone = value;
-      }
+        // Sync ownerId <-> ownerIdNumber <-> unifiedCrNumber
+        if (fieldName === "ownerId") {
+          updated.ownerIdNumber = value;
+          updated.unifiedCrNumber = value;
+        } else if (fieldName === "ownerIdNumber") {
+          updated.ownerId = value;
+          updated.unifiedCrNumber = value;
+        } else if (fieldName === "unifiedCrNumber") {
+          updated.ownerId = value;
+          updated.ownerIdNumber = value;
+        }
 
-      return updated;
-    });
-  }, []);
+        // Sync birthdate across all tabs
+        if (fieldName === "ownerBirthdate") {
+          updated.agentBirthdate = value;
+          updated.companyAgentBirthdate = value;
+        } else if (fieldName === "agentBirthdate") {
+          updated.ownerBirthdate = value;
+          updated.companyAgentBirthdate = value;
+        } else if (fieldName === "companyAgentBirthdate") {
+          updated.ownerBirthdate = value;
+          updated.agentBirthdate = value;
+        }
+
+        // Sync phone across all tabs
+        if (fieldName === "ownerPhone") {
+          updated.agentPhone = value;
+          updated.companyAgentPhone = value;
+        } else if (fieldName === "agentPhone") {
+          updated.ownerPhone = value;
+          updated.companyAgentPhone = value;
+        } else if (fieldName === "companyAgentPhone") {
+          updated.ownerPhone = value;
+          updated.agentPhone = value;
+        }
+
+        return updated;
+      });
+    },
+    [],
+  );
 
   // Validate all fields across all tabs
   const validateAllTabs = useCallback((): boolean => {
@@ -438,10 +491,14 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
 
     // Validate Company tab
     newErrors.companyDeedNumber = validators.deedNumber(fields.deedNumber);
-    newErrors.unifiedCrNumber = validators.unifiedCrNumber(fields.unifiedCrNumber);
+    newErrors.unifiedCrNumber = validators.unifiedCrNumber(
+      fields.unifiedCrNumber,
+    );
     newErrors.companyPoaAgentId = validators.poaAgentId(fields.poaAgentId);
     newErrors.companyPoaId = validators.poaId(fields.poaId);
-    newErrors.companyAgentBirthdate = validators.birthdate(fields.companyAgentBirthdate);
+    newErrors.companyAgentBirthdate = validators.birthdate(
+      fields.companyAgentBirthdate,
+    );
     newErrors.companyAgentPhone = validators.phone(fields.companyAgentPhone);
 
     setErrors(newErrors);
@@ -449,14 +506,17 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
   }, [fields, validators]);
 
   // Handlers
-  const handleDeedOwnerSelect = useCallback((index: number) => {
-    if (index === 1) {
-      navigation.dispatch(StackActions.pop(2));
-      navigation.navigate("MarketingRequestPlaceholder");
-    } else {
-      setDeedOwnerType("electronic");
-    }
-  }, [navigation]);
+  const handleDeedOwnerSelect = useCallback(
+    (index: number) => {
+      if (index === 1) {
+        navigation.dispatch(StackActions.pop(2));
+        navigation.navigate("MarketingRequestPlaceholder");
+      } else {
+        setDeedOwnerType("electronic");
+      }
+    },
+    [navigation],
+  );
 
   const handleOwnerTypeSelect = useCallback((index: number) => {
     const types: OwnerType[] = ["individual", "multi-agent", "company"];
@@ -524,52 +584,62 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
     navigation.navigate("MarketingRequestPlaceholder");
   }, [navigation]);
 
-  const openDatePicker = useCallback((type: "owner" | "agent" | "company") => {
-    setActiveCalendarType(type);
-    const titles = {
-      owner: t("listings.ownerBirthdate"),
-      agent: t("listings.agentBirthdate"),
-      company: t("listings.agentBirthdate"),
-    };
-    setDatePickerTitle(titles[type]);
+  const openDatePicker = useCallback(
+    (type: "owner" | "agent" | "company") => {
+      setActiveCalendarType(type);
+      const titles = {
+        owner: t("listings.ownerBirthdate"),
+        agent: t("listings.agentBirthdate"),
+        company: t("listings.agentBirthdate"),
+      };
+      setDatePickerTitle(titles[type]);
 
-    const fieldNames = {
-      owner: "ownerBirthdate",
-      agent: "agentBirthdate",
-      company: "companyAgentBirthdate",
-    };
-    setTouched((prev) => ({ ...prev, [fieldNames[type]]: true }));
-    setDatePickerVisible(true);
-  }, [t]);
+      const fieldNames = {
+        owner: "ownerBirthdate",
+        agent: "agentBirthdate",
+        company: "companyAgentBirthdate",
+      };
+      setTouched((prev) => ({ ...prev, [fieldNames[type]]: true }));
+      setDatePickerVisible(true);
+    },
+    [t],
+  );
 
-  const handleDateSelect = useCallback((formattedDate: string) => {
-    // Update the active calendar type field, which will sync to all tabs
-    if (activeCalendarType === "owner") {
-      updateField("ownerBirthdate", formattedDate, validators.birthdate);
-      setErrors((prev) => ({
-        ...prev,
-        ownerBirthdate: "",
-        agentBirthdate: "",
-        companyAgentBirthdate: ""
-      }));
-    } else if (activeCalendarType === "agent") {
-      updateField("agentBirthdate", formattedDate, validators.birthdate);
-      setErrors((prev) => ({
-        ...prev,
-        ownerBirthdate: "",
-        agentBirthdate: "",
-        companyAgentBirthdate: ""
-      }));
-    } else {
-      updateField("companyAgentBirthdate", formattedDate, validators.birthdate);
-      setErrors((prev) => ({
-        ...prev,
-        ownerBirthdate: "",
-        agentBirthdate: "",
-        companyAgentBirthdate: ""
-      }));
-    }
-  }, [activeCalendarType, updateField, validators]);
+  const handleDateSelect = useCallback(
+    (formattedDate: string) => {
+      // Update the active calendar type field, which will sync to all tabs
+      if (activeCalendarType === "owner") {
+        updateField("ownerBirthdate", formattedDate, validators.birthdate);
+        setErrors((prev) => ({
+          ...prev,
+          ownerBirthdate: "",
+          agentBirthdate: "",
+          companyAgentBirthdate: "",
+        }));
+      } else if (activeCalendarType === "agent") {
+        updateField("agentBirthdate", formattedDate, validators.birthdate);
+        setErrors((prev) => ({
+          ...prev,
+          ownerBirthdate: "",
+          agentBirthdate: "",
+          companyAgentBirthdate: "",
+        }));
+      } else {
+        updateField(
+          "companyAgentBirthdate",
+          formattedDate,
+          validators.birthdate,
+        );
+        setErrors((prev) => ({
+          ...prev,
+          ownerBirthdate: "",
+          agentBirthdate: "",
+          companyAgentBirthdate: "",
+        }));
+      }
+    },
+    [activeCalendarType, updateField, validators],
+  );
 
   // RTL-aware styles
   const rtlStyles = useMemo(
@@ -610,36 +680,149 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         marginRight: isRTL ? wp(2) : 0,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // FlatList data: one item per form field (virtualized for smooth scroll)
   const formFieldsList = useMemo(() => {
     if (ownerType === "individual") {
       return [
-        { id: "ind-deed", kind: "text" as const, fieldName: "deedNumber" as const, label: t("listings.deedNumber"), placeholder: t("listings.deedNumber"), validator: validators.deedNumber, errorKey: "deedNumber" },
-        { id: "ind-ownerId", kind: "text" as const, fieldName: "ownerId" as const, label: t("listings.ownerId"), placeholder: t("listings.enterHere"), validator: validators.ownerId, errorKey: "ownerId" },
-        { id: "ind-birth", kind: "date" as const, fieldName: "ownerBirthdate" as const, label: t("listings.ownerBirthdate"), dateType: "owner" as const },
-        { id: "ind-phone", kind: "phone" as const, fieldName: "ownerPhone" as const, label: t("listings.ownerPhoneNumber") },
+        {
+          id: "ind-deed",
+          kind: "text" as const,
+          fieldName: "deedNumber" as const,
+          label: t("listings.deedNumber"),
+          placeholder: t("listings.deedNumber"),
+          validator: validators.deedNumber,
+          errorKey: "deedNumber",
+        },
+        {
+          id: "ind-ownerId",
+          kind: "text" as const,
+          fieldName: "ownerId" as const,
+          label: t("listings.ownerId"),
+          placeholder: t("listings.enterHere"),
+          validator: validators.ownerId,
+          errorKey: "ownerId",
+        },
+        {
+          id: "ind-birth",
+          kind: "date" as const,
+          fieldName: "ownerBirthdate" as const,
+          label: t("listings.ownerBirthdate"),
+          dateType: "owner" as const,
+        },
+        {
+          id: "ind-phone",
+          kind: "phone" as const,
+          fieldName: "ownerPhone" as const,
+          label: t("listings.ownerPhoneNumber"),
+        },
       ];
     }
     if (ownerType === "multi-agent") {
       return [
-        { id: "ma-deed", kind: "text" as const, fieldName: "deedNumber" as const, label: t("listings.deedNumber"), placeholder: t("listings.deedNumber"), validator: validators.deedNumber, errorKey: "deedNumber_ma" },
-        { id: "ma-ownerId", kind: "text" as const, fieldName: "ownerIdNumber" as const, label: t("listings.ownerIdNumber"), placeholder: t("listings.enterHere"), validator: validators.ownerId, errorKey: "ownerIdNumber" },
-        { id: "ma-poaAgent", kind: "text" as const, fieldName: "poaAgentId" as const, label: t("listings.poaAgentId"), placeholder: t("listings.enterHere"), validator: validators.poaAgentId, errorKey: "poaAgentId" },
-        { id: "ma-poaId", kind: "text" as const, fieldName: "poaId" as const, label: t("listings.poaId"), placeholder: t("listings.enterHere"), validator: validators.poaId, errorKey: "poaId" },
-        { id: "ma-birth", kind: "date" as const, fieldName: "agentBirthdate" as const, label: t("listings.agentBirthdate"), dateType: "agent" as const },
-        { id: "ma-phone", kind: "phone" as const, fieldName: "agentPhone" as const, label: t("listings.agentPhoneNumber") },
+        {
+          id: "ma-deed",
+          kind: "text" as const,
+          fieldName: "deedNumber" as const,
+          label: t("listings.deedNumber"),
+          placeholder: t("listings.deedNumber"),
+          validator: validators.deedNumber,
+          errorKey: "deedNumber_ma",
+        },
+        {
+          id: "ma-ownerId",
+          kind: "text" as const,
+          fieldName: "ownerIdNumber" as const,
+          label: t("listings.ownerIdNumber"),
+          placeholder: t("listings.enterHere"),
+          validator: validators.ownerId,
+          errorKey: "ownerIdNumber",
+        },
+        {
+          id: "ma-poaAgent",
+          kind: "text" as const,
+          fieldName: "poaAgentId" as const,
+          label: t("listings.poaAgentId"),
+          placeholder: t("listings.enterHere"),
+          validator: validators.poaAgentId,
+          errorKey: "poaAgentId",
+        },
+        {
+          id: "ma-poaId",
+          kind: "text" as const,
+          fieldName: "poaId" as const,
+          label: t("listings.poaId"),
+          placeholder: t("listings.enterHere"),
+          validator: validators.poaId,
+          errorKey: "poaId",
+        },
+        {
+          id: "ma-birth",
+          kind: "date" as const,
+          fieldName: "agentBirthdate" as const,
+          label: t("listings.agentBirthdate"),
+          dateType: "agent" as const,
+        },
+        {
+          id: "ma-phone",
+          kind: "phone" as const,
+          fieldName: "agentPhone" as const,
+          label: t("listings.agentPhoneNumber"),
+        },
       ];
     }
     return [
-      { id: "co-deed", kind: "text" as const, fieldName: "deedNumber" as const, label: t("listings.deedNumber"), placeholder: t("listings.deedNumber"), validator: validators.deedNumber, errorKey: "companyDeedNumber" },
-      { id: "co-cr", kind: "text" as const, fieldName: "unifiedCrNumber" as const, label: t("listings.unifiedCrNumber"), placeholder: t("listings.enterHere"), validator: validators.unifiedCrNumber, errorKey: "unifiedCrNumber" },
-      { id: "co-poaAgent", kind: "text" as const, fieldName: "poaAgentId" as const, label: t("listings.poaAgentId"), placeholder: t("listings.enterHere"), validator: validators.poaAgentId, errorKey: "companyPoaAgentId" },
-      { id: "co-poaId", kind: "text" as const, fieldName: "poaId" as const, label: t("listings.poaId"), placeholder: t("listings.enterHere"), validator: validators.poaId, errorKey: "companyPoaId" },
-      { id: "co-birth", kind: "date" as const, fieldName: "companyAgentBirthdate" as const, label: t("listings.agentBirthdate"), dateType: "company" as const },
-      { id: "co-phone", kind: "phone" as const, fieldName: "companyAgentPhone" as const, label: t("listings.agentPhoneNumber") },
+      {
+        id: "co-deed",
+        kind: "text" as const,
+        fieldName: "deedNumber" as const,
+        label: t("listings.deedNumber"),
+        placeholder: t("listings.deedNumber"),
+        validator: validators.deedNumber,
+        errorKey: "companyDeedNumber",
+      },
+      {
+        id: "co-cr",
+        kind: "text" as const,
+        fieldName: "unifiedCrNumber" as const,
+        label: t("listings.unifiedCrNumber"),
+        placeholder: t("listings.enterHere"),
+        validator: validators.unifiedCrNumber,
+        errorKey: "unifiedCrNumber",
+      },
+      {
+        id: "co-poaAgent",
+        kind: "text" as const,
+        fieldName: "poaAgentId" as const,
+        label: t("listings.poaAgentId"),
+        placeholder: t("listings.enterHere"),
+        validator: validators.poaAgentId,
+        errorKey: "companyPoaAgentId",
+      },
+      {
+        id: "co-poaId",
+        kind: "text" as const,
+        fieldName: "poaId" as const,
+        label: t("listings.poaId"),
+        placeholder: t("listings.enterHere"),
+        validator: validators.poaId,
+        errorKey: "companyPoaId",
+      },
+      {
+        id: "co-birth",
+        kind: "date" as const,
+        fieldName: "companyAgentBirthdate" as const,
+        label: t("listings.agentBirthdate"),
+        dateType: "company" as const,
+      },
+      {
+        id: "co-phone",
+        kind: "phone" as const,
+        fieldName: "companyAgentPhone" as const,
+        label: t("listings.agentPhoneNumber"),
+      },
     ];
   }, [ownerType, t, validators]);
 
@@ -675,7 +858,15 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         />
       );
     },
-    [updateField, handleFocusField, handleBlurField, openDatePicker, rtlStyles, t, validators.phone]
+    [
+      updateField,
+      handleFocusField,
+      handleBlurField,
+      openDatePicker,
+      rtlStyles,
+      t,
+      validators.phone,
+    ],
   );
 
   const getItemLayout = useCallback(
@@ -684,7 +875,7 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
       offset: FORM_ROW_HEIGHT * index,
       index,
     }),
-    []
+    [],
   );
 
   const listHeader = useMemo(
@@ -701,12 +892,26 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         rtlStyles={rtlStyles}
       />
     ),
-    [deedOwnerType, deedOwnerOptions, ownerType, ownerTypeOptions, handleDeedOwnerSelect, handleOwnerTypeSelect, t, rtlStyles]
+    [
+      deedOwnerType,
+      deedOwnerOptions,
+      ownerType,
+      ownerTypeOptions,
+      handleDeedOwnerSelect,
+      handleOwnerTypeSelect,
+      t,
+      rtlStyles,
+    ],
   );
 
   const listFooter = useMemo(
-    () => <ContactLink rtlStyles={rtlStyles} haveQuestionText={t("listings.haveQuestionContactUs")} />,
-    [rtlStyles, t]
+    () => (
+      <ContactLink
+        rtlStyles={rtlStyles}
+        haveQuestionText={t("listings.haveQuestionContactUs")}
+      />
+    ),
+    [rtlStyles, t],
   );
 
   return (
@@ -764,10 +969,16 @@ export default function DeedOwnerInformationScreen(): React.JSX.Element {
         title={datePickerTitle}
         initialDate={
           activeCalendarType === "owner"
-            ? (fields.ownerBirthdate ? parseDateFromFormatted(fields.ownerBirthdate) : new Date())
+            ? fields.ownerBirthdate
+              ? parseDateFromFormatted(fields.ownerBirthdate)
+              : new Date()
             : activeCalendarType === "agent"
-              ? (fields.agentBirthdate ? parseDateFromFormatted(fields.agentBirthdate) : new Date())
-              : (fields.companyAgentBirthdate ? parseDateFromFormatted(fields.companyAgentBirthdate) : new Date())
+              ? fields.agentBirthdate
+                ? parseDateFromFormatted(fields.agentBirthdate)
+                : new Date()
+              : fields.companyAgentBirthdate
+                ? parseDateFromFormatted(fields.companyAgentBirthdate)
+                : new Date()
         }
       />
 

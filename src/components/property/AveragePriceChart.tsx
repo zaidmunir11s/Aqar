@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import {
   Gesture,
@@ -37,7 +43,11 @@ const WHITE_HALO = "#2563EB";
 /**
  * Format value for display with translated thousand/million suffixes
  */
-function formatChartValue(value: number, thousand: string, million: string): string {
+function formatChartValue(
+  value: number,
+  thousand: string,
+  million: string,
+): string {
   if (value >= 1_000_000) {
     return `${(value / 1_000_000).toFixed(1)} ${million}`;
   }
@@ -109,7 +119,7 @@ export default function AveragePriceChart({
 
   const customFont = useFont(
     require("@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf"),
-    12
+    12,
   );
   const font = customFont ?? matchFont({ fontSize: 12 });
   const { state: chartPressState } = useChartPressState({
@@ -138,7 +148,7 @@ export default function AveragePriceChart({
       setTooltip({ visible, x: tooltipX, y, value });
       if (visible) scheduleHideTooltipRef.current();
     },
-    []
+    [],
   );
 
   useAnimatedReaction(
@@ -155,17 +165,14 @@ export default function AveragePriceChart({
           true,
           current.x,
           current.y + LINE_STROKE_WIDTH - 44,
-          current.value
+          current.value,
         );
       }
       // Don't hide when active becomes false – tooltip stays until auto-hide or next tap
-    }
+    },
   );
 
-  const chartWidth = Math.max(
-    SCREEN_WIDTH,
-    data.length * MIN_WIDTH_PER_POINT
-  );
+  const chartWidth = Math.max(SCREEN_WIDTH, data.length * MIN_WIDTH_PER_POINT);
 
   rtlRef.current = { isRTL, chartWidth };
 
@@ -177,12 +184,14 @@ export default function AveragePriceChart({
         ...d,
         xIndex: isRTL ? data.length - 1 - i : i,
       })),
-    [data, isRTL]
+    [data, isRTL],
   );
 
   // Origin at 0: Y-axis always starts at 0; max is rounded up for a clean scale (reference: 0, 236, 473, … 1420)
   const { yDomain, yAxisOverlay, plotHeight, maxVal } = useMemo(() => {
-    const values = data.map((d) => d.value).filter((v) => typeof v === "number");
+    const values = data
+      .map((d) => d.value)
+      .filter((v) => typeof v === "number");
     const dataMax = values.length ? Math.max(...values) : 100;
     const max = dataMax <= 0 ? 100 : dataMax;
     const plotH = height - PLOT_TOP - plotBottom;
@@ -232,17 +241,15 @@ export default function AveragePriceChart({
         0,
         Math.min(
           isRTL ? data.length - 1 - visualIndex : visualIndex,
-          data.length - 1
-        )
+          data.length - 1,
+        ),
       );
       const datum = data[clampedIndex];
       if (!datum || typeof datum.value !== "number") return;
       const dotXLtr = Y_AXIS_WIDTH + (clampedIndex + 0.5) * cellWidth;
       const tooltipX = isRTL ? chartWidth - dotXLtr : dotXLtr;
       const dotY =
-        PLOT_TOP +
-        (1 - datum.value / maxVal) * plotHeight +
-        LINE_STROKE_WIDTH;
+        PLOT_TOP + (1 - datum.value / maxVal) * plotHeight + LINE_STROKE_WIDTH;
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
       setTooltip({
         visible: true,
@@ -252,7 +259,7 @@ export default function AveragePriceChart({
       });
       scheduleHideTooltip();
     },
-    [data, cellWidth, plotWidth, plotHeight, maxVal, isRTL, chartWidth]
+    [data, cellWidth, plotWidth, plotHeight, maxVal, isRTL, chartWidth],
   );
 
   const tapGesture = useMemo(
@@ -261,7 +268,7 @@ export default function AveragePriceChart({
         "worklet";
         scheduleOnRN(handleTap, e.x, e.y);
       }),
-    [handleTap]
+    [handleTap],
   );
 
   const scrollToEndIfRTL = useCallback(() => {
@@ -335,90 +342,92 @@ export default function AveragePriceChart({
       >
         <View style={[styles.chartWrapper, { width: chartWidth, height }]}>
           <View style={[styles.chartArea, { height }]}>
-          {/* Horizontal grid lines at Y price ticks only (not at 0) - behind chart */}
-          <View
-            style={[styles.yGridOverlay, { width: chartWidth, height }]}
-            pointerEvents="none"
-          >
-            {yAxisOverlay.slice(1).map(({ y }, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.yGridLine,
-                  {
-                    top: y - 0.5,
-                    left: 0,
-                    width: chartWidth,
-                  },
-                ]}
-              />
-            ))}
-          </View>
-            <CartesianChart
-          data={chartData}
-          xKey="xIndex"
-          yKeys={["value"]}
-          domain={{ x: [-0.5, data.length - 0.5], y: yDomain }}
-          domainPadding={{ left: Y_AXIS_WIDTH, right: Y_AXIS_WIDTH, top: PLOT_TOP, bottom: plotBottom }}
-          axisOptions={{
-            font,
-            tickCount: { x: data.length, y: 6 },
-            labelColor: AXIS_LABEL_COLOR,
-            formatXLabel,
-            formatYLabel: formatYLabelHidden,
-          }}
-          xAxis={{ lineWidth: 0, lineColor: "transparent" }}
-          yAxis={[{ lineWidth: 0, lineColor: "transparent" }]}
-          frame={{ lineWidth: 0, lineColor: "transparent" }}
-          chartPressState={chartPressState}
-          chartPressConfig={{
-            pan: {
-              activateAfterLongPress: 30,
-            },
-          }}
-        >
-          {({ points }) => (
-            <>
-              <Line
-                points={points.value}
-                color={CHART_LINE_COLOR}
-                strokeWidth={LINE_STROKE_WIDTH}
-                curveType="catmullRom"
-              />
-              {points.value.map((point, index) => {
-                const cx = point.x ?? 0;
-                const cy = (point.y ?? 0) + LINE_STROKE_WIDTH;
-                return (
-                  <React.Fragment key={index}>
-                    <Circle
-                      cx={cx}
-                      cy={cy}
-                      r={DOT_HALO_RADIUS}
-                      color={WHITE_HALO}
-                      style="fill"
-                    />
-                    <Circle
-                      cx={cx}
-                      cy={cy}
-                      r={DOT_FILL_RADIUS}
-                      color="white"
-                      style="fill"
-                    />
-                  </React.Fragment>
-                );
-              })}
-            </>
-          )}
-        </CartesianChart>
-          {/* Tap overlay: show tooltip on tap when chart press misses (e.g. after scroll) */}
-          <GestureDetector gesture={tapGesture}>
+            {/* Horizontal grid lines at Y price ticks only (not at 0) - behind chart */}
             <View
-              style={[
-                StyleSheet.absoluteFill,
-                { width: chartWidth, height },
-              ]}
-            />
-          </GestureDetector>
+              style={[styles.yGridOverlay, { width: chartWidth, height }]}
+              pointerEvents="none"
+            >
+              {yAxisOverlay.slice(1).map(({ y }, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.yGridLine,
+                    {
+                      top: y - 0.5,
+                      left: 0,
+                      width: chartWidth,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+            <CartesianChart
+              data={chartData}
+              xKey="xIndex"
+              yKeys={["value"]}
+              domain={{ x: [-0.5, data.length - 0.5], y: yDomain }}
+              domainPadding={{
+                left: Y_AXIS_WIDTH,
+                right: Y_AXIS_WIDTH,
+                top: PLOT_TOP,
+                bottom: plotBottom,
+              }}
+              axisOptions={{
+                font,
+                tickCount: { x: data.length, y: 6 },
+                labelColor: AXIS_LABEL_COLOR,
+                formatXLabel,
+                formatYLabel: formatYLabelHidden,
+              }}
+              xAxis={{ lineWidth: 0, lineColor: "transparent" }}
+              yAxis={[{ lineWidth: 0, lineColor: "transparent" }]}
+              frame={{ lineWidth: 0, lineColor: "transparent" }}
+              chartPressState={chartPressState}
+              chartPressConfig={{
+                pan: {
+                  activateAfterLongPress: 30,
+                },
+              }}
+            >
+              {({ points }) => (
+                <>
+                  <Line
+                    points={points.value}
+                    color={CHART_LINE_COLOR}
+                    strokeWidth={LINE_STROKE_WIDTH}
+                    curveType="catmullRom"
+                  />
+                  {points.value.map((point, index) => {
+                    const cx = point.x ?? 0;
+                    const cy = (point.y ?? 0) + LINE_STROKE_WIDTH;
+                    return (
+                      <React.Fragment key={index}>
+                        <Circle
+                          cx={cx}
+                          cy={cy}
+                          r={DOT_HALO_RADIUS}
+                          color={WHITE_HALO}
+                          style="fill"
+                        />
+                        <Circle
+                          cx={cx}
+                          cy={cy}
+                          r={DOT_FILL_RADIUS}
+                          color="white"
+                          style="fill"
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+                </>
+              )}
+            </CartesianChart>
+            {/* Tap overlay: show tooltip on tap when chart press misses (e.g. after scroll) */}
+            <GestureDetector gesture={tapGesture}>
+              <View
+                style={[StyleSheet.absoluteFill, { width: chartWidth, height }]}
+              />
+            </GestureDetector>
           </View>
 
           {/* X-axis labels inside chart area at bottom (Y-axis extends through this strip); row-reverse in RTL */}
@@ -436,7 +445,8 @@ export default function AveragePriceChart({
             {data.map((d, i) => {
               const parts = String(d.period).split("\n");
               const periodLabel = parts[0] ?? "";
-              const yearLabel = periodMode === "halfYear" ? (parts[1] ?? "") : "";
+              const yearLabel =
+                periodMode === "halfYear" ? (parts[1] ?? "") : "";
               return (
                 <View key={i} style={styles.xAxisLabelCell}>
                   <Text style={styles.xAxisPeriod}>{periodLabel}</Text>
@@ -448,26 +458,26 @@ export default function AveragePriceChart({
             })}
           </View>
 
-        {/* Interactive tooltip overlay */}
-        {tooltip.visible && (
-          <View
-            style={[
-              styles.tooltip,
-              {
-                left: Math.max(0, Math.min(tooltip.x - 28, chartWidth - 56)),
-                top: Math.max(0, tooltip.y),
-              },
-            ]}
-            pointerEvents="none"
-          >
-            <View style={styles.tooltipBubble}>
-              <Text style={styles.tooltipText}>
-                {formatChartValue(tooltip.value, thousandLabel, millionLabel)}
-              </Text>
+          {/* Interactive tooltip overlay */}
+          {tooltip.visible && (
+            <View
+              style={[
+                styles.tooltip,
+                {
+                  left: Math.max(0, Math.min(tooltip.x - 28, chartWidth - 56)),
+                  top: Math.max(0, tooltip.y),
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <View style={styles.tooltipBubble}>
+                <Text style={styles.tooltipText}>
+                  {formatChartValue(tooltip.value, thousandLabel, millionLabel)}
+                </Text>
+              </View>
+              <View style={styles.tooltipArrow} />
             </View>
-            <View style={styles.tooltipArrow} />
-          </View>
-        )}
+          )}
         </View>
       </ScrollView>
     </View>

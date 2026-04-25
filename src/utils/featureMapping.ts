@@ -86,7 +86,7 @@ const TOGGLE_TO_FEATURE_MAP: Record<string, string> = {
 /**
  * Extract selected features from orderFormData
  * Uses OR logic: if ANY toggle is selected, include that feature
- * 
+ *
  * @param orderFormData - The order form data object containing toggle states
  * @returns Array of feature display names that were selected
  */
@@ -96,7 +96,9 @@ export function getSelectedFeatures(orderFormData: any): string[] {
   const features: string[] = [];
 
   // Check each toggle in the mapping
-  for (const [toggleKey, featureName] of Object.entries(TOGGLE_TO_FEATURE_MAP)) {
+  for (const [toggleKey, featureName] of Object.entries(
+    TOGGLE_TO_FEATURE_MAP,
+  )) {
     // If toggle is true (ON), add the corresponding feature
     if (orderFormData[toggleKey] === true) {
       // Avoid duplicates (e.g., both 'furnished' and 'villaFurnished' map to 'Furnished')
@@ -112,7 +114,7 @@ export function getSelectedFeatures(orderFormData: any): string[] {
 /**
  * Get feature display name for a toggle key
  * Useful for displaying feature names in UI
- * 
+ *
  * @param toggleKey - The toggle state key (e.g., 'furnished', 'pool')
  * @returns Feature display name or null if not found
  */
@@ -123,7 +125,7 @@ export function getFeatureName(toggleKey: string): string | null {
 /**
  * Get all available feature names
  * Useful for displaying all possible features
- * 
+ *
  * @returns Array of unique feature display names
  */
 export function getAllFeatureNames(): string[] {

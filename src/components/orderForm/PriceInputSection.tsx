@@ -34,7 +34,7 @@ const PriceInputSection = memo<PriceInputSectionProps>(
     helperText,
   }) => {
     const { t, isRTL } = useLocalization();
-    
+
     // Use translated defaults if placeholders not provided
     const defaultFromPlaceholder = fromPlaceholder || t("listings.fromPrice");
     const defaultToPlaceholder = toPlaceholder || t("listings.toPrice");
@@ -46,10 +46,12 @@ const PriceInputSection = memo<PriceInputSectionProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         priceRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -77,11 +79,13 @@ const PriceInputSection = memo<PriceInputSectionProps>(
           />
         </View>
         {helperText?.trim() ? (
-          <Text style={[styles.helperText, rtlStyles.label]}>{helperText.trim()}</Text>
+          <Text style={[styles.helperText, rtlStyles.label]}>
+            {helperText.trim()}
+          </Text>
         ) : null}
       </View>
     );
-  }
+  },
 );
 
 PriceInputSection.displayName = "PriceInputSection";
@@ -126,4 +130,3 @@ const styles = StyleSheet.create({
 });
 
 export default PriceInputSection;
-

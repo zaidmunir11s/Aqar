@@ -27,7 +27,9 @@ export function useOrderForm() {
 
   // Cache setter closures so `setX` function references stay stable across renders.
   // This reduces unnecessary re-renders when consumers pass these callbacks into memoized children.
-  const setterCacheRef = useRef<Record<string, ((value: unknown) => void) | undefined>>({});
+  const setterCacheRef = useRef<
+    Record<string, ((value: unknown) => void) | undefined>
+  >({});
 
   const setField = useCallback(
     <K extends keyof OrderFormState>(key: K) => {
@@ -40,10 +42,12 @@ export function useOrderForm() {
       const setter = (value: OrderFormState[K]) => {
         dispatch({ type: "SET", payload: { key, value } });
       };
-      setterCacheRef.current[cacheKey] = setter as unknown as (value: unknown) => void;
+      setterCacheRef.current[cacheKey] = setter as unknown as (
+        value: unknown,
+      ) => void;
       return setter;
     },
-    [dispatch]
+    [dispatch],
   );
 
   // ========== HANDLERS ==========
@@ -55,15 +59,24 @@ export function useOrderForm() {
     (period: RentPaymentFrequencyChoice) => {
       const next = state.rentPeriod === period ? null : period;
       dispatch({ type: "SET", payload: { key: "rentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.rentPeriod]
+    [state.rentPeriod],
   );
 
-  const handlePaymentChipPress = useCallback((payment: string) => {
-    const next = state.selectedPayment === payment ? null : payment;
-    dispatch({ type: "SET", payload: { key: "selectedPayment", value: next } });
-  }, [state.selectedPayment]);
+  const handlePaymentChipPress = useCallback(
+    (payment: string) => {
+      const next = state.selectedPayment === payment ? null : payment;
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: next },
+      });
+    },
+    [state.selectedPayment],
+  );
 
   const handleApartmentRentTenantPress = useCallback(
     (value: string) => {
@@ -71,45 +84,87 @@ export function useOrderForm() {
       const picked = value as ApartmentRentTenantChoice;
       const current = state.apartmentRentTenant;
       const next: ApartmentRentTenant = current === picked ? null : picked;
-      dispatch({ type: "SET", payload: { key: "apartmentRentTenant", value: next } });
+      dispatch({
+        type: "SET",
+        payload: { key: "apartmentRentTenant", value: next },
+      });
     },
-    [state.apartmentRentTenant]
+    [state.apartmentRentTenant],
   );
 
-  const handleBedroomPress = useCallback((value: string) => {
-    const next = state.selectedBedroom === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "selectedBedroom", value: next } });
-  }, [state.selectedBedroom]);
+  const handleBedroomPress = useCallback(
+    (value: string) => {
+      const next = state.selectedBedroom === value ? null : value;
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedBedroom", value: next },
+      });
+    },
+    [state.selectedBedroom],
+  );
 
-  const handleLivingRoomPress = useCallback((value: string) => {
-    const next = state.selectedLivingRoom === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "selectedLivingRoom", value: next } });
-  }, [state.selectedLivingRoom]);
+  const handleLivingRoomPress = useCallback(
+    (value: string) => {
+      const next = state.selectedLivingRoom === value ? null : value;
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedLivingRoom", value: next },
+      });
+    },
+    [state.selectedLivingRoom],
+  );
 
-  const handleWcPress = useCallback((value: string) => {
-    const next = state.selectedWc === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "selectedWc", value: next } });
-  }, [state.selectedWc]);
+  const handleWcPress = useCallback(
+    (value: string) => {
+      const next = state.selectedWc === value ? null : value;
+      dispatch({ type: "SET", payload: { key: "selectedWc", value: next } });
+    },
+    [state.selectedWc],
+  );
 
-  const handleApartmentPress = useCallback((value: string) => {
-    const next = state.selectedApartment === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "selectedApartment", value: next } });
-  }, [state.selectedApartment]);
+  const handleApartmentPress = useCallback(
+    (value: string) => {
+      const next = state.selectedApartment === value ? null : value;
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedApartment", value: next },
+      });
+    },
+    [state.selectedApartment],
+  );
 
-  const handleBuildingApartmentsPress = useCallback((value: string) => {
-    const next = state.buildingApartments === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "buildingApartments", value: next } });
-  }, [state.buildingApartments]);
+  const handleBuildingApartmentsPress = useCallback(
+    (value: string) => {
+      const next = state.buildingApartments === value ? null : value;
+      dispatch({
+        type: "SET",
+        payload: { key: "buildingApartments", value: next },
+      });
+    },
+    [state.buildingApartments],
+  );
 
-  const handleBuildingRentApartmentsPress = useCallback((value: string) => {
-    const next = state.buildingRentApartments === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "buildingRentApartments", value: next } });
-  }, [state.buildingRentApartments]);
+  const handleBuildingRentApartmentsPress = useCallback(
+    (value: string) => {
+      const next = state.buildingRentApartments === value ? null : value;
+      dispatch({
+        type: "SET",
+        payload: { key: "buildingRentApartments", value: next },
+      });
+    },
+    [state.buildingRentApartments],
+  );
 
-  const handleVillaTypePress = useCallback((value: string) => {
-    const next = state.selectedVillaType === value ? null : value;
-    dispatch({ type: "SET", payload: { key: "selectedVillaType", value: next } });
-  }, [state.selectedVillaType]);
+  const handleVillaTypePress = useCallback(
+    (value: string) => {
+      const next = state.selectedVillaType === value ? null : value;
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedVillaType", value: next },
+      });
+    },
+    [state.selectedVillaType],
+  );
 
   const handleStreetDirectionSelect = useCallback(
     (value: string) => {
@@ -135,9 +190,12 @@ export function useOrderForm() {
       if (key) {
         dispatch({ type: "SET", payload: { key, value } });
       }
-      dispatch({ type: "SET", payload: { key: "showStreetDirectionModal", value: false } });
+      dispatch({
+        type: "SET",
+        payload: { key: "showStreetDirectionModal", value: false },
+      });
     },
-    [state.category]
+    [state.category],
   );
 
   const handleStreetWidthSelect = useCallback(
@@ -174,105 +232,162 @@ export function useOrderForm() {
       if (key) {
         dispatch({ type: "SET", payload: { key, value } });
       }
-      dispatch({ type: "SET", payload: { key: "showStreetWidthModal", value: false } });
+      dispatch({
+        type: "SET",
+        payload: { key: "showStreetWidthModal", value: false },
+      });
     },
-    [state.category]
+    [state.category],
   );
 
   const handleLandRentTypePress = useCallback(
     (value: string) => {
       const next = state.selectedLandRentType === value ? null : value;
-      dispatch({ type: "SET", payload: { key: "selectedLandRentType", value: next } });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedLandRentType", value: next },
+      });
     },
-    [state.selectedLandRentType]
+    [state.selectedLandRentType],
   );
 
   const handleBuildingRentTypePress = useCallback(
     (value: string) => {
       const next = state.selectedBuildingRentType === value ? null : value;
-      dispatch({ type: "SET", payload: { key: "selectedBuildingRentType", value: next } });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedBuildingRentType", value: next },
+      });
     },
-    [state.selectedBuildingRentType]
+    [state.selectedBuildingRentType],
   );
 
   const handleBuildingRentStoresSelect = useCallback((value: string) => {
     dispatch({ type: "SET", payload: { key: "buildingRentStores", value } });
-    dispatch({ type: "SET", payload: { key: "showStoresModal", value: false } });
+    dispatch({
+      type: "SET",
+      payload: { key: "showStoresModal", value: false },
+    });
   }, []);
 
   const handleVillaRentRentPeriodPress = useCallback(
     (period: RentPaymentFrequencyChoice) => {
       const next = state.villaRentRentPeriod === period ? null : period;
-      dispatch({ type: "SET", payload: { key: "villaRentRentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "villaRentRentPeriod", value: next },
+      });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.villaRentRentPeriod]
+    [state.villaRentRentPeriod],
   );
 
   const handleBigFlatRentPeriodPress = useCallback(
     (period: RentPaymentFrequencyChoice) => {
       const next = state.bigFlatRentPeriod === period ? null : period;
-      dispatch({ type: "SET", payload: { key: "bigFlatRentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "bigFlatRentPeriod", value: next },
+      });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.bigFlatRentPeriod]
+    [state.bigFlatRentPeriod],
   );
 
   const handleLoungeRentRentPeriodPress = useCallback(
     (period: RentPaymentFrequencyChoice) => {
       const next = state.loungeRentRentPeriod === period ? null : period;
-      dispatch({ type: "SET", payload: { key: "loungeRentRentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "loungeRentRentPeriod", value: next },
+      });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.loungeRentRentPeriod]
+    [state.loungeRentRentPeriod],
   );
 
   const handleRoomRentRentPeriodPress = useCallback(
     (period: RentPaymentFrequencyChoice) => {
       const next = state.roomRentRentPeriod === period ? null : period;
-      dispatch({ type: "SET", payload: { key: "roomRentRentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "roomRentRentPeriod", value: next },
+      });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.roomRentRentPeriod]
+    [state.roomRentRentPeriod],
   );
 
   const handleTentRentRentPeriodPress = useCallback(
     (period: RentPaymentFrequencyChoice) => {
       const next = state.tentRentRentPeriod === period ? null : period;
-      dispatch({ type: "SET", payload: { key: "tentRentRentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "tentRentRentPeriod", value: next },
+      });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.tentRentRentPeriod]
+    [state.tentRentRentPeriod],
   );
 
   const handleChaletRentRentPeriodPress = useCallback(
     (period: RentPaymentFrequencyChoice) => {
       const next = state.chaletRentRentPeriod === period ? null : period;
-      dispatch({ type: "SET", payload: { key: "chaletRentRentPeriod", value: next } });
-      dispatch({ type: "SET", payload: { key: "selectedPayment", value: null } });
+      dispatch({
+        type: "SET",
+        payload: { key: "chaletRentRentPeriod", value: next },
+      });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedPayment", value: null },
+      });
     },
-    [state.chaletRentRentPeriod]
+    [state.chaletRentRentPeriod],
   );
 
   const handleLandTypePress = useCallback(
     (value: string) => {
       const next = state.selectedLandType === value ? null : value;
-      dispatch({ type: "SET", payload: { key: "selectedLandType", value: next } });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedLandType", value: next },
+      });
     },
-    [state.selectedLandType]
+    [state.selectedLandType],
   );
 
   const handleBuildingTypePress = useCallback(
     (value: string) => {
       const next = state.selectedBuildingType === value ? null : value;
-      dispatch({ type: "SET", payload: { key: "selectedBuildingType", value: next } });
+      dispatch({
+        type: "SET",
+        payload: { key: "selectedBuildingType", value: next },
+      });
     },
-    [state.selectedBuildingType]
+    [state.selectedBuildingType],
   );
 
   const handleStoresSelect = useCallback((value: string) => {
     dispatch({ type: "SET", payload: { key: "stores", value } });
-    dispatch({ type: "SET", payload: { key: "showStoresModal", value: false } });
+    dispatch({
+      type: "SET",
+      payload: { key: "showStoresModal", value: false },
+    });
   }, []);
 
   const handleFloorSelect = useCallback((value: string) => {
@@ -312,15 +427,18 @@ export function useOrderForm() {
       isChaletForRent: state.category === "Chalet for rent",
       isOther: state.category === "Other",
     }),
-    [state.category]
+    [state.category],
   );
 
   const apartmentForRentComputed = useMemo(() => {
     const isMonthly = state.rentPeriod === "Monthly";
     const showAnnualPriceBlock =
       state.rentPeriod != null && isRentAnnualPriceFrequency(state.rentPeriod);
-    const showPriceSection = (!state.rentPeriod || isMonthly) && categoryChecks.isApartmentForRent;
-    const priceLabel = isMonthly ? t("listings.priceMonthly") : t("listings.annualPrice");
+    const showPriceSection =
+      (!state.rentPeriod || isMonthly) && categoryChecks.isApartmentForRent;
+    const priceLabel = isMonthly
+      ? t("listings.priceMonthly")
+      : t("listings.annualPrice");
 
     return {
       /** @deprecated use showAnnualPriceBlock */
@@ -439,7 +557,7 @@ export function useOrderForm() {
       handleWcPress,
       handleFloorSelect,
       handleAgeSelect,
-    ]
+    ],
   );
 
   const saleGroup = useMemo(
@@ -518,7 +636,9 @@ export function useOrderForm() {
       apartmentSaleTwoEntrances: state.apartmentSaleTwoEntrances,
       setApartmentSaleTwoEntrances: setField("apartmentSaleTwoEntrances"),
       apartmentSaleSpecialEntrances: state.apartmentSaleSpecialEntrances,
-      setApartmentSaleSpecialEntrances: setField("apartmentSaleSpecialEntrances"),
+      setApartmentSaleSpecialEntrances: setField(
+        "apartmentSaleSpecialEntrances",
+      ),
       buildingPriceFrom: state.buildingPriceFrom,
       setBuildingPriceFrom: setField("buildingPriceFrom"),
       buildingPriceTo: state.buildingPriceTo,
@@ -675,7 +795,7 @@ export function useOrderForm() {
       handleLandTypePress,
       handleBuildingTypePress,
       handleStoresSelect,
-    ]
+    ],
   );
 
   const rentGroup = useMemo(
@@ -748,7 +868,9 @@ export function useOrderForm() {
       smallHouseRentPriceTo: state.smallHouseRentPriceTo,
       setSmallHouseRentPriceTo: setField("smallHouseRentPriceTo"),
       smallHouseRentStreetDirection: state.smallHouseRentStreetDirection,
-      setSmallHouseRentStreetDirection: setField("smallHouseRentStreetDirection"),
+      setSmallHouseRentStreetDirection: setField(
+        "smallHouseRentStreetDirection",
+      ),
       smallHouseRentAreaFrom: state.smallHouseRentAreaFrom,
       setSmallHouseRentAreaFrom: setField("smallHouseRentAreaFrom"),
       smallHouseRentAreaTo: state.smallHouseRentAreaTo,
@@ -962,7 +1084,7 @@ export function useOrderForm() {
       handleRoomRentRentPeriodPress,
       handleTentRentRentPeriodPress,
       handleChaletRentRentPeriodPress,
-    ]
+    ],
   );
 
   const otherGroup = useMemo(
@@ -976,7 +1098,13 @@ export function useOrderForm() {
       otherAreaTo: state.otherAreaTo,
       setOtherAreaTo: setField("otherAreaTo"),
     }),
-    [state.otherPriceFrom, state.otherPriceTo, state.otherAreaFrom, state.otherAreaTo, setField]
+    [
+      state.otherPriceFrom,
+      state.otherPriceTo,
+      state.otherAreaFrom,
+      state.otherAreaTo,
+      setField,
+    ],
   );
 
   const formApi = useMemo(
@@ -986,9 +1114,8 @@ export function useOrderForm() {
       ...rentGroup,
       ...otherGroup,
     }),
-    [commonGroup, saleGroup, rentGroup, otherGroup]
+    [commonGroup, saleGroup, rentGroup, otherGroup],
   );
 
   return formApi;
 }
-

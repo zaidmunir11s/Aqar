@@ -19,15 +19,40 @@ interface Props {
 }
 
 function Comp(p: Props): React.JSX.Element {
-  return <>
-    <PriceInputSection label={p.t("listings.price")} fromValue={p.farmPriceFrom} toValue={p.farmPriceTo} onFromChange={p.onPriceFromChange} onToChange={p.onPriceToChange} />
-    <PriceInputSection label={p.t("listings.areaM2")} fromValue={p.farmAreaFrom} toValue={p.farmAreaTo} onFromChange={p.onAreaFromChange} onToChange={p.onAreaToChange} fromPlaceholder={p.t("listings.fromArea")} toPlaceholder={p.t("listings.toArea")} />
-    <ToggleGroup toggles={[
-      { label: p.t("listings.nearBus"), value: p.nearBus, onValueChange: p.onNearBusChange },
-      { label: p.t("listings.nearMetro"), value: p.nearMetro, onValueChange: p.onNearMetroChange },
-    ]} />
-  </>;
+  return (
+    <>
+      <PriceInputSection
+        label={p.t("listings.price")}
+        fromValue={p.farmPriceFrom}
+        toValue={p.farmPriceTo}
+        onFromChange={p.onPriceFromChange}
+        onToChange={p.onPriceToChange}
+      />
+      <PriceInputSection
+        label={p.t("listings.areaM2")}
+        fromValue={p.farmAreaFrom}
+        toValue={p.farmAreaTo}
+        onFromChange={p.onAreaFromChange}
+        onToChange={p.onAreaToChange}
+        fromPlaceholder={p.t("listings.fromArea")}
+        toPlaceholder={p.t("listings.toArea")}
+      />
+      <ToggleGroup
+        toggles={[
+          {
+            label: p.t("listings.nearBus"),
+            value: p.nearBus,
+            onValueChange: p.onNearBusChange,
+          },
+          {
+            label: p.t("listings.nearMetro"),
+            value: p.nearMetro,
+            onValueChange: p.onNearMetroChange,
+          },
+        ]}
+      />
+    </>
+  );
 }
 
 export const FarmForSaleOrderSection = memo(Comp);
-

@@ -22,7 +22,7 @@ export function useDailyPrice(selectedDates: CalendarDates | null | undefined) {
 
       const days = calculateDays(
         selectedDates.startDate,
-        selectedDates.endDate
+        selectedDates.endDate,
       );
 
       // For monthly properties: show monthly price if < 30 days, otherwise calculate and round
@@ -40,7 +40,7 @@ export function useDailyPrice(selectedDates: CalendarDates | null | undefined) {
       const calculated = (property.dailyPrice ?? 0) * days;
       return Math.round(calculated);
     },
-    [selectedDates]
+    [selectedDates],
   );
 
   const hasValidDates = useMemo(() => {

@@ -24,7 +24,9 @@ const ProjectHeader = memo<ProjectHeaderProps>(({ project, onLogoPress }) => {
     () => ({
       projectType: {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
-        alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        alignSelf: (isRTL ? "flex-end" : "flex-start") as
+          | "flex-start"
+          | "flex-end",
       },
       projectHeader: {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
@@ -40,12 +42,12 @@ const ProjectHeader = memo<ProjectHeaderProps>(({ project, onLogoPress }) => {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const translatedAddress = useMemo(
     () => translateAddress(project.address, t),
-    [project.address, t]
+    [project.address, t],
   );
 
   return (

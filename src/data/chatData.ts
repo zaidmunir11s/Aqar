@@ -45,12 +45,12 @@ export const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
 // Helper function to initialize admin conversation
 const initializeAdminConversation = (): void => {
   const adminConvId = "conv-admin";
-  
+
   // Check if admin conversation already exists
   const existingAdminConv = MOCK_CONVERSATIONS.find(
-    (conv) => conv.id === adminConvId
+    (conv) => conv.id === adminConvId,
   );
-  
+
   if (!existingAdminConv) {
     // Create admin conversation
     const adminConversation: ChatConversation = {
@@ -62,9 +62,9 @@ const initializeAdminConversation = (): void => {
       lastMessageTime: new Date(),
       unreadCount: 0,
     };
-    
+
     MOCK_CONVERSATIONS.push(adminConversation);
-    
+
     // Add predefined messages from admin
     const adminMessages: ChatMessage[] = [
       {
@@ -84,7 +84,7 @@ const initializeAdminConversation = (): void => {
         received: true,
       },
     ];
-    
+
     MOCK_MESSAGES[adminConvId] = adminMessages;
   }
 };
@@ -97,38 +97,40 @@ export const getUserName = (userId: string | number): string => {
   const userIdStr = String(userId);
   // Try direct lookup first
   let user = MOCK_USERS[userIdStr];
-  
+
   // If not found, try normalizing the ID (handle "advertiser-1" -> "advertiser1")
   if (!user && userIdStr.includes("-")) {
     const normalizedId = userIdStr.replace("-", "");
     user = MOCK_USERS[normalizedId];
   }
-  
+
   // If still not found, try with "advertiser" prefix
   if (!user && !userIdStr.startsWith("advertiser") && userIdStr !== "admin") {
     user = MOCK_USERS[`advertiser${userIdStr}`];
   }
-  
+
   return user?.name || "Property Owner";
 };
 
 // Helper function to get user avatar from MOCK_USERS
-export const getUserAvatar = (userId: string | number): string | number | undefined => {
+export const getUserAvatar = (
+  userId: string | number,
+): string | number | undefined => {
   const userIdStr = String(userId);
   // Try direct lookup first
   let user = MOCK_USERS[userIdStr];
-  
+
   // If not found, try normalizing the ID (handle "advertiser-1" -> "advertiser1")
   if (!user && userIdStr.includes("-")) {
     const normalizedId = userIdStr.replace("-", "");
     user = MOCK_USERS[normalizedId];
   }
-  
+
   // If still not found, try with "advertiser" prefix
   if (!user && !userIdStr.startsWith("advertiser") && userIdStr !== "admin") {
     user = MOCK_USERS[`advertiser${userIdStr}`];
   }
-  
+
   return user?.avatar;
 };
 
@@ -139,7 +141,7 @@ export const isAdminUser = (userId: string | number): boolean => {
 
 // Helper function to get messages for a conversation
 export const getMessagesForConversation = (
-  conversationId: string | number
+  conversationId: string | number,
 ): ChatMessage[] => {
   return MOCK_MESSAGES[String(conversationId)] || [];
 };
@@ -149,12 +151,12 @@ export const getMessagesForConversation = (
 export const getOrCreateConversationForProperty = (
   propertyId: number,
   advertiserName: string,
-  advertiserId: string | number = `advertiser-${propertyId}`
+  advertiserId: string | number = `advertiser-${propertyId}`,
 ): ChatConversation => {
   // Find existing conversation by advertiserId (owner), not propertyId
   // This allows same owner with multiple properties to share one conversation
   const existingConv = MOCK_CONVERSATIONS.find(
-    (conv) => String(conv.userId) === String(advertiserId)
+    (conv) => String(conv.userId) === String(advertiserId),
   );
 
   if (existingConv) {
@@ -168,18 +170,20 @@ export const getOrCreateConversationForProperty = (
     // Update userName if it's missing or if a new name is provided
     if (!existingConv.userName || existingConv.userName === "Property Owner") {
       const nameFromUsers = getUserName(advertiserId);
-      existingConv.userName = nameFromUsers !== "Property Owner" 
-        ? nameFromUsers 
-        : (advertiserName || "Property Owner");
+      existingConv.userName =
+        nameFromUsers !== "Property Owner"
+          ? nameFromUsers
+          : advertiserName || "Property Owner";
     }
     return existingConv;
   }
 
   // Get name from MOCK_USERS if available, otherwise use provided name
   const nameFromUsers = getUserName(advertiserId);
-  const finalName = nameFromUsers !== "Property Owner" 
-    ? nameFromUsers 
-    : (advertiserName || "Property Owner");
+  const finalName =
+    nameFromUsers !== "Property Owner"
+      ? nameFromUsers
+      : advertiserName || "Property Owner";
 
   // Create new conversation for this owner
   const newConv: ChatConversation = {
@@ -203,7 +207,7 @@ export const getOrCreateConversationForProperty = (
 // Helper function to update conversation with new message
 export const addMessageToConversation = (
   conversationId: string | number,
-  message: ChatMessage
+  message: ChatMessage,
 ): void => {
   const convId = String(conversationId);
   if (!MOCK_MESSAGES[convId]) {
@@ -218,4 +222,3 @@ export const addMessageToConversation = (
     conversation.lastMessageTime = message.createdAt;
   }
 };
-

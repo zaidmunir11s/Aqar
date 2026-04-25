@@ -10,7 +10,11 @@ import {
   Linking,
   BackHandler,
 } from "react-native";
-import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -18,7 +22,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader, ListingFooter, CancelModal } from "../../../../components";
+import {
+  ScreenHeader,
+  ListingFooter,
+  CancelModal,
+} from "../../../../components";
 import { COLORS } from "@/constants";
 import { useLocalization } from "../../../../hooks/useLocalization";
 import { navigateToMapScreen } from "../../../../utils";
@@ -52,7 +60,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
     (params.attachments ?? []).map((asset) => ({
       ...asset,
       note: asset.note ?? "",
-    }))
+    })),
   );
   const [virtualTourLink] = useState(params.virtualTourLink ?? "");
   const [focusedNoteId, setFocusedNoteId] = useState<string | null>(null);
@@ -71,13 +79,17 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
       virtualTourLink,
       ...((params as any)?.deed ? { deed: (params as any).deed } : {}),
     }),
-    [attachments, params, selectedCategory, virtualTourLink]
+    [attachments, params, selectedCategory, virtualTourLink],
   );
 
   const mergeAttachments = useCallback(
     (
       previous: AttachmentItem[],
-      incoming: Array<{ id: string; uri: string; mediaType?: "photo" | "video" | "unknown" }>
+      incoming: {
+        id: string;
+        uri: string;
+        mediaType?: "photo" | "video" | "unknown";
+      }[],
     ): AttachmentItem[] => {
       const map = new Map<string, AttachmentItem>();
       previous.forEach((item) => {
@@ -97,7 +109,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
       });
       return Array.from(map.values());
     },
-    []
+    [],
   );
 
   const rtlStyles = useMemo(
@@ -117,7 +129,9 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
       coverLabelWrap: {
-        alignSelf: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+        alignSelf: (isRTL ? "flex-end" : "flex-start") as
+          | "flex-start"
+          | "flex-end",
       },
       /** Cover / make-cover chips: leading corner follows reading direction */
       mediaOverlayStart: isRTL ? { right: wp(3.2) } : { left: wp(3.2) },
@@ -127,7 +141,7 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = useCallback(() => {
@@ -182,13 +196,13 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
 
   const handleNoteChange = useCallback((id: string, note: string) => {
     setAttachments((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, note } : item))
+      prev.map((item) => (item.id === id ? { ...item, note } : item)),
     );
   }, []);
 
   const coverPhotoId = useMemo(
     () => attachments.find((item) => item.mediaType !== "video")?.id ?? null,
-    [attachments]
+    [attachments],
   );
 
   const handleActionIconPress = useCallback(
@@ -247,7 +261,13 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
         setAttachments((prev) => mergeAttachments(prev, mapped));
       }
     },
-    [attachments, mergeAttachments, navigation, selectedCategory, virtualTourLink]
+    [
+      attachments,
+      mergeAttachments,
+      navigation,
+      selectedCategory,
+      virtualTourLink,
+    ],
   );
 
   useFocusEffect(
@@ -256,9 +276,12 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
         navigation.navigate("MarketingRequestPlaceholder", buildDraftParams());
         return true;
       };
-      const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
       return () => subscription.remove();
-    }, [buildDraftParams, navigation])
+    }, [buildDraftParams, navigation]),
   );
 
   return (
@@ -295,28 +318,44 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
               activeOpacity={0.75}
               onPress={() => handleActionIconPress("attach")}
             >
-              <Ionicons name="attach" size={wp(5.5)} color={COLORS.textTertiary} />
+              <Ionicons
+                name="attach"
+                size={wp(5.5)}
+                color={COLORS.textTertiary}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
               activeOpacity={0.75}
               onPress={() => handleActionIconPress("camera")}
             >
-              <Ionicons name="camera" size={wp(5.5)} color={COLORS.textTertiary} />
+              <Ionicons
+                name="camera"
+                size={wp(5.5)}
+                color={COLORS.textTertiary}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
               activeOpacity={0.75}
               onPress={() => handleActionIconPress("video")}
             >
-              <Ionicons name="videocam" size={wp(5.5)} color={COLORS.textTertiary} />
+              <Ionicons
+                name="videocam"
+                size={wp(5.5)}
+                color={COLORS.textTertiary}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
               activeOpacity={0.75}
               onPress={() => {}}
             >
-              <Ionicons name="images" size={wp(5.5)} color={COLORS.textTertiary} />
+              <Ionicons
+                name="images"
+                size={wp(5.5)}
+                color={COLORS.textTertiary}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -328,7 +367,9 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
                 value={item.note}
                 onChangeText={(text) => handleNoteChange(item.id, text)}
                 onFocus={() => setFocusedNoteId(item.id)}
-                onBlur={() => setFocusedNoteId((prev) => (prev === item.id ? null : prev))}
+                onBlur={() =>
+                  setFocusedNoteId((prev) => (prev === item.id ? null : prev))
+                }
                 style={[
                   styles.noteInput,
                   focusedNoteId === item.id && styles.noteInputFocused,
@@ -344,18 +385,35 @@ export default function MarketingRequestAttachmentsScreen(): React.JSX.Element {
 
               {item.mediaType !== "video" ? (
                 item.id === coverPhotoId ? (
-                  <View style={[styles.coverTag, rtlStyles.mediaOverlayStart, rtlStyles.coverLabelWrap]}>
-                    <Text style={[styles.coverTagText, rtlStyles.overlayLabelText]}>
+                  <View
+                    style={[
+                      styles.coverTag,
+                      rtlStyles.mediaOverlayStart,
+                      rtlStyles.coverLabelWrap,
+                    ]}
+                  >
+                    <Text
+                      style={[styles.coverTagText, rtlStyles.overlayLabelText]}
+                    >
                       {t("listings.coverPhoto")}
                     </Text>
                   </View>
                 ) : (
                   <TouchableOpacity
-                    style={[styles.makeCoverTag, rtlStyles.mediaOverlayStart, rtlStyles.coverLabelWrap]}
+                    style={[
+                      styles.makeCoverTag,
+                      rtlStyles.mediaOverlayStart,
+                      rtlStyles.coverLabelWrap,
+                    ]}
                     activeOpacity={0.8}
                     onPress={() => handleMakeCover(item.id)}
                   >
-                    <Text style={[styles.makeCoverTagText, rtlStyles.overlayLabelText]}>
+                    <Text
+                      style={[
+                        styles.makeCoverTagText,
+                        rtlStyles.overlayLabelText,
+                      ]}
+                    >
                       {t("listings.makeItCover")}
                     </Text>
                   </TouchableOpacity>

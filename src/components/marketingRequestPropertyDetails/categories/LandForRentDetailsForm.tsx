@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import ToggleRow from "../../orderForm/ToggleRow";
 import OptionChips from "../shared/OptionChips";
 import SliderWithInput from "../shared/SliderWithInput";
 import SegmentedControl from "../../common/SegmentedControl";
 import { useLocalization } from "@/hooks/useLocalization";
-import { STREET_DIRECTION_OPTIONS, getDirectionLabel } from "../shared/propertyDetailsOptions";
+import {
+  STREET_DIRECTION_OPTIONS,
+  getDirectionLabel,
+} from "../shared/propertyDetailsOptions";
 import { CategoryFormProps } from "../shared/CategoryFormProps";
 
 const TOGGLE_TRACK_WIDTH = wp(9);
@@ -30,11 +36,15 @@ export default function LandForRentDetailsForm({
 
   const directionOptions = useMemo(
     () => STREET_DIRECTION_OPTIONS.map((opt) => getDirectionLabel(opt, t)),
-    [t]
+    [t],
   );
   const typeOptions = useMemo(
-    () => [t("listings.residential"), t("listings.commercial"), t("listings.residentialAndCommercial")],
-    [t]
+    () => [
+      t("listings.residential"),
+      t("listings.commercial"),
+      t("listings.residentialAndCommercial"),
+    ],
+    [t],
   );
   const isStreetDirectionValid = streetDirection !== "Not Defined";
 
@@ -44,12 +54,34 @@ export default function LandForRentDetailsForm({
 
   useEffect(() => {
     onFormDataChange?.([
-      { type: "value", icon: "navigate", label: t("listings.streetDirection"), value: getDirectionLabel(streetDirection, t) },
-      { type: "value", label: t("listings.landType"), value: typeOptions[segmentIndex] ?? "" },
-      { type: "value", icon: "swap-horizontal", label: t("listings.streetWidth"), value: String(streetWidth) },
+      {
+        type: "value",
+        icon: "navigate",
+        label: t("listings.streetDirection"),
+        value: getDirectionLabel(streetDirection, t),
+      },
+      {
+        type: "value",
+        label: t("listings.landType"),
+        value: typeOptions[segmentIndex] ?? "",
+      },
+      {
+        type: "value",
+        icon: "swap-horizontal",
+        label: t("listings.streetWidth"),
+        value: String(streetWidth),
+      },
       { type: "toggle", label: t("listings.water"), enabled: toggles.water },
-      { type: "toggle", label: t("listings.electricity"), enabled: toggles.electricity },
-      { type: "toggle", label: t("listings.drainageAvailability"), enabled: toggles.drainageAvailability },
+      {
+        type: "toggle",
+        label: t("listings.electricity"),
+        enabled: toggles.electricity,
+      },
+      {
+        type: "toggle",
+        label: t("listings.drainageAvailability"),
+        enabled: toggles.drainageAvailability,
+      },
     ]);
   }, [
     onFormDataChange,
@@ -70,7 +102,9 @@ export default function LandForRentDetailsForm({
         options={directionOptions}
         selectedValue={getDirectionLabel(streetDirection, t)}
         onSelect={(value) => {
-          const original = STREET_DIRECTION_OPTIONS.find((opt) => getDirectionLabel(opt, t) === value);
+          const original = STREET_DIRECTION_OPTIONS.find(
+            (opt) => getDirectionLabel(opt, t) === value,
+          );
           setStreetDirection(original ?? "Not Defined");
         }}
         scrollable
@@ -90,7 +124,12 @@ export default function LandForRentDetailsForm({
         />
       </View>
 
-      <SliderWithInput label={t("listings.streetWidth")} value={streetWidth} onChangeValue={setStreetWidth} max={100} />
+      <SliderWithInput
+        label={t("listings.streetWidth")}
+        value={streetWidth}
+        onChangeValue={setStreetWidth}
+        max={100}
+      />
 
       {["water", "electricity", "drainageAvailability"].map((k) => (
         <ToggleRow
@@ -106,4 +145,3 @@ export default function LandForRentDetailsForm({
     </>
   );
 }
-

@@ -1,5 +1,12 @@
 import React, { memo, useMemo } from "react";
-  import { View, Text, StyleSheet, TouchableOpacity, FlexAlignType, ViewStyle } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlexAlignType,
+  ViewStyle,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
@@ -17,34 +24,59 @@ export interface MenuItemCardProps {
 
 const MenuItemCard = memo<MenuItemCardProps>(
   ({ title, subtitle, onPress, showNewBadge = false }) => {
-    const { isRTL } = useLocalization();
+    const { isRTL, t } = useLocalization();
 
-    const rtlStyles = useMemo(() => ({
-      content: { flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse" },
-      textContainer: {
-        marginRight: (isRTL ? 0 : wp(2)) as number,
-        marginLeft: (isRTL ? wp(2) : 0) as number,
-      },
-      titleRow: { flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse", alignItems: "center" as FlexAlignType, gap: wp(2) },
-      chevron: { marginLeft: (isRTL ? 0 : wp(2)) as number, marginRight: (isRTL ? wp(2) : 0) as number } as ViewStyle,
-      titleText: { textAlign: (isRTL ? "right" : "left") as "left" | "right" },
-      subtitleText: { textAlign: (isRTL ? "right" : "left") as "left" | "right" },
-    }), [isRTL]
-  );
+    const rtlStyles = useMemo(
+      () => ({
+        content: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+        },
+        textContainer: {
+          marginRight: (isRTL ? 0 : wp(2)) as number,
+          marginLeft: (isRTL ? wp(2) : 0) as number,
+        },
+        titleRow: {
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
+          alignItems: "center" as FlexAlignType,
+          gap: wp(2),
+        },
+        chevron: {
+          marginLeft: (isRTL ? 0 : wp(2)) as number,
+          marginRight: (isRTL ? wp(2) : 0) as number,
+        } as ViewStyle,
+        titleText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+        subtitleText: {
+          textAlign: (isRTL ? "right" : "left") as "left" | "right",
+        },
+      }),
+      [isRTL],
+    );
 
     return (
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
         <View style={[styles.content, rtlStyles.content]}>
           <View style={[styles.textContainer, rtlStyles.textContainer]}>
             <View style={[styles.titleRow, rtlStyles.titleRow]}>
               <Text style={[styles.title, rtlStyles.titleText]}>{title}</Text>
               {showNewBadge && (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>New</Text>
+                  <Text style={styles.badgeText}>{t("common.new")}</Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.subtitle, rtlStyles.subtitleText]}>{subtitle}</Text>
+            <Text style={[styles.subtitle, rtlStyles.subtitleText]}>
+              {subtitle}
+            </Text>
           </View>
           <Ionicons
             name={isRTL ? "chevron-back" : "chevron-forward"}
@@ -55,7 +87,7 @@ const MenuItemCard = memo<MenuItemCardProps>(
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 MenuItemCard.displayName = "MenuItemCard";

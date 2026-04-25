@@ -12,14 +12,16 @@ import { shouldShowTabBar } from "./hiddenRoutes";
 
 const TAB_ICON_SIZE = wp(6);
 
-export function CustomTabBar(props: BottomTabBarProps): React.JSX.Element | null {
+export function CustomTabBar(
+  props: BottomTabBarProps,
+): React.JSX.Element | null {
   const { isRTL } = useLocalization();
   const focusedRoute = props.state.routes[props.state.index];
   const tabBarVisible = shouldShowTabBar(focusedRoute);
 
   const displayRoutes = useMemo(
     () => (isRTL ? [...props.state.routes].reverse() : props.state.routes),
-    [isRTL, props.state.routes]
+    [isRTL, props.state.routes],
   );
 
   if (!tabBarVisible) {
@@ -45,11 +47,19 @@ export function CustomTabBar(props: BottomTabBarProps): React.JSX.Element | null
   );
 }
 
-type TabBarItemProps = Pick<BottomTabBarProps, "state" | "descriptors" | "navigation"> & {
+type TabBarItemProps = Pick<
+  BottomTabBarProps,
+  "state" | "descriptors" | "navigation"
+> & {
   route: BottomTabBarProps["state"]["routes"][number];
 };
 
-function TabBarItem({ route, state, descriptors, navigation }: TabBarItemProps): React.JSX.Element {
+function TabBarItem({
+  route,
+  state,
+  descriptors,
+  navigation,
+}: TabBarItemProps): React.JSX.Element {
   const originalIndex = state.routes.findIndex((r) => r.key === route.key);
   const isFocused = state.index === originalIndex;
   const { options } = descriptors[route.key];
@@ -100,7 +110,9 @@ function TabBarItem({ route, state, descriptors, navigation }: TabBarItemProps):
         size: TAB_ICON_SIZE,
       })}
       {typeof label === "string" && (
-        <Text style={[styles.tabLabel, { color }, options.tabBarLabelStyle]}>{label}</Text>
+        <Text style={[styles.tabLabel, { color }, options.tabBarLabelStyle]}>
+          {label}
+        </Text>
       )}
     </TouchableOpacity>
   );

@@ -32,10 +32,14 @@ export const InfoItem = memo<InfoItemProps>(
     const rtlStyles = useMemo(
       () => ({
         infoItem: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         infoLeftSection: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         infoLabel: {
           marginLeft: isRTL ? 0 : wp(3),
@@ -46,7 +50,7 @@ export const InfoItem = memo<InfoItemProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -60,7 +64,7 @@ export const InfoItem = memo<InfoItemProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 InfoItem.displayName = "InfoItem";
@@ -82,7 +86,9 @@ export const FeatureItem = memo<FeatureItemProps>(
     const rtlStyles = useMemo(
       () => ({
         featureItem: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         featureLabel: {
           marginLeft: isRTL ? 0 : wp(2),
@@ -90,16 +96,24 @@ export const FeatureItem = memo<FeatureItemProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
-      <View style={[styles.featureItem, { backgroundColor }, rtlStyles.featureItem]}>
-        <Ionicons name="checkmark-circle" size={wp(5)} color={COLORS.checkmarkCircle} />
-        <Text style={[styles.featureLabel, rtlStyles.featureLabel]}>{label}</Text>
+      <View
+        style={[styles.featureItem, { backgroundColor }, rtlStyles.featureItem]}
+      >
+        <Ionicons
+          name="checkmark-circle"
+          size={wp(5)}
+          color={COLORS.checkmarkCircle}
+        />
+        <Text style={[styles.featureLabel, rtlStyles.featureLabel]}>
+          {label}
+        </Text>
       </View>
     );
-  }
+  },
 );
 
 FeatureItem.displayName = "FeatureItem";
@@ -125,27 +139,33 @@ export const DetailRow = memo<DetailRowProps>(
     const rtlStyles = useMemo(
       () => ({
         detailRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         detailLabel: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         detailValueContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
           justifyContent: "space-between" as "space-between",
         },
         detailValue: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         copyAction: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         copyText: {
           marginLeft: isRTL ? 0 : wp(1),
           marginRight: isRTL ? wp(1) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
@@ -158,11 +178,22 @@ export const DetailRow = memo<DetailRowProps>(
         ]}
       >
         <Text style={[styles.detailLabel, rtlStyles.detailLabel]}>{label}</Text>
-        <View style={[styles.detailValueContainer, rtlStyles.detailValueContainer]}>
-          <Text style={[styles.detailValue, rtlStyles.detailValue]}>{value}</Text>
+        <View
+          style={[styles.detailValueContainer, rtlStyles.detailValueContainer]}
+        >
+          <Text style={[styles.detailValue, rtlStyles.detailValue]}>
+            {value}
+          </Text>
           {showCopy && onCopy && (
-            <TouchableOpacity onPress={onCopy} style={[styles.copyAction, rtlStyles.copyAction]}>
-              <Ionicons name="copy-outline" size={wp(4.5)} color={COLORS.textTertiary} />
+            <TouchableOpacity
+              onPress={onCopy}
+              style={[styles.copyAction, rtlStyles.copyAction]}
+            >
+              <Ionicons
+                name="copy-outline"
+                size={wp(4.5)}
+                color={COLORS.textTertiary}
+              />
               <Text style={[styles.copyText, rtlStyles.copyText]}>
                 {copyLabel?.trim() ? copyLabel.trim() : t("common.copy")}
               </Text>
@@ -171,7 +202,7 @@ export const DetailRow = memo<DetailRowProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
 DetailRow.displayName = "DetailRow";

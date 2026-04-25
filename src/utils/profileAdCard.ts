@@ -13,7 +13,7 @@ import { isPublishedListingProperty } from "./propertyInfoRows";
 export function buildProfileAdCardLines(
   item: Property,
   t: (key: string) => string,
-  language: string | undefined
+  language: string | undefined,
 ): { title: string; priceLine: string; listingTypeForCard: "rent" | "sale" } {
   const listingType = item.listingType === "rent" ? "rent" : "sale";
   const typeLabel = getTranslatedPropertyTypeLabel(item.type, listingType, t);

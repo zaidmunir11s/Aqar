@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -86,28 +92,38 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
   const [isSatellite, setIsSatellite] = useState(false);
   const [showLocationError, setShowLocationError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(() =>
-    marketingRequestChooseLocationSavedRegion && isValidMapRegion(marketingRequestChooseLocationSavedRegion)
+    marketingRequestChooseLocationSavedRegion &&
+    isValidMapRegion(marketingRequestChooseLocationSavedRegion)
       ? marketingRequestChooseLocationSavedRegion
-      : null
+      : null,
   );
   const [geocodedLabel, setGeocodedLabel] = useState("");
-  const [manualLocationLabel, setManualLocationLabel] = useState<string | null>(null);
-  const [isOtherLocationModalVisible, setIsOtherLocationModalVisible] = useState(false);
+  const [manualLocationLabel, setManualLocationLabel] = useState<string | null>(
+    null,
+  );
+  const [isOtherLocationModalVisible, setIsOtherLocationModalVisible] =
+    useState(false);
   const [isCityPickerVisible, setIsCityPickerVisible] = useState(false);
-  const [isDirectionPickerVisible, setIsDirectionPickerVisible] = useState(false);
+  const [isDirectionPickerVisible, setIsDirectionPickerVisible] =
+    useState(false);
   const [isDistrictPickerVisible, setIsDistrictPickerVisible] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [selectedDirectionKey, setSelectedDirectionKey] = useState<string | null>(null);
-  const [selectedDistrictKey, setSelectedDistrictKey] = useState<string | null>(null);
+  const [selectedDirectionKey, setSelectedDirectionKey] = useState<
+    string | null
+  >(null);
+  const [selectedDistrictKey, setSelectedDistrictKey] = useState<string | null>(
+    null,
+  );
   const [citySearchText, setCitySearchText] = useState("");
   const [districtSearchText, setDistrictSearchText] = useState("");
   const footerOffset = useRef(
-    new Animated.Value(FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + 0)
+    new Animated.Value(FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + 0),
   ).current;
 
   useEffect(() => {
-    const total = FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + insets.bottom;
+    const total =
+      FOOTER_CONTENT_HEIGHT + ERROR_GAP_ABOVE_FOOTER + insets.bottom;
     footerOffset.setValue(total);
   }, [footerOffset, insets.bottom]);
 
@@ -156,10 +172,12 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
       },
       /** RTL: confirm first in tree + flex-start keeps primary on the visual start (right) */
       modalActionsAlign: {
-        justifyContent: (isRTL ? "flex-start" : "flex-end") as "flex-start" | "flex-end",
+        justifyContent: (isRTL ? "flex-start" : "flex-end") as
+          | "flex-start"
+          | "flex-end",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const locationLabel = useMemo(() => {
@@ -171,7 +189,10 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
   const runReverseGeocode = useCallback(
     async (latitude: number, longitude: number) => {
       try {
-        const results = await Location.reverseGeocodeAsync({ latitude, longitude });
+        const results = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
         const r = results[0];
         if (!r) {
           setGeocodedLabel(t("listings.mapAddressUnavailable"));
@@ -188,25 +209,32 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
           (r.region && String(r.region).trim()) ||
           "";
         const parts = [area, city].filter((p) => p.length > 0);
-        setGeocodedLabel(parts.length > 0 ? parts.join(", ") : t("listings.mapAddressUnavailable"));
+        setGeocodedLabel(
+          parts.length > 0
+            ? parts.join(", ")
+            : t("listings.mapAddressUnavailable"),
+        );
       } catch {
         setGeocodedLabel(t("listings.mapAddressUnavailable"));
       }
     },
-    [t]
+    [t],
   );
 
   const cityOptions = useMemo(() => Object.keys(CITY_REGIONS), []);
   const translatedCityOptions = useMemo(
     () => cityOptions.map((city) => translateCityName(city, t)),
-    [cityOptions, t]
+    [cityOptions, t],
   );
   const displayCity = useMemo(
     () => (selectedCity ? translateCityName(selectedCity, t) : ""),
-    [selectedCity, t]
+    [selectedCity, t],
   );
 
-  const directionOptionKeys = useMemo(() => ["All", ...STREET_DIRECTION_OPTIONS.slice(1)], []);
+  const directionOptionKeys = useMemo(
+    () => ["All", ...STREET_DIRECTION_OPTIONS.slice(1)],
+    [],
+  );
   const directionOptions = useMemo(
     () =>
       directionOptionKeys.map((opt) => {
@@ -223,7 +251,7 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         if (opt === "4 Streets") return t("listings.fourStreets");
         return opt;
       }),
-    [directionOptionKeys, t]
+    [directionOptionKeys, t],
   );
   const directionMap = useMemo(
     () =>
@@ -231,9 +259,11 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         acc[key] = directionOptions[index];
         return acc;
       }, {}),
-    [directionOptionKeys, directionOptions]
+    [directionOptionKeys, directionOptions],
   );
-  const displayDirection = selectedDirectionKey ? directionMap[selectedDirectionKey] : "";
+  const displayDirection = selectedDirectionKey
+    ? directionMap[selectedDirectionKey]
+    : "";
 
   const districtOptionsByCity = useMemo<Record<string, string[]>>(
     () => ({
@@ -248,7 +278,7 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         "districtAlWurud",
       ],
     }),
-    []
+    [],
   );
   const districtKeyOptions = useMemo(() => {
     if (!selectedCity) return [];
@@ -256,7 +286,7 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
   }, [districtOptionsByCity, selectedCity]);
   const districtOptions = useMemo(
     () => districtKeyOptions.map((key) => t(`listings.${key}`)),
-    [districtKeyOptions, t]
+    [districtKeyOptions, t],
   );
   const districtMap = useMemo(
     () =>
@@ -264,19 +294,25 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         acc[key] = districtOptions[index];
         return acc;
       }, {}),
-    [districtKeyOptions, districtOptions]
+    [districtKeyOptions, districtOptions],
   );
-  const displayDistrict = selectedDistrictKey ? districtMap[selectedDistrictKey] : "";
+  const displayDistrict = selectedDistrictKey
+    ? districtMap[selectedDistrictKey]
+    : "";
   const filteredTranslatedCityOptions = useMemo(() => {
     const q = citySearchText.trim().toLowerCase();
     if (!q) return translatedCityOptions;
-    return translatedCityOptions.filter((city) => city.toLowerCase().includes(q));
+    return translatedCityOptions.filter((city) =>
+      city.toLowerCase().includes(q),
+    );
   }, [citySearchText, translatedCityOptions]);
 
   const filteredDistrictOptions = useMemo(() => {
     const q = districtSearchText.trim().toLowerCase();
     if (!q) return districtOptions;
-    return districtOptions.filter((district) => district.toLowerCase().includes(q));
+    return districtOptions.filter((district) =>
+      district.toLowerCase().includes(q),
+    );
   }, [districtOptions, districtSearchText]);
 
   const isLocationAccurate = useMemo(
@@ -284,7 +320,7 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
       selectedRegion != null &&
       selectedRegion.latitudeDelta <= ACCURATE_LOCATION_ZOOM_THRESHOLD &&
       selectedRegion.longitudeDelta <= ACCURATE_LOCATION_ZOOM_THRESHOLD,
-    [selectedRegion]
+    [selectedRegion],
   );
 
   useEffect(() => {
@@ -338,7 +374,7 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         void runReverseGeocode(newRegion.latitude, newRegion.longitude);
       }, REVERSE_GEOCODE_DEBOUNCE_MS);
     },
-    [runReverseGeocode]
+    [runReverseGeocode],
   );
 
   const handleBackPress = useCallback(() => {
@@ -392,7 +428,9 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
       }
     }
     const nextLabel =
-      displayDistrict && selectedCity ? `${displayDistrict}, ${selectedCity}` : selectedCity ?? "";
+      displayDistrict && selectedCity
+        ? `${displayDistrict}, ${selectedCity}`
+        : (selectedCity ?? "");
     setManualLocationLabel(nextLabel || null);
     setIsOtherLocationModalVisible(false);
   }, [displayDistrict, selectedCity]);
@@ -445,17 +483,26 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
           >
             <View style={[styles.locationLeft, rtlStyles.locationLeftCluster]}>
               <Ionicons name="location" size={wp(4.8)} color={COLORS.primary} />
-              <Text style={[styles.locationText, rtlStyles.locationText]} numberOfLines={1}>
+              <Text
+                style={[styles.locationText, rtlStyles.locationText]}
+                numberOfLines={1}
+              >
                 {locationLabel}
               </Text>
             </View>
-            <Text style={[styles.otherLocationText, rtlStyles.otherLocationText]}>
+            <Text
+              style={[styles.otherLocationText, rtlStyles.otherLocationText]}
+            >
               {t("listings.otherLocation")}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.centerMarkerContainer} pointerEvents="none">
-            <MaterialIcons name="my-location" size={wp(8)} color={COLORS.primary} />
+            <MaterialIcons
+              name="my-location"
+              size={wp(8)}
+              color={COLORS.primary}
+            />
           </View>
 
           <View style={[styles.rightActions, rtlStyles.mapActionsEdge]}>
@@ -475,7 +522,11 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
               activeOpacity={0.8}
               onPress={centerOnCurrentLocation}
             >
-              <FontAwesome6 name="location-crosshairs" size={wp(6)} color="#617381" />
+              <FontAwesome6
+                name="location-crosshairs"
+                size={wp(6)}
+                color="#617381"
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -491,7 +542,11 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
             },
           ]}
         >
-          <Ionicons name="information-circle" size={wp(5)} color={COLORS.error} />
+          <Ionicons
+            name="information-circle"
+            size={wp(5)}
+            color={COLORS.error}
+          />
           <Text style={[styles.errorText, rtlStyles.errorText]}>
             {t("listings.zoomInForAccurateLocation")}
           </Text>
@@ -524,7 +579,9 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
             onPress={() => setIsOtherLocationModalVisible(false)}
           />
           <View style={styles.otherLocationModalCard}>
-            <Text style={[styles.modalLabel, rtlStyles.modalLabel]}>{t("listings.city")}</Text>
+            <Text style={[styles.modalLabel, rtlStyles.modalLabel]}>
+              {t("listings.city")}
+            </Text>
             <TouchableOpacity
               style={[styles.modalField, rtlStyles.modalFieldRow]}
               activeOpacity={0.8}
@@ -539,7 +596,11 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
               >
                 {displayCity || t("listings.selectCity")}
               </Text>
-              <Ionicons name="chevron-down" size={wp(5)} color={COLORS.primary} />
+              <Ionicons
+                name="chevron-down"
+                size={wp(5)}
+                color={COLORS.primary}
+              />
             </TouchableOpacity>
 
             {selectedCity ? (
@@ -560,8 +621,16 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
             <View style={[styles.modalActions, rtlStyles.modalActionsAlign]}>
               {isRTL ? (
                 <>
-                  <TouchableOpacity activeOpacity={0.8} onPress={handleOtherLocationSelect}>
-                    <Text style={[styles.modalSelectText, rtlStyles.modalActionText]}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleOtherLocationSelect}
+                  >
+                    <Text
+                      style={[
+                        styles.modalSelectText,
+                        rtlStyles.modalActionText,
+                      ]}
+                    >
                       {t("common.confirm")}
                     </Text>
                   </TouchableOpacity>
@@ -569,7 +638,12 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
                     activeOpacity={0.8}
                     onPress={() => setIsOtherLocationModalVisible(false)}
                   >
-                    <Text style={[styles.modalCancelText, rtlStyles.modalActionText]}>
+                    <Text
+                      style={[
+                        styles.modalCancelText,
+                        rtlStyles.modalActionText,
+                      ]}
+                    >
                       {t("common.cancel")}
                     </Text>
                   </TouchableOpacity>
@@ -580,12 +654,25 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
                     activeOpacity={0.8}
                     onPress={() => setIsOtherLocationModalVisible(false)}
                   >
-                    <Text style={[styles.modalCancelText, rtlStyles.modalActionText]}>
+                    <Text
+                      style={[
+                        styles.modalCancelText,
+                        rtlStyles.modalActionText,
+                      ]}
+                    >
                       {t("common.cancel")}
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity activeOpacity={0.8} onPress={handleOtherLocationSelect}>
-                    <Text style={[styles.modalSelectText, rtlStyles.modalActionText]}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleOtherLocationSelect}
+                  >
+                    <Text
+                      style={[
+                        styles.modalSelectText,
+                        rtlStyles.modalActionText,
+                      ]}
+                    >
                       {t("common.confirm")}
                     </Text>
                   </TouchableOpacity>
@@ -606,7 +693,8 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         onClose={() => setIsCityPickerVisible(false)}
         onSelect={(item) => {
           const originalCity =
-            cityOptions.find((city) => translateCityName(city, t) === item) ?? item;
+            cityOptions.find((city) => translateCityName(city, t) === item) ??
+            item;
           setSelectedCity(originalCity);
           setSelectedDirectionKey("All");
           setSelectedDistrictKey(null);
@@ -620,7 +708,9 @@ export default function MarketingRequestChooseLocationScreen(): React.JSX.Elemen
         onClose={() => setIsDirectionPickerVisible(false)}
         onSelect={(translatedDirection) => {
           const selectedKey =
-            directionOptionKeys.find((key) => directionMap[key] === translatedDirection) ?? "All";
+            directionOptionKeys.find(
+              (key) => directionMap[key] === translatedDirection,
+            ) ?? "All";
           setSelectedDirectionKey(selectedKey);
           setSelectedDistrictKey(null);
         }}

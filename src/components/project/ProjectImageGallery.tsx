@@ -1,4 +1,11 @@
-import React, { memo, useCallback, useMemo, useState, useRef, useEffect } from "react";
+import React, {
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -51,12 +58,14 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
     const { t, isRTL } = useLocalization();
     const [showScrollBar, setShowScrollBar] = useState(false);
     const [scrollPosition, setScrollPosition] = useState(0);
-    const hideScrollBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hideScrollBarTimer = useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
     const scrollBarOpacity = useRef(new Animated.Value(0)).current;
 
     const scrollBarHeight = 3;
     const scrollBarTrackWidth = SCREEN_WIDTH; // Full width for positioning
-    
+
     // Calculate scroll bar width based on number of images
     // More images = smaller width, fewer images = larger width
     const scrollBarWidth = useMemo(() => {
@@ -81,7 +90,13 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
       } else {
         return (rawIndex / (images.length - 1)) * maxPosition;
       }
-    }, [scrollPosition, images.length, isRTL, scrollBarTrackWidth, scrollBarWidth]);
+    }, [
+      scrollPosition,
+      images.length,
+      isRTL,
+      scrollBarTrackWidth,
+      scrollBarWidth,
+    ]);
 
     // Show/hide scroll bar with animation
     useEffect(() => {
@@ -119,7 +134,7 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
         handleScrollBegin();
         handleScrollEnd();
       },
-      [onImageScroll, handleScrollBegin, handleScrollEnd]
+      [onImageScroll, handleScrollBegin, handleScrollEnd],
     );
 
     // Cleanup timer on unmount
@@ -132,30 +147,33 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
     }, []);
 
     // Helper function to translate status
-    const translateStatus = useCallback((status: string): string => {
-      if (!status) return status;
-      const lowerStatus = status.toLowerCase().trim();
-      
-      if (lowerStatus === "available") {
-        return t("projects.status.available");
-      } else if (lowerStatus === "ready") {
-        return t("projects.status.ready");
-      } else if (lowerStatus === "under construction") {
-        return t("projects.status.underConstruction");
-      }
-      
-      // Fallback to original if no match
-      return status;
-    }, [t]);
+    const translateStatus = useCallback(
+      (status: string): string => {
+        if (!status) return status;
+        const lowerStatus = status.toLowerCase().trim();
+
+        if (lowerStatus === "available") {
+          return t("projects.status.available");
+        } else if (lowerStatus === "ready") {
+          return t("projects.status.ready");
+        } else if (lowerStatus === "under construction") {
+          return t("projects.status.underConstruction");
+        }
+
+        // Fallback to original if no match
+        return status;
+      },
+      [t],
+    );
 
     const translatedAvailableStatus = useMemo(
       () => translateStatus(availableStatus),
-      [availableStatus, translateStatus]
+      [availableStatus, translateStatus],
     );
 
     const translatedReadyStatus = useMemo(
       () => translateStatus(readyStatus),
-      [readyStatus, translateStatus]
+      [readyStatus, translateStatus],
     );
 
     // RTL-aware styles
@@ -164,7 +182,9 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
         seeAllPhotosBtn: {
           left: isRTL ? undefined : wp(4),
           right: isRTL ? wp(4) : undefined,
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         seeAllPhotosText: {
           marginLeft: isRTL ? 0 : wp(2),
@@ -173,14 +193,16 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
         statusBadges: {
           right: isRTL ? undefined : wp(4),
           left: isRTL ? wp(4) : undefined,
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         statusBadge: {
           marginLeft: isRTL ? 0 : wp(2),
           marginRight: isRTL ? wp(2) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
     const renderImage = useCallback(
       ({ item }: { item: string }) => (
@@ -192,12 +214,12 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
           />
         </View>
       ),
-      []
+      [],
     );
 
     const keyExtractor = useCallback(
       (item: string, index: number) => index.toString(),
-      []
+      [],
     );
 
     const getItemLayout = useCallback(
@@ -206,7 +228,7 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
         offset: SCREEN_WIDTH * index,
         index,
       }),
-      []
+      [],
     );
 
     return (
@@ -232,7 +254,6 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
           disableIntervalMomentum={true}
           bounces={false}
         />
-
 
         {/* Image Counter Indicator */}
         {/* Scroll Bar Indicator */}
@@ -273,16 +294,30 @@ const ProjectImageGallery = memo<ProjectImageGalleryProps>(
 
         {/* Status Badges */}
         <View style={[styles.statusBadges, rtlStyles.statusBadges]}>
-          <View style={[styles.statusBadge, styles.availableBadge, rtlStyles.statusBadge]}>
-            <Text style={styles.availableBadgeText}>{translatedAvailableStatus}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              styles.availableBadge,
+              rtlStyles.statusBadge,
+            ]}
+          >
+            <Text style={styles.availableBadgeText}>
+              {translatedAvailableStatus}
+            </Text>
           </View>
-          <View style={[styles.statusBadge, styles.readyBadge, rtlStyles.statusBadge]}>
+          <View
+            style={[
+              styles.statusBadge,
+              styles.readyBadge,
+              rtlStyles.statusBadge,
+            ]}
+          >
             <Text style={styles.readyBadgeText}>{translatedReadyStatus}</Text>
           </View>
         </View>
       </View>
     );
-  }
+  },
 );
 
 ProjectImageGallery.displayName = "ProjectImageGallery";
@@ -335,7 +370,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   readyBadgeText: {
-    color: COLORS.textSecondary ,
+    color: COLORS.textSecondary,
     fontSize: wp(3.2),
     fontWeight: "600",
   },

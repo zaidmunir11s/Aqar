@@ -102,7 +102,9 @@ export default function PropertyDetailsCategoryRenderer({
         />
       );
     case "rent-1":
-      return <ApartmentForRentDetailsForm onFormDataChange={onFormDataChange} />;
+      return (
+        <ApartmentForRentDetailsForm onFormDataChange={onFormDataChange} />
+      );
     case "rent-2":
       return (
         <VillaForRentDetailsForm

@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -22,14 +28,21 @@ import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OtpInput, type OtpInputRef } from "react-native-otp-entry";
 import { secureSet } from "@/utils/secureStore";
-import { Header, PrimaryButton, TextInput as CustomTextInput } from "../../components";
+import {
+  Header,
+  PrimaryButton,
+  TextInput as CustomTextInput,
+} from "../../components";
 import { COLORS, STORAGE_KEYS } from "../../constants";
 import {
   setLoggedInPhoneNumber,
   setLoggedInDisplayName,
   setLoggedInProfileImageUri,
 } from "../../utils/loggedInPhoneStorage";
-import { syncAccountProfileMetaOnAuth, touchLastActiveAt } from "../../utils/accountActivityStorage";
+import {
+  syncAccountProfileMetaOnAuth,
+  touchLastActiveAt,
+} from "../../utils/accountActivityStorage";
 import { useLocalization, useKeyboardHeight } from "../../hooks";
 import { useAuthContext } from "../../context/auth-context";
 import { useVerifyOtpMutation } from "@/redux/api";
@@ -47,7 +60,9 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
   const [verifyOtp, { isLoading }] = useVerifyOtpMutation();
   const { phoneNumber: initialPhoneNumber, otp: initialOtp } = params || {};
 
-  const [phoneNumber, setPhoneNumber] = useState<string>(initialPhoneNumber || "");
+  const [phoneNumber, setPhoneNumber] = useState<string>(
+    initialPhoneNumber || "",
+  );
   const [otp, setOtp] = useState<string>(initialOtp || "");
   const [timeLeft, setTimeLeft] = useState<number>(120); // 2 minutes in seconds
   const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
@@ -73,7 +88,7 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
       if (digits.length > 0) {
         void setLoggedInPhoneNumber(phoneNumber);
       }
-    }, [phoneNumber])
+    }, [phoneNumber]),
   );
 
   // Timer countdown
@@ -141,7 +156,10 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         if (result.data?.token) {
           await secureSet(STORAGE_KEYS.authToken, result.data.token);
           if (result.data.refreshToken) {
-            await secureSet(STORAGE_KEYS.refreshToken, result.data.refreshToken);
+            await secureSet(
+              STORAGE_KEYS.refreshToken,
+              result.data.refreshToken,
+            );
           }
           await setLoggedInPhoneNumber(phoneNumber);
           await syncAccountProfileMetaOnAuth(phoneNumber);
@@ -174,11 +192,11 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
                   CommonActions.reset({
                     index: 0,
                     routes: [{ name: "ProfileDetail" }],
-                  })
+                  }),
                 );
               },
             },
-          ]
+          ],
         );
       } catch (error: unknown) {
         const err = error as {
@@ -188,11 +206,12 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         const errorMessage =
           err?.data?.message ??
           err?.message ??
-          (t("auth.failedToVerify") ?? "Failed to verify. Please try again.");
+          t("auth.failedToVerify") ??
+          "Failed to verify. Please try again.";
         Alert.alert(t("common.error"), errorMessage);
       }
     },
-    [phoneNumber, verifyOtp, navigation, t, isLoading, setHasBackendSession]
+    [phoneNumber, verifyOtp, navigation, t, isLoading, setHasBackendSession],
   );
 
   const handleVerify = useCallback(async () => {
@@ -225,12 +244,12 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "center") as "center" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: hp(3) + keyboardHeight }],
-    [keyboardHeight]
+    [keyboardHeight],
   );
 
   return (
@@ -246,7 +265,9 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, rtlStyles.title]}>{t("auth.verifyPhoneNumber")}</Text>
+          <Text style={[styles.title, rtlStyles.title]}>
+            {t("auth.verifyPhoneNumber")}
+          </Text>
         </View>
 
         {/* Description */}
@@ -258,7 +279,9 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
 
         {/* Phone Number Input */}
         <View style={styles.phoneSection} pointerEvents="none">
-          <Text style={[styles.label, rtlStyles.label]}>{t("auth.phoneNumber")}</Text>
+          <Text style={[styles.label, rtlStyles.label]}>
+            {t("auth.phoneNumber")}
+          </Text>
           <CustomTextInput
             value={phoneNumber}
             onChangeText={handlePhoneChange}
@@ -273,7 +296,9 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
 
         {/* Verification Code Section */}
         <View style={styles.otpSection}>
-          <Text style={[styles.label, rtlStyles.label]}>{t("auth.verificationCode")}</Text>
+          <Text style={[styles.label, rtlStyles.label]}>
+            {t("auth.verificationCode")}
+          </Text>
           <OtpInput
             ref={otpInputRef}
             numberOfDigits={6}
@@ -310,11 +335,10 @@ export default function VerifyPhoneNumberScreen(): React.JSX.Element {
               {t("auth.resendCodeIn")} {formatTime(timeLeft)}
             </Text>
           ) : (
-            <TouchableOpacity
-              onPress={handleResendCode}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.resendText, rtlStyles.resendText]}>{t("auth.resendCode")}</Text>
+            <TouchableOpacity onPress={handleResendCode} activeOpacity={0.7}>
+              <Text style={[styles.resendText, rtlStyles.resendText]}>
+                {t("auth.resendCode")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -410,4 +434,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

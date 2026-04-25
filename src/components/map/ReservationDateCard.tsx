@@ -22,7 +22,7 @@ export interface ReservationDateCardProps {
 const ReservationDateCard = memo<ReservationDateCardProps>(
   ({ selectedDates, onPress }) => {
     const { t, isRTL } = useLocalization();
-    
+
     return (
       <TouchableOpacity
         style={styles.reservationCard}
@@ -32,7 +32,12 @@ const ReservationDateCard = memo<ReservationDateCardProps>(
         <FontAwesome6 name="calendar-days" size={wp(5.5)} color="#3b82f6" />
         {selectedDates.startDate && selectedDates.endDate ? (
           <Text style={styles.reservationTitle}>
-            {formatDateRange(selectedDates.startDate, selectedDates.endDate, t, isRTL)}
+            {formatDateRange(
+              selectedDates.startDate,
+              selectedDates.endDate,
+              t,
+              isRTL,
+            )}
           </Text>
         ) : (
           <Text style={styles.reservationTitle}>
@@ -41,7 +46,7 @@ const ReservationDateCard = memo<ReservationDateCardProps>(
         )}
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 ReservationDateCard.displayName = "ReservationDateCard";

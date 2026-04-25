@@ -37,13 +37,16 @@ const ShowMapFloatingButton = memo<ShowMapFloatingButtonProps>(
       >
         <Ionicons name="map-sharp" size={Math.min(wp(6), 24)} color="#617381" />
         {!isCompact && (
-          <Text style={[styles.showMapText, isRTL && styles.showMapTextRTL]} numberOfLines={1}>
+          <Text
+            style={[styles.showMapText, isRTL && styles.showMapTextRTL]}
+            numberOfLines={1}
+          >
             {label}
           </Text>
         )}
       </TouchableOpacity>
     </View>
-  )
+  ),
 );
 
 ShowMapFloatingButton.displayName = "ShowMapFloatingButton";

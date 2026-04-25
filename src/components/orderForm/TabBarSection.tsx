@@ -34,14 +34,16 @@ const TabBarSection = memo<TabBarSectionProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         segmentedTabBar: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         segmentedTabText: {
           textAlign: "center" as const,
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     const handlePress = (option: string) => {
@@ -59,7 +61,9 @@ const TabBarSection = memo<TabBarSectionProps>(
 
     return (
       <View style={styles.section}>
-        {label ? <Text style={[styles.label, rtlStyles.label]}>{label}</Text> : null}
+        {label ? (
+          <Text style={[styles.label, rtlStyles.label]}>{label}</Text>
+        ) : null}
         <View
           style={[
             styles.segmentedTabBar,
@@ -87,13 +91,15 @@ const TabBarSection = memo<TabBarSectionProps>(
                   {getDisplayText(option)}
                 </Text>
               </TouchableOpacity>
-              {index < options.length - 1 ? <View style={styles.separator} /> : null}
+              {index < options.length - 1 ? (
+                <View style={styles.separator} />
+              ) : null}
             </React.Fragment>
           ))}
         </View>
       </View>
     );
-  }
+  },
 );
 
 TabBarSection.displayName = "TabBarSection";

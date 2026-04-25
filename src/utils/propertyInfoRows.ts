@@ -20,11 +20,92 @@ export type PropertyDetailInfoRow = {
   value: string;
 };
 
+function translateStoredDetailLabel(
+  label: string,
+  t: (key: string) => string,
+): string {
+  const raw = String(label ?? "").trim();
+  if (!raw) return raw;
+
+  // If it already matches any current translation, keep it.
+  const knownKeys = [
+    "listings.area",
+    "listings.bedrooms",
+    "listings.livingRooms",
+    "listings.restrooms",
+    "listings.streetDirection",
+    "listings.streetWidth",
+    "listings.pricePerMeter",
+    "listings.meterPrice",
+    "listings.type",
+    "listings.realEstateAge",
+    "listings.kitchen",
+    "listings.water",
+    "listings.electricity",
+    "listings.maidRoomFeature",
+    "listings.driverRoomFeature",
+    "listings.furnished",
+    "listings.tent",
+    "listings.backyard",
+    "listings.carEntrance",
+    "listings.extraUnit",
+    "listings.privateRoofFeature",
+    "listings.specialEntrance",
+    "listings.nearBusFeature",
+    "listings.drainageAvailability",
+  ] as const;
+  for (const k of knownKeys) {
+    if (t(k) === raw) return raw;
+  }
+
+  const n = raw.toLowerCase().replace(/\s+/g, " ").trim();
+  const map: Record<string, keyof typeof knownKeys | string> = {
+    // Value rows
+    area: "listings.area",
+    bedrooms: "listings.bedrooms",
+    "living rooms": "listings.livingRooms",
+    "living room": "listings.livingRooms",
+    restrooms: "listings.restrooms",
+    bathrooms: "listings.restrooms",
+    "street direction": "listings.streetDirection",
+    "street width": "listings.streetWidth",
+    "price per meter": "listings.pricePerMeter",
+    "meter price": "listings.meterPrice",
+    type: "listings.type",
+    "real estate age": "listings.realEstateAge",
+    age: "listings.realEstateAge",
+
+    // Toggle rows (common)
+    kitchen: "listings.kitchen",
+    water: "listings.water",
+    electricity: "listings.electricity",
+    "maid room": "listings.maidRoomFeature",
+    "driver room": "listings.driverRoomFeature",
+    furnished: "listings.furnished",
+    tent: "listings.tent",
+    backyard: "listings.backyard",
+    "car entrance": "listings.carEntrance",
+    "extra unit": "listings.extraUnit",
+    "private roof": "listings.privateRoofFeature",
+    "special entrance": "listings.specialEntrance",
+    "near bus": "listings.nearBusFeature",
+    "drainage availability": "listings.drainageAvailability",
+  };
+
+  const key = map[n];
+  if (typeof key === "string" && key.startsWith("listings.")) {
+    return t(key);
+  }
+  return raw;
+}
+
 /**
  * Maps `detailsItems[].icon` strings into vector spec.
  * Marketing publish uses `mdi:*`, `feather:*`, and plain Ionicons glyph names from category forms.
  */
-export function parseStoredDetailIcon(iconName?: string): DetailIconSpec | undefined {
+export function parseStoredDetailIcon(
+  iconName?: string,
+): DetailIconSpec | undefined {
   const raw = iconName?.trim();
   if (!raw) return undefined;
   if (raw.startsWith("mdi:")) {
@@ -36,8 +117,14 @@ export function parseStoredDetailIcon(iconName?: string): DetailIconSpec | undef
   return { library: "Ionicons", name: raw };
 }
 
-export function isPublishedListingProperty(property: Property | null | undefined): boolean {
-  return Boolean(property?.listingId || property?.createdAt || property?.detailsItems?.length);
+export function isPublishedListingProperty(
+  property: Property | null | undefined,
+): boolean {
+  return Boolean(
+    property?.listingId ||
+    property?.createdAt ||
+    property?.detailsItems?.length,
+  );
 }
 
 /**
@@ -45,17 +132,23 @@ export function isPublishedListingProperty(property: Property | null | undefined
  */
 export function buildDynamicValueDetailRows(
   property: Property | null | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): PropertyDetailInfoRow[] {
   if (!property) return [];
 
-  const resolveIcon = (label: string, storedIcon?: string): DetailIconSpec | null => {
+  const resolveIcon = (
+    label: string,
+    storedIcon?: string,
+  ): DetailIconSpec | null => {
     const normalized = label.trim().toLowerCase();
     const tentLabel = t("listings.tent").trim().toLowerCase();
     if (normalized === tentLabel) {
       return null;
     }
-    if (label === t("listings.pricePerMeter") || label === t("listings.meterPrice")) {
+    if (
+      label === t("listings.pricePerMeter") ||
+      label === t("listings.meterPrice")
+    ) {
       return null;
     }
 
@@ -72,7 +165,10 @@ export function buildDynamicValueDetailRows(
       normalized.includes("estate age") ||
       normalized.includes("عمر العقار")
     ) {
-      return { library: "MaterialCommunityIcons", name: "calendar-clock-outline" };
+      return {
+        library: "MaterialCommunityIcons",
+        name: "calendar-clock-outline",
+      };
     }
 
     if (
@@ -98,7 +194,10 @@ export function buildDynamicValueDetailRows(
       normalized.includes("street width") ||
       normalized.includes("عرض الشارع")
     ) {
-      return { library: "MaterialCommunityIcons", name: "arrow-expand-horizontal" };
+      return {
+        library: "MaterialCommunityIcons",
+        name: "arrow-expand-horizontal",
+      };
     }
 
     if (
@@ -121,10 +220,7 @@ export function buildDynamicValueDetailRows(
       return { library: "Feather", name: "users" };
     }
 
-    if (
-      normalized.includes("bedroom") ||
-      normalized.includes("غرفة نوم")
-    ) {
+    if (normalized.includes("bedroom") || normalized.includes("غرفة نوم")) {
       return { library: "MaterialCommunityIcons", name: "bed-outline" };
     }
 
@@ -147,23 +243,27 @@ export function buildDynamicValueDetailRows(
   const valueRows: PropertyDetailInfoRow[] = (property.detailsItems ?? [])
     .filter((item) => item.type === "value")
     .map((item) => ({
-      icon: resolveIcon(item.label, item.icon),
-      label: item.label,
+      icon: resolveIcon(translateStoredDetailLabel(item.label, t), item.icon),
+      label: translateStoredDetailLabel(item.label, t),
       value: (() => {
         const raw = (item.value ?? "").trim();
         if (!raw.length) return "---";
+        // Use the stored (possibly English) label for formatting heuristics.
         return formatPropertyDetailValueForListingDisplay(item.label, raw, t);
       })(),
     }));
 
   const hasTentValueRow = valueRows.some(
-    (row) => row.label.trim().toLowerCase() === t("listings.tent").trim().toLowerCase()
+    (row) =>
+      row.label.trim().toLowerCase() ===
+      t("listings.tent").trim().toLowerCase(),
   );
   const hasTentToggleEnabled = (property.detailsItems ?? []).some(
     (item) =>
       item.type === "toggle" &&
       item.enabled &&
-      item.label.trim().toLowerCase() === t("listings.tent").trim().toLowerCase()
+      item.label.trim().toLowerCase() ===
+        t("listings.tent").trim().toLowerCase(),
   );
 
   if (hasTentToggleEnabled && !hasTentValueRow) {
@@ -182,7 +282,7 @@ export function buildDynamicValueDetailRows(
  */
 export function buildPropertyInfoRows(
   property: Property | null | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): PropertyDetailInfoRow[] {
   if (!property) return [];
 
@@ -215,7 +315,10 @@ export function buildPropertyInfoRows(
       value: String(property.restrooms || 2),
     },
     {
-      icon: { library: "MaterialCommunityIcons", name: "calendar-clock-outline" },
+      icon: {
+        library: "MaterialCommunityIcons",
+        name: "calendar-clock-outline",
+      },
       label: t("listings.realEstateAge"),
       value: formatStaticEstateAgeForListing(property.estateAge ?? 0, t),
     },
@@ -230,7 +333,7 @@ export function buildPropertyInfoRows(
 
 export function buildDynamicFeatureLabels(
   property: Property | null | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string[] {
   if (!property) return [];
   return (property.detailsItems ?? [])
@@ -238,9 +341,10 @@ export function buildDynamicFeatureLabels(
       (item) =>
         item.type === "toggle" &&
         item.enabled &&
-        item.label.trim().toLowerCase() !== t("listings.tent").trim().toLowerCase()
+        item.label.trim().toLowerCase() !==
+          t("listings.tent").trim().toLowerCase(),
     )
-    .map((item) => item.label);
+    .map((item) => translateStoredDetailLabel(item.label, t));
 }
 
 const isVisibleDetailValue = (value: string): boolean => {
@@ -255,7 +359,7 @@ const isVisibleDetailValue = (value: string): boolean => {
 export function pickCorePropertyInfoRowsForMapCard(
   rows: PropertyDetailInfoRow[],
   property: Property,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): PropertyDetailInfoRow[] {
   const visible = rows.filter((row) => isVisibleDetailValue(row.value));
   const keys = resolveMapCardCoreFieldKeys(property);

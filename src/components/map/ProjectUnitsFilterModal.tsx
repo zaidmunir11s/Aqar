@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -54,7 +60,7 @@ export default function ProjectUnitsFilterModal({
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useLocalization();
   const [filters, setFilters] = useState<ProjectUnitsFilterState>(
-    initialFilters ?? defaultFilterState
+    initialFilters ?? defaultFilterState,
   );
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const keyboardHeight = useRef(new Animated.Value(0)).current;
@@ -78,7 +84,7 @@ export default function ProjectUnitsFilterModal({
           duration: event.duration ?? 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
     const hideSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -89,7 +95,7 @@ export default function ProjectUnitsFilterModal({
           duration: event.duration ?? 250,
           useNativeDriver: false,
         }).start();
-      }
+      },
     );
     return () => {
       showSub.remove();
@@ -98,10 +104,13 @@ export default function ProjectUnitsFilterModal({
   }, [keyboardHeight]);
 
   const updateFilter = useCallback(
-    <K extends keyof ProjectUnitsFilterState>(key: K, value: ProjectUnitsFilterState[K]) => {
+    <K extends keyof ProjectUnitsFilterState>(
+      key: K,
+      value: ProjectUnitsFilterState[K],
+    ) => {
       setFilters((prev) => ({ ...prev, [key]: value }));
     },
-    []
+    [],
   );
 
   const handleClear = useCallback(() => {
@@ -141,13 +150,16 @@ export default function ProjectUnitsFilterModal({
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const renderChipRow = useCallback(
     (
-      labelKey: "projects.unitsFilter.rooms" | "projects.unitsFilter.livingRooms" | "projects.unitsFilter.wcs",
-      filterKey: "rooms" | "livingRooms" | "wcs"
+      labelKey:
+        | "projects.unitsFilter.rooms"
+        | "projects.unitsFilter.livingRooms"
+        | "projects.unitsFilter.wcs",
+      filterKey: "rooms" | "livingRooms" | "wcs",
     ) => (
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
@@ -156,17 +168,13 @@ export default function ProjectUnitsFilterModal({
         <View style={[styles.chipRow, rtlStyles.chipRow]}>
           {ROOM_OPTIONS.map((opt) => {
             const isSelected = filters[filterKey] === opt;
-            const displayLabel = opt === "more" ? t("projects.unitsFilter.more") : opt;
+            const displayLabel =
+              opt === "more" ? t("projects.unitsFilter.more") : opt;
             return (
               <TouchableOpacity
                 key={opt}
-                style={[
-                  styles.chip,
-                  isSelected && styles.chipSelected,
-                ]}
-                onPress={() =>
-                  updateFilter(filterKey, isSelected ? null : opt)
-                }
+                style={[styles.chip, isSelected && styles.chipSelected]}
+                onPress={() => updateFilter(filterKey, isSelected ? null : opt)}
                 activeOpacity={0.7}
               >
                 <Text
@@ -183,7 +191,7 @@ export default function ProjectUnitsFilterModal({
         </View>
       </View>
     ),
-    [filters, rtlStyles, t, updateFilter]
+    [filters, rtlStyles, t, updateFilter],
   );
 
   return (
@@ -205,92 +213,90 @@ export default function ProjectUnitsFilterModal({
           <View style={styles.modalContainer}>
             {/* Header - same as ProjectSearchModal */}
             <View style={[styles.header, rtlStyles.header]}>
-            <TouchableOpacity onPress={onClose} style={styles.backButton}>
-              <Ionicons
-                name={isRTL ? "arrow-forward" : "arrow-back"}
-                size={wp(6)}
-                color={COLORS.arrows}
-              />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
-              {t("common.search")}
-            </Text>
-            <View style={styles.headerSpacer} />
-          </View>
-
-          {/* Body - single ScrollView; scroll only when keyboard is visible to avoid focus loss */}
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator={keyboardVisible}
-            scrollEnabled={keyboardVisible}
-            keyboardShouldPersistTaps="handled"
-          >
-            {renderChipRow("projects.unitsFilter.rooms", "rooms")}
-            {renderChipRow("projects.unitsFilter.livingRooms", "livingRooms")}
-            {renderChipRow("projects.unitsFilter.wcs", "wcs")}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
-                {t("projects.unitsFilter.price")}
-              </Text>
-              <View style={[styles.priceRow, rtlStyles.priceRow]}>
-                <View style={styles.priceInputWrapper}>
-                  <TextInput
-                    style={[styles.priceInput, rtlStyles.priceInput]}
-                    placeholder={t("projects.unitsFilter.minPrice")}
-                    placeholderTextColor="#9ca3af"
-                    value={filters.minPrice}
-                    onChangeText={(v) => updateFilter("minPrice", v)}
-                    keyboardType="numeric"
-                  />
-                </View>
-                <Text style={styles.priceSeparator}>-</Text>
-                <View style={styles.priceInputWrapper}>
-                  <TextInput
-                    style={[styles.priceInput, rtlStyles.priceInput]}
-                    placeholder={t("projects.unitsFilter.maxPrice")}
-                    placeholderTextColor="#9ca3af"
-                    value={filters.maxPrice}
-                    onChangeText={(v) => updateFilter("maxPrice", v)}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* Footer - same as ProjectSearchModal */}
-          <View
-            style={[
-              styles.footer,
-              rtlStyles.footer,
-              {
-                paddingBottom: Math.max(
-                  insets.bottom,
-                  Platform.OS === "ios" ? hp(2) : hp(1)
-                ),
-              },
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClear}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.clearButtonText}>
-                {t("common.clear")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleSearch}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.searchButtonText}>
+              <TouchableOpacity onPress={onClose} style={styles.backButton}>
+                <Ionicons
+                  name={isRTL ? "arrow-forward" : "arrow-back"}
+                  size={wp(6)}
+                  color={COLORS.arrows}
+                />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, rtlStyles.headerTitle]}>
                 {t("common.search")}
               </Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.headerSpacer} />
+            </View>
+
+            {/* Body - single ScrollView; scroll only when keyboard is visible to avoid focus loss */}
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={keyboardVisible}
+              scrollEnabled={keyboardVisible}
+              keyboardShouldPersistTaps="handled"
+            >
+              {renderChipRow("projects.unitsFilter.rooms", "rooms")}
+              {renderChipRow("projects.unitsFilter.livingRooms", "livingRooms")}
+              {renderChipRow("projects.unitsFilter.wcs", "wcs")}
+              <View style={styles.section}>
+                <Text style={[styles.sectionLabel, rtlStyles.sectionLabel]}>
+                  {t("projects.unitsFilter.price")}
+                </Text>
+                <View style={[styles.priceRow, rtlStyles.priceRow]}>
+                  <View style={styles.priceInputWrapper}>
+                    <TextInput
+                      style={[styles.priceInput, rtlStyles.priceInput]}
+                      placeholder={t("projects.unitsFilter.minPrice")}
+                      placeholderTextColor="#9ca3af"
+                      value={filters.minPrice}
+                      onChangeText={(v) => updateFilter("minPrice", v)}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <Text style={styles.priceSeparator}>-</Text>
+                  <View style={styles.priceInputWrapper}>
+                    <TextInput
+                      style={[styles.priceInput, rtlStyles.priceInput]}
+                      placeholder={t("projects.unitsFilter.maxPrice")}
+                      placeholderTextColor="#9ca3af"
+                      value={filters.maxPrice}
+                      onChangeText={(v) => updateFilter("maxPrice", v)}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Footer - same as ProjectSearchModal */}
+            <View
+              style={[
+                styles.footer,
+                rtlStyles.footer,
+                {
+                  paddingBottom: Math.max(
+                    insets.bottom,
+                    Platform.OS === "ios" ? hp(2) : hp(1),
+                  ),
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={handleClear}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.clearButtonText}>{t("common.clear")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearch}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.searchButtonText}>
+                  {t("common.search")}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </Animated.View>
       </View>

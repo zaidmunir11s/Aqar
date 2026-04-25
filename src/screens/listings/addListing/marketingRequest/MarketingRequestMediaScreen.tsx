@@ -1,4 +1,11 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -40,13 +47,20 @@ interface MediaActionRowProps {
   action: MediaAction;
   rtl: {
     actionRow: { flexDirection: "row" | "row-reverse" };
-    actionText: { marginLeft: number; marginRight: number; textAlign: "left" | "right" };
+    actionText: {
+      marginLeft: number;
+      marginRight: number;
+      textAlign: "left" | "right";
+    };
   };
   onPress: (id: string) => void;
 }
 
 const MediaActionRow = memo<MediaActionRowProps>(({ action, rtl, onPress }) => {
-  const handlePress = useCallback(() => onPress(action.id), [action.id, onPress]);
+  const handlePress = useCallback(
+    () => onPress(action.id),
+    [action.id, onPress],
+  );
 
   return (
     <TouchableOpacity
@@ -74,12 +88,12 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const params = (route.params ?? {}) as {
     selectedCategory?: string;
-    attachments?: Array<{
+    attachments?: {
       id: string;
       uri: string;
       mediaType?: "photo" | "video" | "unknown";
       note?: string;
-    }>;
+    }[];
     virtualTourLink?: string;
   };
 
@@ -104,7 +118,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
         icon: "videocam",
       },
     ],
-    [t]
+    [t],
   );
 
   const rtlStyles = useMemo(
@@ -136,7 +150,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const openSettings = useCallback(async () => {
@@ -207,7 +221,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
           }).start();
         },
       }),
-    [hideWarningAnimated, warningTranslateY]
+    [hideWarningAnimated, warningTranslateY],
   );
 
   const showPermissionDeniedModal = useCallback(
@@ -216,7 +230,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
       setShowPermissionModal(true);
       showWarningAnimated();
     },
-    [showWarningAnimated]
+    [showWarningAnimated],
   );
 
   const handlePermissionLater = useCallback(() => {
@@ -228,17 +242,18 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
     await openSettings();
   }, [openSettings]);
 
-  const ensureMediaLibraryPermission = useCallback(async (): Promise<boolean> => {
-    const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (res.status !== "granted") {
-      showPermissionDeniedModal(t("listings.mediaPermissionDeniedModal"));
-      return false;
-    }
-    if (isWarningMounted) {
-      hideWarningAnimated();
-    }
-    return true;
-  }, [hideWarningAnimated, isWarningMounted, showPermissionDeniedModal, t]);
+  const ensureMediaLibraryPermission =
+    useCallback(async (): Promise<boolean> => {
+      const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (res.status !== "granted") {
+        showPermissionDeniedModal(t("listings.mediaPermissionDeniedModal"));
+        return false;
+      }
+      if (isWarningMounted) {
+        hideWarningAnimated();
+      }
+      return true;
+    }, [hideWarningAnimated, isWarningMounted, showPermissionDeniedModal, t]);
 
   const ensureCameraPermission = useCallback(async (): Promise<boolean> => {
     const res = await ImagePicker.requestCameraPermissionsAsync();
@@ -274,7 +289,9 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
   }, [navigation]);
 
   const handleNextPress = useCallback(() => {
-    const deedParam = (params as any)?.deed ? { deed: (params as any).deed } : {};
+    const deedParam = (params as any)?.deed
+      ? { deed: (params as any).deed }
+      : {};
     navigation.navigate("MarketingRequestChooseLocation", {
       selectedCategory: params.selectedCategory,
       attachments: existingAttachments.map(({ id, uri, mediaType, note }) => ({
@@ -286,18 +303,27 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
       virtualTourLink: existingVirtualTourLink ?? "",
       ...deedParam,
     });
-  }, [existingAttachments, existingVirtualTourLink, navigation, params.selectedCategory]);
+  }, [
+    existingAttachments,
+    existingVirtualTourLink,
+    navigation,
+    params.selectedCategory,
+  ]);
 
   const handleActionPress = useCallback(
     async (id: string) => {
-      const navigateToAttachments = (assets: ImagePicker.ImagePickerAsset[]) => {
+      const navigateToAttachments = (
+        assets: ImagePicker.ImagePickerAsset[],
+      ) => {
         if (assets.length === 0) return;
         const mapped = assets.map((asset, index) => ({
           id: asset.assetId ?? `${asset.uri}-${Date.now()}-${index}`,
           uri: asset.uri,
           mediaType: asset.type === "video" ? "video" : "photo",
         }));
-        const deedParam = (params as any)?.deed ? { deed: (params as any).deed } : {};
+        const deedParam = (params as any)?.deed
+          ? { deed: (params as any).deed }
+          : {};
         navigation.navigate("MarketingRequestAttachments", {
           selectedCategory: params.selectedCategory,
           attachments: [...existingAttachments, ...mapped],
@@ -340,7 +366,6 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
           if (!result.canceled) navigateToAttachments(result.assets);
           return;
         }
-
       } catch {
         showWarningAnimated();
       }
@@ -353,7 +378,7 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
       navigation,
       params.selectedCategory,
       showWarningAnimated,
-    ]
+    ],
   );
 
   return (
@@ -444,7 +469,10 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
         animationType="fade"
         onRequestClose={handlePermissionLater}
       >
-        <Pressable style={styles.permissionModalOverlay} onPress={handlePermissionLater}>
+        <Pressable
+          style={styles.permissionModalOverlay}
+          onPress={handlePermissionLater}
+        >
           <Pressable style={styles.permissionModalCard}>
             <Text style={[styles.permissionModalTitle, rtlStyles.modalText]}>
               {t("common.appName")}
@@ -452,20 +480,26 @@ export default function MarketingRequestMediaScreen(): React.JSX.Element {
             <Text style={[styles.permissionModalMessage, rtlStyles.modalText]}>
               {permissionModalMessage}
             </Text>
-            <View style={[styles.permissionModalButtons, rtlStyles.modalButtonRow]}>
+            <View
+              style={[styles.permissionModalButtons, rtlStyles.modalButtonRow]}
+            >
               <TouchableOpacity
                 style={styles.permissionModalButton}
                 onPress={handlePermissionLater}
                 activeOpacity={0.7}
               >
-                <Text style={styles.permissionModalLaterText}>{t("common.later")}</Text>
+                <Text style={styles.permissionModalLaterText}>
+                  {t("common.later")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.permissionModalButton}
                 onPress={handlePermissionOk}
                 activeOpacity={0.7}
               >
-                <Text style={styles.permissionModalOkText}>{t("common.ok")}</Text>
+                <Text style={styles.permissionModalOkText}>
+                  {t("common.ok")}
+                </Text>
               </TouchableOpacity>
             </View>
           </Pressable>

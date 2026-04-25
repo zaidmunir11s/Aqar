@@ -1,5 +1,11 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -32,20 +38,24 @@ const RentPaymentFrequencyChips = memo<RentPaymentFrequencyChipsProps>(
           if (opt === "Quarterly") return t("listings.quarterly");
           return t("listings.monthly");
         }),
-      [t]
+      [t],
     );
 
     const rtlStyles = useMemo(
       () => ({
         section: {
-          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+          alignItems: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-start"
+            | "flex-end",
         },
         label: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
         chipsContainer: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
           paddingRight: isRTL ? 0 : wp(4),
           paddingLeft: isRTL ? wp(4) : 0,
         },
@@ -54,16 +64,21 @@ const RentPaymentFrequencyChips = memo<RentPaymentFrequencyChipsProps>(
           writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
       <View style={[styles.section, rtlStyles.section]}>
-        <Text style={[styles.label, rtlStyles.label]}>{t("listings.paymentOptions")}</Text>
+        <Text style={[styles.label, rtlStyles.label]}>
+          {t("listings.paymentOptions")}
+        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.chipsContainer, rtlStyles.chipsContainer]}
+          contentContainerStyle={[
+            styles.chipsContainer,
+            rtlStyles.chipsContainer,
+          ]}
         >
           {RENT_PAYMENT_FREQUENCY_OPTIONS.map((original, index) => {
             const isSelected = selectedFrequency === original;
@@ -89,7 +104,7 @@ const RentPaymentFrequencyChips = memo<RentPaymentFrequencyChipsProps>(
         </ScrollView>
       </View>
     );
-  }
+  },
 );
 
 RentPaymentFrequencyChips.displayName = "RentPaymentFrequencyChips";

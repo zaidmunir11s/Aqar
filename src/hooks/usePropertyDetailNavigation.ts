@@ -1,8 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { PanResponder } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { getPropertyById } from "../utils";
-import { calculateDays } from "../utils";
+import { getPropertyById, calculateDays } from "../utils";
 import type { CalendarDates } from "./useCalendar";
 import type { DailyProperty } from "../types/property";
 
@@ -82,12 +81,16 @@ export function usePropertyDetailNavigation({
     const prevPropertyId = filteredVisiblePropertyIds[currentPropertyIndex - 1];
     const prevProperty = getPropertyById(prevPropertyId);
     const screenName =
-      prevProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
+      prevProperty?.listingType === "daily"
+        ? "DailyDetails"
+        : "PropertyDetails";
     navigation.replace(screenName, {
       propertyId: prevPropertyId,
       visiblePropertyIds: idsForReplace,
       listingType,
-      ...(selectedDatesForReplace && { selectedDates: selectedDatesForReplace }),
+      ...(selectedDatesForReplace && {
+        selectedDates: selectedDatesForReplace,
+      }),
     });
   }, [
     canGoPrev,
@@ -104,12 +107,16 @@ export function usePropertyDetailNavigation({
     const nextPropertyId = filteredVisiblePropertyIds[currentPropertyIndex + 1];
     const nextProperty = getPropertyById(nextPropertyId);
     const screenName =
-      nextProperty?.listingType === "daily" ? "DailyDetails" : "PropertyDetails";
+      nextProperty?.listingType === "daily"
+        ? "DailyDetails"
+        : "PropertyDetails";
     navigation.replace(screenName, {
       propertyId: nextPropertyId,
       visiblePropertyIds: idsForReplace,
       listingType,
-      ...(selectedDatesForReplace && { selectedDates: selectedDatesForReplace }),
+      ...(selectedDatesForReplace && {
+        selectedDates: selectedDatesForReplace,
+      }),
     });
   }, [
     canGoNext,
@@ -141,7 +148,7 @@ export function usePropertyDetailNavigation({
           }
         },
       }),
-    [canGoPrev, canGoNext, handlePrevProperty, handleNextProperty]
+    [canGoPrev, canGoNext, handlePrevProperty, handleNextProperty],
   );
 
   return {

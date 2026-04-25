@@ -50,7 +50,7 @@ function ListingMediaScreen(): React.JSX.Element {
 
   const hasAnyImageCaption = useMemo(
     () => imageCaptions?.some((c) => (c ?? "").trim().length > 0) ?? false,
-    [imageCaptions]
+    [imageCaptions],
   );
 
   const initialTab: MediaTab =
@@ -77,7 +77,7 @@ function ListingMediaScreen(): React.JSX.Element {
       const page = e.nativeEvent.position;
       setActiveTab(page === 0 ? "images" : "videos");
     },
-    []
+    [],
   );
 
   const renderImageItem = useCallback(
@@ -87,33 +87,51 @@ function ListingMediaScreen(): React.JSX.Element {
         <View style={styles.imageItemContainer}>
           {caption.length > 0 ? (
             <View style={styles.imageCaptionBandTop}>
-              <Text style={[styles.imageCaptionText, isRTL && styles.imageCaptionTextRtlWriting]}>
+              <Text
+                style={[
+                  styles.imageCaptionText,
+                  isRTL && styles.imageCaptionTextRtlWriting,
+                ]}
+              >
                 {caption}
               </Text>
             </View>
           ) : null}
           <Image
             source={{ uri: item }}
-            style={[styles.imageItem, caption.length > 0 && styles.imageItemUnderCaption]}
+            style={[
+              styles.imageItem,
+              caption.length > 0 && styles.imageItemUnderCaption,
+            ]}
             resizeMode="cover"
           />
         </View>
       );
     },
-    [imageCaptions, isRTL]
+    [imageCaptions, isRTL],
   );
 
   const renderVideoItem = useCallback(
     ({ item }: ListRenderItemInfo<string>) => (
       <View style={styles.videoItemContainer}>
-        <GalleryVideoSlide uri={item} width={mediaContentWidth} height={VIDEO_ITEM_HEIGHT} />
+        <GalleryVideoSlide
+          uri={item}
+          width={mediaContentWidth}
+          height={VIDEO_ITEM_HEIGHT}
+        />
       </View>
     ),
-    [mediaContentWidth]
+    [mediaContentWidth],
   );
 
-  const imageKeyExtractor = useCallback((_: string, index: number) => `image-${index}`, []);
-  const videoKeyExtractor = useCallback((_: string, index: number) => `video-${index}`, []);
+  const imageKeyExtractor = useCallback(
+    (_: string, index: number) => `image-${index}`,
+    [],
+  );
+  const videoKeyExtractor = useCallback(
+    (_: string, index: number) => `video-${index}`,
+    [],
+  );
 
   /** Only when no captions: row heights are uniform (caption bands make measured height unpredictable). */
   const getImageItemLayout = useCallback(
@@ -122,7 +140,7 @@ function ListingMediaScreen(): React.JSX.Element {
       offset: (IMAGE_ITEM_HEIGHT + hp(2)) * index,
       index,
     }),
-    []
+    [],
   );
 
   const getVideoItemLayout = useCallback(
@@ -131,12 +149,12 @@ function ListingMediaScreen(): React.JSX.Element {
       offset: (VIDEO_ITEM_HEIGHT + hp(2)) * index,
       index,
     }),
-    []
+    [],
   );
 
   const pagerLayoutDirection = useMemo<"rtl" | "ltr">(
     () => (isRTL ? "rtl" : "ltr"),
-    [isRTL]
+    [isRTL],
   );
 
   return (
@@ -149,7 +167,10 @@ function ListingMediaScreen(): React.JSX.Element {
 
       <View style={[styles.sectionTabsRow, isRTL && styles.sectionTabsRowRTL]}>
         <TouchableOpacity
-          style={[styles.sectionTab, activeTab === "images" && styles.sectionTabActive]}
+          style={[
+            styles.sectionTab,
+            activeTab === "images" && styles.sectionTabActive,
+          ]}
           onPress={() => goToTab("images")}
           activeOpacity={0.75}
         >
@@ -165,7 +186,10 @@ function ListingMediaScreen(): React.JSX.Element {
         </TouchableOpacity>
         {hasVideos ? (
           <TouchableOpacity
-            style={[styles.sectionTab, activeTab === "videos" && styles.sectionTabActive]}
+            style={[
+              styles.sectionTab,
+              activeTab === "videos" && styles.sectionTabActive,
+            ]}
             onPress={() => goToTab("videos")}
             activeOpacity={0.75}
           >
@@ -201,7 +225,9 @@ function ListingMediaScreen(): React.JSX.Element {
               style={styles.list}
               showsVerticalScrollIndicator
               getItemLayout={
-                images.length > 20 && !hasAnyImageCaption ? getImageItemLayout : undefined
+                images.length > 20 && !hasAnyImageCaption
+                  ? getImageItemLayout
+                  : undefined
               }
               initialNumToRender={6}
               maxToRenderPerBatch={6}
@@ -218,7 +244,9 @@ function ListingMediaScreen(): React.JSX.Element {
               contentContainerStyle={styles.listContent}
               style={styles.list}
               showsVerticalScrollIndicator
-              getItemLayout={videoUris.length > 10 ? getVideoItemLayout : undefined}
+              getItemLayout={
+                videoUris.length > 10 ? getVideoItemLayout : undefined
+              }
               initialNumToRender={4}
               maxToRenderPerBatch={4}
               windowSize={5}
@@ -237,7 +265,9 @@ function ListingMediaScreen(): React.JSX.Element {
             style={styles.list}
             showsVerticalScrollIndicator
             getItemLayout={
-              images.length > 20 && !hasAnyImageCaption ? getImageItemLayout : undefined
+              images.length > 20 && !hasAnyImageCaption
+                ? getImageItemLayout
+                : undefined
             }
             initialNumToRender={6}
             maxToRenderPerBatch={6}

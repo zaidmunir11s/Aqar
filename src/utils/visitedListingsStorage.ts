@@ -20,7 +20,7 @@ function safeParseVisited(raw: string | null): VisitedMap {
 }
 
 export async function loadVisitedListingIdsSet(
-  maxAgeMs: number
+  maxAgeMs: number,
 ): Promise<Set<number>> {
   const raw = await secureGet(STORAGE_KEYS.visitedListingIdsV1);
   const map = safeParseVisited(raw);
@@ -41,4 +41,3 @@ export async function markListingVisited(id: number): Promise<void> {
   map[String(id)] = Date.now();
   await secureSet(STORAGE_KEYS.visitedListingIdsV1, JSON.stringify(map));
 }
-

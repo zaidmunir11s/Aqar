@@ -61,7 +61,10 @@ const ScreenHeader = memo<ScreenHeaderProps>(
       if (rightIcon && rightText && onRightPress) {
         return (
           <TouchableOpacity
-            style={[styles.rightContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+            style={[
+              styles.rightContainer,
+              { flexDirection: isRTL ? "row-reverse" : "row" },
+            ]}
             onPress={onRightPress}
             activeOpacity={0.7}
           >
@@ -77,22 +80,24 @@ const ScreenHeader = memo<ScreenHeaderProps>(
     };
 
     // Determine back arrow icon based on RTL
-    const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? "arrow-forward" : "arrow-back";
+    const backIconName: keyof typeof Ionicons.glyphMap = isRTL
+      ? "arrow-forward"
+      : "arrow-back";
 
     // RTL-aware styles
     const headerStyle = {
       ...styles.header,
-      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+      flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
     };
 
     const leftContainerStyle = {
       ...styles.leftContainer,
-      flexDirection: (isRTL ? 'row-reverse' : 'row') as 'row' | 'row-reverse',
+      flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
     };
 
     const titleStyle = {
       ...styles.title,
-      textAlign: (isRTL ? 'right' : 'left') as 'left' | 'right',
+      textAlign: (isRTL ? "right" : "left") as "left" | "right",
       marginLeft: onBackPress && !isRTL ? wp(2) : 0,
       marginRight: onBackPress && isRTL ? wp(2) : 0,
       flex: 1,
@@ -100,7 +105,7 @@ const ScreenHeader = memo<ScreenHeaderProps>(
 
     const backButtonStyle = {
       ...styles.backButton,
-      alignItems: 'center' as const,
+      alignItems: "center" as const,
     };
 
     return (
@@ -112,7 +117,11 @@ const ScreenHeader = memo<ScreenHeaderProps>(
               onPress={onBackPress}
               activeOpacity={0.7}
             >
-              <Ionicons name={backIconName} size={wp(7)} color={backButtonColor} />
+              <Ionicons
+                name={backIconName}
+                size={wp(7)}
+                color={backButtonColor}
+              />
             </TouchableOpacity>
           )}
           {hideTitle ? (
@@ -134,7 +143,7 @@ const ScreenHeader = memo<ScreenHeaderProps>(
         {renderRightSide()}
       </View>
     );
-  }
+  },
 );
 
 ScreenHeader.displayName = "ScreenHeader";

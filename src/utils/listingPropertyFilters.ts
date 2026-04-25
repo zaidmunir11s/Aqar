@@ -10,7 +10,10 @@ export function hasValidMapCoordinates(property: Property): boolean {
 /**
  * Rent/sale rules for map + property list: both tabs exclude project markers/listings.
  */
-export function propertyMatchesRentSaleTab(p: Property, tab: "rent" | "sale"): boolean {
+export function propertyMatchesRentSaleTab(
+  p: Property,
+  tab: "rent" | "sale",
+): boolean {
   if ("isProject" in p && p.isProject) return false;
   if (tab === "sale") return p.listingType === "sale";
   return p.listingType === "rent";
@@ -25,7 +28,7 @@ export type RentSaleFilterOptions = {
 
 export function filterRentSaleFromPropertyData(
   tab: "rent" | "sale",
-  options?: RentSaleFilterOptions
+  options?: RentSaleFilterOptions,
 ): Property[] {
   const extra = options?.extraProperties ?? [];
   // Rent/sale data source is backend API + locally-published (in-app) listings only.

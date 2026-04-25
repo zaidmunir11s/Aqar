@@ -30,15 +30,17 @@ export default function PayBrokerCommissionScreen(): React.JSX.Element {
   const rtlStyles = useMemo(
     () => ({
       label: { textAlign: isRTL ? "right" : "left" },
-      descriptionText: { textAlign: "center", },
+      descriptionText: { textAlign: "center" },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title={t("profile.yourDepositService", { defaultValue: "Your Deposit Service" })}
+        title={t("profile.yourDepositService", {
+          defaultValue: "Your Deposit Service",
+        })}
         onBackPress={handleBackPress}
         fontWeightBold={true}
         backButtonColor={COLORS.primary}
@@ -51,13 +53,26 @@ export default function PayBrokerCommissionScreen(): React.JSX.Element {
         <View style={styles.iconContainer}>
           <Ionicons name="receipt" size={wp(8)} color={COLORS.info} />
         </View>
-        <Text style={[styles.descriptionText, rtlStyles.descriptionText as TextStyle]}>
-          {t("profile.yourDepositServiceDescription", { defaultValue: "A service that ensures the safe arrival of the commission to the broker by matching all registered official data and passing the national access verification to ensure the rights of all parties." })}
+        <Text
+          style={[
+            styles.descriptionText,
+            rtlStyles.descriptionText as TextStyle,
+          ]}
+        >
+          {t("profile.yourDepositServiceDescription", {
+            defaultValue:
+              "A service that ensures the safe arrival of the commission to the broker by matching all registered official data and passing the national access verification to ensure the rights of all parties.",
+          })}
         </Text>
         <View style={styles.separator} />
         <View style={styles.segmentedControlContainer}>
           <SegmentedControl
-            options={[t("profile.buy", { defaultValue: "Buy" }), t("profile.rent", { defaultValue: "Rent" }) as string, t("profile.sell", { defaultValue: "Sell" }) as string, t("profile.daily", { defaultValue: "Daily" }) as string]       }
+            options={[
+              t("profile.buy", { defaultValue: "Buy" }),
+              t("profile.rent", { defaultValue: "Rent" }) as string,
+              t("profile.sell", { defaultValue: "Sell" }) as string,
+              t("profile.daily", { defaultValue: "Daily" }) as string,
+            ]}
             selectedIndex={selectedIndex}
             onSelect={handleSegmentChange}
           />

@@ -18,18 +18,20 @@ const LanguageConverter: React.FC<LanguageConverterProps> = ({
   onPress: propOnPress,
 }) => {
   const { language, toggleLanguage, isRTL } = useLocalization();
-  
+
   // Use Redux language state if prop not provided, otherwise use prop
-  const currentLanguage = propLanguage 
-    ? (propLanguage === "english" ? "en" : "ar")
+  const currentLanguage = propLanguage
+    ? propLanguage === "english"
+      ? "en"
+      : "ar"
     : language;
-  
+
   // Show the language you'll switch TO (opposite of current)
   const languageText = currentLanguage === "en" ? "العربية" : "English";
   const rightBubbleChar = currentLanguage === "en" ? "ε" : "ع";
 
   const isEnglish = currentLanguage === "en";
-  
+
   const handlePress = () => {
     if (propOnPress) {
       propOnPress();
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
     paddingRight: wp(0.5),
   },
   bubbleText: {
-    color:"#fff",
+    color: "#fff",
     fontSize: wp(3.5),
     fontWeight: "500",
   },

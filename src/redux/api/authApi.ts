@@ -2,16 +2,12 @@ import type {
   BaseQueryFn,
   EndpointBuilder,
   FetchBaseQueryError,
+  FetchArgs,
 } from "@reduxjs/toolkit/query";
-import type { FetchArgs } from "@reduxjs/toolkit/query";
 import { baseApi } from "@/redux/api/baseApi";
 import { API_ENDPOINTS } from "@/constants/api";
 
-type BaseQuery = BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
->;
+type BaseQuery = BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError>;
 type ApiTagTypes =
   | "User"
   | "Auth"

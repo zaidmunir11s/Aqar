@@ -17,7 +17,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader, ListingFooter, CancelModal } from "../../../../components";
+import {
+  ScreenHeader,
+  ListingFooter,
+  CancelModal,
+} from "../../../../components";
 import { openURL, navigateToMapScreen } from "../../../../utils";
 import {
   COLORS,
@@ -47,7 +51,7 @@ export default function Step1LicenseScreen(): React.JSX.Element {
         textAlign: (isRTL ? "right" : "left") as "left" | "right",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   const handleBackPress = useCallback(() => {
@@ -94,7 +98,7 @@ export default function Step1LicenseScreen(): React.JSX.Element {
         <Ionicons name="close" size={wp(6)} color={COLORS.primary} />
       </TouchableOpacity>
     ),
-    [handleClosePress]
+    [handleClosePress],
   );
 
   return (
@@ -145,7 +149,10 @@ export default function Step1LicenseScreen(): React.JSX.Element {
             </View>
 
             <TextInput
-              style={[styles.textInput, licenseFocused && styles.textInputFocused]}
+              style={[
+                styles.textInput,
+                licenseFocused && styles.textInputFocused,
+              ]}
               value={licenseNumber}
               onChangeText={setLicenseNumber}
               keyboardType="number-pad"
@@ -157,7 +164,9 @@ export default function Step1LicenseScreen(): React.JSX.Element {
             />
 
             {licenseNumber.length > 0 && !isValidLicense ? (
-              <Text style={styles.errorText}>{t("listings.brokerAdLicenseInvalid")}</Text>
+              <Text style={styles.errorText}>
+                {t("listings.brokerAdLicenseInvalid")}
+              </Text>
             ) : null}
 
             <TouchableOpacity

@@ -35,14 +35,16 @@ const PropertyHeader = memo<PropertyHeaderProps>(
 
     const translatedAddress = useMemo(
       () => translateAddress(property.address, t),
-      [property.address, t]
+      [property.address, t],
     );
 
     // RTL-aware styles
     const rtlStyles = useMemo(
       () => ({
         priceSection: {
-          alignItems: (isRTL ? "flex-end" : "flex-start") as "flex-start" | "flex-end",
+          alignItems: (isRTL ? "flex-end" : "flex-start") as
+            | "flex-start"
+            | "flex-end",
         },
         address: {
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
@@ -51,19 +53,23 @@ const PropertyHeader = memo<PropertyHeaderProps>(
           textAlign: (isRTL ? "right" : "left") as "left" | "right",
         },
         priceRow: {
-          flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
+          flexDirection: (isRTL ? "row-reverse" : "row") as
+            | "row"
+            | "row-reverse",
         },
         commission: {
           marginLeft: isRTL ? 0 : wp(2),
           marginRight: isRTL ? wp(2) : 0,
         },
       }),
-      [isRTL]
+      [isRTL],
     );
 
     return (
       <View style={[styles.priceSection, rtlStyles.priceSection]}>
-        <Text style={[styles.address, rtlStyles.address]}>{translatedAddress}</Text>
+        <Text style={[styles.address, rtlStyles.address]}>
+          {translatedAddress}
+        </Text>
         <Text style={[styles.title, rtlStyles.title]}>
           {property.listingType === "daily"
             ? typeLabel
@@ -86,16 +92,17 @@ const PropertyHeader = memo<PropertyHeaderProps>(
         ) : (
           <View style={[styles.priceRow, rtlStyles.priceRow]}>
             <Text style={styles.price}>{displayPrice}</Text>
-            {property.listingType === "rent" && Boolean(property.commissionText?.trim()) && (
-              <Text style={[styles.commission, rtlStyles.commission]}>
-                {property.commissionText}
-              </Text>
-            )}
+            {property.listingType === "rent" &&
+              Boolean(property.commissionText?.trim()) && (
+                <Text style={[styles.commission, rtlStyles.commission]}>
+                  {property.commissionText}
+                </Text>
+              )}
           </View>
         )}
       </View>
     );
-  }
+  },
 );
 
 PropertyHeader.displayName = "PropertyHeader";

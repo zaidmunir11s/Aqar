@@ -14,7 +14,10 @@ import {
 
 type TranslateFn = (key: string, options?: Record<string, unknown>) => string;
 
-function createReverseMap(originalOptions: string[], translatedOptions: string[]): Record<string, string> {
+function createReverseMap(
+  originalOptions: string[],
+  translatedOptions: string[],
+): Record<string, string> {
   const map: Record<string, string> = {};
   originalOptions.forEach((original, index) => {
     map[translatedOptions[index]] = original;
@@ -50,11 +53,14 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
       if (!originalValue) return "";
       return categoryTranslationMap[originalValue] || originalValue;
     },
-    [categoryTranslationMap]
+    [categoryTranslationMap],
   );
 
   const translateOption = useCallback(
-    (opt: string, type: "streetDirection" | "floor" | "age" | "streetWidth"): string => {
+    (
+      opt: string,
+      type: "streetDirection" | "floor" | "age" | "streetWidth",
+    ): string => {
       if (opt === "All") return t("listings.all");
 
       if (type === "streetDirection") {
@@ -85,41 +91,49 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
 
       return opt;
     },
-    [t]
+    [t],
   );
 
   const translatedStreetDirectionOptions = useMemo(
-    () => STREET_DIRECTION_OPTIONS.map((opt) => translateOption(opt, "streetDirection")),
-    [translateOption]
+    () =>
+      STREET_DIRECTION_OPTIONS.map((opt) =>
+        translateOption(opt, "streetDirection"),
+      ),
+    [translateOption],
   );
   const translatedFloorOptions = useMemo(
     () => FLOOR_OPTIONS.map((opt) => translateOption(opt, "floor")),
-    [translateOption]
+    [translateOption],
   );
   const translatedAgeOptions = useMemo(
     () => AGE_OPTIONS.map((opt) => translateOption(opt, "age")),
-    [translateOption]
+    [translateOption],
   );
   const translatedStreetWidthOptions = useMemo(
-    () => STREET_WIDTH_OPTIONS.map((opt) => translateOption(opt, "streetWidth")),
-    [translateOption]
+    () =>
+      STREET_WIDTH_OPTIONS.map((opt) => translateOption(opt, "streetWidth")),
+    [translateOption],
   );
 
   const streetDirectionReverseMap = useMemo(
-    () => createReverseMap(STREET_DIRECTION_OPTIONS, translatedStreetDirectionOptions),
-    [translatedStreetDirectionOptions]
+    () =>
+      createReverseMap(
+        STREET_DIRECTION_OPTIONS,
+        translatedStreetDirectionOptions,
+      ),
+    [translatedStreetDirectionOptions],
   );
   const floorReverseMap = useMemo(
     () => createReverseMap(FLOOR_OPTIONS, translatedFloorOptions),
-    [translatedFloorOptions]
+    [translatedFloorOptions],
   );
   const ageReverseMap = useMemo(
     () => createReverseMap(AGE_OPTIONS, translatedAgeOptions),
-    [translatedAgeOptions]
+    [translatedAgeOptions],
   );
   const streetWidthReverseMap = useMemo(
     () => createReverseMap(STREET_WIDTH_OPTIONS, translatedStreetWidthOptions),
-    [translatedStreetWidthOptions]
+    [translatedStreetWidthOptions],
   );
 
   const getTranslatedInitialValue = useCallback(
@@ -127,22 +141,24 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
       originalValue: string | null,
       reverseMap: Record<string, string>,
       translatedOptions: string[],
-      originalOptions?: string[]
+      originalOptions?: string[],
     ): string => {
       if (!originalValue) return "";
       const originalIndex =
         originalOptions && originalOptions.length === translatedOptions.length
           ? originalOptions.indexOf(originalValue)
           : Object.values(reverseMap).indexOf(originalValue);
-      return originalIndex >= 0 ? translatedOptions[originalIndex] : originalValue;
+      return originalIndex >= 0
+        ? translatedOptions[originalIndex]
+        : originalValue;
     },
-    []
+    [],
   );
 
   const getTranslatedPickerValue = useCallback(
     (
       originalValue: string | null,
-      type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores"
+      type: "floor" | "age" | "streetDirection" | "streetWidth" | "stores",
     ): string => {
       if (!originalValue) return "";
 
@@ -151,23 +167,28 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
           originalValue,
           floorReverseMap,
           translatedFloorOptions,
-          FLOOR_OPTIONS
+          FLOOR_OPTIONS,
         );
       } else if (type === "age") {
-        return getTranslatedInitialValue(originalValue, ageReverseMap, translatedAgeOptions, AGE_OPTIONS);
+        return getTranslatedInitialValue(
+          originalValue,
+          ageReverseMap,
+          translatedAgeOptions,
+          AGE_OPTIONS,
+        );
       } else if (type === "streetDirection") {
         return getTranslatedInitialValue(
           originalValue,
           streetDirectionReverseMap,
           translatedStreetDirectionOptions,
-          STREET_DIRECTION_OPTIONS
+          STREET_DIRECTION_OPTIONS,
         );
       } else if (type === "streetWidth") {
         return getTranslatedInitialValue(
           originalValue,
           streetWidthReverseMap,
           translatedStreetWidthOptions,
-          STREET_WIDTH_OPTIONS
+          STREET_WIDTH_OPTIONS,
         );
       } else if (type === "stores") {
         // Stores options: ["All", "1", "2", "3", "4"]
@@ -189,7 +210,7 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
       streetWidthReverseMap,
       translatedStreetWidthOptions,
       t,
-    ]
+    ],
   );
 
   const translatedVillaTypeOptions = useMemo(
@@ -200,7 +221,7 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
         if (opt === "Townhouse") return t("listings.townhouse");
         return opt;
       }),
-    [t]
+    [t],
   );
 
   const translatedResidentialCommercialOptions = useMemo(
@@ -210,20 +231,20 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
         if (opt === "Commercial") return t("listings.commercial");
         return opt;
       }),
-    [t]
+    [t],
   );
 
   const villaTypeReverseMap = useMemo(
     () => createReverseMap(VILLA_TYPE_OPTIONS, translatedVillaTypeOptions),
-    [translatedVillaTypeOptions]
+    [translatedVillaTypeOptions],
   );
   const residentialCommercialReverseMap = useMemo(
     () =>
       createReverseMap(
         RESIDENTIAL_COMMERCIAL_OPTIONS,
-        translatedResidentialCommercialOptions
+        translatedResidentialCommercialOptions,
       ),
-    [translatedResidentialCommercialOptions]
+    [translatedResidentialCommercialOptions],
   );
 
   return {
@@ -246,4 +267,3 @@ export function useSearchRequestOrderTranslations(t: TranslateFn) {
     residentialCommercialReverseMap,
   };
 }
-

@@ -1,6 +1,10 @@
 import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome6,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -8,7 +12,6 @@ import {
 import { COLORS } from "../../constants";
 import { useLocalization } from "../../hooks/useLocalization";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 
 export type TabType = "rent" | "sale";
 
@@ -26,10 +29,14 @@ const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
   // Memoize tabs with translations
   const tabs = useMemo(
     () => [
-      { id: "rent" as TabType, icon: "door-open", label: t("listings.forRent") },
+      {
+        id: "rent" as TabType,
+        icon: "door-open",
+        label: t("listings.forRent"),
+      },
       { id: "sale" as TabType, icon: "key", label: t("listings.forSale") },
     ],
-    [t]
+    [t],
   );
 
   // RTL-aware styles
@@ -42,15 +49,21 @@ const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
         flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
-    <View style={[styles.topTabs, rtlStyles.topTabs, { top: hp(1) + insets.top }]}>
+    <View
+      style={[styles.topTabs, rtlStyles.topTabs, { top: hp(1) + insets.top }]}
+    >
       {tabs.map((tab, index) => (
         <React.Fragment key={tab.id}>
           <TouchableOpacity
-            style={[styles.tab, rtlStyles.tab, activeTab === tab.id && styles.activeTab]}
+            style={[
+              styles.tab,
+              rtlStyles.tab,
+              activeTab === tab.id && styles.activeTab,
+            ]}
             onPress={() => onTabChange(tab.id)}
           >
             {tab.id === "sale" ? (
@@ -59,7 +72,7 @@ const MapTabs = memo<MapTabsProps>(({ activeTab, onTabChange }) => {
                 size={wp(5)}
                 color={activeTab === tab.id ? COLORS.activeTopTabBar : "#666"}
                 style={{
-                  transform: [{ scaleX: -1},{rotate: '-20deg'}],
+                  transform: [{ scaleX: -1 }, { rotate: "-20deg" }],
                 }}
               />
             ) : (
@@ -119,7 +132,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   activeTabLabel: {
-    color: COLORS.activeTopTabBar ,
+    color: COLORS.activeTopTabBar,
     // fontWeight: "700",
   },
   separator: {

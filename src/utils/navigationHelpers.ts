@@ -1,6 +1,10 @@
 import { StackActions, type NavigationProp } from "@react-navigation/native";
 
-const MAP_STACK_SCREEN_NAMES = ["MapLanding", "DailyMap", "ProjectsMap"] as const;
+const MAP_STACK_SCREEN_NAMES = [
+  "MapLanding",
+  "DailyMap",
+  "ProjectsMap",
+] as const;
 
 /**
  * Determines the correct map screen to navigate to based on the current navigation state
@@ -10,11 +14,11 @@ const MAP_STACK_SCREEN_NAMES = ["MapLanding", "DailyMap", "ProjectsMap"] as cons
 export function getMapScreenName(navigation: NavigationProp<any>): string {
   // Try to get the parent navigator to determine which tab we're in
   const parent = navigation.getParent();
-  
+
   if (parent) {
     const state = parent.getState();
     const currentRoute = state?.routes[state?.index];
-    
+
     // Check which tab is currently active
     if (currentRoute?.name === "Daily") {
       return "DailyMap";
@@ -24,12 +28,12 @@ export function getMapScreenName(navigation: NavigationProp<any>): string {
       return "MapLanding";
     }
   }
-  
+
   // Fallback: check navigation state to see which screens are available
   try {
     const navState = navigation.getState();
     const routeNames = navState?.routeNames || [];
-    
+
     // Check which map screen exists in the current navigator
     if (routeNames.includes("DailyMap")) {
       return "DailyMap";
@@ -41,7 +45,7 @@ export function getMapScreenName(navigation: NavigationProp<any>): string {
   } catch {
     // If we can't get state, default to MapLanding
   }
-  
+
   // Default to MapLanding as it's the most common
   return "MapLanding";
 }
@@ -68,7 +72,9 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
     const previous = routes[index - 1];
     if (
       previous &&
-      MAP_STACK_SCREEN_NAMES.includes(previous.name as (typeof MAP_STACK_SCREEN_NAMES)[number])
+      MAP_STACK_SCREEN_NAMES.includes(
+        previous.name as (typeof MAP_STACK_SCREEN_NAMES)[number],
+      )
     ) {
       navigation.goBack();
       return;
@@ -82,7 +88,9 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
   if (
     index > 0 &&
     rootName &&
-    MAP_STACK_SCREEN_NAMES.includes(rootName as (typeof MAP_STACK_SCREEN_NAMES)[number])
+    MAP_STACK_SCREEN_NAMES.includes(
+      rootName as (typeof MAP_STACK_SCREEN_NAMES)[number],
+    )
   ) {
     navigation.dispatch(StackActions.popToTop());
     return;
@@ -117,7 +125,7 @@ export function navigateToMapScreen(navigation: NavigationProp<any>): void {
  * @param navigation - Navigation from the current screen (e.g. ChatStack); its parent must be the tab navigator
  */
 export function navigateToListingsMapFromOtherTab(
-  navigation: NavigationProp<any>
+  navigation: NavigationProp<any>,
 ): void {
   const tabNav = navigation.getParent();
   if (!tabNav) {
@@ -127,10 +135,13 @@ export function navigateToListingsMapFromOtherTab(
 
   const state = tabNav.getState();
   const listingsRoute = state?.routes?.find(
-    (r: { name: string }) => r.name === "Listings"
+    (r: { name: string }) => r.name === "Listings",
   );
   const listingsState = listingsRoute?.state as
-    | { routes: Array<{ name: string; key?: string; params?: object }>; index: number }
+    | {
+        routes: { name: string; key?: string; params?: object }[];
+        index: number;
+      }
     | undefined;
   const routes = listingsState?.routes ?? [];
   const firstRoute = routes[0];

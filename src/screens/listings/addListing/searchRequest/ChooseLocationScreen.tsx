@@ -1,10 +1,11 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useCallback,
+} from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MapView, { Region } from "react-native-maps";
@@ -13,7 +14,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { ScreenHeader, ListingFooter, ToggleSwitch } from "../../../../components";
+import {
+  ScreenHeader,
+  ListingFooter,
+  ToggleSwitch,
+} from "../../../../components";
 import { COLORS } from "@/constants";
 import { useLocalization } from "../../../../hooks/useLocalization";
 import { useLocation } from "../../../../hooks";
@@ -61,7 +66,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
       latitudeDelta: 0.08,
       longitudeDelta: 0.08,
     }),
-    []
+    [],
   );
 
   const initialSelectedLocation =
@@ -78,8 +83,8 @@ export default function ChooseLocationScreen(): React.JSX.Element {
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
     longitude: number;
-  } | null>(initialSelectedLocation ?? { latitude: DEFAULT_REGION.latitude, longitude: DEFAULT_REGION.longitude });
-  const [mapInitialRegion, setMapInitialRegion] = useState<Region | null>(
+  } | null>(initialSelectedLocation);
+  const [mapInitialRegion, setMapInitialRegion] = useState<Region | null>(() =>
     initialSelectedLocation
       ? {
           latitude: initialSelectedLocation.latitude,
@@ -87,10 +92,10 @@ export default function ChooseLocationScreen(): React.JSX.Element {
           latitudeDelta: 0.08,
           longitudeDelta: 0.08,
         }
-      : DEFAULT_REGION
+      : null,
   );
   const [isResolvingInitialLocation, setIsResolvingInitialLocation] = useState(
-    !initialSelectedLocation
+    !initialSelectedLocation,
   );
 
   // Toggle states: true = ON (thumb left), false = OFF (thumb right)
@@ -109,7 +114,13 @@ export default function ChooseLocationScreen(): React.JSX.Element {
       assistFromPartners,
       orderFormData: params.orderFormData,
     });
-  }, [navigation, selectedLocation, onlyAdsWithPhoto, assistFromPartners, params.orderFormData]);
+  }, [
+    navigation,
+    selectedLocation,
+    onlyAdsWithPhoto,
+    assistFromPartners,
+    params.orderFormData,
+  ]);
 
   useEffect(() => {
     if (mapInitialRegion) return;
@@ -168,7 +179,7 @@ export default function ChooseLocationScreen(): React.JSX.Element {
         marginLeft: isRTL ? wp(3) : 0,
       },
     }),
-    [isRTL]
+    [isRTL],
   );
 
   // Handle map region change (when user pans/zooms)
@@ -205,25 +216,33 @@ export default function ChooseLocationScreen(): React.JSX.Element {
 
       <View style={styles.content}>
         {/* Choose Location Title */}
-        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>{t("listings.chooseLocation")}</Text>
+        <Text style={[styles.sectionTitle, rtlStyles.sectionTitle]}>
+          {t("listings.chooseLocation")}
+        </Text>
 
         {/* Interactive Map */}
         <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={mapInitialRegion ?? DEFAULT_REGION}
-            onRegionChangeComplete={handleRegionChangeComplete}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-            showsCompass={false}
-            toolbarEnabled={false}
-            mapType="standard"
-            scrollEnabled={true}
-            zoomEnabled={true}
-            pitchEnabled={false}
-            rotateEnabled={false}
-          />
+          {mapInitialRegion ? (
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              initialRegion={mapInitialRegion}
+              onRegionChangeComplete={handleRegionChangeComplete}
+              showsUserLocation={true}
+              showsMyLocationButton={false}
+              showsCompass={false}
+              toolbarEnabled={false}
+              mapType="standard"
+              scrollEnabled={true}
+              zoomEnabled={true}
+              pitchEnabled={false}
+              rotateEnabled={false}
+            />
+          ) : (
+            <View style={[styles.map, styles.mapLoadingPlaceholder]}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          )}
           {isResolvingInitialLocation ? (
             <View style={styles.mapResolvingBadge} pointerEvents="none">
               <ActivityIndicator size="small" color={COLORS.primary} />
@@ -243,7 +262,9 @@ export default function ChooseLocationScreen(): React.JSX.Element {
         {/* Toggle Options */}
         <View style={styles.togglesContainer}>
           <View style={[styles.toggleRow, rtlStyles.toggleRow]}>
-            <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>{t("listings.onlyAdsWithPhoto")}</Text>
+            <Text style={[styles.toggleLabel, rtlStyles.toggleLabel]}>
+              {t("listings.onlyAdsWithPhoto")}
+            </Text>
             <ToggleSwitch
               value={onlyAdsWithPhoto}
               onValueChange={setOnlyAdsWithPhoto}
@@ -317,6 +338,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  // (deduped) mapLoadingPlaceholder is defined below with flex: 1
   mapResolvingBadge: {
     position: "absolute",
     top: hp(1),
@@ -353,7 +375,6 @@ const styles = StyleSheet.create({
     pointerEvents: "none",
   },
   togglesContainer: {
-
     // marginTop: hp(1),
   },
   toggleRow: {
@@ -373,4 +394,3 @@ const styles = StyleSheet.create({
     marginRight: wp(3),
   },
 });
-

@@ -63,7 +63,7 @@ export default function SliderWithInput({
     () => () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     },
-    []
+    [],
   );
 
   const cancelScheduledEmit = () => {
@@ -150,7 +150,7 @@ export default function SliderWithInput({
           const deltaRatio = (dx / tw) * (isRTLRef.current ? -1 : 1);
           const ratio = Math.max(
             0,
-            Math.min(1, dragStartRef.current.startRatio + deltaRatio)
+            Math.min(1, dragStartRef.current.startRatio + deltaRatio),
           );
           const next = Math.round(ratio * maxRef.current);
           if (maxRef.current > HEAVY_SLIDER_MAX) {
@@ -162,7 +162,7 @@ export default function SliderWithInput({
         onPanResponderRelease: (e) => endPan(e),
         onPanResponderTerminate: (e) => endPan(e),
       }),
-    []
+    [],
   );
 
   const displayValue = panTransient !== null ? panTransient : value;
@@ -176,15 +176,13 @@ export default function SliderWithInput({
         writingDirection: (isRTL ? "rtl" : "ltr") as "rtl" | "ltr",
       },
       row: {
-        flexDirection: (isRTL
-          ? "row-reverse"
-          : "row") as "row" | "row-reverse",
+        flexDirection: (isRTL ? "row-reverse" : "row") as "row" | "row-reverse",
       },
       trackFill: isRTL
         ? ({ right: 0, left: undefined } as const)
         : ({ left: 0, right: undefined } as const),
     }),
-    [isRTL]
+    [isRTL],
   );
 
   return (
